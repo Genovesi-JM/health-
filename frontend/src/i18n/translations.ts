@@ -133,6 +133,10 @@ const translations: Record<string, Record<Lang, string>> = {
   'landing.cta_desc': { pt: 'Registe-se gratuitamente e comece a sua triagem em menos de 3 minutos.', en: 'Register for free and start your triage in less than 3 minutes.', fr: 'Inscrivez-vous gratuitement et commencez votre triage en moins de 3 minutes.' },
   'landing.create_free': { pt: 'Criar Conta Grátis', en: 'Create Free Account', fr: 'Créer un Compte Gratuit' },
   'landing.have_account': { pt: 'Já tenho conta', en: 'I have an account', fr: 'J\'ai un compte' },
+  'landing.enter': { pt: 'Entrar', en: 'Sign In', fr: 'Se connecter' },
+  'landing.discover_services': { pt: 'Conhecer serviços', en: 'Discover services', fr: 'Découvrir les services' },
+  'landing.emergency_112': { pt: 'Emergências', en: 'Emergencies', fr: 'Urgences' },
+  'landing.emergency_061': { pt: 'Consultas urgentes', en: 'Urgent consultations', fr: 'Consultations urgentes' },
 
   /* ═══════════════════════════════════════════════════════════
      ABOUT PAGE
@@ -598,6 +602,28 @@ const translations: Record<string, Record<Lang, string>> = {
   'dash.tab_triages': { pt: 'Triagens', en: 'Triages', fr: 'Triages' },
   'dash.tab_consultations': { pt: 'Consultas', en: 'Consultations', fr: 'Consultations' },
   'dash.tab_profile': { pt: 'Perfil', en: 'Profile', fr: 'Profil' },
+
+  /* Dashboard — Quick Actions (La Meva Salut) */
+  'dash.quick_actions': { pt: 'Acesso Rápido', en: 'Quick Access', fr: 'Accès Rapide' },
+  'dash.qa_triage': { pt: 'Triagem', en: 'Triage', fr: 'Triage' },
+  'dash.qa_appointments': { pt: 'Consultas', en: 'Appointments', fr: 'Rendez-vous' },
+  'dash.qa_medication': { pt: 'Medicação', en: 'Medication', fr: 'Médicaments' },
+  'dash.qa_econsulta': { pt: 'eConsulta', en: 'eConsult', fr: 'eConsultation' },
+  'dash.qa_doctors': { pt: 'Médicos', en: 'Doctors', fr: 'Médecins' },
+  'dash.qa_results': { pt: 'Resultados', en: 'Results', fr: 'Résultats' },
+  'dash.qa_consents': { pt: 'Consentimentos', en: 'Consents', fr: 'Consentements' },
+  'dash.qa_profile': { pt: 'Perfil', en: 'Profile', fr: 'Profil' },
+
+  /* Dashboard — Highlights / Destaques */
+  'dash.highlights': { pt: 'Destaques', en: 'Highlights', fr: 'En vedette' },
+  'dash.hl_hydration': { pt: 'Mantenha-se hidratado', en: 'Stay hydrated', fr: 'Restez hydraté(e)' },
+  'dash.hl_hydration_desc': { pt: 'Beba pelo menos 2L de água por dia para manter o corpo saudável.', en: 'Drink at least 2L of water per day to keep your body healthy.', fr: 'Buvez au moins 2L d\'eau par jour pour garder votre corps en bonne santé.' },
+  'dash.hl_sleep': { pt: 'Durma bem', en: 'Sleep well', fr: 'Dormez bien' },
+  'dash.hl_sleep_desc': { pt: '7 a 9 horas de sono por noite são essenciais para a recuperação.', en: '7 to 9 hours of sleep per night are essential for recovery.', fr: '7 à 9 heures de sommeil par nuit sont essentielles pour la récupération.' },
+  'dash.hl_nutrition': { pt: 'Alimentação equilibrada', en: 'Balanced diet', fr: 'Alimentation équilibrée' },
+  'dash.hl_nutrition_desc': { pt: 'Inclua frutas, vegetais e proteínas na sua dieta diária.', en: 'Include fruits, vegetables and proteins in your daily diet.', fr: 'Incluez des fruits, des légumes et des protéines dans votre alimentation quotidienne.' },
+  'dash.hl_checkup': { pt: 'Check-up regular', en: 'Regular check-up', fr: 'Bilan régulier' },
+  'dash.hl_checkup_desc': { pt: 'Realize exames preventivos pelo menos uma vez por ano.', en: 'Have preventive exams at least once a year.', fr: 'Faites des examens préventifs au moins une fois par an.' },
 
   /* ═══════════════════════════════════════════════════════════
      SELF-CARE PAGE

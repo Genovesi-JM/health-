@@ -478,7 +478,7 @@ input:focus, select:focus, textarea:focus {
   border-bottom-color: var(--accent-teal);
 }
 
-/* ============ Hero (Landing / About) ============ */
+/* ============ Hero (Landing / About — old kept for About) ============ */
 .hero {
   position: relative;
   min-height: 80vh;
@@ -523,7 +523,9 @@ input:focus, select:focus, textarea:focus {
   display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
 }
 
-/* ============ Sections (Landing) ============ */
+/* ============ NEW Landing Hero (La Meva Salut) ============ */
+
+/* ── Legacy sections (used by About page) ── */
 .section {
   padding: 5rem 1.5rem;
 }
@@ -566,8 +568,6 @@ input:focus, select:focus, textarea:focus {
 .feature-card p, .service-card p {
   font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;
 }
-
-/* ============ CTA Section ============ */
 .cta-section {
   text-align: center; padding: 5rem 1.5rem;
   background: var(--gradient-glow);
@@ -580,6 +580,406 @@ input:focus, select:focus, textarea:focus {
 .cta-section p {
   font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1.75rem;
   max-width: 480px; margin-left: auto; margin-right: auto;
+}
+
+.landing-hero {
+  position: relative;
+  min-height: 85vh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 6rem 1.5rem 4rem;
+  overflow: hidden;
+}
+.landing-hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, #0d9488 0%, #0891b2 40%, #e0f2fe 70%, #f0fdfa 100%);
+  opacity: 0.12;
+  pointer-events: none;
+}
+.landing-hero-content {
+  position: relative; z-index: 2;
+  max-width: 560px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.landing-hero-icon {
+  width: 88px; height: 88px; border-radius: 24px;
+  background: var(--gradient-primary);
+  display: flex; align-items: center; justify-content: center;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 32px rgba(13,148,136,0.25);
+}
+.landing-hero-title {
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 800; line-height: 1.1;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+.landing-hero-subtitle {
+  font-size: 1rem; color: var(--text-secondary);
+  max-width: 440px; margin: 0 auto 2rem;
+  line-height: 1.7;
+}
+.landing-hero-actions {
+  display: flex; gap: 0.75rem; flex-direction: column;
+  width: 100%; max-width: 320px;
+}
+.landing-btn-primary {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0.85rem 1.5rem; border-radius: 14px;
+  background: var(--gradient-primary); color: #fff;
+  font-weight: 700; font-size: 1rem; text-decoration: none;
+  box-shadow: 0 4px 16px rgba(13,148,136,0.3);
+  transition: all 0.25s;
+}
+.landing-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(13,148,136,0.4); }
+.landing-btn-secondary {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0.85rem 1.5rem; border-radius: 14px;
+  background: #ffffff; color: var(--text-primary);
+  font-weight: 600; font-size: 0.95rem; text-decoration: none;
+  border: 1px solid var(--border);
+  transition: all 0.25s;
+}
+.landing-btn-secondary:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
+
+/* ── Stats Strip ── */
+.landing-stats-strip {
+  display: flex; justify-content: center; gap: 1rem;
+  padding: 1.5rem; flex-wrap: wrap;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.landing-stat {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 100px; padding: 0.75rem 1rem;
+}
+.landing-stat-value {
+  font-size: 1.5rem; font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.landing-stat-label {
+  font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.1em; margin-top: 0.15rem;
+}
+
+/* ── Landing sections ── */
+.landing-section {
+  padding: 4rem 1.5rem;
+  max-width: 1100px; margin: 0 auto;
+}
+.landing-section-alt {
+  background: var(--bg-darker);
+  max-width: none;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.landing-section-alt > .section-header,
+.landing-section-alt > .landing-features-grid {
+  max-width: 1100px; margin-left: auto; margin-right: auto;
+}
+.landing-services-grid, .landing-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+.landing-service-card, .landing-feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: all 0.3s;
+}
+.landing-service-card:hover, .landing-feature-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-3px);
+}
+.landing-service-icon, .landing-feature-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--gradient-glow);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1rem; color: var(--accent-teal);
+}
+.landing-service-card h3, .landing-feature-card h3 {
+  font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;
+}
+.landing-service-card p, .landing-feature-card p {
+  font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;
+}
+
+/* ── Landing CTA ── */
+.landing-cta {
+  text-align: center; padding: 4rem 1.5rem;
+  background: var(--gradient-glow);
+  border-top: 1px solid var(--border);
+}
+.landing-cta h2 {
+  font-size: 1.6rem; font-weight: 700; margin-bottom: 0.75rem;
+}
+.landing-cta p {
+  font-size: 0.95rem; color: var(--text-secondary);
+  margin-bottom: 1.5rem; max-width: 480px; margin-left: auto; margin-right: auto;
+}
+.landing-cta-actions {
+  display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
+}
+
+/* ============ Emergency Bar (La Meva Salut) ============ */
+.emergency-bar, .dash-emergency-bar {
+  display: flex; gap: 0; border-radius: 14px;
+  overflow: hidden; margin: 2rem 0 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.dash-emergency-bar {
+  margin: 2rem 0 0;
+}
+.emergency-bar-item {
+  flex: 1; display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  text-decoration: none; color: #fff;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.emergency-bar-item:hover { opacity: 0.9; }
+.emergency-bar-item div {
+  display: flex; flex-direction: column;
+}
+.emergency-bar-red { background: #dc2626; }
+.emergency-bar-blue { background: #2563eb; }
+.emergency-bar-number {
+  font-size: 1.1rem; font-weight: 800; line-height: 1;
+}
+.emergency-bar-label {
+  font-size: 0.68rem; opacity: 0.9; font-weight: 500;
+}
+
+/* ============ Dashboard — La Meva Salut Redesign ============ */
+
+/* Greeting header */
+.dash-greeting {
+  position: relative; overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 1.25rem;
+  background: var(--gradient-primary);
+}
+.dash-greeting-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+.dash-greeting-content {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.5rem;
+  color: #fff;
+}
+.dash-greeting-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; font-weight: 800; color: #fff;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+}
+.dash-greeting-title {
+  font-size: 1.25rem; font-weight: 700; margin: 0;
+  color: #fff;
+}
+.dash-greeting-subtitle {
+  font-size: 0.82rem; opacity: 0.9; margin: 0.15rem 0 0;
+  color: rgba(255,255,255,0.92);
+}
+
+/* Urgent banner */
+.dash-urgent-banner {
+  background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;
+  border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: 0.85rem;
+  box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+  animation: urgentPulse 2s ease-in-out infinite;
+}
+@keyframes urgentPulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 4px 24px rgba(239,68,68,0.5); }
+}
+
+/* Status card (compact) */
+.dash-status-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
+  position: relative; overflow: hidden;
+}
+.dash-status-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.dash-status-content {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.25rem;
+  flex-wrap: wrap;
+}
+.dash-status-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dash-status-label {
+  font-size: 0.65rem; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--text-muted);
+}
+.dash-status-title {
+  font-size: 1rem; font-weight: 700; color: var(--text-primary);
+}
+.dash-risk-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.15rem 0.55rem; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 600; margin-top: 0.25rem;
+}
+.dash-status-action {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem 1.1rem; border-radius: 10px;
+  background: var(--gradient-primary); color: #fff;
+  font-weight: 600; font-size: 0.82rem; text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(13,148,136,0.25);
+  transition: all 0.2s;
+}
+.dash-status-action:hover { transform: translateY(-1px); }
+
+/* Section headers */
+.dash-section-header {
+  margin: 1.5rem 0 0.75rem;
+}
+.dash-section-header h2 {
+  font-size: 1rem; font-weight: 700; color: var(--text-primary);
+}
+
+/* ── Quick Actions Carousel (La Meva Salut) ── */
+.dash-carousel {
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+.dash-carousel-track {
+  display: flex; gap: 0.85rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.25rem 0.25rem 0.75rem;
+  scrollbar-width: none;
+}
+.dash-carousel-track::-webkit-scrollbar { display: none; }
+
+.dash-action-card {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 100px; width: 100px;
+  padding: 0.85rem 0.5rem;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition: all 0.25s;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.dash-action-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.dash-action-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 0.5rem;
+  transition: transform 0.2s;
+}
+.dash-action-card:hover .dash-action-icon {
+  transform: scale(1.08);
+}
+.dash-action-label {
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* ── KPI Row ── */
+.dash-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+@media (max-width: 600px) {
+  .dash-kpi-row { grid-template-columns: 1fr; }
+}
+.dash-kpi {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.dash-kpi-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dash-kpi-value {
+  display: block;
+  font-size: 1.15rem; font-weight: 700; line-height: 1.2;
+}
+.dash-kpi-label {
+  display: block;
+  font-size: 0.68rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+/* ── Highlights / Destaques ── */
+.dash-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+.dash-highlight-card {
+  display: flex; align-items: flex-start; gap: 0.85rem;
+  padding: 1.15rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: all 0.25s;
+}
+.dash-highlight-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+.dash-highlight-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dash-highlight-card h4 {
+  font-size: 0.88rem; font-weight: 600; color: var(--text-primary);
+  margin: 0 0 0.2rem;
+}
+.dash-highlight-card p {
+  font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;
+  margin: 0;
+}
+
+/* ============ Navbar desktop link visibility ============ */
+.navbar-desktop-nav {
+  display: flex; align-items: center; gap: 1.75rem;
+}
+.navbar-mobile-toggle { display: none; }
+@media (max-width: 767px) {
+  .navbar-desktop-nav { display: none; }
+  .navbar-mobile-toggle { display: block !important; }
 }
 
 /* ============ Navbar (public) ============ */

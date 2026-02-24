@@ -9,6 +9,8 @@ import {
   Activity, Calendar, ArrowRight, ChevronRight,
   ClipboardList, HeartPulse, AlertTriangle, CheckCircle2,
   Clock, Shield, Zap, TrendingUp, Siren, User,
+  FileText, Pill, Video, Stethoscope, FileCheck, MoreHorizontal,
+  Phone, Droplets, Apple, Moon,
 } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -40,6 +42,7 @@ export default function DashboardPage() {
   }, []);
 
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+  const firstName = displayName.split(' ')[0];
   const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
 
@@ -54,232 +57,161 @@ export default function DashboardPage() {
     }
   };
 
-  const urgencyConfig = (urgency: string) => {
-    switch (urgency) {
-      case 'critical': return { color: '#ef4444', bg: '#ef4444', text: '#fff' };
-      case 'high': return { color: '#f97316', bg: '#f97316', text: '#fff' };
-      case 'medium': return { color: '#eab308', bg: '#eab308', text: '#1e1e1e' };
-      default: return { color: 'var(--accent-teal)', bg: 'var(--accent-teal)', text: '#fff' };
-    }
-  };
-
-  const actionRoute = (action: string) => {
-    switch (action) {
-      case 'start_triage': case 'complete_triage': return '/triage';
-      case 'book_consultation': return '/consultations';
-      case 'self_care': return '/self-care';
-      default: return '/triage';
-    }
-  };
-
-  const actionMap = (action?: string) => {
-    switch (action) {
-      case 'ER_NOW': return t('action.er_now');
-      case 'DOCTOR_NOW': return t('action.doctor_now');
-      case 'DOCTOR_24H': return t('action.doctor_24h');
-      default: return t('action.self_care');
-    }
-  };
-
   const risk = riskConfig(state?.last_triage_risk);
-  const urgency = urgencyConfig(state?.next_action_urgency || 'low');
+
+  /* Quick action cards — La Meva Salut style */
+  const quickActions = [
+    { icon: Activity, label: t('dash.qa_triage'), color: '#0d9488', bg: '#e0f7f5', to: '/triage' },
+    { icon: Calendar, label: t('dash.qa_appointments'), color: '#2563eb', bg: '#dbeafe', to: '/consultations' },
+    { icon: Pill, label: t('dash.qa_medication'), color: '#7c3aed', bg: '#ede9fe', to: '/self-care' },
+    { icon: Video, label: t('dash.qa_econsulta'), color: '#059669', bg: '#d1fae5', to: '/consultations' },
+    { icon: Stethoscope, label: t('dash.qa_doctors'), color: '#dc2626', bg: '#fee2e2', to: '/consultations' },
+    { icon: FileText, label: t('dash.qa_results'), color: '#ea580c', bg: '#ffedd5', to: '/dashboard' },
+    { icon: FileCheck, label: t('dash.qa_consents'), color: '#0891b2', bg: '#cffafe', to: '/consents' },
+    { icon: User, label: t('dash.qa_profile'), color: '#64748b', bg: '#f1f5f9', to: '/patient/profile' },
+  ];
+
+  /* Highlights / Destaques — health tips */
+  const highlights = [
+    { icon: Droplets, title: t('dash.hl_hydration'), desc: t('dash.hl_hydration_desc'), color: '#0ea5e9' },
+    { icon: Moon, title: t('dash.hl_sleep'), desc: t('dash.hl_sleep_desc'), color: '#6366f1' },
+    { icon: Apple, title: t('dash.hl_nutrition'), desc: t('dash.hl_nutrition_desc'), color: '#22c55e' },
+    { icon: HeartPulse, title: t('dash.hl_checkup'), desc: t('dash.hl_checkup_desc'), color: '#ef4444' },
+  ];
 
   return (
     <>
-      {/* Header */}
-      <div className="page-header">
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-          {t('dash.panel')}
-        </p>
-        <h1>{t('dash.hello')} {displayName} 👋</h1>
-        <p>{t('dash.subtitle')}</p>
+      {/* ── Greeting Header (La Meva Salut style) ── */}
+      <div className="dash-greeting">
+        <div className="dash-greeting-bg" />
+        <div className="dash-greeting-content">
+          <div className="dash-greeting-avatar">
+            {firstName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h1 className="dash-greeting-title">{t('dash.hello')} {firstName} 👋</h1>
+            <p className="dash-greeting-subtitle">{t('dash.subtitle')}</p>
+          </div>
+        </div>
       </div>
 
       {/* URGENT BANNER */}
       {state?.last_triage_action === 'ER_NOW' && state.current_state === 'triage_completed' && (
-        <div style={{
-          background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff',
-          borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
-          display: 'flex', alignItems: 'center', gap: '1rem',
-          boxShadow: '0 4px 20px rgba(239,68,68,0.3)',
-        }}>
-          <Siren size={28} />
+        <div className="dash-urgent-banner">
+          <Siren size={24} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.2rem' }}>{t('dash.urgent_title')}</div>
-            <div style={{ fontSize: '0.88rem', opacity: 0.95 }}>
-              {t('dash.urgent_desc')}
-            </div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t('dash.urgent_title')}</div>
+            <div style={{ fontSize: '0.85rem', opacity: 0.95 }}>{t('dash.urgent_desc')}</div>
           </div>
         </div>
       )}
 
-      {/* SMART STATUS CARD */}
-      <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border)',
-        borderRadius: '14px', padding: '1.5rem', marginBottom: '1.25rem',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-          background: state?.last_triage_risk
-            ? `linear-gradient(90deg, ${risk.color}, ${risk.color}88)`
-            : 'linear-gradient(90deg, var(--accent-teal), var(--accent-cyan))',
-        }} />
-
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', flexWrap: 'wrap' }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '14px',
-            background: state?.last_triage_risk ? risk.bg : 'rgba(20,184,166,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: state?.last_triage_risk ? risk.color : 'var(--accent-teal)', flexShrink: 0,
-          }}>
-            {state?.current_state === 'no_triage' ? <Activity size={24} /> :
-             state?.current_state === 'triage_in_progress' ? <Clock size={24} /> :
-             state?.current_state === 'consultation_booked' ? <Calendar size={24} /> :
-             state?.current_state === 'consultation_completed' ? <CheckCircle2 size={24} /> :
-             risk.icon}
-          </div>
-
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-              {t('dash.current_state')}
+      {/* ── Smart Status Card (compact) ── */}
+      {state && state.current_state !== 'no_triage' && (
+        <div className="dash-status-card">
+          <div className="dash-status-bar" style={{
+            background: state.last_triage_risk
+              ? `linear-gradient(90deg, ${risk.color}, ${risk.color}88)`
+              : 'linear-gradient(90deg, var(--accent-teal), var(--accent-cyan))',
+          }} />
+          <div className="dash-status-content">
+            <div className="dash-status-icon" style={{
+              background: state.last_triage_risk ? risk.bg : 'rgba(20,184,166,0.1)',
+              color: state.last_triage_risk ? risk.color : 'var(--accent-teal)',
+            }}>
+              {state.current_state === 'triage_in_progress' ? <Clock size={22} /> :
+               state.current_state === 'consultation_booked' ? <Calendar size={22} /> :
+               state.current_state === 'consultation_completed' ? <CheckCircle2 size={22} /> :
+               risk.icon}
             </div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
-              {state?.state_label || t('common.loading')}
-            </div>
-
-            {state?.current_state === 'no_triage' && (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                {t('dash.no_triage_desc')}
-              </p>
-            )}
-            {state?.current_state === 'triage_in_progress' && (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                {t('dash.triage_in_progress')}
-                <br /><strong style={{ color: 'var(--text-primary)' }}>{t('dash.complaint')}</strong> {state.last_triage_complaint}
-              </p>
-            )}
-            {state?.current_state === 'triage_completed' && state.last_triage_risk && (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                  padding: '0.15rem 0.6rem', borderRadius: '6px',
-                  background: risk.bg, color: risk.color, fontWeight: 600, fontSize: '0.78rem', marginRight: '0.5rem',
-                }}>
-                  {risk.icon} {t('dash.risk')} {risk.label}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="dash-status-label">{t('dash.current_state')}</div>
+              <div className="dash-status-title">{state.state_label || t('common.loading')}</div>
+              {state.last_triage_risk && (
+                <span className="dash-risk-badge" style={{ background: risk.bg, color: risk.color }}>
+                  {risk.icon} {risk.label}
                 </span>
-                {actionMap(state.last_triage_action)}
-                {state.next_action_deadline && (
-                  <span style={{ fontWeight: 600, color: risk.color }}> — {state.next_action_deadline}</span>
-                )}
-              </p>
-            )}
-            {state?.current_state === 'consultation_booked' && (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                {t('dash.consultation_booked')}
-              </p>
-            )}
-            {state?.current_state === 'consultation_completed' && (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                {t('dash.consultation_completed')}
-              </p>
+              )}
+            </div>
+            {state.next_action && state.next_action !== 'none' && state.next_action !== 'go_to_er' && (
+              <Link to={state.next_action === 'self_care' ? '/self-care' : state.next_action === 'book_consultation' ? '/consultations' : '/triage'} className="dash-status-action">
+                <Zap size={14} /> {state.next_action_label}
+              </Link>
             )}
           </div>
+        </div>
+      )}
 
-          {state?.next_action && state.next_action !== 'none' && state.next_action !== 'go_to_er' && (
-            <Link to={actionRoute(state.next_action)} style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.75rem 1.5rem', borderRadius: '10px',
-              background: urgency.bg, color: urgency.text,
-              fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none',
-              boxShadow: `0 4px 14px ${urgency.color}33`,
-              alignSelf: 'center', whiteSpace: 'nowrap',
-            }}>
-              <Zap size={16} /> {state.next_action_label}
+      {/* ── Quick Actions Carousel (La Meva Salut style) ── */}
+      <div className="dash-section-header">
+        <h2>{t('dash.quick_actions')}</h2>
+      </div>
+      <div className="dash-carousel">
+        <div className="dash-carousel-track">
+          {quickActions.map(qa => (
+            <Link key={qa.label} to={qa.to} className="dash-action-card" onClick={qa.label === t('dash.qa_appointments') ? (e) => { e.preventDefault(); setShowBooking(true); } : undefined}>
+              <div className="dash-action-icon" style={{ background: qa.bg, color: qa.color }}>
+                <qa.icon size={26} />
+              </div>
+              <span className="dash-action-label">{qa.label}</span>
             </Link>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* 3 SMART KPI CARDS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: '10px',
-              background: state?.last_triage_risk ? risk.bg : 'rgba(20,184,166,0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: state?.last_triage_risk ? risk.color : 'var(--accent-teal)',
-            }}>
-              <Shield size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t('dash.last_risk')}</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: state?.last_triage_risk ? risk.color : 'var(--text-primary)' }}>
-                {state?.last_triage_risk ? risk.label : '—'}
-              </div>
-            </div>
+      {/* ── KPI Summary Cards ── */}
+      <div className="dash-kpi-row">
+        <div className="dash-kpi">
+          <div className="dash-kpi-icon" style={{ background: state?.last_triage_risk ? risk.bg : 'rgba(20,184,166,0.1)', color: state?.last_triage_risk ? risk.color : 'var(--accent-teal)' }}>
+            <Shield size={18} />
           </div>
-          {state?.last_triage_score != null && (
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-              {t('dash.score')} <strong>{state.last_triage_score.toFixed(1)}</strong> · {state.last_triage_complaint}
-            </div>
-          )}
-        </div>
-
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: '10px',
-              background: `${urgency.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: urgency.color,
-            }}>
-              <Zap size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t('dash.next_action')}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {state?.next_action_deadline || t('dash.whenever')}
-              </div>
-            </div>
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            {state?.next_action_label || t('dash.start_triage')}
+          <div>
+            <span className="dash-kpi-value" style={{ color: state?.last_triage_risk ? risk.color : 'var(--text-primary)' }}>
+              {state?.last_triage_risk ? risk.label : '—'}
+            </span>
+            <span className="dash-kpi-label">{t('dash.last_risk')}</span>
           </div>
         </div>
-
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: '10px',
-              background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#8b5cf6',
-            }}>
-              <TrendingUp size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t('dash.history')}</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {state?.triage_count ?? 0} {(state?.triage_count ?? 0) !== 1 ? t('dash.triages') : t('dash.triage_singular')}
-              </div>
-            </div>
+        <div className="dash-kpi">
+          <div className="dash-kpi-icon" style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
+            <TrendingUp size={18} />
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            {state?.completed_consultations ?? 0} {(state?.completed_consultations ?? 0) !== 1 ? t('dash.consultations_done') : t('dash.consultation_done')}
-            {state?.resolution_rate != null && <> · {state.resolution_rate}% {t('dash.resolved')}</>}
+          <div>
+            <span className="dash-kpi-value">{state?.triage_count ?? 0}</span>
+            <span className="dash-kpi-label">{t('dash.tab_triages')}</span>
+          </div>
+        </div>
+        <div className="dash-kpi">
+          <div className="dash-kpi-icon" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563eb' }}>
+            <Calendar size={18} />
+          </div>
+          <div>
+            <span className="dash-kpi-value">{state?.completed_consultations ?? 0}</span>
+            <span className="dash-kpi-label">{t('dash.consultations_done')}</span>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-        <Link to="/triage" className="btn btn-primary"><Activity size={16} /> {t('dash.btn_start_triage')}</Link>
-        <button onClick={() => setShowBooking(true)} className="btn btn-secondary"><Calendar size={16} /> {t('dash.book_consultation')}</button>
-        <Link to="/patient/profile" className="btn btn-secondary"><ClipboardList size={16} /> {t('dash.btn_profile')}</Link>
+      {/* ── Highlights / Destaques (La Meva Salut style) ── */}
+      <div className="dash-section-header">
+        <h2>{t('dash.highlights')}</h2>
+      </div>
+      <div className="dash-highlights">
+        {highlights.map(h => (
+          <div className="dash-highlight-card" key={h.title}>
+            <div className="dash-highlight-icon" style={{ color: h.color, background: `${h.color}14` }}>
+              <h.icon size={22} />
+            </div>
+            <div>
+              <h4>{h.title}</h4>
+              <p>{h.desc}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Tab Navigation */}
-      <div className="tab-nav" style={{ marginBottom: '1.25rem' }}>
+      {/* ── Tab Navigation ── */}
+      <div className="tab-nav" style={{ marginTop: '1.5rem', marginBottom: '1.25rem' }}>
         <button className={activeTab === 'summary' ? 'active' : ''} onClick={() => setActiveTab('summary')}>{t('dash.tab_summary')}</button>
         <button className={activeTab === 'triages' ? 'active' : ''} onClick={() => setActiveTab('triages')}>{t('dash.tab_triages')}</button>
         <button className={activeTab === 'consultations' ? 'active' : ''} onClick={() => setActiveTab('consultations')}>{t('dash.tab_consultations')}</button>
@@ -288,7 +220,7 @@ export default function DashboardPage() {
 
       {/* TAB: Summary */}
       {activeTab === 'summary' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem' }}>
           {/* Recent Triages preview */}
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
@@ -492,15 +424,15 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
-            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-darker)', border: '1px solid var(--border)' }}>
               <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.tab_triages')}</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.triage_count ?? 0}</div>
             </div>
-            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-darker)', border: '1px solid var(--border)' }}>
               <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.tab_consultations')}</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.consultation_count ?? 0}</div>
             </div>
-            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-darker)', border: '1px solid var(--border)' }}>
               <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.resolved')}</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.resolution_rate != null ? `${state.resolution_rate}%` : '—'}</div>
             </div>
@@ -520,6 +452,24 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ── Emergency bar (bottom) ── */}
+      <div className="dash-emergency-bar">
+        <a href="tel:112" className="emergency-bar-item emergency-bar-red">
+          <Phone size={16} />
+          <div>
+            <span className="emergency-bar-number">112</span>
+            <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
+          </div>
+        </a>
+        <a href="tel:061" className="emergency-bar-item emergency-bar-blue">
+          <Phone size={16} />
+          <div>
+            <span className="emergency-bar-number">061</span>
+            <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
+          </div>
+        </a>
+      </div>
 
       {/* Book Consultation Modal */}
       <BookConsultationModal

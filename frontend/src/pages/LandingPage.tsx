@@ -5,6 +5,7 @@ import { useT } from '../i18n/LanguageContext';
 import {
   Activity, Stethoscope, Shield, Clock, Heart, Users,
   Zap, Lock, BarChart3, Smartphone, Globe, HeartPulse,
+  Phone,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -39,44 +40,46 @@ export default function LandingPage() {
     <>
       <Navbar />
 
-      {/* ── Hero ── */}
-      <section className="hero">
-        <div className="hero-content">
-          <div className="hero-badge">
-            <HeartPulse size={14} /> {t('landing.badge')}
+      {/* ── Hero (La Meva Salut style) ── */}
+      <section className="landing-hero">
+        <div className="landing-hero-bg" />
+        <div className="landing-hero-content">
+          <div className="landing-hero-icon">
+            <HeartPulse size={48} />
           </div>
-          <h1>
-            {t('landing.hero_title1')}<br />
-            <span className="gradient-text">{t('landing.hero_title2')}</span>
-          </h1>
-          <p>{t('landing.hero_desc')}</p>
-          <div className="hero-actions">
-            <Link to="/register" className="btn btn-primary btn-lg">{t('landing.start_now')}</Link>
-            <Link to="/about" className="btn btn-outline btn-lg">{t('landing.learn_more')}</Link>
-          </div>
-
-          {/* Stats */}
-          <div className="stats-grid">
-            {stats.map(s => (
-              <div className="stat-item" key={s.label}>
-                <div className="stat-value">{s.value}</div>
-                <div className="stat-label">{s.label}</div>
-              </div>
-            ))}
+          <h1 className="landing-hero-title">Health Platform</h1>
+          <p className="landing-hero-subtitle">{t('landing.hero_desc')}</p>
+          <div className="landing-hero-actions">
+            <Link to="/login" className="landing-btn-primary">
+              {t('landing.enter')}
+            </Link>
+            <Link to="/about" className="landing-btn-secondary">
+              {t('landing.discover_services')}
+            </Link>
           </div>
         </div>
       </section>
 
+      {/* ── Stats strip ── */}
+      <section className="landing-stats-strip">
+        {stats.map(s => (
+          <div className="landing-stat" key={s.label}>
+            <span className="landing-stat-value">{s.value}</span>
+            <span className="landing-stat-label">{s.label}</span>
+          </div>
+        ))}
+      </section>
+
       {/* ── Services ── */}
-      <section className="section" style={{ background: 'var(--bg-darker)' }}>
+      <section className="landing-section">
         <div className="section-header">
           <h2>{t('landing.services_title')}</h2>
           <p>{t('landing.services_subtitle')}</p>
         </div>
-        <div className="services-grid">
+        <div className="landing-services-grid">
           {services.map(s => (
-            <div className="service-card" key={s.title}>
-              <div className="service-card-icon"><s.icon size={22} /></div>
+            <div className="landing-service-card" key={s.title}>
+              <div className="landing-service-icon"><s.icon size={24} /></div>
               <h3>{s.title}</h3>
               <p>{s.desc}</p>
             </div>
@@ -85,15 +88,15 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ── */}
-      <section className="section">
+      <section className="landing-section landing-section-alt">
         <div className="section-header">
           <h2>{t('landing.features_title')}</h2>
           <p>{t('landing.features_subtitle')}</p>
         </div>
-        <div className="features-grid">
+        <div className="landing-features-grid">
           {features.map(f => (
-            <div className="feature-card" key={f.title}>
-              <div className="feature-card-icon"><f.icon size={22} /></div>
+            <div className="landing-feature-card" key={f.title}>
+              <div className="landing-feature-icon"><f.icon size={22} /></div>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
             </div>
@@ -102,14 +105,32 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="cta-section">
+      <section className="landing-cta">
         <h2>{t('landing.cta_title')}</h2>
         <p>{t('landing.cta_desc')}</p>
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/register" className="btn btn-primary btn-lg">{t('landing.create_free')}</Link>
-          <Link to="/login" className="btn btn-outline btn-lg">{t('landing.have_account')}</Link>
+        <div className="landing-cta-actions">
+          <Link to="/register" className="landing-btn-primary">{t('landing.create_free')}</Link>
+          <Link to="/login" className="landing-btn-secondary">{t('landing.have_account')}</Link>
         </div>
       </section>
+
+      {/* ── Emergency Bar (La Meva Salut style) ── */}
+      <div className="emergency-bar">
+        <a href="tel:112" className="emergency-bar-item emergency-bar-red">
+          <Phone size={18} />
+          <div>
+            <span className="emergency-bar-number">112</span>
+            <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
+          </div>
+        </a>
+        <a href="tel:061" className="emergency-bar-item emergency-bar-blue">
+          <Phone size={18} />
+          <div>
+            <span className="emergency-bar-number">061</span>
+            <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
+          </div>
+        </a>
+      </div>
 
       <Footer />
     </>
