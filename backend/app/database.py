@@ -45,11 +45,10 @@ def init_db_engine(database_url: str | None = None) -> None:
         bind=engine,
     )
 
-    # Auto-create tables for local dev (SQLite)
-    if "sqlite" in database_url:
-        # Import models so all tables are registered on Base.metadata
-        from . import models, health_models  # noqa: F401
-        Base.metadata.create_all(bind=engine)
+    # Auto-create tables (works for both SQLite and PostgreSQL)
+    # Import models so all tables are registered on Base.metadata
+    from . import models, health_models  # noqa: F401
+    Base.metadata.create_all(bind=engine)
 
 
 def get_db():

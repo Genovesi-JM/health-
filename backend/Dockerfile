@@ -26,5 +26,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# Run migrations then start gunicorn with uvicorn workers
-CMD ["sh", "-c", "python -m alembic upgrade head 2>/dev/null; gunicorn app.main:create_application --factory --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
+# Run migrations (skip if they fail — tables are auto-created by SQLAlchemy)
+# Then start gunicorn with uvicorn workers
+CMD ["sh", "-c", "python -m alembic upgrade head 2>/dev/null || echo 'Alembic skipped — using auto-create'; gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
