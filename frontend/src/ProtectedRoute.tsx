@@ -1,6 +1,7 @@
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
+import ChatWidget from './components/ChatWidget';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 
@@ -52,6 +53,7 @@ export function ProtectedRoute() {
           <Outlet />
         </main>
       </div>
+      <ChatWidget />
     </div>
   );
 }

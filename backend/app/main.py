@@ -31,6 +31,7 @@ from .routers import (
     health_billing,
     compliance,
     health_dashboard,
+    chatbot,
 )
 
 from .seed_data import seed_all
@@ -126,6 +127,7 @@ def create_application() -> FastAPI:
     application.include_router(health_billing.router)     # /api/v1/billing/*
     application.include_router(compliance.router)         # /api/v1/compliance/*
     application.include_router(health_dashboard.router)   # /api/v1/dashboard/*
+    application.include_router(chatbot.router)            # /api/v1/chatbot/*
 
     # ── Deprecated drone/shop routers (disabled) ──
     # The following routers are from the original GeoVision platform and
