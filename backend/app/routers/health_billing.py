@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Health Billing Router — Consultation payments and invoices.
 

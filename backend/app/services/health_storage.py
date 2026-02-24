@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Health Storage Service — S3-compatible (DigitalOcean Spaces) + local fallback.
 

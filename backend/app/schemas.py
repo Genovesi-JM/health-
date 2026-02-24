@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Pydantic schemas for request/response models."""
 from datetime import datetime
 from typing import List, Optional

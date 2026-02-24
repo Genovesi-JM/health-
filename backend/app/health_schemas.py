@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Pydantic schemas for the Health Platform domain.
 
 Covers: Patient, Doctor, Triage, Consultation, Prescription, Referral,

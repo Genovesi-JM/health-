@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Mail service for GeoVision — Microsoft 365 SMTP (Office 365).
 
 Supports:
@@ -10,7 +11,6 @@ Supports:
 Uses smtp.office365.com:587 with TLS.
 Falls back to file logging when SMTP is not configured.
 """
-from __future__ import annotations
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime

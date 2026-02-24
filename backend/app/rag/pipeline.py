@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Simple placeholder RAG pipeline.
 
 This module provides a minimal `RAGPipeline` class so imports like

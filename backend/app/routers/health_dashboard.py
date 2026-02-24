@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Health Dashboard Router — KPIs and admin dashboard.
 

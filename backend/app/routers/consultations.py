@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Consultations Router — Booking, queue, acceptance, and completion.
 

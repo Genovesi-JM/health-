@@ -1,3 +1,4 @@
+from __future__ import annotations
 # backend/app/routers/ai.py
 
 import logging

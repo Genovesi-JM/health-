@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Routers for customer accounts stored in the accounts database."""
 
 from typing import List, Optional

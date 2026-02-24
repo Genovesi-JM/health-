@@ -1,5 +1,6 @@
+from __future__ import annotations
 """Routers package for the backend."""
-# Note: avoid importing routers that rely on missing/optional models during
-# early startup. Services router references ServiceRequest which isn't defined
-# in `app.models` in this branch, so omit it to allow the app to start.
-from . import auth, projects, ai  # noqa: F401
+# Health Platform routers — only import core routers that are actively used.
+# GeoVision-era routers (projects, ai, shop, etc.) are kept as files but
+# NOT imported here to avoid startup errors.
+from . import auth  # noqa: F401

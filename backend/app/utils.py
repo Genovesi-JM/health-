@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Utility helpers shared across the application.
 
 This module uses passlib's CryptContext (bcrypt) for new hashes while

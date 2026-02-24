@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Symmetric encryption helpers for sensitive data at rest (API keys, secrets).
 
 Uses Fernet (AES-128-CBC + HMAC-SHA256) from the `cryptography` library.
@@ -5,8 +6,6 @@ The encryption key is read from ``settings.encryption_key``.  If no key is
 configured the helpers fall back to a plaintext prefix so existing data
 can still be read — but a WARNING is logged on every call.
 """
-
-from __future__ import annotations
 
 import logging
 import warnings

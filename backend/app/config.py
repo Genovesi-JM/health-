@@ -1,3 +1,4 @@
+from __future__ import annotations
 import secrets
 import warnings
 from pathlib import Path

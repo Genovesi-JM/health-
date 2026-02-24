@@ -1,3 +1,4 @@
+from __future__ import annotations
 # app/security.py
 """Thin wrapper that re-exports canonical implementations.
 

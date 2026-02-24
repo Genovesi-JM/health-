@@ -1,3 +1,4 @@
+from __future__ import annotations
 # backend/app/database.py — FINAL ESTÁVEL
 
 from sqlalchemy import create_engine, inspect, text

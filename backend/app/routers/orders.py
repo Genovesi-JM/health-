@@ -1,3 +1,4 @@
+from __future__ import annotations
 # app/routers/orders.py
 import json
 from typing import Dict, List, Optional

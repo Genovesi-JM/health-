@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 PDF Generation Service — Simple templates for prescriptions and referrals.
 

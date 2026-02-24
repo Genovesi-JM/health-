@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Security middleware for production hardening.
 
 Includes:
@@ -5,8 +6,6 @@ Includes:
 - Rate limiting (login, reset-password, webhooks)
 - Audit logging helper
 """
-
-from __future__ import annotations
 
 import hashlib
 import json

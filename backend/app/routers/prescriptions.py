@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Prescriptions & Referrals Router — Generate and download documents.
 

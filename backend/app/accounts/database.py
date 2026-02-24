@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Dedicated database connection for accounts (customers/employees)."""
 
 from sqlalchemy import create_engine

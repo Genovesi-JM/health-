@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Triage Engine — Rule-Based MVP for Health Platform
 

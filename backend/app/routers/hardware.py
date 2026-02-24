@@ -1,3 +1,4 @@
+from __future__ import annotations
 # routers/hardware.py
 
 from fastapi import APIRouter, Depends

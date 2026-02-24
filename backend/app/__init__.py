@@ -1,3 +1,4 @@
+from __future__ import annotations
 """GeoVision FastAPI application package.
 
 This file exposes the FastAPI `app` so tools like uvicorn can import

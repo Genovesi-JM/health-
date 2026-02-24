@@ -1,3 +1,4 @@
+from __future__ import annotations
 # app/health_models.py
 """
 Health Platform Domain Models — Digital Triage & Teleconsultation
@@ -6,7 +7,6 @@ These models extend the existing User/Account tables with health-specific
 domain entities: Patient, Doctor, TriageSession, Consultation, Prescription,
 Referral, CorporateAccount, and supporting tables.
 """
-from __future__ import annotations
 
 import uuid
 from datetime import datetime

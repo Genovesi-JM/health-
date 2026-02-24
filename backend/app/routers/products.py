@@ -1,3 +1,4 @@
+from __future__ import annotations
 # app/routers/products.py
 from typing import Optional
 

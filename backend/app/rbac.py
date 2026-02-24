@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Role-Based Access Control (RBAC) dependencies for the Health Platform.
 
 Follows the existing deps.py patterns (get_current_user, require_admin)

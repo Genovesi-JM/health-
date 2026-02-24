@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Storage Service - S3-Compatible Object Storage
 

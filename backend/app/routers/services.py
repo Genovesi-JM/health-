@@ -1,3 +1,4 @@
+from __future__ import annotations
 # routers/services.py
 
 from fastapi import APIRouter, Depends

@@ -1,10 +1,9 @@
+from __future__ import annotations
 """Contact methods router — WhatsApp, Instagram, Email, Phone, SMS.
 
 Public endpoint for frontend to fetch configured contact channels,
 admin endpoint to manage them.
 """
-
-from __future__ import annotations
 
 from typing import List, Optional
 from urllib.parse import quote

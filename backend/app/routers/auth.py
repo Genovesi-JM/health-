@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Authentication endpoints for email/password, Google OAuth, and Microsoft OAuth.
 
 Production-grade implementation with:

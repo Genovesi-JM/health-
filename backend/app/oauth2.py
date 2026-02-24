@@ -1,3 +1,4 @@
+from __future__ import annotations
 """OAuth2/JWT helper utilities for token creation and validation.
 
 Keep this module focused on JWT encode/decode.

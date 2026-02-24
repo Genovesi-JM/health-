@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Patients Router — Patient profile management and medical info.
 """

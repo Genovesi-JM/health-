@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Models stored in the accounts database."""
 
 from datetime import datetime

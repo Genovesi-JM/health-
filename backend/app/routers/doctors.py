@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Doctors Router — Doctor profile, availability, and verification.
 """

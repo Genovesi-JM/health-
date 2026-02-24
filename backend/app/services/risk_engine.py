@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Risk Engine v1 - Rule-Based Risk Assessment
 
