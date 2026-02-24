@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ──
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: health_platform
+      POSTGRES_USER: health_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health_user -d health_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis (sessions / rate-limiting / queues) ──
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://health_user:${DB_PASSWORD:-changeme}@db:5432/health_platform
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pg_data:

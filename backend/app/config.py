@@ -1,0 +1,110 @@
+import secrets
+import warnings
+from pathlib import Path
+from pydantic_settings import BaseSettings
+from pydantic import field_validator
+from typing import Optional
+
+_INSECURE_DEFAULT = "CHANGE_ME"
+
+class Settings(BaseSettings):
+    app_name: str = "Health Platform API"
+    env: str = "dev"
+
+    # JWT / Auth — MUST be set via SECRET_KEY env var in production
+    secret_key: str = _INSECURE_DEFAULT
+    algorithm: str = "HS256"
+    access_token_expires_minutes: int = 30  # Shorter for health data security
+
+    # Refresh token settings
+    refresh_token_expires_days: int = 7  # Shorter for health compliance
+
+    # Frontend URL used to build password-reset links (no trailing slash)
+    frontend_base: str = "http://127.0.0.1:8001"
+
+    # Optional SMTP settings for sending password reset emails
+    smtp_host: Optional[str] = None
+    smtp_port: int = 25
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from: Optional[str] = None
+    smtp_use_tls: bool = True
+
+    # Backend base URL used for OAuth callbacks (no trailing slash)
+    backend_base: str = "http://127.0.0.1:8010"
+
+    # Google OAuth settings (optional)
+    google_client_id: Optional[str] = None
+    google_client_secret: Optional[str] = None
+
+    # Microsoft OAuth / Entra ID settings (optional)
+    microsoft_client_id: Optional[str] = None
+    microsoft_client_secret: Optional[str] = None
+    microsoft_tenant_id: str = "common"
+
+    # Encryption key for sensitive data at rest
+    encryption_key: Optional[str] = None
+
+    # Database
+    database_url: str = "sqlite:///./health_platform.db"
+    accounts_database_url: str = "sqlite:///./accounts.db"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def fix_postgres_url(cls, v: str) -> str:
+        """Some providers use postgres:// but SQLAlchemy 2.0 requires postgresql://"""
+        if v and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
+
+    # DigitalOcean Spaces (S3-compatible storage)
+    do_spaces_key: Optional[str] = None
+    do_spaces_secret: Optional[str] = None
+    do_spaces_bucket: str = "health-platform"
+    do_spaces_region: str = "nyc3"
+    do_spaces_endpoint: Optional[str] = None
+
+    # Stripe (optional — for real payment processing)
+    stripe_secret_key: Optional[str] = None
+    stripe_webhook_secret: Optional[str] = None
+
+    # Redis (optional — for caching/rate limiting at scale)
+    redis_url: Optional[str] = None
+
+    # OpenAI (optional — for AI-assisted triage in future)
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o-mini"
+
+    # Pydantic v2 settings: accept extra env vars (ignore unknown variables)
+    model_config = {
+        "env_file": Path(__file__).resolve().parent.parent / ".env",
+        "extra": "ignore",
+    }
+
+settings = Settings()
+
+# ── Secret key safety check ──────────────────────────────────────
+if settings.secret_key == _INSECURE_DEFAULT:
+    if settings.env in ("production", "prod"):
+        raise RuntimeError(
+            "FATAL: SECRET_KEY env var is not set. "
+            "Refusing to start in production with the insecure default."
+        )
+    # Dev / test: auto-generate a random key so tokens still work
+    _generated = secrets.token_urlsafe(48)
+    warnings.warn(
+        "SECRET_KEY not set — using a random ephemeral key. "
+        "Set SECRET_KEY env var before deploying to production.",
+        stacklevel=1,
+    )
+    settings.secret_key = _generated
+
+# Backwards-compatible names expected elsewhere in the codebase
+JWT_SECRET = settings.secret_key
+JWT_ALG = settings.algorithm
+JWT_EXPIRE_MIN = settings.access_token_expires_minutes
+
+# Expose OpenAI key alias for modules that look for OPENAI_API_KEY
+OPENAI_API_KEY = settings.openai_api_key
+# Backwards-compatible DB URL constant for alembic/env.py
+DATABASE_URL = settings.database_url
