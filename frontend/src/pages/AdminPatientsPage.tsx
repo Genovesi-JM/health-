@@ -4,6 +4,9 @@ import {
   Users, Search, RefreshCw, User, Heart, AlertCircle,
   ChevronDown, ChevronUp, Phone, Calendar, Droplets, X,
 } from 'lucide-react';
+import { useT } from '../i18n/LanguageContext';
+
+const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
 interface PatientAdmin {
   id: string;
@@ -22,6 +25,8 @@ interface PatientAdmin {
 }
 
 export default function AdminPatientsPage() {
+  const { lang } = useT();
+  const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [patients, setPatients] = useState<PatientAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -55,7 +60,7 @@ export default function AdminPatientsPage() {
 
   const formatDate = (d?: string) => {
     if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('pt-PT'); } catch { return d; }
+    try { return new Date(d).toLocaleDateString(locale); } catch { return d; }
   };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;

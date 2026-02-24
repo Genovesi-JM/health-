@@ -4,13 +4,18 @@ import api from '../api';
 import type { Consultation, PatientState } from '../types';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
+import BookConsultationModal from '../components/BookConsultationModal';
+
+const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
 export default function ConsultationsPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [patientState, setPatientState] = useState<PatientState | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [showBooking, setShowBooking] = useState(false);
 
   useEffect(() => {
     Promise.allSettled([
@@ -104,7 +109,7 @@ export default function ConsultationsPage() {
                     ⏱ {t('consult.recommended_by')} {patientState.next_action_deadline}
                   </span>
                 )}
-                <button className="btn btn-primary" style={{
+                <button onClick={() => setShowBooking(true)} className="btn btn-primary" style={{
                   background: patientState.last_triage_risk === 'URGENT' ? '#ef4444'
                     : patientState.last_triage_risk === 'HIGH' ? '#f97316'
                     : patientState.last_triage_risk === 'MEDIUM' ? '#eab308'
@@ -144,9 +149,9 @@ export default function ConsultationsPage() {
                         {statusIcon(c.status)} {statusLabel(c.status)}
                       </span>
                     </td>
-                    <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleString('pt') : '—'}</td>
+                    <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleString(locale) : '—'}</td>
                     <td><span className={`badge ${c.payment_status === 'paid' ? 'badge-success' : 'badge-neutral'}`}>{c.payment_status}</span></td>
-                    <td>{new Date(c.created_at).toLocaleDateString('pt')}</td>
+                    <td>{new Date(c.created_at).toLocaleDateString(locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -154,6 +159,14 @@ export default function ConsultationsPage() {
           </div>
         )}
       </div>
+
+      {/* Book Consultation Modal */}
+      <BookConsultationModal
+        open={showBooking}
+        onClose={() => setShowBooking(false)}
+        patientState={patientState}
+        onBooked={(c: Consultation) => { setConsultations(prev => [c, ...prev]); setShowBooking(false); }}
+      />
     </>
   );
 }

@@ -22,6 +22,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminDoctorsPage from './pages/AdminDoctorsPage';
 import AdminPatientsPage from './pages/AdminPatientsPage';
 import SettingsPage from './pages/SettingsPage';
+import SelfCarePage from './pages/SelfCarePage';
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/patient/profile" element={<PatientProfilePage />} />
             <Route path="/triage" element={<TriagePage />} />
             <Route path="/consultations" element={<ConsultationsPage />} />
+            <Route path="/self-care" element={<SelfCarePage />} />
             <Route path="/consents" element={<ConsentsPage />} />
 
             {/* Doctor */}

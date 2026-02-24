@@ -4,11 +4,14 @@ import { useAuth } from '../AuthContext';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import type { PatientState, TriageHistoryItem, Consultation } from '../types';
+import BookConsultationModal from '../components/BookConsultationModal';
 import {
   Activity, Calendar, ArrowRight, ChevronRight,
   ClipboardList, HeartPulse, AlertTriangle, CheckCircle2,
-  Clock, Shield, Zap, TrendingUp, Siren,
+  Clock, Shield, Zap, TrendingUp, Siren, User,
 } from 'lucide-react';
+
+const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -16,6 +19,8 @@ export default function DashboardPage() {
   const [triageHistory, setTriageHistory] = useState<TriageHistoryItem[]>([]);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'summary' | 'triages' | 'consultations' | 'profile'>('summary');
+  const [showBooking, setShowBooking] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -35,7 +40,8 @@ export default function DashboardPage() {
   }, []);
 
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
-  const { t } = useT();
+  const { t, lang } = useT();
+  const locale = LOCALE_MAP[lang] || 'pt-PT';
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
 
@@ -60,7 +66,8 @@ export default function DashboardPage() {
   const actionRoute = (action: string) => {
     switch (action) {
       case 'start_triage': case 'complete_triage': return '/triage';
-      case 'book_consultation': case 'self_care': return '/consultations';
+      case 'book_consultation': return '/consultations';
+      case 'self_care': return '/self-care';
       default: return '/triage';
     }
   };
@@ -135,7 +142,7 @@ export default function DashboardPage() {
 
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: '0.7rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-              Estado Atual
+              {t('dash.current_state')}
             </div>
             <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
               {state?.state_label || t('common.loading')}
@@ -215,7 +222,7 @@ export default function DashboardPage() {
           </div>
           {state?.last_triage_score != null && (
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-              Score: <strong>{state.last_triage_score.toFixed(1)}</strong> · {state.last_triage_complaint}
+              {t('dash.score')} <strong>{state.last_triage_score.toFixed(1)}</strong> · {state.last_triage_complaint}
             </div>
           )}
         </div>
@@ -267,18 +274,117 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
         <Link to="/triage" className="btn btn-primary"><Activity size={16} /> {t('dash.btn_start_triage')}</Link>
-        <Link to="/consultations" className="btn btn-secondary"><Calendar size={16} /> {t('dash.btn_consultations')}</Link>
+        <button onClick={() => setShowBooking(true)} className="btn btn-secondary"><Calendar size={16} /> {t('dash.book_consultation')}</button>
         <Link to="/patient/profile" className="btn btn-secondary"><ClipboardList size={16} /> {t('dash.btn_profile')}</Link>
       </div>
 
-      {/* Content Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.25rem' }}>
-        {/* Triage History */}
+      {/* Tab Navigation */}
+      <div className="tab-nav" style={{ marginBottom: '1.25rem' }}>
+        <button className={activeTab === 'summary' ? 'active' : ''} onClick={() => setActiveTab('summary')}>{t('dash.tab_summary')}</button>
+        <button className={activeTab === 'triages' ? 'active' : ''} onClick={() => setActiveTab('triages')}>{t('dash.tab_triages')}</button>
+        <button className={activeTab === 'consultations' ? 'active' : ''} onClick={() => setActiveTab('consultations')}>{t('dash.tab_consultations')}</button>
+        <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>{t('dash.tab_profile')}</button>
+      </div>
+
+      {/* TAB: Summary */}
+      {activeTab === 'summary' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.25rem' }}>
+          {/* Recent Triages preview */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.recent_triages')}</h3>
+              <button onClick={() => setActiveTab('triages')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                {t('dash.view_all')} <ArrowRight size={13} />
+              </button>
+            </div>
+            <div style={{ padding: '0.5rem 0' }}>
+              {triageHistory.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon"><Activity size={24} style={{ color: 'var(--accent-teal)' }} /></div>
+                  <div className="empty-state-title">{t('dash.no_triages')}</div>
+                  <div className="empty-state-desc">{t('dash.no_triages_desc')}</div>
+                  <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
+                    <Activity size={14} /> {t('dash.btn_start_triage')}
+                  </Link>
+                </div>
+              ) : (
+                <div className="table-container" style={{ border: 'none' }}>
+                  <table>
+                    <thead><tr><th>{t('table.complaint')}</th><th>{t('table.risk')}</th><th>{t('table.date')}</th></tr></thead>
+                    <tbody>
+                      {triageHistory.slice(0, 3).map(th => {
+                        const r = riskConfig(th.risk_level);
+                        return (
+                          <tr key={th.session_id}>
+                            <td style={{ color: 'var(--text-primary)' }}>{th.chief_complaint}</td>
+                            <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{th.risk_level || th.status}</span></td>
+                            <td>{new Date(th.created_at).toLocaleDateString(locale)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Consultations preview */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.consultations')}</h3>
+              <button onClick={() => setActiveTab('consultations')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                {t('dash.manage')} <ArrowRight size={13} />
+              </button>
+            </div>
+            <div style={{ padding: '0.5rem 0' }}>
+              {consultations.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon"><Calendar size={24} style={{ color: 'var(--accent-teal)' }} /></div>
+                  <div className="empty-state-title">{t('dash.no_consultations')}</div>
+                  <div className="empty-state-desc">
+                    {state?.current_state === 'triage_completed'
+                      ? t('dash.triage_done_book')
+                      : t('dash.complete_triage_first')}
+                  </div>
+                  {state?.current_state === 'triage_completed' ? (
+                    <button onClick={() => setShowBooking(true)} className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
+                      <Calendar size={14} /> {t('dash.book_consultation')}
+                    </button>
+                  ) : (
+                    <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
+                      <Activity size={14} /> {t('dash.btn_start_triage')}
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="table-container" style={{ border: 'none' }}>
+                  <table>
+                    <thead><tr><th>{t('table.specialty')}</th><th>{t('table.status')}</th><th>{t('table.date')}</th></tr></thead>
+                    <tbody>
+                      {consultations.slice(0, 3).map(c => (
+                        <tr key={c.id}>
+                          <td style={{ color: 'var(--text-primary)' }}>{c.specialty}</td>
+                          <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
+                          <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : new Date(c.created_at).toLocaleDateString(locale)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Triages (full history) */}
+      {activeTab === 'triages' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.recent_triages')}</h3>
-            <Link to="/triage" style={{ color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              {t('dash.view_all')} <ArrowRight size={13} />
+            <Link to="/triage" className="btn btn-primary btn-sm">
+              <Activity size={14} /> {t('dash.btn_start_triage')}
             </Link>
           </div>
           <div style={{ padding: '0.5rem 0' }}>
@@ -294,7 +400,7 @@ export default function DashboardPage() {
             ) : (
               <div className="table-container" style={{ border: 'none' }}>
                 <table>
-                  <thead><tr><th>{t('table.complaint')}</th><th>{t('table.risk')}</th><th>{t('table.date')}</th></tr></thead>
+                  <thead><tr><th>{t('table.complaint')}</th><th>{t('table.risk')}</th><th>{t('table.recommendation')}</th><th>{t('table.score')}</th><th>{t('table.date')}</th></tr></thead>
                   <tbody>
                     {triageHistory.map(th => {
                       const r = riskConfig(th.risk_level);
@@ -302,7 +408,9 @@ export default function DashboardPage() {
                         <tr key={th.session_id}>
                           <td style={{ color: 'var(--text-primary)' }}>{th.chief_complaint}</td>
                           <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{th.risk_level || th.status}</span></td>
-                          <td>{new Date(th.created_at).toLocaleDateString('pt')}</td>
+                          <td style={{ fontSize: '0.82rem' }}>{th.recommended_action || '—'}</td>
+                          <td style={{ fontSize: '0.82rem' }}>{th.score != null ? th.score.toFixed(1) : '—'}</td>
+                          <td>{new Date(th.created_at).toLocaleDateString(locale)}</td>
                         </tr>
                       );
                     })}
@@ -312,14 +420,18 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+      )}
 
-        {/* Consultations */}
+      {/* TAB: Consultations (full list) */}
+      {activeTab === 'consultations' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.consultations')}</h3>
-            <Link to="/consultations" style={{ color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              {t('dash.manage')} <ArrowRight size={13} />
-            </Link>
+            {state?.current_state === 'triage_completed' && (
+              <button onClick={() => setShowBooking(true)} className="btn btn-primary btn-sm">
+                <Calendar size={14} /> {t('dash.book_consultation')}
+              </button>
+            )}
           </div>
           <div style={{ padding: '0.5rem 0' }}>
             {consultations.length === 0 ? (
@@ -331,23 +443,28 @@ export default function DashboardPage() {
                     ? t('dash.triage_done_book')
                     : t('dash.complete_triage_first')}
                 </div>
-                <Link to={state?.current_state === 'triage_completed' ? '/consultations' : '/triage'}
-                  className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                  {state?.current_state === 'triage_completed'
-                    ? <><Calendar size={14} /> {t('dash.book_consultation')}</>
-                    : <><Activity size={14} /> {t('dash.btn_start_triage')}</>}
-                </Link>
+                {state?.current_state === 'triage_completed' ? (
+                  <button onClick={() => setShowBooking(true)} className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
+                    <Calendar size={14} /> {t('dash.book_consultation')}
+                  </button>
+                ) : (
+                  <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
+                    <Activity size={14} /> {t('dash.btn_start_triage')}
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="table-container" style={{ border: 'none' }}>
                 <table>
-                  <thead><tr><th>{t('table.specialty')}</th><th>{t('table.status')}</th><th>{t('table.date')}</th></tr></thead>
+                  <thead><tr><th>{t('table.specialty')}</th><th>{t('table.status')}</th><th>{t('table.scheduled')}</th><th>{t('table.payment')}</th><th>{t('table.created')}</th></tr></thead>
                   <tbody>
                     {consultations.map(c => (
                       <tr key={c.id}>
-                        <td style={{ color: 'var(--text-primary)' }}>{c.specialty}</td>
+                        <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{c.specialty}</td>
                         <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
-                        <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString('pt') : new Date(c.created_at).toLocaleDateString('pt')}</td>
+                        <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : '—'}</td>
+                        <td><span className={`badge ${c.payment_status === 'paid' ? 'badge-success' : 'badge-neutral'}`}>{c.payment_status}</span></td>
+                        <td>{new Date(c.created_at).toLocaleDateString(locale)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -356,11 +473,39 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Profile Alert */}
-      <div className="card" style={{ marginTop: '1.25rem' }}>
-        <div style={{ padding: '1rem 1.25rem' }}>
+      {/* TAB: Profile */}
+      {activeTab === 'profile' && (
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', background: 'rgba(20,184,166,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-teal)',
+            }}>
+              <User size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{displayName}</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{user?.email}</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.tab_triages')}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.triage_count ?? 0}</div>
+            </div>
+            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.tab_consultations')}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.consultation_count ?? 0}</div>
+            </div>
+            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.resolved')}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.resolution_rate != null ? `${state.resolution_rate}%` : '—'}</div>
+            </div>
+          </div>
+
           <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', borderLeft: '4px solid var(--accent-teal)', background: 'rgba(20,184,166,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <HeartPulse size={14} style={{ color: 'var(--accent-teal)' }} />
@@ -374,7 +519,15 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Book Consultation Modal */}
+      <BookConsultationModal
+        open={showBooking}
+        onClose={() => setShowBooking(false)}
+        patientState={state}
+        onBooked={(c: Consultation) => { setConsultations(prev => [c, ...prev]); setShowBooking(false); }}
+      />
     </>
   );
 }

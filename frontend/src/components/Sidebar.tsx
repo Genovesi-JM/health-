@@ -4,7 +4,7 @@ import { getInitials } from '../api';
 import { useT } from '../i18n/LanguageContext';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
-  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X,
+  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse,
 } from 'lucide-react';
 
 interface Props {
@@ -50,6 +50,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/patient/profile" icon={User} label={t('sidebar.my_profile')} onClick={onClose} />
               <SidebarLink to="/triage" icon={Activity} label={t('sidebar.triage')} onClick={onClose} />
               <SidebarLink to="/consultations" icon={Calendar} label={t('sidebar.consultations')} onClick={onClose} />
+              <SidebarLink to="/self-care" icon={HeartPulse} label={t('sidebar.self_care')} onClick={onClose} />
               <SidebarLink to="/consents" icon={Shield} label={t('sidebar.consents')} onClick={onClose} />
             </SidebarSection>
           )}

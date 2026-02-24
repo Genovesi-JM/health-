@@ -259,6 +259,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'sidebar.triage': { pt: 'Triagem', en: 'Triage', fr: 'Triage' },
   'sidebar.consultations': { pt: 'Consultas', en: 'Consultations', fr: 'Consultations' },
   'sidebar.consents': { pt: 'Consentimentos', en: 'Consents', fr: 'Consentements' },
+  'sidebar.self_care': { pt: 'Autocuidado', en: 'Self-Care', fr: 'Auto-soins' },
   'sidebar.doctor': { pt: 'Médico', en: 'Doctor', fr: 'Médecin' },
   'sidebar.doctor_profile': { pt: 'Perfil Médico', en: 'Doctor Profile', fr: 'Profil Médecin' },
   'sidebar.queue': { pt: 'Fila de Espera', en: 'Queue', fr: 'File d\'Attente' },
@@ -281,6 +282,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'topbar.my_profile': { pt: 'Meu Perfil', en: 'My Profile', fr: 'Mon Profil' },
   'topbar.triage': { pt: 'Triagem', en: 'Triage', fr: 'Triage' },
   'topbar.consultations': { pt: 'Consultas', en: 'Consultations', fr: 'Consultations' },
+  'topbar.self_care': { pt: 'Autocuidado', en: 'Self-Care', fr: 'Auto-soins' },
   'topbar.consents': { pt: 'Consentimentos', en: 'Consents', fr: 'Consentements' },
   'topbar.doctor_profile': { pt: 'Perfil Médico', en: 'Doctor Profile', fr: 'Profil Médecin' },
   'topbar.queue': { pt: 'Fila de Espera', en: 'Queue', fr: 'File d\'Attente' },
@@ -587,6 +589,63 @@ const translations: Record<string, Record<Lang, string>> = {
   'spec.internal': { pt: 'Medicina Interna', en: 'Internal Medicine', fr: 'Médecine Interne' },
   'spec.surgery': { pt: 'Cirurgia Geral', en: 'General Surgery', fr: 'Chirurgie Générale' },
   'spec.other': { pt: 'Outra', en: 'Other', fr: 'Autre' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DASHBOARD TABS
+     ═══════════════════════════════════════════════════════════ */
+  'dash.score': { pt: 'Score:', en: 'Score:', fr: 'Score :' },
+  'dash.tab_summary': { pt: 'Resumo', en: 'Summary', fr: 'Résumé' },
+  'dash.tab_triages': { pt: 'Triagens', en: 'Triages', fr: 'Triages' },
+  'dash.tab_consultations': { pt: 'Consultas', en: 'Consultations', fr: 'Consultations' },
+  'dash.tab_profile': { pt: 'Perfil', en: 'Profile', fr: 'Profil' },
+
+  /* ═══════════════════════════════════════════════════════════
+     SELF-CARE PAGE
+     ═══════════════════════════════════════════════════════════ */
+  'selfcare.title': { pt: 'Autocuidado', en: 'Self-Care', fr: 'Auto-soins' },
+  'selfcare.subtitle': { pt: 'Recomendações personalizadas para o seu bem-estar', en: 'Personalized recommendations for your well-being', fr: 'Recommandations personnalisées pour votre bien-être' },
+  'selfcare.good_news': { pt: 'Boa notícia!', en: 'Good news!', fr: 'Bonne nouvelle !' },
+  'selfcare.low_risk_msg': {
+    pt: 'A sua triagem indica risco baixo. Siga estas recomendações de autocuidado e monitorize os seus sintomas.',
+    en: 'Your triage indicates low risk. Follow these self-care recommendations and monitor your symptoms.',
+    fr: 'Votre triage indique un risque faible. Suivez ces recommandations d\'auto-soins et surveillez vos symptômes.',
+  },
+  'selfcare.tip_hydration': { pt: 'Mantenha-se hidratado(a)', en: 'Stay hydrated', fr: 'Restez hydraté(e)' },
+  'selfcare.tip_hydration_desc': { pt: 'Beba pelo menos 2L de água por dia. Evite bebidas alcoólicas e com cafeína em excesso.', en: 'Drink at least 2L of water per day. Avoid excessive alcohol and caffeine.', fr: 'Buvez au moins 2L d\'eau par jour. Évitez l\'alcool et la caféine en excès.' },
+  'selfcare.tip_rest': { pt: 'Descanse adequadamente', en: 'Rest adequately', fr: 'Reposez-vous adéquatement' },
+  'selfcare.tip_rest_desc': { pt: 'Durma 7-9 horas por noite. O repouso é essencial para a recuperação.', en: 'Sleep 7-9 hours per night. Rest is essential for recovery.', fr: 'Dormez 7 à 9 heures par nuit. Le repos est essentiel pour la récupération.' },
+  'selfcare.tip_monitor': { pt: 'Monitorize os sintomas', en: 'Monitor your symptoms', fr: 'Surveillez vos symptômes' },
+  'selfcare.tip_monitor_desc': { pt: 'Se os sintomas piorarem ou surgirem novos, realize uma nova triagem ou consulte um médico.', en: 'If symptoms worsen or new ones appear, perform a new triage or consult a doctor.', fr: 'Si les symptômes s\'aggravent ou de nouveaux apparaissent, effectuez un nouveau triage ou consultez un médecin.' },
+  'selfcare.tip_medication': { pt: 'Medicação de venda livre', en: 'Over-the-counter medication', fr: 'Médicaments en vente libre' },
+  'selfcare.tip_medication_desc': { pt: 'Para alívio sintomático, pode considerar paracetamol ou ibuprofeno conforme as indicações da embalagem.', en: 'For symptomatic relief, you may consider paracetamol or ibuprofen as per package directions.', fr: 'Pour un soulagement symptomatique, vous pouvez envisager du paracétamol ou de l\'ibuprofène selon les indications de l\'emballage.' },
+  'selfcare.tip_diet': { pt: 'Alimentação equilibrada', en: 'Balanced diet', fr: 'Alimentation équilibrée' },
+  'selfcare.tip_diet_desc': { pt: 'Prefira alimentos leves e nutritivos. Evite processados e açúcares em excesso.', en: 'Prefer light and nutritious foods. Avoid processed foods and excess sugar.', fr: 'Préférez des aliments légers et nutritifs. Évitez les aliments transformés et le sucre en excès.' },
+  'selfcare.tip_exercise': { pt: 'Atividade física moderada', en: 'Moderate physical activity', fr: 'Activité physique modérée' },
+  'selfcare.tip_exercise_desc': { pt: 'Se se sentir bem, caminhe ou faça exercício leve. Evite esforços intensos.', en: 'If you feel well, walk or do light exercise. Avoid intense exertion.', fr: 'Si vous vous sentez bien, marchez ou faites de l\'exercice léger. Évitez les efforts intenses.' },
+  'selfcare.when_seek': { pt: 'Quando procurar ajuda médica', en: 'When to seek medical help', fr: 'Quand consulter un médecin' },
+  'selfcare.seek_desc': { pt: 'Procure atendimento médico se:', en: 'Seek medical care if:', fr: 'Consultez un médecin si :' },
+  'selfcare.seek_1': { pt: 'Os sintomas piorarem significativamente', en: 'Symptoms worsen significantly', fr: 'Les symptômes s\'aggravent significativement' },
+  'selfcare.seek_2': { pt: 'Surgirem novos sintomas preocupantes', en: 'New concerning symptoms appear', fr: 'De nouveaux symptômes préoccupants apparaissent' },
+  'selfcare.seek_3': { pt: 'Febre superior a 38.5°C por mais de 48h', en: 'Fever above 38.5°C for more than 48h', fr: 'Fièvre supérieure à 38,5°C pendant plus de 48h' },
+  'selfcare.seek_4': { pt: 'Dificuldade em respirar ou dor intensa', en: 'Difficulty breathing or severe pain', fr: 'Difficulté à respirer ou douleur intense' },
+  'selfcare.new_triage': { pt: 'Nova Triagem', en: 'New Triage', fr: 'Nouveau Triage' },
+  'selfcare.book_anyway': { pt: 'Marcar Consulta Mesmo Assim', en: 'Book Consultation Anyway', fr: 'Prendre Rendez-vous Quand Même' },
+  'selfcare.back_dashboard': { pt: '← Voltar ao Dashboard', en: '← Back to Dashboard', fr: '← Retour au Tableau de Bord' },
+  'selfcare.complaint_label': { pt: 'Queixa:', en: 'Complaint:', fr: 'Plainte :' },
+
+  /* ═══════════════════════════════════════════════════════════
+     BOOK CONSULTATION MODAL
+     ═══════════════════════════════════════════════════════════ */
+  'booking.title': { pt: 'Marcar Consulta', en: 'Book Consultation', fr: 'Prendre Rendez-vous' },
+  'booking.specialty': { pt: 'Especialidade', en: 'Specialty', fr: 'Spécialité' },
+  'booking.specialty_select': { pt: 'Selecionar especialidade', en: 'Select specialty', fr: 'Sélectionner la spécialité' },
+  'booking.confirm': { pt: 'Confirmar Marcação', en: 'Confirm Booking', fr: 'Confirmer le Rendez-vous' },
+  'booking.confirming': { pt: 'A marcar…', en: 'Booking…', fr: 'Réservation…' },
+  'booking.cancel': { pt: 'Cancelar', en: 'Cancel', fr: 'Annuler' },
+  'booking.success': { pt: 'Consulta marcada com sucesso!', en: 'Consultation booked successfully!', fr: 'Consultation réservée avec succès !' },
+  'booking.error': { pt: 'Erro ao marcar consulta.', en: 'Error booking consultation.', fr: 'Erreur lors de la réservation.' },
+  'booking.based_on': { pt: 'Com base na sua triagem:', en: 'Based on your triage:', fr: 'Selon votre triage :' },
+  'booking.risk_label': { pt: 'Risco', en: 'Risk', fr: 'Risque' },
 };
 
 export default translations;

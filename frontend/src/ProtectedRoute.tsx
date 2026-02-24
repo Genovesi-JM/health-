@@ -31,6 +31,7 @@ export function ProtectedRoute() {
     '/patient/profile': t('topbar.my_profile'),
     '/triage': t('topbar.triage'),
     '/consultations': t('topbar.consultations'),
+    '/self-care': t('topbar.self_care'),
     '/consents': t('topbar.consents'),
     '/doctor/profile': t('topbar.doctor_profile'),
     '/doctor/queue': t('topbar.queue'),

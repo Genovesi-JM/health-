@@ -4,8 +4,11 @@ import type { Consent } from '../types';
 import { Shield, CheckCircle2, Plus } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
+const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
+
 export default function ConsentsPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [consents, setConsents] = useState<Consent[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -94,7 +97,7 @@ export default function ConsentsPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '0.88rem', fontWeight: 500 }}>{c.consent_type}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('consents.accepted_at')} {new Date(c.accepted_at).toLocaleDateString('pt')}
+                    {t('consents.accepted_at')} {new Date(c.accepted_at).toLocaleDateString(locale)}
                   </div>
                 </div>
               </div>

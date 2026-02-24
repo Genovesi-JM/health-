@@ -4,8 +4,11 @@ import type { ConsultationQueueItem } from '../types';
 import { ClipboardList, CheckCircle2, Play, Phone } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
+const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
+
 export default function DoctorQueuePage() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [queue, setQueue] = useState<ConsultationQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +90,7 @@ export default function DoctorQueuePage() {
                     <td>{q.specialty}</td>
                     <td><span className={`badge ${riskBadge(q.risk_level)}`}>{q.risk_level || '—'}</span></td>
                     <td><span className={`badge ${q.status === 'in_progress' ? 'badge-info' : 'badge-warning'}`}>{q.status}</span></td>
-                    <td>{new Date(q.created_at).toLocaleDateString('pt')}</td>
+                    <td>{new Date(q.created_at).toLocaleDateString(locale)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         {q.status !== 'in_progress' && (

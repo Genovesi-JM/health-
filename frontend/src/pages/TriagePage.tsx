@@ -9,8 +9,11 @@ import {
 
 type Step = 'start' | 'questions' | 'result' | 'history';
 
+const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
+
 export default function TriagePage() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [step, setStep] = useState<Step>('history');
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -137,7 +140,7 @@ export default function TriagePage() {
                       <td><span className={`badge ${riskBadge(h.risk_level)}`}>{h.risk_level || h.status}</span></td>
                       <td style={{ fontSize: '0.8rem' }}>{h.recommended_action || '—'}</td>
                       <td>{h.score ?? '—'}</td>
-                      <td>{new Date(h.created_at).toLocaleDateString('pt')}</td>
+                      <td>{new Date(h.created_at).toLocaleDateString(locale)}</td>
                     </tr>
                   ))}
                 </tbody>
