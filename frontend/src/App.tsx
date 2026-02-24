@@ -24,7 +24,7 @@ import SettingsPage from './pages/SettingsPage';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/health-">
         <Routes>
           {/* Public */}
           <Route path="/" element={<LandingPage />} />

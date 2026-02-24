@@ -25,8 +25,9 @@ api.interceptors.response.use(
       const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
       if (!isAuthRoute) {
         clearSession();
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+        if (!window.location.pathname.endsWith('/login')) {
+          window.location.href = `${base}/login`;
         }
       }
     }
