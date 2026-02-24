@@ -1,9 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api';
 import { MessageCircle, X, Send, Bot, User, ArrowRight, Sparkles } from 'lucide-react';
 
-interface Message {
+/* ── Types ────────────────────────────────────────────────── */
+
+/** Role-based message for conversation history (sent to backend) */
+interface ChatHistoryItem {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/** UI message with extra rendering data */
+interface UIMessage {
   id: number;
   text: string;
   sender: 'user' | 'bot';
@@ -13,21 +22,41 @@ interface Message {
   timestamp: Date;
 }
 
+/* ── Page title mapping ────────────────────────────────────── */
+
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/triage': 'Triagem Digital',
+  '/consultations': 'Consultas',
+  '/patient/profile': 'Perfil do Paciente',
+  '/settings': 'Definições',
+  '/admin/patients': 'Gestão de Pacientes',
+  '/admin/doctors': 'Gestão de Médicos',
+};
+
+function getPageTitle(pathname: string): string {
+  return PAGE_TITLES[pathname] || document.title || '';
+}
+
+/* ── Component ─────────────────────────────────────────────── */
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [uiMessages, setUiMessages] = useState<UIMessage[]>([]);
+  const [history, setHistory] = useState<ChatHistoryItem[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [pulse, setPulse] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  let nextId = useRef(1);
+  const location = useLocation();
+  const nextId = useRef(1);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [uiMessages]);
 
   // Focus input when opened
   useEffect(() => {
@@ -41,50 +70,73 @@ export default function ChatWidget() {
     if (open) setPulse(false);
   }, [open]);
 
-  const addBotMessage = useCallback((reply: string, action?: string, actionTarget?: string, suggestions?: string[]) => {
-    setMessages(prev => [...prev, {
-      id: nextId.current++,
-      text: reply,
-      sender: 'bot',
-      action,
-      actionTarget,
-      suggestions,
-      timestamp: new Date(),
-    }]);
-  }, []);
+  /** Append a bot message to the UI list */
+  const addBotMessage = useCallback(
+    (reply: string, action?: string, actionTarget?: string, suggestions?: string[]) => {
+      setUiMessages(prev => [
+        ...prev,
+        {
+          id: nextId.current++,
+          text: reply,
+          sender: 'bot',
+          action,
+          actionTarget,
+          suggestions,
+          timestamp: new Date(),
+        },
+      ]);
+    },
+    [],
+  );
 
+  /** Open the widget — send initial greeting on first open */
   const handleOpen = () => {
     setOpen(true);
-    if (messages.length === 0) {
-      // Send initial greeting
+    if (history.length === 0) {
       sendMessage('Olá', true);
     }
   };
 
+  /**
+   * GeoVision-style: send full conversation history + page context.
+   * @param text  User message text
+   * @param silent  If true, don't show user bubble (e.g. initial greeting)
+   */
   const sendMessage = async (text: string, silent = false) => {
     if (!text.trim()) return;
 
+    // Build updated history with the new user message
+    const userItem: ChatHistoryItem = { role: 'user', content: text.trim() };
+    const updatedHistory = [...history, userItem];
+
+    // Update history state immediately
+    setHistory(updatedHistory);
+
+    // Show user bubble (unless silent greeting)
     if (!silent) {
-      setMessages(prev => [...prev, {
-        id: nextId.current++,
-        text,
-        sender: 'user',
-        timestamp: new Date(),
-      }]);
+      setUiMessages(prev => [
+        ...prev,
+        { id: nextId.current++, text, sender: 'user', timestamp: new Date() },
+      ]);
     }
 
     setInput('');
     setLoading(true);
 
     try {
-      const res = await api.post('/api/v1/chatbot/message', { message: text });
+      // GeoVision-style: send full messages[] + page context
+      const res = await api.post('/api/v1/chatbot/chat', {
+        messages: updatedHistory,
+        page: location.pathname,
+        page_title: getPageTitle(location.pathname),
+      });
+
       const data = res.data;
-      addBotMessage(
-        data.reply,
-        data.action,
-        data.action_target,
-        data.suggestions,
-      );
+
+      // Append assistant reply to history
+      setHistory(prev => [...prev, { role: 'assistant', content: data.reply }]);
+
+      addBotMessage(data.reply, data.action, data.action_target, data.suggestions);
     } catch {
       addBotMessage('Desculpe, ocorreu um erro. Tente novamente.');
     } finally {
@@ -106,7 +158,7 @@ export default function ChatWidget() {
     setOpen(false);
   };
 
-  // Simple markdown-like bold rendering
+  /** Simple markdown bold rendering */
   const renderText = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, i) => {
@@ -153,7 +205,7 @@ export default function ChatWidget() {
 
           {/* Messages */}
           <div className="chat-messages">
-            {messages.map(msg => (
+            {uiMessages.map(msg => (
               <div key={msg.id} className={`chat-msg chat-msg-${msg.sender}`}>
                 <div className="chat-msg-icon">
                   {msg.sender === 'bot' ? <Bot size={14} /> : <User size={14} />}

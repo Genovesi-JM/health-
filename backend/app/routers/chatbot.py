@@ -1,26 +1,31 @@
 from __future__ import annotations
 """
-Chatbot Router — AI-powered patient assistant.
+Chatbot Router — AI-powered patient assistant (GeoVision-style).
 
-Smart rule-based chatbot that:
-- Detects user intent from Portuguese natural language
-- Provides contextual responses based on patient state
-- Guides users through triage, consultations, and platform navigation
-- Handles emergency detection with immediate ER guidance
-- Encourages conversion: Triage → Consultation → Payment
+Like GeoVision's GAIA chatbot but for health:
+- Multi-turn conversation with full message history
+- OpenAI GPT integration with health-specific system prompt
+- Page context awareness (knows which page the user is viewing)
+- Patient state context (triage history, consultations, risk level)
+- Demo/fallback mode with smart rule-based responses when no API key
+- Emergency detection always handled locally (no AI delay)
 
-Endpoint:
-- POST /api/v1/chatbot/message — Send message, get response
+Endpoints:
+- POST /api/v1/chatbot/chat — Multi-turn chat (GeoVision-style)
+- POST /api/v1/chatbot/message — Legacy single-message (backward compat)
 """
+import asyncio
 import logging
-import re
+import os
 from datetime import datetime
-from typing import Optional
+from typing import List, Literal, Optional
 
+import httpx
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
@@ -31,151 +36,96 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/chatbot", tags=["chatbot"])
 
 
-# ── Schemas ──
+# ═══════════════════════════════════════════════════════════════
+# Schemas
+# ═══════════════════════════════════════════════════════════════
 
-class ChatMessage(BaseModel):
-    message: str
+class ChatMessageItem(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    """GeoVision-style chat request with full conversation history."""
+    messages: List[ChatMessageItem]
+    page: Optional[str] = None
+    page_title: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
     reply: str
-    action: Optional[str] = None  # navigate, link, none
-    action_target: Optional[str] = None  # e.g. /triage, /consultations
+    action: Optional[str] = None
+    action_target: Optional[str] = None
     suggestions: list[str] = []
 
 
-# ── Intent Detection ──
+# Legacy single-message schema (backward compat)
+class SingleMessage(BaseModel):
+    message: str
+
+
+# ═══════════════════════════════════════════════════════════════
+# Health System Prompt
+# ═══════════════════════════════════════════════════════════════
+
+HEALTH_SYSTEM_PROMPT = """
+Es a assistente de saude AI da Health Platform, focada em Angola e paises lusofonos.
+
+Tens acesso a contexto adicional:
+- `page`: pagina actual onde o utilizador se encontra.
+- `page_title`: titulo da pagina.
+- `patient_context`: estado clinico do paciente (triagens, consultas, risco).
+
+Regras importantes:
+- Responde SEMPRE em portugues.
+- Se empatica, profissional e clara.
+- Se detectares sintomas de EMERGENCIA (dor no peito, dificuldade respirar,
+  AVC, hemorragia grave, perda de consciencia), responde IMEDIATAMENTE
+  com instrucao para ligar 112 ou ir as Urgencias. Nao facas diagnostico.
+- NUNCA facas diagnostico medico. Podes orientar e recomendar triagem/consulta.
+- Usa emojis moderadamente para tornar as respostas amigaveis.
+- Mantem respostas concisas (maximo 150 palavras).
+- Incentiva o fluxo: Triagem -> Consulta -> Tratamento.
+- Se o utilizador perguntar sobre "esta pagina" ou conteudo visivel,
+  usa o contexto da pagina para responder.
+
+Servicos da plataforma:
+- Triagem Digital (gratuita, 2-3 minutos, avaliacao de risco)
+- Teleconsulta (a partir de 5.000 Kz, com medicos verificados)
+- Receita Digital (incluida na consulta)
+- Historico clinico e acompanhamento
+
+Niveis de risco da triagem:
+Verde/Baixo: Auto-cuidado em casa
+Amarelo/Medio: Consulta em 24h recomendada
+Laranja/Alto: Consulta urgente necessaria
+Vermelho/Urgente: Urgencias / Ligar 112
+
+Objectivo: ajudar pacientes a navegar a plataforma, compreender
+resultados, marcar consultas e sentir-se apoiados no seu percurso de saude.
+"""
+
+
+# ═══════════════════════════════════════════════════════════════
+# Emergency Detection (always local, never wait for AI)
+# ═══════════════════════════════════════════════════════════════
 
 EMERGENCY_KEYWORDS = [
-    "emergência", "emergencia", "urgência", "urgencia",
-    "dor no peito", "dor peito", "não consigo respirar", "nao consigo respirar",
-    "dificuldade respirar", "avc", "derrame", "desmaio", "desmaiei",
-    "hemorragia", "sangramento grave", "convulsão", "convulsao",
-    "overdose", "envenenamento", "ataque cardíaco", "ataque cardiaco",
-    "perda de consciência", "perda de consciencia", "vou morrer",
-    "socorro", "112", "ambulância", "ambulancia",
-]
-
-TRIAGE_KEYWORDS = [
-    "triagem", "sintoma", "sintomas", "o que tenho", "diagnóstico",
-    "diagnostico", "avaliar", "avaliação", "avaliacao", "doente",
-    "mal disposto", "febre", "dor", "tosse", "gripe", "constipação",
-    "constipacao", "diarreia", "vomitar", "vómito", "vomito",
-    "dor de cabeça", "dor cabeca", "tontura", "alergia",
-    "iniciar triagem", "fazer triagem", "quero triagem",
-    "check-up", "checkup", "como me sinto",
-]
-
-CONSULTATION_KEYWORDS = [
-    "consulta", "consultas", "marcar consulta", "agendar", "médico",
-    "medico", "doutor", "doutora", "especialista", "teleconsulta",
-    "videochamada", "falar com médico", "falar com medico",
-    "quando posso", "disponibilidade", "horário", "horario",
-    "próxima consulta", "proxima consulta", "cancelar consulta",
-]
-
-PRICING_KEYWORDS = [
-    "preço", "preco", "custo", "quanto custa", "pagamento",
-    "pagar", "valor", "plano", "grátis", "gratis", "gratuito",
-    "desconto", "promoção", "promocao",
-]
-
-NAVIGATION_KEYWORDS = [
-    "como funciona", "ajuda", "onde", "encontrar", "perfil",
-    "definições", "definicoes", "configurações", "configuracoes",
-    "palavra-passe", "password", "conta", "dados", "histórico",
-    "historico", "resultado", "relatório", "relatorio",
-]
-
-GREETING_KEYWORDS = [
-    "olá", "ola", "oi", "bom dia", "boa tarde", "boa noite",
-    "hello", "hi", "hey", "obrigado", "obrigada", "thanks",
-    "tudo bem", "como vai",
+    "emergencia", "urgencia",
+    "dor no peito", "dor peito", "nao consigo respirar",
+    "dificuldade respirar",
+    "avc", "derrame", "desmaio", "desmaiei",
+    "hemorragia", "sangramento grave", "convulsao",
+    "overdose", "envenenamento", "ataque cardiaco",
+    "perda de consciencia",
+    "vou morrer", "socorro", "112", "ambulancia",
 ]
 
 
-def detect_intent(text: str) -> str:
-    """Detect user intent from message text."""
-    lower = text.lower().strip()
+def is_emergency(text: str) -> bool:
+    lower = text.lower().replace("ê", "e").replace("â", "a").replace("í", "i").replace("á", "a").replace("ã", "a").replace("ó", "o").replace("ú", "u")
+    return any(kw in lower for kw in EMERGENCY_KEYWORDS)
 
-    # Emergency always takes priority
-    for kw in EMERGENCY_KEYWORDS:
-        if kw in lower:
-            return "emergency"
-
-    # Check each category
-    for kw in GREETING_KEYWORDS:
-        if kw in lower:
-            return "greeting"
-
-    for kw in TRIAGE_KEYWORDS:
-        if kw in lower:
-            return "triage"
-
-    for kw in CONSULTATION_KEYWORDS:
-        if kw in lower:
-            return "consultation"
-
-    for kw in PRICING_KEYWORDS:
-        if kw in lower:
-            return "pricing"
-
-    for kw in NAVIGATION_KEYWORDS:
-        if kw in lower:
-            return "navigation"
-
-    return "general"
-
-
-def get_patient_context(user: User, db: Session) -> dict:
-    """Gather patient state for contextual responses."""
-    ctx: dict = {
-        "is_patient": False,
-        "has_triage": False,
-        "last_risk": None,
-        "pending_consultations": 0,
-        "triage_in_progress": False,
-    }
-
-    patient = db.query(Patient).filter(Patient.user_id == user.id).first()
-    if not patient:
-        return ctx
-
-    ctx["is_patient"] = True
-
-    # Latest triage
-    latest_triage = (
-        db.query(TriageSession)
-        .filter(TriageSession.patient_id == patient.id)
-        .order_by(TriageSession.created_at.desc())
-        .first()
-    )
-    if latest_triage:
-        ctx["has_triage"] = True
-        ctx["triage_in_progress"] = latest_triage.status == "in_progress"
-        result = (
-            db.query(TriageResult)
-            .filter(TriageResult.triage_session_id == latest_triage.id)
-            .first()
-        )
-        if result:
-            ctx["last_risk"] = result.risk_level
-
-    # Pending consultations
-    pending = (
-        db.query(Consultation)
-        .filter(
-            Consultation.patient_id == patient.id,
-            Consultation.status.in_(["requested", "scheduled"]),
-        )
-        .count()
-    )
-    ctx["pending_consultations"] = pending
-
-    return ctx
-
-
-# ── Response Generators ──
 
 def emergency_response() -> ChatResponse:
     return ChatResponse(
@@ -195,251 +145,494 @@ def emergency_response() -> ChatResponse:
     )
 
 
-def greeting_response(ctx: dict, user_name: str) -> ChatResponse:
-    hour = datetime.now().hour
-    if hour < 12:
-        greeting = "Bom dia"
-    elif hour < 19:
-        greeting = "Boa tarde"
+# ═══════════════════════════════════════════════════════════════
+# Patient Context Builder
+# ═══════════════════════════════════════════════════════════════
+
+def get_patient_context(user: User, db: Session) -> str:
+    """Build a text summary of patient state for the AI system prompt."""
+    parts: list[str] = []
+
+    patient = db.query(Patient).filter(Patient.user_id == user.id).first()
+    if not patient:
+        parts.append("Utilizador sem perfil de paciente registado.")
+        return " | ".join(parts)
+
+    # Triage state
+    latest_triage = (
+        db.query(TriageSession)
+        .filter(TriageSession.patient_id == patient.id)
+        .order_by(TriageSession.created_at.desc())
+        .first()
+    )
+    triage_count = (
+        db.query(TriageSession)
+        .filter(TriageSession.patient_id == patient.id)
+        .count()
+    )
+
+    if latest_triage:
+        parts.append(f"Total triagens: {triage_count}")
+        parts.append(f"Ultima triagem: {latest_triage.status} ({latest_triage.created_at.strftime('%d/%m/%Y')})")
+        if latest_triage.chief_complaint:
+            parts.append(f"Queixa: {latest_triage.chief_complaint}")
+        result = (
+            db.query(TriageResult)
+            .filter(TriageResult.triage_session_id == latest_triage.id)
+            .first()
+        )
+        if result:
+            parts.append(f"Risco: {result.risk_level}")
+            parts.append(f"Acao recomendada: {result.recommended_action}")
+        elif latest_triage.status == "in_progress":
+            parts.append("Triagem em curso (nao concluida)")
     else:
-        greeting = "Boa noite"
+        parts.append("Sem triagens realizadas.")
 
-    name = user_name.split()[0] if user_name else ""
-    base = f"{greeting}{', ' + name if name else ''}! 👋\n\nSou o assistente da Health Platform."
-
-    if ctx.get("triage_in_progress"):
-        base += "\n\n📋 Notei que tem uma **triagem em curso**. Quer continuar?"
-        suggestions = ["Continuar triagem", "Marcar consulta", "Como funciona?"]
-    elif ctx.get("last_risk") in ("HIGH", "URGENT"):
-        base += (
-            "\n\n⚠️ A sua última triagem indicou **risco elevado**. "
-            "Recomendo marcar uma consulta médica."
+    # Consultations
+    pending = (
+        db.query(Consultation)
+        .filter(
+            Consultation.patient_id == patient.id,
+            Consultation.status.in_(["requested", "scheduled"]),
         )
-        suggestions = ["Marcar consulta", "Ver resultados", "Ajuda"]
-    elif ctx.get("has_triage"):
-        base += "\n\nComo posso ajudar hoje?"
-        suggestions = ["Nova triagem", "Marcar consulta", "Ver histórico"]
-    else:
-        base += "\n\nPosso ajudá-lo(a) a:\n• Fazer uma triagem de sintomas\n• Marcar uma consulta\n• Navegar a plataforma"
-        suggestions = ["Fazer triagem", "Marcar consulta", "Como funciona?"]
-
-    return ChatResponse(reply=base, suggestions=suggestions)
-
-
-def triage_response(ctx: dict) -> ChatResponse:
-    if ctx.get("triage_in_progress"):
-        return ChatResponse(
-            reply=(
-                "📋 **Tem uma triagem em curso!**\n\n"
-                "Clique no botão abaixo para continuar a responder às perguntas e obter a sua avaliação de risco."
-            ),
-            action="navigate",
-            action_target="/triage",
-            suggestions=["Ir para triagem", "O que é a triagem?"],
+        .count()
+    )
+    completed = (
+        db.query(Consultation)
+        .filter(
+            Consultation.patient_id == patient.id,
+            Consultation.status == "completed",
         )
+        .count()
+    )
+    parts.append(f"Consultas pendentes: {pending}")
+    parts.append(f"Consultas concluidas: {completed}")
 
-    if ctx.get("last_risk"):
-        risk_labels = {"LOW": "baixo", "MEDIUM": "médio", "HIGH": "alto", "URGENT": "urgente"}
-        risk = risk_labels.get(ctx["last_risk"], ctx["last_risk"])
-        reply = (
-            f"📊 A sua última triagem indicou risco **{risk}**.\n\n"
+    return " | ".join(parts)
+
+
+def get_patient_context_dict(user: User, db: Session) -> dict:
+    """Get structured patient context for demo/fallback responses."""
+    ctx: dict = {
+        "is_patient": False,
+        "has_triage": False,
+        "last_risk": None,
+        "pending_consultations": 0,
+        "triage_in_progress": False,
+    }
+
+    patient = db.query(Patient).filter(Patient.user_id == user.id).first()
+    if not patient:
+        return ctx
+
+    ctx["is_patient"] = True
+
+    latest_triage = (
+        db.query(TriageSession)
+        .filter(TriageSession.patient_id == patient.id)
+        .order_by(TriageSession.created_at.desc())
+        .first()
+    )
+    if latest_triage:
+        ctx["has_triage"] = True
+        ctx["triage_in_progress"] = latest_triage.status == "in_progress"
+        result = (
+            db.query(TriageResult)
+            .filter(TriageResult.triage_session_id == latest_triage.id)
+            .first()
         )
-        if ctx["last_risk"] in ("HIGH", "URGENT"):
-            reply += "⚠️ **Recomendação:** Marque uma consulta médica o mais rápido possível.\n\n"
-        elif ctx["last_risk"] == "MEDIUM":
-            reply += "💡 **Recomendação:** Considere marcar uma consulta nas próximas 24 horas.\n\n"
+        if result:
+            ctx["last_risk"] = result.risk_level
+
+    ctx["pending_consultations"] = (
+        db.query(Consultation)
+        .filter(
+            Consultation.patient_id == patient.id,
+            Consultation.status.in_(["requested", "scheduled"]),
+        )
+        .count()
+    )
+
+    return ctx
+
+
+# ═══════════════════════════════════════════════════════════════
+# OpenAI Integration (GeoVision-style)
+# ═══════════════════════════════════════════════════════════════
+
+async def call_openai(
+    messages: List[ChatMessageItem],
+    patient_context: str,
+    page: Optional[str] = None,
+    page_title: Optional[str] = None,
+) -> str:
+    """Call OpenAI with health system prompt + patient context."""
+    api_key = settings.openai_api_key or os.getenv("OPENAI_API_KEY")
+    model = settings.openai_model or "gpt-4o-mini"
+
+    if not api_key:
+        return ""  # Signal to use demo mode
+
+    # Build system messages
+    chat_messages = [{"role": "system", "content": HEALTH_SYSTEM_PROMPT}]
+
+    # Add patient + page context
+    context_parts = []
+    if patient_context:
+        context_parts.append(f"Estado do paciente: {patient_context}")
+    if page:
+        context_parts.append(f"Pagina actual: {page}")
+    if page_title:
+        context_parts.append(f"Titulo da pagina: {page_title}")
+
+    if context_parts:
+        chat_messages.append({
+            "role": "system",
+            "content": " | ".join(context_parts),
+        })
+
+    # Add conversation history
+    for m in messages:
+        chat_messages.append({"role": m.role, "content": m.content})
+
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {"model": model, "messages": chat_messages}
+
+    # Retry with backoff (same as GeoVision)
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                res = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+        except httpx.RequestError as exc:
+            logger.error("OpenAI request failed (attempt %s): %s", attempt, exc)
+            if attempt < max_attempts:
+                await asyncio.sleep(2 ** attempt)
+                continue
+            return ""
+
+        if res.status_code != 200:
+            logger.error("OpenAI HTTP %s (attempt %s): %s", res.status_code, attempt, res.text[:300])
+            if attempt < max_attempts:
+                await asyncio.sleep(2 ** attempt)
+                continue
+            return ""
+
+        try:
+            data = res.json()
+            return data["choices"][0]["message"]["content"]
+        except (ValueError, KeyError, IndexError) as exc:
+            logger.error("OpenAI response parse error: %s", exc)
+            if attempt < max_attempts:
+                await asyncio.sleep(2 ** attempt)
+                continue
+            return ""
+
+    return ""
+
+
+# ═══════════════════════════════════════════════════════════════
+# Demo / Fallback Response Engine
+# ═══════════════════════════════════════════════════════════════
+
+INTENT_KEYWORDS = {
+    "greeting": [
+        "ola", "oi", "bom dia", "boa tarde", "boa noite",
+        "hello", "hi", "hey", "obrigado", "obrigada", "tudo bem",
+    ],
+    "triage": [
+        "triagem", "sintoma", "sintomas", "diagnostico",
+        "doente", "febre", "dor", "tosse", "gripe", "diarreia",
+        "vomitar", "tontura", "alergia", "mal disposto",
+        "iniciar triagem", "fazer triagem", "check-up",
+    ],
+    "pricing": [
+        "preco", "custo", "quanto custa", "pagamento",
+        "pagar", "valor", "gratis", "gratuito", "custa",
+    ],
+    "consultation": [
+        "consulta", "marcar", "agendar", "medico",
+        "doutor", "doutora", "especialista", "teleconsulta",
+        "videochamada", "cancelar consulta",
+    ],
+    "navigation": [
+        "como funciona", "ajuda", "perfil", "definicoes",
+        "password", "conta", "historico",
+        "resultado", "relatorio",
+    ],
+}
+
+
+def _normalize(text: str) -> str:
+    """Strip accents for keyword matching."""
+    replacements = {
+        "á": "a", "à": "a", "â": "a", "ã": "a",
+        "é": "e", "ê": "e", "í": "i", "ó": "o",
+        "ô": "o", "õ": "o", "ú": "u", "ç": "c",
+    }
+    result = text.lower()
+    for src, dst in replacements.items():
+        result = result.replace(src, dst)
+    return result
+
+
+def detect_intent(text: str) -> str:
+    normalized = _normalize(text)
+    for intent, keywords in INTENT_KEYWORDS.items():
+        for kw in keywords:
+            if kw in normalized:
+                return intent
+    return "general"
+
+
+def demo_response(
+    messages: List[ChatMessageItem],
+    ctx: dict,
+    user_name: str,
+    page: Optional[str] = None,
+) -> ChatResponse:
+    """Smart fallback when OpenAI is not available."""
+    last_text = messages[-1].content if messages else ""
+    intent = detect_intent(last_text)
+
+    if intent == "greeting":
+        hour = datetime.now().hour
+        greeting = "Bom dia" if hour < 12 else "Boa tarde" if hour < 19 else "Boa noite"
+        name = user_name.split()[0] if user_name else ""
+        base = f"{greeting}{', ' + name if name else ''}! 👋\n\nSou a assistente da Health Platform."
+
+        if ctx.get("triage_in_progress"):
+            base += "\n\n📋 Tem uma **triagem em curso**. Quer continuar?"
+            suggestions = ["Continuar triagem", "Marcar consulta", "Como funciona?"]
+        elif ctx.get("last_risk") in ("HIGH", "URGENT"):
+            base += "\n\n⚠️ A sua ultima triagem indicou **risco elevado**. Recomendo marcar consulta."
+            suggestions = ["Marcar consulta", "Ver resultados", "Ajuda"]
+        elif ctx.get("has_triage"):
+            base += "\n\nComo posso ajudar hoje?"
+            suggestions = ["Nova triagem", "Marcar consulta", "Ver historico"]
         else:
-            reply += "✅ **Recomendação:** Monitore os sintomas. Se piorarem, faça nova triagem.\n\n"
+            base += "\n\nPosso ajuda-lo(a) a:\n• Fazer triagem de sintomas\n• Marcar consulta\n• Navegar a plataforma"
+            suggestions = ["Fazer triagem", "Marcar consulta", "Como funciona?"]
 
-        reply += "Pode iniciar uma **nova triagem** a qualquer momento."
-        return ChatResponse(
-            reply=reply,
-            action="navigate",
-            action_target="/triage",
-            suggestions=["Nova triagem", "Marcar consulta", "Ver histórico"],
-        )
+        return ChatResponse(reply=base, suggestions=suggestions)
 
-    return ChatResponse(
-        reply=(
-            "🩺 **Triagem Digital**\n\n"
-            "A triagem analisa os seus sintomas e indica o nível de risco:\n\n"
-            "🟢 **Baixo** — Auto-cuidado em casa\n"
-            "🟡 **Médio** — Consulta em 24h\n"
-            "🟠 **Alto** — Consulta urgente\n"
-            "🔴 **Urgente** — Urgências / 112\n\n"
-            "É rápido (2-3 minutos) e completamente confidencial.\n"
-            "Quer iniciar agora?"
-        ),
-        action="navigate",
-        action_target="/triage",
-        suggestions=["Iniciar triagem", "Falar com médico"],
-    )
-
-
-def consultation_response(ctx: dict) -> ChatResponse:
-    if ctx.get("pending_consultations", 0) > 0:
-        n = ctx["pending_consultations"]
+    if intent == "triage":
+        if ctx.get("triage_in_progress"):
+            return ChatResponse(
+                reply="📋 **Tem uma triagem em curso!**\n\nContinue a responder para obter a avaliacao de risco.",
+                action="navigate", action_target="/triage",
+                suggestions=["Ir para triagem", "O que e a triagem?"],
+            )
+        if ctx.get("last_risk"):
+            risk_labels = {"LOW": "baixo", "MEDIUM": "medio", "HIGH": "alto", "URGENT": "urgente"}
+            risk = risk_labels.get(ctx["last_risk"], ctx["last_risk"])
+            reply = f"📊 A sua ultima triagem indicou risco **{risk}**.\n\n"
+            if ctx["last_risk"] in ("HIGH", "URGENT"):
+                reply += "⚠️ **Recomendacao:** Marque consulta o mais rapido possivel.\n\n"
+            elif ctx["last_risk"] == "MEDIUM":
+                reply += "💡 **Recomendacao:** Considere marcar consulta nas proximas 24h.\n\n"
+            else:
+                reply += "✅ **Recomendacao:** Monitore os sintomas. Se piorarem, faca nova triagem.\n\n"
+            reply += "Pode iniciar uma **nova triagem** a qualquer momento."
+            return ChatResponse(
+                reply=reply, action="navigate", action_target="/triage",
+                suggestions=["Nova triagem", "Marcar consulta", "Ver historico"],
+            )
         return ChatResponse(
             reply=(
-                f"📅 Tem **{n} consulta{'s' if n > 1 else ''} pendente{'s' if n > 1 else ''}**.\n\n"
-                "Pode verificar o estado, horário e detalhes na página de consultas."
+                "🩺 **Triagem Digital**\n\n"
+                "Analisa os seus sintomas e indica o nivel de risco:\n\n"
+                "🟢 **Baixo** — Auto-cuidado\n🟡 **Medio** — Consulta em 24h\n"
+                "🟠 **Alto** — Consulta urgente\n🔴 **Urgente** — 112\n\n"
+                "E rapido (2-3 minutos) e gratuito. Quer iniciar?"
             ),
-            action="navigate",
-            action_target="/consultations",
-            suggestions=["Ver consultas", "Marcar mais uma", "Cancelar consulta"],
+            action="navigate", action_target="/triage",
+            suggestions=["Iniciar triagem", "Falar com medico"],
         )
 
-    if not ctx.get("has_triage"):
+    if intent == "consultation":
+        if ctx.get("pending_consultations", 0) > 0:
+            n = ctx["pending_consultations"]
+            return ChatResponse(
+                reply=f"📅 Tem **{n} consulta{'s' if n > 1 else ''} pendente{'s' if n > 1 else ''}**.\n\nVerifique o estado na pagina de consultas.",
+                action="navigate", action_target="/consultations",
+                suggestions=["Ver consultas", "Marcar mais uma"],
+            )
+        if not ctx.get("has_triage"):
+            return ChatResponse(
+                reply="📋 **Antes de marcar consulta**, recomendamos fazer triagem rapida.\n\nAjuda o medico a preparar-se e demora so 2-3 minutos!",
+                action="navigate", action_target="/triage",
+                suggestions=["Fazer triagem", "Marcar consulta direto"],
+            )
         return ChatResponse(
             reply=(
-                "📋 **Antes de marcar consulta**, recomendamos fazer uma triagem rápida.\n\n"
-                "A triagem ajuda o médico a preparar-se e priorizar o seu caso. "
-                "Demora apenas 2-3 minutos!\n\n"
-                "Quer iniciar a triagem primeiro?"
+                "👨‍⚕️ **Marcar Consulta**\n\n"
+                "Agende teleconsulta com medicos verificados.\n\n"
+                "📌 **Passos:**\n1. Escolha especialidade\n2. Marque horario\n"
+                "3. Confirmacao\n4. Videochamada\n\n"
+                "O medico tera acesso aos seus resultados de triagem."
             ),
-            action="navigate",
-            action_target="/triage",
-            suggestions=["Fazer triagem", "Marcar consulta direto"],
+            action="navigate", action_target="/consultations",
+            suggestions=["Marcar agora", "Precos"],
         )
 
-    return ChatResponse(
-        reply=(
-            "👨‍⚕️ **Marcar Consulta**\n\n"
-            "Pode agendar uma teleconsulta com um dos nossos médicos verificados.\n\n"
-            "📌 **Como funciona:**\n"
-            "1. Escolha a especialidade\n"
-            "2. Marque o horário\n"
-            "3. Receba confirmação\n"
-            "4. Consulta por videochamada\n\n"
-            "O médico terá acesso aos seus resultados de triagem para melhor atendimento."
-        ),
-        action="navigate",
-        action_target="/consultations",
-        suggestions=["Marcar agora", "Ver médicos disponíveis", "Preços"],
-    )
-
-
-def pricing_response() -> ChatResponse:
-    return ChatResponse(
-        reply=(
-            "💰 **Informações de Preço**\n\n"
-            "• **Triagem Digital** — Gratuita ✅\n"
-            "• **Teleconsulta** — A partir de 5.000 Kz\n"
-            "• **Receita Digital** — Incluída na consulta\n"
-            "• **Relatório de Triagem** — Gratuito\n\n"
-            "A triagem é sempre gratuita e ajuda a priorizar o seu caso!\n\n"
-            "Quer fazer uma triagem gratuita agora?"
-        ),
-        action=None,
-        suggestions=["Fazer triagem grátis", "Marcar consulta", "Falar com suporte"],
-    )
-
-
-def navigation_response(text: str) -> ChatResponse:
-    lower = text.lower()
-
-    if any(w in lower for w in ["perfil", "dados", "conta"]):
+    if intent == "pricing":
         return ChatResponse(
             reply=(
-                "👤 **O Seu Perfil**\n\n"
-                "Na página de perfil pode:\n"
-                "• Atualizar dados pessoais\n"
-                "• Adicionar alergias e condições\n"
-                "• Definir contacto de emergência\n\n"
-                "Manter o perfil atualizado ajuda na triagem!"
+                "💰 **Precos**\n\n"
+                "• **Triagem Digital** — Gratuita ✅\n"
+                "• **Teleconsulta** — A partir de 5.000 Kz\n"
+                "• **Receita Digital** — Incluida\n"
+                "• **Relatorio de Triagem** — Gratuito\n\n"
+                "Quer fazer uma triagem gratuita agora?"
             ),
-            action="navigate",
-            action_target="/patient/profile",
-            suggestions=["Ir ao perfil", "Fazer triagem", "Ajuda"],
+            suggestions=["Fazer triagem gratis", "Marcar consulta"],
         )
 
-    if any(w in lower for w in ["histórico", "historico", "resultado", "relatório", "relatorio"]):
+    if intent == "navigation":
+        lower = _normalize(last_text)
+        if any(w in lower for w in ["perfil", "dados", "conta"]):
+            return ChatResponse(
+                reply="👤 **O Seu Perfil**\n\nAtualize dados pessoais, alergias e contacto de emergencia.\nManter o perfil atualizado ajuda na triagem!",
+                action="navigate", action_target="/patient/profile",
+                suggestions=["Ir ao perfil", "Fazer triagem"],
+            )
+        if any(w in lower for w in ["historico", "resultado"]):
+            return ChatResponse(
+                reply="📊 **Historico**\n\nVeja triagens anteriores, consultas e receitas no Dashboard.",
+                action="navigate", action_target="/dashboard",
+                suggestions=["Ir ao dashboard", "Nova triagem"],
+            )
+        if any(w in lower for w in ["password", "palavra-passe", "definicoes"]):
+            return ChatResponse(
+                reply="⚙️ **Definicoes**\n\nAltere palavra-passe, notificacoes e preferencias.",
+                action="navigate", action_target="/settings",
+                suggestions=["Ir as definicoes", "Ajuda"],
+            )
         return ChatResponse(
             reply=(
-                "📊 **Histórico**\n\n"
-                "Pode ver todo o seu histórico no Dashboard:\n"
-                "• Triagens anteriores e níveis de risco\n"
-                "• Consultas passadas e futuras\n"
-                "• Receitas e referências médicas"
+                "🏥 **Como Funciona**\n\n"
+                "1️⃣ **Triagem** — Responda sobre sintomas (gratis)\n"
+                "2️⃣ **Resultado** — Avaliacao de risco imediata\n"
+                "3️⃣ **Consulta** — Teleconsulta se necessario\n"
+                "4️⃣ **Tratamento** — Receita digital\n\n"
+                "Seguro, confidencial e com medicos verificados. 🔒"
             ),
-            action="navigate",
-            action_target="/dashboard",
-            suggestions=["Ir ao dashboard", "Nova triagem", "Marcar consulta"],
+            suggestions=["Iniciar triagem", "Marcar consulta", "Precos"],
         )
 
-    if any(w in lower for w in ["password", "palavra-passe", "definições", "definicoes", "configurações", "configuracoes"]):
-        return ChatResponse(
-            reply=(
-                "⚙️ **Definições**\n\n"
-                "Nas definições pode:\n"
-                "• Alterar a palavra-passe\n"
-                "• Gerir notificações\n"
-                "• Configurar preferências"
-            ),
-            action="navigate",
-            action_target="/settings",
-            suggestions=["Ir às definições", "Ajuda", "Dashboard"],
-        )
-
+    # General / unknown
     return ChatResponse(
         reply=(
-            "🏥 **Como Funciona a Plataforma**\n\n"
-            "1️⃣ **Triagem** — Responda a perguntas sobre sintomas (grátis)\n"
-            "2️⃣ **Resultado** — Receba avaliação de risco imediata\n"
-            "3️⃣ **Consulta** — Marque teleconsulta se necessário\n"
-            "4️⃣ **Tratamento** — Receita digital e acompanhamento\n\n"
-            "Tudo seguro, confidencial e com médicos verificados. 🔒"
-        ),
-        action=None,
-        suggestions=["Iniciar triagem", "Marcar consulta", "Ver preços"],
-    )
-
-
-def general_response(text: str) -> ChatResponse:
-    return ChatResponse(
-        reply=(
-            "Entendo! Posso ajudá-lo(a) com:\n\n"
-            "🩺 **Saúde** — Triagem de sintomas, consultas\n"
-            "📋 **Plataforma** — Navegação, perfil, histórico\n"
-            "💰 **Preços** — Informações sobre custos\n"
-            "🆘 **Emergência** — Orientação urgente\n\n"
+            "Posso ajuda-lo(a) com:\n\n"
+            "🩺 **Saude** — Triagem, consultas\n"
+            "📋 **Plataforma** — Navegacao, perfil, historico\n"
+            "💰 **Precos** — Custos e planos\n"
+            "🆘 **Emergencia** — Orientacao urgente\n\n"
             "Que tema gostaria de explorar?"
         ),
-        suggestions=["Fazer triagem", "Marcar consulta", "Preços", "Como funciona?"],
+        suggestions=["Fazer triagem", "Marcar consulta", "Precos", "Como funciona?"],
     )
 
 
-# ── Main Endpoint ──
+def parse_ai_response(ai_text: str) -> ChatResponse:
+    """Parse AI response and detect navigation hints."""
+    action = None
+    action_target = None
+    suggestions: list[str] = []
 
-@router.post("/message", response_model=ChatResponse)
-def chat_message(
-    body: ChatMessage,
+    lower = _normalize(ai_text)
+
+    if "triagem" in lower and any(w in lower for w in ["iniciar", "fazer", "comecar"]):
+        action = "navigate"
+        action_target = "/triage"
+        suggestions = ["Iniciar triagem", "Marcar consulta"]
+    elif "consulta" in lower and any(w in lower for w in ["marcar", "agendar"]):
+        action = "navigate"
+        action_target = "/consultations"
+        suggestions = ["Marcar consulta", "Fazer triagem"]
+    elif "perfil" in lower:
+        suggestions = ["Ir ao perfil", "Fazer triagem", "Ajuda"]
+    elif "112" in ai_text or "urgencia" in lower or "emergencia" in lower:
+        action = "emergency"
+        suggestions = ["Ligar 112", "Fazer triagem"]
+    else:
+        suggestions = ["Fazer triagem", "Marcar consulta", "Ajuda"]
+
+    return ChatResponse(
+        reply=ai_text,
+        action=action,
+        action_target=action_target,
+        suggestions=suggestions,
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+# Main Endpoints
+# ═══════════════════════════════════════════════════════════════
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat(
+    request: ChatRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Process a chat message and return contextual response."""
-    text = body.message.strip()
-    if not text:
+    """GeoVision-style multi-turn chat with AI + patient context."""
+    if not request.messages:
         return ChatResponse(
             reply="Por favor, escreva uma mensagem. 😊",
             suggestions=["Fazer triagem", "Ajuda"],
         )
 
-    intent = detect_intent(text)
-    ctx = get_patient_context(current_user, db)
-    user_name = current_user.full_name if hasattr(current_user, "full_name") else ""
+    last_text = request.messages[-1].content.strip()
 
-    if intent == "emergency":
+    # Emergency detection — always local, never wait for AI
+    if is_emergency(last_text):
         return emergency_response()
-    elif intent == "greeting":
-        return greeting_response(ctx, user_name or "")
-    elif intent == "triage":
-        return triage_response(ctx)
-    elif intent == "consultation":
-        return consultation_response(ctx)
-    elif intent == "pricing":
-        return pricing_response()
-    elif intent == "navigation":
-        return navigation_response(text)
-    else:
-        return general_response(text)
+
+    # Build patient context
+    patient_ctx_text = get_patient_context(current_user, db)
+    patient_ctx_dict = get_patient_context_dict(current_user, db)
+    user_name = getattr(current_user, "full_name", "") or ""
+
+    logger.info(
+        "chatbot.chat: page=%s title=%s msgs=%d",
+        request.page, (request.page_title or "")[:50], len(request.messages),
+    )
+
+    # Try OpenAI first (GeoVision-style)
+    ai_reply = await call_openai(
+        messages=request.messages,
+        patient_context=patient_ctx_text,
+        page=request.page,
+        page_title=request.page_title,
+    )
+
+    if ai_reply:
+        return parse_ai_response(ai_reply)
+
+    # Fallback to demo mode (smart rule-based)
+    return demo_response(
+        messages=request.messages,
+        ctx=patient_ctx_dict,
+        user_name=user_name,
+        page=request.page,
+    )
+
+
+@router.post("/message", response_model=ChatResponse)
+async def chat_message_legacy(
+    body: SingleMessage,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Legacy single-message endpoint (backward compatibility)."""
+    request = ChatRequest(
+        messages=[ChatMessageItem(role="user", content=body.message)],
+    )
+    return await chat(request, current_user, db)
