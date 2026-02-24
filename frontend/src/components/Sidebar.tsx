@@ -2,7 +2,7 @@ import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { getInitials } from '../api';
 import {
-  Activity, User, Stethoscope, ClipboardList, Calendar,
+  Activity, User, Users, Stethoscope, ClipboardList, Calendar,
   Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X,
 } from 'lucide-react';
 
@@ -64,6 +64,7 @@ export function Sidebar({ open, onClose }: Props) {
           {role === 'admin' && (
             <SidebarSection title="Administração">
               <SidebarLink to="/admin" icon={LayoutDashboard} label="Dashboard" onClick={onClose} />
+              <SidebarLink to="/admin/patients" icon={Users} label="Pacientes" onClick={onClose} />
               <SidebarLink to="/admin/doctors" icon={UserCog} label="Verificar Médicos" onClick={onClose} />
             </SidebarSection>
           )}

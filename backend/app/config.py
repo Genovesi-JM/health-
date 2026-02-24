@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     stripe_secret_key: Optional[str] = None
     stripe_webhook_secret: Optional[str] = None
 
+    # Admin seed password (set via ADMIN_PASSWORD env var or .env)
+    admin_password: Optional[str] = None
+
     # Redis (optional — for caching/rate limiting at scale)
     redis_url: Optional[str] = None
 

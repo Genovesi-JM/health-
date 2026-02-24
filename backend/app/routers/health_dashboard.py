@@ -24,13 +24,45 @@ from app.health_models import (
     HealthPayment, HealthAuditLog,
 )
 from app.health_schemas import (
-    HealthKPIResponse, AdminDashboardResponse, RoleEnum,
+    HealthKPIResponse, AdminDashboardResponse, PatientDashboardKPIs, RoleEnum,
 )
 from app.rbac import require_admin_or_support
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])
+
+
+# ── Patient-level KPIs (any authenticated user) ──
+
+@router.get("/kpis", response_model=PatientDashboardKPIs)
+def patient_kpis(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Lightweight KPIs for the patient/user dashboard."""
+    from datetime import date as _date
+    today_start = datetime.combine(_date.today(), datetime.min.time())
+
+    total_triage = db.query(TriageSession).count()
+    total_consultations = db.query(Consultation).count()
+    total_patients = db.query(Patient).count()
+    total_doctors = db.query(Doctor).filter(Doctor.verification_status == "verified").count()
+    consultations_today = db.query(Consultation).filter(
+        Consultation.created_at >= today_start,
+    ).count()
+
+    avg_score_row = db.query(func.avg(TriageResult.score)).scalar()
+    avg_score = round(float(avg_score_row), 1) if avg_score_row else None
+
+    return PatientDashboardKPIs(
+        total_triage_sessions=total_triage,
+        total_consultations=total_consultations,
+        total_patients=total_patients,
+        total_doctors=total_doctors,
+        consultations_today=consultations_today,
+        avg_triage_score=avg_score,
+    )
 
 
 @router.get("/health", response_model=HealthKPIResponse)

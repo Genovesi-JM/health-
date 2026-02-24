@@ -1,13 +1,13 @@
-"""Seed data helpers for the GeoVision store."""
+"""Seed data helpers for the Health Platform."""
 
 from __future__ import annotations
 
-import os
 from typing import List
 
 from sqlalchemy.orm import Session
 
 from app import models
+from app.config import settings
 from app.database import SessionLocal
 from app.utils import hash_password
 
@@ -25,11 +25,11 @@ def seed_admin_users() -> int:
     """Create admin user(s) if they do not exist.
 
     The admin password MUST be set via the ADMIN_PASSWORD environment
-    variable.  If it is not set, admin seeding is skipped with a warning.
+    variable (or in .env).  If it is not set, admin seeding is skipped.
     """
-    admin_password = os.environ.get("ADMIN_PASSWORD", "").strip()
+    admin_password = (settings.admin_password or "").strip()
     if not admin_password:
-        print("[GeoVision] WARNING: ADMIN_PASSWORD env var not set — skipping admin seed.")
+        print("[HealthPlatform] WARNING: ADMIN_PASSWORD not set — skipping admin seed.")
         return 0
 
     db: Session = SessionLocal()

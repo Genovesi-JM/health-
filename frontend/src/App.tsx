@@ -19,6 +19,7 @@ import DoctorProfilePage from './pages/DoctorProfilePage';
 import DoctorQueuePage from './pages/DoctorQueuePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminDoctorsPage from './pages/AdminDoctorsPage';
+import AdminPatientsPage from './pages/AdminPatientsPage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
@@ -50,6 +51,7 @@ export default function App() {
             {/* Admin */}
             <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/admin/doctors" element={<AdminDoctorsPage />} />
+            <Route path="/admin/patients" element={<AdminPatientsPage />} />
 
             {/* Settings */}
             <Route path="/settings" element={<SettingsPage />} />

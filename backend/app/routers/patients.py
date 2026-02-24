@@ -4,21 +4,80 @@ Patients Router — Patient profile management and medical info.
 """
 import json
 import logging
-from typing import Optional
+from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.deps import get_current_user
+from app.deps import get_current_user, require_admin
 from app.models import User
 from app.health_models import Patient
-from app.health_schemas import PatientCreate, PatientUpdate, PatientOut, RoleEnum
+from app.health_schemas import PatientCreate, PatientUpdate, PatientOut, PatientAdminOut, RoleEnum
 from app.rbac import require_patient, get_patient_for_user
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/patients", tags=["patients"])
+
+
+# ── Admin: list all patients ──
+
+@router.get("/", response_model=List[PatientAdminOut])
+def list_patients(
+    search: Optional[str] = Query(None, description="Filtrar por email ou nome"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """List all patients (admin only). Joins user table for email."""
+    q = db.query(Patient).options(joinedload(Patient.user))
+
+    if search:
+        like_term = f"%{search}%"
+        q = q.join(User, Patient.user_id == User.id).filter(
+            User.email.ilike(like_term)
+        )
+
+    patients = q.order_by(Patient.created_at.desc()).offset(skip).limit(limit).all()
+    return [_patient_admin_out(p) for p in patients]
+
+
+@router.get("/{patient_id}", response_model=PatientAdminOut)
+def get_patient_detail(
+    patient_id: str,
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Get a single patient's full profile (admin only)."""
+    patient = (
+        db.query(Patient)
+        .options(joinedload(Patient.user))
+        .filter(Patient.id == patient_id)
+        .first()
+    )
+    if not patient:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado.")
+    return _patient_admin_out(patient)
+
+
+def _patient_admin_out(p: Patient) -> PatientAdminOut:
+    return PatientAdminOut(
+        id=p.id,
+        user_id=p.user_id,
+        email=p.user.email if p.user else None,
+        name=getattr(p.user, "name", None) if p.user else None,
+        is_active=p.user.is_active if p.user else True,
+        date_of_birth=p.date_of_birth,
+        gender=p.gender,
+        blood_type=p.blood_type,
+        allergies=json.loads(p.allergies_json or "[]"),
+        chronic_conditions=json.loads(p.chronic_conditions_json or "[]"),
+        emergency_contact_name=p.emergency_contact_name,
+        emergency_contact_phone=p.emergency_contact_phone,
+        created_at=p.created_at,
+    )
 
 
 @router.post("/profile", response_model=PatientOut)

@@ -60,6 +60,13 @@ class PatientOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PatientAdminOut(PatientOut):
+    """Extended patient view for admin — includes user email / name."""
+    email: Optional[str] = None
+    name: Optional[str] = None
+    is_active: bool = True
+
+
 # ── Doctor ──
 
 class DoctorCreate(BaseModel):
@@ -343,6 +350,16 @@ class ConsentOut(BaseModel):
 
 
 # ── Dashboard KPIs ──
+
+class PatientDashboardKPIs(BaseModel):
+    """KPIs visible to any logged-in user on the patient dashboard."""
+    total_triage_sessions: int = 0
+    total_consultations: int = 0
+    total_patients: int = 0
+    total_doctors: int = 0
+    consultations_today: int = 0
+    avg_triage_score: Optional[float] = None
+
 
 class HealthKPIResponse(BaseModel):
     total_consultations: int

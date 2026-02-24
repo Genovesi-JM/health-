@@ -304,10 +304,6 @@ class CorporateMember(Base):
     corporate_account = relationship("CorporateAccount", back_populates="members")
     patient = relationship("Patient")
 
-    __table_args__ = (
-        Index("ix_corporate_members_corporate_id", "corporate_id"),
-    )
-
 
 # ── Patient Consent ──
 
