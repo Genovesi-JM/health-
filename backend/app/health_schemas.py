@@ -361,6 +361,36 @@ class PatientDashboardKPIs(BaseModel):
     avg_triage_score: Optional[float] = None
 
 
+class PatientStateResponse(BaseModel):
+    """Conversion-driven patient state for the smart dashboard."""
+    # Current funnel state
+    current_state: str  # no_triage | triage_in_progress | triage_completed | consultation_booked | consultation_completed
+    state_label: str  # Human-readable PT label
+
+    # Last triage info
+    last_triage_risk: Optional[str] = None  # LOW | MEDIUM | HIGH | URGENT
+    last_triage_action: Optional[str] = None  # SELF_CARE | DOCTOR_24H | DOCTOR_NOW | ER_NOW
+    last_triage_complaint: Optional[str] = None
+    last_triage_score: Optional[float] = None
+    last_triage_date: Optional[str] = None
+    last_triage_session_id: Optional[str] = None
+
+    # Next action CTA
+    next_action: str  # start_triage | complete_triage | book_consultation | self_care | go_to_er | none
+    next_action_label: str  # PT text for button
+    next_action_urgency: str  # low | medium | high | critical
+    next_action_deadline: Optional[str] = None  # "24h", "imediato", etc.
+
+    # Counts
+    triage_count: int = 0
+    consultation_count: int = 0
+    completed_consultations: int = 0
+    pending_consultations: int = 0
+
+    # Resolution history
+    resolution_rate: Optional[float] = None  # % resolved without referral
+
+
 class HealthKPIResponse(BaseModel):
     total_consultations: int
     triage_distribution: dict
@@ -378,6 +408,11 @@ class AdminDashboardResponse(BaseModel):
     total_patients: int
     total_doctors: int
     revenue_this_month: Optional[float] = None
+    # Business metrics
+    consultations_this_month: int = 0
+    resolution_rate: float = 0.0  # % completed without referral
+    risk_distribution: dict = {}  # {LOW: n, MEDIUM: n, HIGH: n, URGENT: n}
+    active_patients: int = 0  # patients with activity in last 30 days
 
 
 class FileDownloadResponse(BaseModel):

@@ -111,6 +111,26 @@ export interface DashboardKPIs {
   avg_triage_score: number;
 }
 
+export interface PatientState {
+  current_state: 'no_triage' | 'triage_in_progress' | 'triage_completed' | 'consultation_booked' | 'consultation_completed';
+  state_label: string;
+  last_triage_risk?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  last_triage_action?: 'SELF_CARE' | 'DOCTOR_24H' | 'DOCTOR_NOW' | 'ER_NOW';
+  last_triage_complaint?: string;
+  last_triage_score?: number;
+  last_triage_date?: string;
+  last_triage_session_id?: string;
+  next_action: string;
+  next_action_label: string;
+  next_action_urgency: 'low' | 'medium' | 'high' | 'critical';
+  next_action_deadline?: string;
+  triage_count: number;
+  consultation_count: number;
+  completed_consultations: number;
+  pending_consultations: number;
+  resolution_rate?: number;
+}
+
 export interface AdminDashboard {
   total_patients: number;
   total_doctors: number;
@@ -118,4 +138,12 @@ export interface AdminDashboard {
   total_consultations: number;
   total_triage_sessions: number;
   revenue_total: number;
+  // Business metrics
+  pending_verifications: number;
+  flagged_triage_sessions: number;
+  consultations_this_month: number;
+  resolution_rate: number;
+  risk_distribution: Record<string, number>;
+  active_patients: number;
+  revenue_this_month?: number;
 }
