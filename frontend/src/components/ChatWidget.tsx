@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api';
 import { MessageCircle, X, Send, Bot, User, ArrowRight, Sparkles } from 'lucide-react';
+import { useT } from '../i18n/LanguageContext';
 
 /* ── Types ────────────────────────────────────────────────── */
 
@@ -41,6 +42,7 @@ function getPageTitle(pathname: string): string {
 /* ── Component ─────────────────────────────────────────────── */
 
 export default function ChatWidget() {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [uiMessages, setUiMessages] = useState<UIMessage[]>([]);
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
@@ -138,7 +140,7 @@ export default function ChatWidget() {
 
       addBotMessage(data.reply, data.action, data.action_target, data.suggestions);
     } catch {
-      addBotMessage('Desculpe, ocorreu um erro. Tente novamente.');
+      addBotMessage(t('chat.error'));
     } finally {
       setLoading(false);
     }
@@ -176,7 +178,7 @@ export default function ChatWidget() {
         <button
           className={`chat-bubble${pulse ? ' chat-bubble-pulse' : ''}`}
           onClick={handleOpen}
-          aria-label="Abrir assistente"
+          aria-label={t('chat.open')}
         >
           <MessageCircle size={24} />
         </button>
@@ -192,13 +194,13 @@ export default function ChatWidget() {
                 <Sparkles size={16} />
               </div>
               <div>
-                <div className="chat-header-title">Assistente Health</div>
+                <div className="chat-header-title">{t('chat.title')}</div>
                 <div className="chat-header-status">
                   <span className="chat-status-dot" /> Online
                 </div>
               </div>
             </div>
-            <button className="chat-close" onClick={() => setOpen(false)} aria-label="Fechar">
+            <button className="chat-close" onClick={() => setOpen(false)} aria-label={t('chat.close')}>
               <X size={18} />
             </button>
           </div>
@@ -226,7 +228,7 @@ export default function ChatWidget() {
                       className="chat-action-btn"
                       onClick={() => handleNavigate(msg.actionTarget!)}
                     >
-                      Ir para a página <ArrowRight size={12} />
+                      {t('common.go_to_page')} <ArrowRight size={12} />
                     </button>
                   )}
 
@@ -271,7 +273,7 @@ export default function ChatWidget() {
               ref={inputRef}
               type="text"
               className="chat-input"
-              placeholder="Escreva a sua mensagem..."
+              placeholder={t('chat.placeholder')}
               value={input}
               onChange={e => setInput(e.target.value)}
               disabled={loading}
@@ -280,7 +282,7 @@ export default function ChatWidget() {
               type="submit"
               className="chat-send"
               disabled={!input.trim() || loading}
-              aria-label="Enviar"
+              aria-label={t('chat.send')}
             >
               <Send size={16} />
             </button>

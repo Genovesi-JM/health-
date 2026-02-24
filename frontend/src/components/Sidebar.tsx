@@ -1,6 +1,7 @@
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { getInitials } from '../api';
+import { useT } from '../i18n/LanguageContext';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
   Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X,
@@ -14,10 +15,11 @@ interface Props {
 export function Sidebar({ open, onClose }: Props) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useT();
   const role = user?.role;
   const initials = getInitials(user?.name, user?.email);
-  const displayName = user?.name || user?.email?.split('@')[0] || 'Utilizador';
-  const roleLabel = role === 'admin' ? 'Administrador' : role === 'doctor' ? 'Médico' : 'Paciente';
+  const displayName = user?.name || user?.email?.split('@')[0] || t('sidebar.user_fallback');
+  const roleLabel = role === 'admin' ? t('sidebar.role_admin') : role === 'doctor' ? t('sidebar.role_doctor') : t('sidebar.role_patient');
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -43,35 +45,35 @@ export function Sidebar({ open, onClose }: Props) {
         <nav className="sidebar-nav">
           {/* Patient / General */}
           {(role === 'patient' || role === 'cliente' || role === 'admin') && (
-            <SidebarSection title="Principal">
-              <SidebarLink to="/dashboard" icon={Home} label="Visão Geral" onClick={onClose} />
-              <SidebarLink to="/patient/profile" icon={User} label="Meu Perfil" onClick={onClose} />
-              <SidebarLink to="/triage" icon={Activity} label="Triagem" onClick={onClose} />
-              <SidebarLink to="/consultations" icon={Calendar} label="Consultas" onClick={onClose} />
-              <SidebarLink to="/consents" icon={Shield} label="Consentimentos" onClick={onClose} />
+            <SidebarSection title={t('sidebar.main')}>
+              <SidebarLink to="/dashboard" icon={Home} label={t('sidebar.overview')} onClick={onClose} />
+              <SidebarLink to="/patient/profile" icon={User} label={t('sidebar.my_profile')} onClick={onClose} />
+              <SidebarLink to="/triage" icon={Activity} label={t('sidebar.triage')} onClick={onClose} />
+              <SidebarLink to="/consultations" icon={Calendar} label={t('sidebar.consultations')} onClick={onClose} />
+              <SidebarLink to="/consents" icon={Shield} label={t('sidebar.consents')} onClick={onClose} />
             </SidebarSection>
           )}
 
           {/* Doctor */}
           {(role === 'doctor' || role === 'admin') && (
-            <SidebarSection title="Médico">
-              <SidebarLink to="/doctor/profile" icon={Stethoscope} label="Perfil Médico" onClick={onClose} />
-              <SidebarLink to="/doctor/queue" icon={ClipboardList} label="Fila de Espera" onClick={onClose} />
+            <SidebarSection title={t('sidebar.doctor')}>
+              <SidebarLink to="/doctor/profile" icon={Stethoscope} label={t('sidebar.doctor_profile')} onClick={onClose} />
+              <SidebarLink to="/doctor/queue" icon={ClipboardList} label={t('sidebar.queue')} onClick={onClose} />
             </SidebarSection>
           )}
 
           {/* Admin */}
           {role === 'admin' && (
-            <SidebarSection title="Administração">
-              <SidebarLink to="/admin" icon={LayoutDashboard} label="Dashboard" onClick={onClose} />
-              <SidebarLink to="/admin/patients" icon={Users} label="Pacientes" onClick={onClose} />
-              <SidebarLink to="/admin/doctors" icon={UserCog} label="Verificar Médicos" onClick={onClose} />
+            <SidebarSection title={t('sidebar.admin')}>
+              <SidebarLink to="/admin" icon={LayoutDashboard} label={t('sidebar.dashboard')} onClick={onClose} />
+              <SidebarLink to="/admin/patients" icon={Users} label={t('sidebar.patients')} onClick={onClose} />
+              <SidebarLink to="/admin/doctors" icon={UserCog} label={t('sidebar.verify_doctors')} onClick={onClose} />
             </SidebarSection>
           )}
 
           {/* Conta */}
-          <SidebarSection title="Conta">
-            <SidebarLink to="/settings" icon={Settings} label="Definições" onClick={onClose} />
+          <SidebarSection title={t('sidebar.account')}>
+            <SidebarLink to="/settings" icon={Settings} label={t('sidebar.settings')} onClick={onClose} />
           </SidebarSection>
         </nav>
 
@@ -85,7 +87,7 @@ export function Sidebar({ open, onClose }: Props) {
             </div>
           </div>
           <button className="sidebar-logout" onClick={handleLogout}>
-            <LogOut size={16} /> Terminar Sessão
+            <LogOut size={16} /> {t('sidebar.logout')}
           </button>
         </div>
       </aside>

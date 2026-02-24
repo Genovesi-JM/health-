@@ -2,15 +2,18 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Heart, Shield, Users, Award, Target, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useT } from '../i18n/LanguageContext';
 
 export default function AboutPage() {
+  const { t } = useT();
+
   const values = [
-    { icon: Heart, title: 'Cuidado ao Paciente', desc: 'Colocamos o paciente no centro de cada decisão, garantindo uma experiência acessível e humanizada.' },
-    { icon: Shield, title: 'Segurança & Privacidade', desc: 'Protecção rigorosa dos dados clínicos com encriptação e conformidade regulamentar.' },
-    { icon: Users, title: 'Inclusão Digital', desc: 'Plataforma acessível a todos, independentemente da localização geográfica ou nível tecnológico.' },
-    { icon: Award, title: 'Excelência Clínica', desc: 'Médicos verificados, protocolos baseados em evidência e melhoria contínua de qualidade.' },
-    { icon: Target, title: 'Inovação Contínua', desc: 'Investimos em IA e machine learning para triagens cada vez mais precisas e eficientes.' },
-    { icon: Lightbulb, title: 'Transparência', desc: 'Comunicação clara sobre custos, processos e resultados em todas as etapas do serviço.' },
+    { icon: Heart, title: t('about.val.patient_care'), desc: t('about.val.patient_care_desc') },
+    { icon: Shield, title: t('about.val.security'), desc: t('about.val.security_desc') },
+    { icon: Users, title: t('about.val.inclusion'), desc: t('about.val.inclusion_desc') },
+    { icon: Award, title: t('about.val.excellence'), desc: t('about.val.excellence_desc') },
+    { icon: Target, title: t('about.val.innovation'), desc: t('about.val.innovation_desc') },
+    { icon: Lightbulb, title: t('about.val.transparency'), desc: t('about.val.transparency_desc') },
   ];
 
   return (
@@ -21,16 +24,13 @@ export default function AboutPage() {
       <section className="hero" style={{ minHeight: '65vh' }}>
         <div className="hero-content">
           <div className="hero-badge">
-            <Heart size={14} /> Sobre a Health Platform
+            <Heart size={14} /> {t('about.badge')}
           </div>
           <h1>
-            Transformar a Saúde<br />
-            <span className="gradient-text">com Tecnologia</span>
+            {t('about.hero_title1')}<br />
+            <span className="gradient-text">{t('about.hero_title2')}</span>
           </h1>
-          <p>
-            Somos uma plataforma digital de saúde que combina inteligência artificial,
-            teleconsulta médica e gestão clínica para democratizar o acesso a cuidados de saúde de qualidade.
-          </p>
+          <p>{t('about.hero_desc')}</p>
         </div>
       </section>
 
@@ -40,20 +40,18 @@ export default function AboutPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
             <div className="card">
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
-                <span className="gradient-text">Missão</span>
+                <span className="gradient-text">{t('about.mission')}</span>
               </h3>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                Democratizar o acesso à saúde através de uma plataforma inteligente de triagem e teleconsulta,
-                conectando pacientes a profissionais de saúde qualificados de forma segura, eficiente e acessível.
+                {t('about.mission_desc')}
               </p>
             </div>
             <div className="card">
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
-                <span className="gradient-text">Visão</span>
+                <span className="gradient-text">{t('about.vision')}</span>
               </h3>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                Ser a referência em saúde digital em África, liderando a transformação do acesso a cuidados
-                de saúde com tecnologia de ponta e um compromisso inabalável com o bem-estar do paciente.
+                {t('about.vision_desc')}
               </p>
             </div>
           </div>
@@ -63,8 +61,8 @@ export default function AboutPage() {
       {/* Values */}
       <section className="section">
         <div className="section-header">
-          <h2>Os Nossos Valores</h2>
-          <p>Princípios que orientam tudo o que fazemos</p>
+          <h2>{t('about.values_title')}</h2>
+          <p>{t('about.values_subtitle')}</p>
         </div>
         <div className="features-grid">
           {values.map(v => (
@@ -79,11 +77,11 @@ export default function AboutPage() {
 
       {/* CTA */}
       <section className="cta-section">
-        <h2>Junte-se a nós</h2>
-        <p>Faça parte da revolução digital em saúde. Registe-se e comece hoje.</p>
+        <h2>{t('about.cta_title')}</h2>
+        <p>{t('about.cta_desc')}</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/register" className="btn btn-primary btn-lg">Criar Conta</Link>
-          <Link to="/login" className="btn btn-outline btn-lg">Portal</Link>
+          <Link to="/register" className="btn btn-primary btn-lg">{t('about.create_account')}</Link>
+          <Link to="/login" className="btn btn-outline btn-lg">{t('nav.portal')}</Link>
         </div>
       </section>
 

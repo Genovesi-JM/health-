@@ -2,6 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { Heart, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { getSession, getInitials } from '../api';
+import { useT } from '../i18n/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
 /**
  * Public navbar — equivalent to GeoVision's .navbar on every public page.
@@ -11,11 +13,12 @@ export function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const session = getSession();
+  const { t } = useT();
 
   const navLinks = [
-    { to: '/', label: 'Início' },
-    { to: '/about', label: 'Sobre' },
-    { to: '/services', label: 'Serviços' },
+    { to: '/', label: t('nav.home') },
+    { to: '/about', label: t('nav.about') },
+    { to: '/services', label: t('nav.services') },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -82,9 +85,10 @@ export function Navbar() {
                 fontWeight: 600, textDecoration: 'none', fontSize: '0.85rem',
                 display: 'inline-block',
               }}>
-              Portal
+              {t('nav.portal')}
             </Link>
           )}
+          <LanguageSelector />
         </div>
 
         <button onClick={() => setMobileOpen(!mobileOpen)}

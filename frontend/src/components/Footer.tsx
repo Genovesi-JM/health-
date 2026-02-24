@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import { useT } from '../i18n/LanguageContext';
 
 export function Footer() {
+  const { t } = useT();
   return (
     <footer className="footer">
       <div className="footer-inner">
@@ -12,36 +14,33 @@ export function Footer() {
               <Heart size={22} style={{ color: 'var(--accent-teal)' }} />
               <span style={{ fontWeight: 700, letterSpacing: '2px', fontSize: '0.95rem' }}>HEALTH PLATFORM</span>
             </div>
-            <p>
-              Plataforma digital de triagem inteligente e teleconsulta médica.
-              Conectamos pacientes a profissionais de saúde de forma segura e eficiente.
-            </p>
+            <p>{t('footer.brand_desc')}</p>
           </div>
 
           {/* Plataforma */}
           <div>
-            <h4>Plataforma</h4>
+            <h4>{t('footer.platform')}</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <Link to="/about">Sobre Nós</Link>
-              <Link to="/services">Serviços</Link>
-              <Link to="/login">Portal</Link>
+              <Link to="/about">{t('footer.about_us')}</Link>
+              <Link to="/services">{t('footer.services')}</Link>
+              <Link to="/login">{t('nav.portal')}</Link>
             </div>
           </div>
 
           {/* Serviços */}
           <div>
-            <h4>Serviços</h4>
+            <h4>{t('footer.services')}</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Triagem Inteligente</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Teleconsulta</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Prescrições Digitais</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Gestão Clínica</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{t('footer.services_list.triage')}</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{t('footer.services_list.teleconsult')}</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{t('footer.services_list.prescriptions')}</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{t('footer.services_list.management')}</span>
             </div>
           </div>
 
           {/* Contactos */}
           <div>
-            <h4>Contacto</h4>
+            <h4>{t('footer.contact')}</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <a href="mailto:suporte@healthplatform.com">suporte@healthplatform.com</a>
               <a href="tel:+244928917269">+244 928 917 269</a>
@@ -51,10 +50,10 @@ export function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <span>&copy; {new Date().getFullYear()} Health Platform. Todos os direitos reservados.</span>
+          <span>&copy; {new Date().getFullYear()} Health Platform. {t('footer.rights')}</span>
           <div style={{ display: 'flex', gap: '1.25rem' }}>
-            <Link to="/privacy">Privacidade</Link>
-            <Link to="/terms">Termos</Link>
+            <Link to="/privacy">{t('footer.privacy')}</Link>
+            <Link to="/terms">{t('footer.terms')}</Link>
           </div>
         </div>
       </div>

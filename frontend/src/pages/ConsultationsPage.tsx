@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import api from '../api';
 import type { Consultation, PatientState } from '../types';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap } from 'lucide-react';
+import { useT } from '../i18n/LanguageContext';
 
 export default function ConsultationsPage() {
+  const { t } = useT();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [patientState, setPatientState] = useState<PatientState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,8 +49,8 @@ export default function ConsultationsPage() {
 
   const statusLabel = (s: string) => {
     const map: Record<string, string> = {
-      requested: 'Pedido', scheduled: 'Agendada', in_progress: 'Em Curso',
-      completed: 'Concluída', cancelled: 'Cancelada', no_show: 'Falta',
+      requested: t('consult.status_requested'), scheduled: t('consult.status_scheduled'), in_progress: t('consult.status_in_progress'),
+      completed: t('consult.status_completed'), cancelled: t('consult.status_cancelled'), no_show: t('consult.status_no_show'),
     };
     return map[s] || s;
   };
@@ -58,14 +60,14 @@ export default function ConsultationsPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Consultas</h1>
-        <p>Gerir e acompanhar as suas consultas médicas</p>
+        <h1>{t('consult.title')}</h1>
+        <p>{t('consult.subtitle')}</p>
       </div>
 
       <div className="tab-nav">
-        <button className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>Todas</button>
-        <button className={tab === 'upcoming' ? 'active' : ''} onClick={() => setTab('upcoming')}>Próximas</button>
-        <button className={tab === 'past' ? 'active' : ''} onClick={() => setTab('past')}>Passadas</button>
+        <button className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>{t('consult.tab_all')}</button>
+        <button className={tab === 'upcoming' ? 'active' : ''} onClick={() => setTab('upcoming')}>{t('consult.tab_upcoming')}</button>
+        <button className={tab === 'past' ? 'active' : ''} onClick={() => setTab('past')}>{t('consult.tab_past')}</button>
       </div>
 
       <div className="card">
@@ -73,21 +75,21 @@ export default function ConsultationsPage() {
           <div className="empty-state" style={{ padding: '3rem' }}>
             <div className="empty-state-icon"><Calendar size={24} style={{ color: 'var(--accent-teal)' }} /></div>
             <div className="empty-state-title">
-              {tab === 'upcoming' ? 'Sem consultas agendadas' : tab === 'past' ? 'Sem consultas passadas' : 'Sem consultas'}
+              {tab === 'upcoming' ? t('consult.no_scheduled') : tab === 'past' ? t('consult.no_past') : t('consult.no_any')}
             </div>
             <div className="empty-state-desc" style={{ maxWidth: '380px' }}>
               {patientState?.current_state === 'triage_completed' && patientState.last_triage_risk ? (
                 <>
                   {patientState.last_triage_risk === 'LOW'
-                    ? 'Autocuidado recomendado. Pode marcar consulta se desejar acompanhamento.'
+                    ? t('consult.self_care_msg')
                     : patientState.last_triage_risk === 'MEDIUM'
-                    ? 'Consulta recomendada nas próximas 24h com base na sua triagem.'
-                    : 'Consulta recomendada com urgência com base na sua classificação de risco.'}
+                    ? t('consult.medium_msg')
+                    : t('consult.urgent_msg')}
                 </>
               ) : patientState?.current_state === 'no_triage' || patientState?.current_state === 'triage_in_progress' ? (
-                'Complete uma triagem para desbloquear o agendamento de consultas.'
+                t('consult.complete_first')
               ) : (
-                'Não existem consultas registadas.'
+                t('consult.no_records')
               )}
             </div>
 
@@ -99,7 +101,7 @@ export default function ConsultationsPage() {
                     fontSize: '0.75rem', fontWeight: 600,
                     color: patientState.last_triage_risk === 'URGENT' ? '#ef4444' : patientState.last_triage_risk === 'HIGH' ? '#f97316' : '#eab308',
                   }}>
-                    ⏱ Recomendado: até {patientState.next_action_deadline}
+                    ⏱ {t('consult.recommended_by')} {patientState.next_action_deadline}
                   </span>
                 )}
                 <button className="btn btn-primary" style={{
@@ -110,14 +112,14 @@ export default function ConsultationsPage() {
                   color: patientState.last_triage_risk === 'MEDIUM' ? '#1e1e1e' : '#fff',
                   border: 'none', fontSize: '0.9rem', padding: '0.7rem 1.5rem',
                 }}>
-                  <Zap size={16} /> Marcar Consulta Agora
+                  <Zap size={16} /> {t('consult.book_now')}
                 </button>
               </div>
             )}
 
             {(patientState?.current_state === 'no_triage' || patientState?.current_state === 'triage_in_progress') && (
               <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                <Activity size={14} /> {patientState.current_state === 'triage_in_progress' ? 'Completar Triagem' : 'Iniciar Triagem'}
+                <Activity size={14} /> {patientState.current_state === 'triage_in_progress' ? t('consult.complete_triage') : t('triage.start_btn')}
               </Link>
             )}
           </div>
@@ -126,11 +128,11 @@ export default function ConsultationsPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Especialidade</th>
-                  <th>Estado</th>
-                  <th>Agendada</th>
-                  <th>Pagamento</th>
-                  <th>Criada</th>
+                  <th>{t('table.specialty')}</th>
+                  <th>{t('table.status')}</th>
+                  <th>{t('table.scheduled')}</th>
+                  <th>{t('table.payment')}</th>
+                  <th>{t('table.created')}</th>
                 </tr>
               </thead>
               <tbody>

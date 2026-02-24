@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import type { ConsultationQueueItem } from '../types';
 import { ClipboardList, CheckCircle2, Play, Phone } from 'lucide-react';
+import { useT } from '../i18n/LanguageContext';
 
 export default function DoctorQueuePage() {
+  const { t } = useT();
   const [queue, setQueue] = useState<ConsultationQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,15 +46,15 @@ export default function DoctorQueuePage() {
   return (
     <>
       <div className="page-header">
-        <h1>Fila de Espera</h1>
-        <p>Consultas pendentes e em curso atribuídas a si</p>
+        <h1>{t('queue.title')}</h1>
+        <p>{t('queue.subtitle')}</p>
       </div>
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
           <h3 style={{ fontSize: '0.95rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <ClipboardList size={18} style={{ color: 'var(--accent-teal)' }} />
-            Pacientes na Fila
+            {t('queue.patients')}
           </h3>
           <span className={`badge ${queue.length > 0 ? 'badge-warning' : 'badge-neutral'}`}>
             {queue.length} paciente{queue.length !== 1 ? 's' : ''}
@@ -62,20 +64,20 @@ export default function DoctorQueuePage() {
         {queue.length === 0 ? (
           <div className="empty-state" style={{ padding: '3rem' }}>
             <div className="empty-state-icon"><ClipboardList size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-            <div className="empty-state-title">Fila vazia</div>
-            <div className="empty-state-desc">Não existem consultas pendentes de momento.</div>
+            <div className="empty-state-title">{t('queue.empty')}</div>
+            <div className="empty-state-desc">{t('queue.empty_desc')}</div>
           </div>
         ) : (
           <div className="table-container" style={{ border: 'none' }}>
             <table>
               <thead>
                 <tr>
-                  <th>Paciente</th>
-                  <th>Especialidade</th>
-                  <th>Risco</th>
-                  <th>Estado</th>
-                  <th>Data</th>
-                  <th>Ações</th>
+                  <th>{t('table.patient')}</th>
+                  <th>{t('table.specialty')}</th>
+                  <th>{t('table.risk')}</th>
+                  <th>{t('table.status')}</th>
+                  <th>{t('table.date')}</th>
+                  <th>{t('table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -89,14 +91,14 @@ export default function DoctorQueuePage() {
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         {q.status !== 'in_progress' && (
-                          <button className="btn btn-primary btn-sm" onClick={() => startConsultation(q.id)} title="Iniciar consulta">
-                            <Play size={13} /> Iniciar
+                          <button className="btn btn-primary btn-sm" onClick={() => startConsultation(q.id)} title={t('queue.start')}>
+                            <Play size={13} /> {t('queue.start')}
                           </button>
                         )}
                         {q.status === 'in_progress' && (
-                          <button className="btn btn-sm" onClick={() => completeConsultation(q.id)} title="Concluir"
+                          <button className="btn btn-sm" onClick={() => completeConsultation(q.id)} title={t('queue.complete')}
                             style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
-                            <CheckCircle2 size={13} /> Concluir
+                            <CheckCircle2 size={13} /> {t('queue.complete')}
                           </button>
                         )}
                       </div>

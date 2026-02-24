@@ -4,6 +4,8 @@ import { Sidebar } from './components/Sidebar';
 import ChatWidget from './components/ChatWidget';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
+import { useT } from './i18n/LanguageContext';
+import LanguageSelector from './components/LanguageSelector';
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -23,17 +25,18 @@ export function ProtectedRoute() {
   }
 
   /* Map route path to a breadcrumb label */
+  const { t } = useT();
   const crumbs: Record<string, string> = {
-    '/dashboard': 'Visão Geral',
-    '/patient/profile': 'Meu Perfil',
-    '/triage': 'Triagem',
-    '/consultations': 'Consultas',
-    '/consents': 'Consentimentos',
-    '/doctor/profile': 'Perfil Médico',
-    '/doctor/queue': 'Fila de Espera',
-    '/admin': 'Dashboard Admin',
-    '/admin/doctors': 'Verificar Médicos',
-    '/settings': 'Definições',
+    '/dashboard': t('topbar.overview'),
+    '/patient/profile': t('topbar.my_profile'),
+    '/triage': t('topbar.triage'),
+    '/consultations': t('topbar.consultations'),
+    '/consents': t('topbar.consents'),
+    '/doctor/profile': t('topbar.doctor_profile'),
+    '/doctor/queue': t('topbar.queue'),
+    '/admin': t('topbar.admin_dashboard'),
+    '/admin/doctors': t('topbar.verify_doctors'),
+    '/settings': t('topbar.settings'),
   };
   const pageTitle = crumbs[location.pathname] || 'Dashboard';
 
@@ -48,6 +51,7 @@ export function ProtectedRoute() {
             </button>
             <div className="app-topbar-title">{pageTitle}</div>
           </div>
+          <LanguageSelector />
         </header>
         <main className="app-content">
           <Outlet />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 import type { PatientState, TriageHistoryItem, Consultation } from '../types';
 import {
   Activity, Calendar, ArrowRight, ChevronRight,
@@ -33,16 +34,17 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const displayName = user?.name || user?.email?.split('@')[0] || 'Utilizador';
+  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+  const { t } = useT();
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
 
   const riskConfig = (risk?: string) => {
     switch (risk?.toUpperCase()) {
-      case 'URGENT': return { color: '#ef4444', bg: 'rgba(239,68,68,0.08)', label: 'Urgente', icon: <Siren size={20} /> };
-      case 'HIGH': return { color: '#f97316', bg: 'rgba(249,115,22,0.08)', label: 'Alto', icon: <AlertTriangle size={20} /> };
-      case 'MEDIUM': return { color: '#eab308', bg: 'rgba(234,179,8,0.08)', label: 'Médio', icon: <Clock size={20} /> };
-      default: return { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', label: 'Baixo', icon: <CheckCircle2 size={20} /> };
+      case 'URGENT': return { color: '#ef4444', bg: 'rgba(239,68,68,0.08)', label: t('risk.urgent'), icon: <Siren size={20} /> };
+      case 'HIGH': return { color: '#f97316', bg: 'rgba(249,115,22,0.08)', label: t('risk.high'), icon: <AlertTriangle size={20} /> };
+      case 'MEDIUM': return { color: '#eab308', bg: 'rgba(234,179,8,0.08)', label: t('risk.medium'), icon: <Clock size={20} /> };
+      default: return { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', label: t('risk.low'), icon: <CheckCircle2 size={20} /> };
     }
   };
 
@@ -65,10 +67,10 @@ export default function DashboardPage() {
 
   const actionMap = (action?: string) => {
     switch (action) {
-      case 'ER_NOW': return 'Procure atendimento de urgência imediatamente';
-      case 'DOCTOR_NOW': return 'Consulte um médico hoje';
-      case 'DOCTOR_24H': return 'Consulta recomendada nas próximas 24h';
-      default: return 'Autocuidado com monitorização';
+      case 'ER_NOW': return t('action.er_now');
+      case 'DOCTOR_NOW': return t('action.doctor_now');
+      case 'DOCTOR_24H': return t('action.doctor_24h');
+      default: return t('action.self_care');
     }
   };
 
@@ -80,10 +82,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="page-header">
         <p style={{ fontSize: '0.75rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-          Painel do Paciente
+          {t('dash.panel')}
         </p>
-        <h1>Olá, {displayName} 👋</h1>
-        <p>O seu assistente de saúde digital. Avalie sintomas, receba recomendações e marque consultas.</p>
+        <h1>{t('dash.hello')} {displayName} 👋</h1>
+        <p>{t('dash.subtitle')}</p>
       </div>
 
       {/* URGENT BANNER */}
@@ -96,10 +98,9 @@ export default function DashboardPage() {
         }}>
           <Siren size={28} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.2rem' }}>⚠️ Atenção Urgente</div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.2rem' }}>{t('dash.urgent_title')}</div>
             <div style={{ fontSize: '0.88rem', opacity: 0.95 }}>
-              Com base na sua triagem, recomendamos que procure atendimento de urgência imediatamente.
-              Ligue 112 ou dirija-se ao serviço de urgência mais próximo.
+              {t('dash.urgent_desc')}
             </div>
           </div>
         </div>
@@ -137,18 +138,18 @@ export default function DashboardPage() {
               Estado Atual
             </div>
             <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
-              {state?.state_label || 'A carregar...'}
+              {state?.state_label || t('common.loading')}
             </div>
 
             {state?.current_state === 'no_triage' && (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Inicie uma triagem inteligente para avaliar os seus sintomas e receber uma recomendação personalizada.
+                {t('dash.no_triage_desc')}
               </p>
             )}
             {state?.current_state === 'triage_in_progress' && (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Complete a sua triagem para receber a classificação de risco.
-                <br /><strong style={{ color: 'var(--text-primary)' }}>Queixa:</strong> {state.last_triage_complaint}
+                {t('dash.triage_in_progress')}
+                <br /><strong style={{ color: 'var(--text-primary)' }}>{t('dash.complaint')}</strong> {state.last_triage_complaint}
               </p>
             )}
             {state?.current_state === 'triage_completed' && state.last_triage_risk && (
@@ -158,7 +159,7 @@ export default function DashboardPage() {
                   padding: '0.15rem 0.6rem', borderRadius: '6px',
                   background: risk.bg, color: risk.color, fontWeight: 600, fontSize: '0.78rem', marginRight: '0.5rem',
                 }}>
-                  {risk.icon} Risco {risk.label}
+                  {risk.icon} {t('dash.risk')} {risk.label}
                 </span>
                 {actionMap(state.last_triage_action)}
                 {state.next_action_deadline && (
@@ -168,12 +169,12 @@ export default function DashboardPage() {
             )}
             {state?.current_state === 'consultation_booked' && (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                A sua consulta está agendada. Aguarde o contacto do médico.
+                {t('dash.consultation_booked')}
               </p>
             )}
             {state?.current_state === 'consultation_completed' && (
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Caso resolvido. Pode iniciar uma nova triagem se tiver novos sintomas.
+                {t('dash.consultation_completed')}
               </p>
             )}
           </div>
@@ -206,7 +207,7 @@ export default function DashboardPage() {
               <Shield size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Último Risco</div>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t('dash.last_risk')}</div>
               <div style={{ fontSize: '1.25rem', fontWeight: 700, color: state?.last_triage_risk ? risk.color : 'var(--text-primary)' }}>
                 {state?.last_triage_risk ? risk.label : '—'}
               </div>
@@ -229,14 +230,14 @@ export default function DashboardPage() {
               <Zap size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Próxima Ação</div>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t('dash.next_action')}</div>
               <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {state?.next_action_deadline || 'Quando quiser'}
+                {state?.next_action_deadline || t('dash.whenever')}
               </div>
             </div>
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            {state?.next_action_label || 'Iniciar triagem'}
+            {state?.next_action_label || t('dash.start_triage')}
           </div>
         </div>
 
@@ -250,24 +251,24 @@ export default function DashboardPage() {
               <TrendingUp size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Histórico</div>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>{t('dash.history')}</div>
               <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {state?.triage_count ?? 0} triagen{(state?.triage_count ?? 0) !== 1 ? 's' : ''}
+                {state?.triage_count ?? 0} {(state?.triage_count ?? 0) !== 1 ? t('dash.triages') : t('dash.triage_singular')}
               </div>
             </div>
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            {state?.completed_consultations ?? 0} consulta{(state?.completed_consultations ?? 0) !== 1 ? 's' : ''} concluída{(state?.completed_consultations ?? 0) !== 1 ? 's' : ''}
-            {state?.resolution_rate != null && <> · {state.resolution_rate}% resolvido</>}
+            {state?.completed_consultations ?? 0} {(state?.completed_consultations ?? 0) !== 1 ? t('dash.consultations_done') : t('dash.consultation_done')}
+            {state?.resolution_rate != null && <> · {state.resolution_rate}% {t('dash.resolved')}</>}
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-        <Link to="/triage" className="btn btn-primary"><Activity size={16} /> Iniciar Triagem</Link>
-        <Link to="/consultations" className="btn btn-secondary"><Calendar size={16} /> Ver Consultas</Link>
-        <Link to="/patient/profile" className="btn btn-secondary"><ClipboardList size={16} /> Meu Perfil</Link>
+        <Link to="/triage" className="btn btn-primary"><Activity size={16} /> {t('dash.btn_start_triage')}</Link>
+        <Link to="/consultations" className="btn btn-secondary"><Calendar size={16} /> {t('dash.btn_consultations')}</Link>
+        <Link to="/patient/profile" className="btn btn-secondary"><ClipboardList size={16} /> {t('dash.btn_profile')}</Link>
       </div>
 
       {/* Content Grid */}
@@ -275,33 +276,33 @@ export default function DashboardPage() {
         {/* Triage History */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Triagens Recentes</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.recent_triages')}</h3>
             <Link to="/triage" style={{ color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              Ver Todas <ArrowRight size={13} />
+              {t('dash.view_all')} <ArrowRight size={13} />
             </Link>
           </div>
           <div style={{ padding: '0.5rem 0' }}>
             {triageHistory.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon"><Activity size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-                <div className="empty-state-title">Sem triagens</div>
-                <div className="empty-state-desc">Inicie a sua primeira triagem para avaliar os seus sintomas.</div>
+                <div className="empty-state-title">{t('dash.no_triages')}</div>
+                <div className="empty-state-desc">{t('dash.no_triages_desc')}</div>
                 <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                  <Activity size={14} /> Iniciar Triagem
+                  <Activity size={14} /> {t('dash.btn_start_triage')}
                 </Link>
               </div>
             ) : (
               <div className="table-container" style={{ border: 'none' }}>
                 <table>
-                  <thead><tr><th>Queixa</th><th>Risco</th><th>Data</th></tr></thead>
+                  <thead><tr><th>{t('table.complaint')}</th><th>{t('table.risk')}</th><th>{t('table.date')}</th></tr></thead>
                   <tbody>
-                    {triageHistory.map(t => {
-                      const r = riskConfig(t.risk_level);
+                    {triageHistory.map(th => {
+                      const r = riskConfig(th.risk_level);
                       return (
-                        <tr key={t.session_id}>
-                          <td style={{ color: 'var(--text-primary)' }}>{t.chief_complaint}</td>
-                          <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{t.risk_level || t.status}</span></td>
-                          <td>{new Date(t.created_at).toLocaleDateString('pt')}</td>
+                        <tr key={th.session_id}>
+                          <td style={{ color: 'var(--text-primary)' }}>{th.chief_complaint}</td>
+                          <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{th.risk_level || th.status}</span></td>
+                          <td>{new Date(th.created_at).toLocaleDateString('pt')}</td>
                         </tr>
                       );
                     })}
@@ -315,32 +316,32 @@ export default function DashboardPage() {
         {/* Consultations */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Consultas</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.consultations')}</h3>
             <Link to="/consultations" style={{ color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              Gerir <ArrowRight size={13} />
+              {t('dash.manage')} <ArrowRight size={13} />
             </Link>
           </div>
           <div style={{ padding: '0.5rem 0' }}>
             {consultations.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon"><Calendar size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-                <div className="empty-state-title">Sem consultas</div>
+                <div className="empty-state-title">{t('dash.no_consultations')}</div>
                 <div className="empty-state-desc">
                   {state?.current_state === 'triage_completed'
-                    ? 'Triagem concluída — marque uma consulta para ser atendido.'
-                    : 'Complete uma triagem para desbloquear o agendamento.'}
+                    ? t('dash.triage_done_book')
+                    : t('dash.complete_triage_first')}
                 </div>
                 <Link to={state?.current_state === 'triage_completed' ? '/consultations' : '/triage'}
                   className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
                   {state?.current_state === 'triage_completed'
-                    ? <><Calendar size={14} /> Marcar Consulta</>
-                    : <><Activity size={14} /> Iniciar Triagem</>}
+                    ? <><Calendar size={14} /> {t('dash.book_consultation')}</>
+                    : <><Activity size={14} /> {t('dash.btn_start_triage')}</>}
                 </Link>
               </div>
             ) : (
               <div className="table-container" style={{ border: 'none' }}>
                 <table>
-                  <thead><tr><th>Especialidade</th><th>Estado</th><th>Data</th></tr></thead>
+                  <thead><tr><th>{t('table.specialty')}</th><th>{t('table.status')}</th><th>{t('table.date')}</th></tr></thead>
                   <tbody>
                     {consultations.map(c => (
                       <tr key={c.id}>
@@ -363,12 +364,12 @@ export default function DashboardPage() {
           <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', borderLeft: '4px solid var(--accent-teal)', background: 'rgba(20,184,166,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <HeartPulse size={14} style={{ color: 'var(--accent-teal)' }} />
-              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>Mantenha o perfil atualizado</span>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{t('dash.keep_profile')}</span>
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Alergias, condições crónicas e contacto de emergência melhoram a triagem.{' '}
+              {t('dash.profile_tip')}{' '}
               <Link to="/patient/profile" style={{ color: 'var(--accent-teal)', fontWeight: 600, textDecoration: 'none' }}>
-                Atualizar perfil <ChevronRight size={12} style={{ verticalAlign: 'middle' }} />
+                {t('dash.update_profile')} <ChevronRight size={12} style={{ verticalAlign: 'middle' }} />
               </Link>
             </p>
           </div>

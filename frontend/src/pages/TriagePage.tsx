@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 import type { TriageQuestion, TriageResult, TriageHistoryItem } from '../types';
 import {
   Activity, ChevronRight, AlertTriangle, CheckCircle2,
@@ -9,6 +10,7 @@ import {
 type Step = 'start' | 'questions' | 'result' | 'history';
 
 export default function TriagePage() {
+  const { t } = useT();
   const [step, setStep] = useState<Step>('history');
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -59,19 +61,19 @@ export default function TriagePage() {
 
   const riskData = (level?: string) => {
     switch (level?.toUpperCase()) {
-      case 'URGENT': return { color: '#ef4444', bg: 'rgba(239,68,68,0.12)', label: 'Urgente', icon: <AlertTriangle size={22} /> };
-      case 'HIGH': return { color: '#f97316', bg: 'rgba(249,115,22,0.12)', label: 'Alto', icon: <AlertTriangle size={22} /> };
-      case 'MEDIUM': return { color: '#eab308', bg: 'rgba(234,179,8,0.12)', label: 'Médio', icon: <Clock size={22} /> };
-      default: return { color: '#22c55e', bg: 'rgba(34,197,94,0.12)', label: 'Baixo', icon: <CheckCircle2 size={22} /> };
+      case 'URGENT': return { color: '#ef4444', bg: 'rgba(239,68,68,0.12)', label: t('risk.urgent'), icon: <AlertTriangle size={22} /> };
+      case 'HIGH': return { color: '#f97316', bg: 'rgba(249,115,22,0.12)', label: t('risk.high'), icon: <AlertTriangle size={22} /> };
+      case 'MEDIUM': return { color: '#eab308', bg: 'rgba(234,179,8,0.12)', label: t('risk.medium'), icon: <Clock size={22} /> };
+      default: return { color: '#22c55e', bg: 'rgba(34,197,94,0.12)', label: t('risk.low'), icon: <CheckCircle2 size={22} /> };
     }
   };
 
   const actionLabel = (action?: string) => {
     switch (action) {
-      case 'ER_NOW': return 'Dirija-se às Urgências imediatamente';
-      case 'DOCTOR_NOW': return 'Consulte um médico hoje';
-      case 'DOCTOR_24H': return 'Agende consulta nas próximas 24h';
-      default: return 'Auto-cuidado com monitorização';
+      case 'ER_NOW': return t('triage.er_label');
+      case 'DOCTOR_NOW': return t('triage.doctor_now_label');
+      case 'DOCTOR_24H': return t('triage.doctor_24h_label');
+      default: return t('triage.self_care_label');
     }
   };
 
@@ -86,16 +88,16 @@ export default function TriagePage() {
   return (
     <>
       <div className="page-header">
-        <h1>Triagem Inteligente</h1>
-        <p>Avaliação de sintomas com classificação automática de risco</p>
+        <h1>{t('triage.title')}</h1>
+        <p>{t('triage.subtitle')}</p>
       </div>
 
       {/* Tab nav */}
       <div className="tab-nav">
-        <button className={step === 'history' ? 'active' : ''} onClick={() => setStep('history')}>Histórico</button>
+        <button className={step === 'history' ? 'active' : ''} onClick={() => setStep('history')}>{t('triage.history_tab')}</button>
         <button className={step === 'start' || step === 'questions' || step === 'result' ? 'active' : ''}
           onClick={() => { setStep('start'); setResult(null); setError(''); }}>
-          Nova Triagem
+          {t('triage.new_tab')}
         </button>
       </div>
 
@@ -105,27 +107,27 @@ export default function TriagePage() {
       {step === 'history' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Sessões de Triagem</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.sessions')}</h3>
             <button className="btn btn-primary btn-sm" onClick={() => setStep('start')}>
-              <Activity size={14} /> Nova Triagem
+              <Activity size={14} /> {t('triage.new_btn')}
             </button>
           </div>
           {history.length === 0 ? (
             <div className="empty-state" style={{ padding: '3rem' }}>
               <div className="empty-state-icon"><Activity size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-              <div className="empty-state-title">Sem triagens realizadas</div>
-              <div className="empty-state-desc">Inicie a sua primeira triagem para avaliar o seu estado de saúde.</div>
+              <div className="empty-state-title">{t('triage.no_sessions')}</div>
+              <div className="empty-state-desc">{t('triage.no_sessions_desc')}</div>
             </div>
           ) : (
             <div className="table-container" style={{ border: 'none' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>Queixa Principal</th>
-                    <th>Risco</th>
-                    <th>Recomendação</th>
-                    <th>Score</th>
-                    <th>Data</th>
+                    <th>{t('triage.chief_complaint')}</th>
+                    <th>{t('table.risk')}</th>
+                    <th>{t('table.recommendation')}</th>
+                    <th>{t('table.score')}</th>
+                    <th>{t('table.date')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,13 +151,13 @@ export default function TriagePage() {
       {step === 'start' && (
         <div className="card" style={{ maxWidth: '600px' }}>
           <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Descreva os seus sintomas</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.describe')}</h3>
           </div>
           <form onSubmit={startTriage} style={{ padding: '1.25rem' }}>
             <div className="form-group">
-              <label className="form-label">Queixa Principal</label>
+              <label className="form-label">{t('triage.chief_complaint')}</label>
               <textarea className="form-textarea" rows={3}
-                placeholder="Descreva os sintomas que está a sentir..."
+                placeholder={t('triage.describe_placeholder')}
                 value={complaint} onChange={e => setComplaint(e.target.value)} required
                 style={{
                   width: '100%', padding: '0.7rem 0.9rem',
@@ -164,7 +166,7 @@ export default function TriagePage() {
                 }} />
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'A iniciar…' : <><ChevronRight size={16} /> Iniciar Triagem</>}
+              {loading ? t('triage.starting') : <><ChevronRight size={16} /> {t('triage.start_btn')}</>}
             </button>
           </form>
         </div>
@@ -174,7 +176,7 @@ export default function TriagePage() {
       {step === 'questions' && (
         <div className="card" style={{ maxWidth: '600px' }}>
           <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Responda às seguintes questões</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.answer_questions')}</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
               Queixa: <strong style={{ color: 'var(--text-primary)' }}>{complaint}</strong>
             </p>
@@ -185,10 +187,10 @@ export default function TriagePage() {
                 <label className="form-label">{q.label}</label>
                 {q.type === 'boolean' && (
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    {['Sim', 'Não'].map(opt => (
+                    {[t('triage.yes'), t('triage.no')].map(opt => (
                       <button key={opt} type="button"
-                        className={`btn btn-sm ${answers[q.key] === (opt === 'Sim') ? 'btn-primary' : 'btn-outline'}`}
-                        onClick={() => setAnswers(a => ({ ...a, [q.key]: opt === 'Sim' }))}>
+                        className={`btn btn-sm ${answers[q.key] === (opt === t('triage.yes')) ? 'btn-primary' : 'btn-outline'}`}
+                        onClick={() => setAnswers(a => ({ ...a, [q.key]: opt === t('triage.yes') }))}>
                         {opt}
                       </button>
                     ))}
@@ -209,7 +211,7 @@ export default function TriagePage() {
                 {q.type === 'select' && q.options && (
                   <select className="form-select" value={String(answers[q.key] || '')}
                     onChange={e => setAnswers(a => ({ ...a, [q.key]: e.target.value }))}>
-                    <option value="">Selecionar</option>
+                    <option value="">{t('common.select')}</option>
                     {q.options.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 )}
@@ -218,10 +220,10 @@ export default function TriagePage() {
 
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button className="btn btn-outline" onClick={() => setStep('start')}>
-                <ArrowLeft size={16} /> Voltar
+                <ArrowLeft size={16} /> {t('common.cancel')}
               </button>
               <button className="btn btn-primary" onClick={submitAnswers} disabled={loading}>
-                {loading ? 'A submeter…' : 'Submeter Respostas'}
+                {loading ? t('triage.submitting') : t('triage.submit')}
               </button>
             </div>
           </div>
@@ -243,7 +245,7 @@ export default function TriagePage() {
                 {rd.icon}
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-                Risco: <span style={{ color: rd.color }}>{rd.label}</span>
+                {t('triage.risk_level')}: <span style={{ color: rd.color }}>{rd.label}</span>
               </h2>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
                 Score: {result.score} / 100
@@ -261,10 +263,10 @@ export default function TriagePage() {
 
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
                 <button className="btn btn-primary" onClick={() => { setStep('start'); setComplaint(''); setResult(null); }}>
-                  <RotateCcw size={16} /> Nova Triagem
+                  <RotateCcw size={16} /> {t('triage.new_again')}
                 </button>
                 <button className="btn btn-outline" onClick={() => { setStep('history'); loadHistory(); }}>
-                  Ver Histórico
+                  {t('triage.history_tab')}
                 </button>
               </div>
             </div>

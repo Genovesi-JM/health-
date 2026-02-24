@@ -3,10 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useT();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +32,7 @@ export default function LoginPage() {
       const role = res.data.user?.role;
       navigate(role === 'admin' ? '/admin' : '/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Credenciais inválidas.');
+      setError(err.response?.data?.detail || t('login.invalid'));
     } finally { setLoading(false); }
   };
 
@@ -38,9 +41,9 @@ export default function LoginPage() {
     setForgotMsg('');
     try {
       await api.post('/auth/forgot-password', { email: forgotEmail });
-      setForgotMsg('Se o email existir, receberá instruções de recuperação.');
+      setForgotMsg(t('login.forgot_msg'));
     } catch {
-      setForgotMsg('Se o email existir, receberá instruções de recuperação.');
+      setForgotMsg(t('login.forgot_msg'));
     }
   };
 
@@ -50,6 +53,11 @@ export default function LoginPage() {
 
   return (
     <div className="auth-shell">
+      {/* Language Selector */}
+      <div style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 100 }}>
+        <LanguageSelector />
+      </div>
+
       {/* Login Card */}
       <div className="auth-card">
         {/* Brand */}
@@ -58,13 +66,13 @@ export default function LoginPage() {
           <span className="auth-brand-text">HEALTH PLATFORM</span>
         </div>
 
-        <h1 className="auth-title">Iniciar Sessão</h1>
-        <p className="auth-subtitle">Aceda ao portal Health Platform</p>
+        <h1 className="auth-title">{t('login.title')}</h1>
+        <p className="auth-subtitle">{t('login.subtitle')}</p>
 
         {/* Login Form */}
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">{t('login.email')}</label>
             <div className="form-input-icon">
               <Mail size={16} className="icon-left" />
               <input className="form-input" type="email" placeholder="utilizador@empresa.com"
@@ -72,7 +80,7 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Palavra-passe</label>
+            <label className="form-label">{t('login.password')}</label>
             <div className="form-input-icon">
               <Lock size={16} className="icon-left" />
               <input className="form-input" type={showPw ? 'text' : 'password'} placeholder="••••••••"
@@ -87,7 +95,7 @@ export default function LoginPage() {
 
           <button type="submit" className="btn btn-primary btn-lg" disabled={loading}
             style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem' }}>
-            {loading ? 'A entrar…' : 'Iniciar Sessão'}
+            {loading ? t('login.loading') : t('login.submit')}
           </button>
         </form>
 
@@ -95,19 +103,19 @@ export default function LoginPage() {
         <button type="button" className="auth-oauth-btn" onClick={() => handleOAuth('google')}
           style={{ marginBottom: '0.5rem' }}>
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width={18} height={18} />
-          Entrar com Google
+          {t('login.google')}
         </button>
         <button type="button" className="auth-oauth-btn" onClick={() => handleOAuth('microsoft')}
           style={{ background: '#2f2f2f', borderColor: '#2f2f2f', color: '#fff' }}>
           <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-          Entrar com Microsoft
+          {t('login.microsoft')}
         </button>
 
         {/* Links */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', fontSize: '0.82rem' }}>
           <button type="button" onClick={() => setShowForgot(true)}
             style={{ background: 'none', border: 'none', color: 'var(--accent-teal)', cursor: 'pointer', fontWeight: 600 }}>
-            Esqueceu a palavra-passe?
+            {t('login.forgot')}
           </button>
         </div>
 
@@ -117,8 +125,8 @@ export default function LoginPage() {
 
         {/* Toggle to register */}
         <div className="auth-toggle">
-          Não tem conta?{' '}
-          <Link to="/register">Criar conta</Link>
+          {t('login.no_account')}{' '}
+          <Link to="/register">{t('login.create_account')}</Link>
         </div>
 
         {/* Hint */}
@@ -127,12 +135,12 @@ export default function LoginPage() {
           border: '1px solid var(--border)', background: 'rgba(10,16,28,0.6)',
           fontSize: '0.82rem', color: 'var(--text-secondary)'
         }}>
-          Aceda com as suas credenciais.
+          {t('login.access_hint')}
         </div>
 
         <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
           <Link to="/" style={{ color: 'var(--accent-teal)', fontSize: '0.82rem', textDecoration: 'none' }}>
-            ← Voltar ao site
+            {t('login.back_site')}
           </Link>
         </div>
       </div>
@@ -142,21 +150,21 @@ export default function LoginPage() {
         <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setShowForgot(false); }}>
           <div className="modal">
             <div className="modal-header">
-              <h3>Recuperar Palavra-passe</h3>
+              <h3>{t('login.forgot_title')}</h3>
               <button className="btn-icon" onClick={() => setShowForgot(false)}>&times;</button>
             </div>
             <div className="modal-body">
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-                Insira o seu email e enviaremos instruções de recuperação.
+                {t('login.forgot_desc')}
               </p>
               <form onSubmit={handleForgotPw}>
                 <div className="form-group">
-                  <label className="form-label">Email</label>
+                  <label className="form-label">{t('login.email')}</label>
                   <input className="form-input" type="email" placeholder="utilizador@empresa.com"
                     value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required />
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                  Enviar
+                  {t('login.forgot_submit')}
                 </button>
               </form>
               {forgotMsg && <p style={{ marginTop: '0.75rem', fontSize: '0.82rem', color: 'var(--accent-teal)' }}>{forgotMsg}</p>}

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
+import { I18nProvider } from './i18n/LanguageContext';
 import { ProtectedRoute } from './ProtectedRoute';
 
 /* Public pages */
@@ -24,6 +25,7 @@ import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   return (
+    <I18nProvider>
     <AuthProvider>
       <BrowserRouter basename="/health-">
         <Routes>
@@ -62,5 +64,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </I18nProvider>
   );
 }
