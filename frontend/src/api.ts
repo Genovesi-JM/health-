@@ -1,9 +1,14 @@
 import axios from 'axios';
 
-/* Detect environment — in dev the Vite proxy forwards /auth, /api, etc. to backend.
-   In production, the backend serves the SPA so same-origin works. */
+/*
+ * In dev the Vite proxy forwards /auth, /api, etc. to localhost:8000.
+ * In production (GitHub Pages) we hit the Render backend directly via
+ * the VITE_API_URL env var that is injected at build time.
+ */
+const API_BASE = import.meta.env.VITE_API_URL || '/';
+
 const api = axios.create({
-  baseURL: '/',
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 });
 

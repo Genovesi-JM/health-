@@ -1,0 +1,28 @@
+# Render Blueprint — auto-deploys backend from GitHub
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: health-api
+    runtime: python
+    region: frankfurt          # EU — closest to PT
+    plan: free                 # Free tier (spins down after 15 min idle)
+    rootDir: backend
+    buildCommand: pip install -r requirements.deploy.txt
+    startCommand: >
+      gunicorn app.main:create_application
+      --factory
+      --worker-class uvicorn.workers.UvicornWorker
+      --bind 0.0.0.0:$PORT
+      --workers 2
+      --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        value: Admin@1234
+      - key: DATABASE_URL
+        value: sqlite:///./health_platform.db
+      - key: CORS_ORIGINS
+        value: https://genovesi-jm.github.io,http://localhost:5173
+      - key: PYTHON_VERSION
+        value: 3.12.8
