@@ -1,0 +1,87 @@
+# ═══════════════════════════════════════════════════════════════
+# Health Platform — Production Docker Compose (DigitalOcean)
+# Usage:
+#   cp .env.production .env
+#   docker compose -f docker-compose.prod.yml up -d --build
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL ──
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: health_platform
+      POSTGRES_USER: health_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health_user -d health_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ── Backend API (FastAPI + Gunicorn) ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - ENV=production
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://health_user:${DB_PASSWORD}@db:5432/health_platform
+      - REDIS_URL=redis://redis:6379/0
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - FRONTEND_BASE=${FRONTEND_BASE:-http://localhost}
+      - BACKEND_BASE=${BACKEND_BASE:-http://localhost}
+      - DO_SPACES_KEY=${DO_SPACES_KEY:-}
+      - DO_SPACES_SECRET=${DO_SPACES_SECRET:-}
+      - DO_SPACES_BUCKET=${DO_SPACES_BUCKET:-health-platform-files}
+      - DO_SPACES_REGION=${DO_SPACES_REGION:-fra1}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # ── Frontend (React + Nginx + Reverse Proxy) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "${APP_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  internal:
+    driver: bridge

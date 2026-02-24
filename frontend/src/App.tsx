@@ -24,11 +24,13 @@ import AdminPatientsPage from './pages/AdminPatientsPage';
 import SettingsPage from './pages/SettingsPage';
 import SelfCarePage from './pages/SelfCarePage';
 
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
+
 export default function App() {
   return (
     <I18nProvider>
     <AuthProvider>
-      <BrowserRouter basename="/health-">
+      <BrowserRouter basename={BASE}>
         <Routes>
           {/* Public */}
           <Route path="/" element={<LandingPage />} />
