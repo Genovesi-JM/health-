@@ -33,7 +33,7 @@ from .routers import (
     health_dashboard,
 )
 
-from .seed_data import seed_admin_users
+from .seed_data import seed_all
 
 
 def create_application() -> FastAPI:
@@ -103,11 +103,10 @@ def create_application() -> FastAPI:
     except Exception as exc:
         print(f"[HealthPlatform] Schema drift check failed (non-fatal): {exc}")
 
-    # Seed admin users
+    # Seed test data (admin, patients, doctors)
     try:
-        inserted_users = seed_admin_users()
-        if inserted_users:
-            print(f"[HealthPlatform] Admin users created: {inserted_users}")
+        result = seed_all()
+        print(f"[HealthPlatform] Seed complete: {result}")
     except Exception as exc:
         print(f"[HealthPlatform] Seed data failed (non-fatal): {exc}")
 
