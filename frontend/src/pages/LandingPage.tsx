@@ -26,8 +26,8 @@ export default function LandingPage() {
   ];
 
   const stats = [
-    { value: '10K+', label: 'Pacientes' },
-    { value: '500+', label: 'Médicos' },
+    { value: '150+', label: 'Pacientes' },
+    { value: '25+', label: 'Médicos' },
     { value: '98%', label: 'Satisfação' },
     { value: '24/7', label: 'Disponível' },
   ];

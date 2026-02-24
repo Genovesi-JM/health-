@@ -72,7 +72,7 @@ export default function AdminDashboardPage() {
 function KpiCard({ icon, label, value, color, variant }: { icon: React.ReactNode; label: string; value: string | number; color: string; variant?: string }) {
   return (
     <div className="kpi-card" style={variant === 'warning' ? {
-      background: 'linear-gradient(135deg, rgba(234,179,8,0.1), rgba(5,9,20,0.95))',
+      background: 'linear-gradient(135deg, rgba(234,179,8,0.06), #ffffff)',
       borderColor: 'rgba(234,179,8,0.25)',
     } : {}}>
       <div className="kpi-icon" style={{ background: color, color: 'var(--accent-teal)' }}>{icon}</div>

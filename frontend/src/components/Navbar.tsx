@@ -35,9 +35,9 @@ export function Navbar() {
           display: mobileOpen ? 'flex' : undefined,
           ...(mobileOpen ? {
             flexDirection: 'column' as const, position: 'absolute' as const, top: '100%', right: 0,
-            background: '#0b1428', border: '1px solid var(--border)', borderRadius: '12px',
+            background: '#ffffff', border: '1px solid var(--border)', borderRadius: '12px',
             padding: '0.5rem 0', minWidth: '200px', zIndex: 9999,
-            boxShadow: '0 14px 36px rgba(0,0,0,0.8)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
           } : {}),
         }}
           className={mobileOpen ? '' : 'navbar-desktop-nav'}
@@ -68,7 +68,7 @@ export function Navbar() {
                 width: '30px', height: '30px', borderRadius: '50%',
                 background: 'var(--gradient-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.7rem', fontWeight: 700, color: '#020617',
+                fontSize: '0.7rem', fontWeight: 700, color: '#ffffff',
               }}>{initials}</span>
               <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {displayName.split(' ')[0]}
@@ -78,7 +78,7 @@ export function Navbar() {
             <Link to="/login" onClick={() => setMobileOpen(false)}
               style={{
                 padding: '0.6rem 1.4rem', borderRadius: '8px',
-                background: 'var(--gradient-primary)', color: '#020617',
+                background: 'var(--gradient-primary)', color: '#ffffff',
                 fontWeight: 600, textDecoration: 'none', fontSize: '0.85rem',
                 display: 'inline-block',
               }}>
