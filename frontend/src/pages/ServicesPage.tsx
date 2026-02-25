@@ -3,7 +3,7 @@ import { Footer } from '../components/Footer';
 import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
 import {
-  Activity, Stethoscope, FileText, Clock, Building2, AlertTriangle,
+  Activity, Stethoscope, FileText, HeartPulse, Building2, Layers,
   User, UserCog, Briefcase, Check, ChevronDown, ChevronUp, Phone,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -28,9 +28,9 @@ export default function ServicesPage() {
     { icon: Activity, title: t('services.triage_title'), desc: t('services.triage_desc'), color: '#00b894' },
     { icon: Stethoscope, title: t('services.teleconsult_title'), desc: t('services.teleconsult_desc'), color: '#0984e3' },
     { icon: FileText, title: t('services.prescriptions_title'), desc: t('services.prescriptions_desc'), color: '#6c5ce7' },
-    { icon: Clock, title: t('services.followup_title'), desc: t('services.followup_desc'), color: '#fdcb6e' },
+    { icon: HeartPulse, title: t('services.followup_title'), desc: t('services.followup_desc'), color: '#d63031' },
     { icon: Building2, title: t('services.corporate_title'), desc: t('services.corporate_desc'), color: '#e17055' },
-    { icon: AlertTriangle, title: t('services.emergency_title'), desc: t('services.emergency_desc'), color: '#d63031' },
+    { icon: Layers, title: t('services.emergency_title'), desc: t('services.emergency_desc'), color: '#0984e3' },
   ];
 
   const audiences = [
@@ -58,6 +58,8 @@ export default function ServicesPage() {
     { q: t('services.faq1_q'), a: t('services.faq1_a') },
     { q: t('services.faq2_q'), a: t('services.faq2_a') },
     { q: t('services.faq3_q'), a: t('services.faq3_a') },
+    { q: t('services.faq4_q'), a: t('services.faq4_a') },
+    { q: t('services.faq5_q'), a: t('services.faq5_a') },
   ];
 
   return (

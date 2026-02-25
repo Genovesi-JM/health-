@@ -1,6 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { Heart, Target, Eye, Code2, Stethoscope, Headphones, Users, FileCheck, Clock, Globe } from 'lucide-react';
+import { Heart, Target, Eye, Code2, Stethoscope, Headphones, Users, FileCheck, Clock, Globe, Pill } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
 
@@ -22,11 +22,11 @@ export default function AboutPage() {
 
   const numbers = [
     { icon: Users, value: '150+', label: t('landing.stat_patients') },
-    { icon: Stethoscope, value: '25+', label: t('landing.stat_doctors') },
-    { icon: FileCheck, value: '2.5K+', label: 'Triagens' },
-    { icon: Clock, value: '<3 min', label: 'Tempo médio' },
+    { icon: Stethoscope, value: '15+', label: t('landing.stat_available') },
+    { icon: Pill, value: '10K+', label: 'Prescrições' },
+    { icon: Heart, value: '4', label: 'Prog. Crónicos' },
     { icon: Globe, value: '3', label: 'Idiomas' },
-    { icon: Heart, value: '98%', label: t('landing.stat_satisfaction') },
+    { icon: Clock, value: '<3 min', label: 'Triagem' },
   ];
 
   return (

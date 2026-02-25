@@ -4,7 +4,8 @@ import { Footer } from '../components/Footer';
 import { useT } from '../i18n/LanguageContext';
 import {
   HeartPulse, ClipboardCheck, Stethoscope, ArrowRight,
-  Phone, UserPlus, Star, Quote,
+  Phone, UserPlus, Star, Quote, Heart, Brain,
+  Activity, Pill, Wind, Smile,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -14,7 +15,7 @@ export default function LandingPage() {
     { value: '150+', label: t('landing.stat_patients') },
     { value: '25+', label: t('landing.stat_doctors') },
     { value: '98%', label: t('landing.stat_satisfaction') },
-    { value: '24/7', label: t('landing.stat_available') },
+    { value: '15+', label: t('landing.stat_available') },
   ];
 
   const steps = [
@@ -78,6 +79,66 @@ export default function LandingPage() {
               <h3>{s.title}</h3>
               <p>{s.desc}</p>
               {i < steps.length - 1 && <div className="landing-step-arrow"><ArrowRight size={20} /></div>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Specialties Strip ── */}
+      <section className="landing-section landing-section-alt">
+        <div className="section-header">
+          <h2>{t('landing.specialties_title')}</h2>
+          <p>{t('landing.specialties_subtitle')}</p>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem', maxWidth: '900px', margin: '0 auto' }}>
+          {[
+            { icon: Heart, label: t('landing.spec_cardiology') },
+            { icon: Activity, label: t('landing.spec_endocrinology') },
+            { icon: Wind, label: t('landing.spec_pulmonology') },
+            { icon: Smile, label: t('landing.spec_dermatology') },
+            { icon: Brain, label: t('landing.spec_neurology') },
+            { icon: ClipboardCheck, label: t('landing.spec_orthopedics') },
+            { icon: HeartPulse, label: t('landing.spec_psychiatry') },
+            { icon: Stethoscope, label: t('landing.spec_general') },
+          ].map(s => (
+            <div key={s.label} style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: '99px', padding: '0.5rem 1rem',
+              fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)',
+              transition: 'all 0.2s',
+            }}>
+              <s.icon size={16} style={{ color: 'var(--accent-teal)' }} />
+              {s.label}
+            </div>
+          ))}
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            background: 'var(--gradient-primary)', borderRadius: '99px',
+            padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 700, color: '#fff',
+          }}>
+            {t('landing.spec_more')}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Chronic Diseases ── */}
+      <section className="landing-section">
+        <div className="section-header">
+          <h2>{t('landing.chronic_title')}</h2>
+          <p>{t('landing.chronic_subtitle')}</p>
+        </div>
+        <div className="landing-services-grid">
+          {[
+            { icon: Activity, title: t('landing.chronic_diabetes'), desc: t('landing.chronic_diabetes_desc'), color: '#0984e3' },
+            { icon: Heart, title: t('landing.chronic_hypertension'), desc: t('landing.chronic_hypertension_desc'), color: '#d63031' },
+            { icon: Wind, title: t('landing.chronic_asthma'), desc: t('landing.chronic_asthma_desc'), color: '#00b894' },
+            { icon: Brain, title: t('landing.chronic_mental'), desc: t('landing.chronic_mental_desc'), color: '#6c5ce7' },
+          ].map(c => (
+            <div className="landing-service-card" key={c.title}>
+              <div className="landing-service-icon" style={{ color: c.color }}><c.icon size={24} /></div>
+              <h3>{c.title}</h3>
+              <p>{c.desc}</p>
             </div>
           ))}
         </div>
