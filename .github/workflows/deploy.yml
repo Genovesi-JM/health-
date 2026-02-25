@@ -33,7 +33,7 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          VITE_API_URL: http://46.101.150.184
+          VITE_API_URL: https://health.geovisionops.com
           VITE_BASE_PATH: /health-/
         run: npm run build
 
