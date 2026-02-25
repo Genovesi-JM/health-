@@ -1,6 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { Heart, Target, Eye, Code2, Stethoscope, Headphones, Users, FileCheck, Clock, Globe, Pill } from 'lucide-react';
+import { Heart, Target, Eye, Stethoscope, Headphones, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
 
@@ -15,18 +15,8 @@ export default function AboutPage() {
   ];
 
   const teamAreas = [
-    { icon: Code2, title: t('about.team_dev'), desc: t('about.team_dev_desc') },
     { icon: Stethoscope, title: t('about.team_clinical'), desc: t('about.team_clinical_desc') },
     { icon: Headphones, title: t('about.team_ops'), desc: t('about.team_ops_desc') },
-  ];
-
-  const numbers = [
-    { icon: Users, value: '150+', label: t('landing.stat_patients') },
-    { icon: Stethoscope, value: '20+', label: t('landing.stat_available') },
-    { icon: Pill, value: '10K+', label: 'Prescrições' },
-    { icon: Heart, value: '6', label: 'Prog. Doenças' },
-    { icon: Globe, value: '3', label: 'Idiomas' },
-    { icon: Clock, value: '<3 min', label: 'Triagem' },
   ];
 
   return (
@@ -104,22 +94,6 @@ export default function AboutPage() {
               <div className="landing-step-icon"><area.icon size={28} /></div>
               <h3>{area.title}</h3>
               <p>{area.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Numbers */}
-      <section className="landing-section landing-section-alt">
-        <div className="section-header">
-          <h2>{t('about.numbers_title')}</h2>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
-          {numbers.map(n => (
-            <div key={n.label} style={{ textAlign: 'center', padding: '1.5rem 0.75rem' }}>
-              <n.icon size={24} style={{ color: 'var(--accent-teal)', marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>{n.value}</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{n.label}</div>
             </div>
           ))}
         </div>

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
 import {
   Activity, Stethoscope, FileText, HeartPulse, Building2, Layers,
-  User, UserCog, Briefcase, Check, ChevronDown, ChevronUp, Phone,
+  User, UserCog, Briefcase, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -37,21 +37,6 @@ export default function ServicesPage() {
     { icon: User, title: t('services.for_patients'), desc: t('services.for_patients_desc') },
     { icon: UserCog, title: t('services.for_doctors'), desc: t('services.for_doctors_desc') },
     { icon: Briefcase, title: t('services.for_companies'), desc: t('services.for_companies_desc') },
-  ];
-
-  const plans = [
-    {
-      name: t('services.plan_free'), price: t('services.plan_free_price'), popular: false,
-      features: [t('services.plan_free_f1'), t('services.plan_free_f2'), t('services.plan_free_f3')],
-    },
-    {
-      name: t('services.plan_pro'), price: t('services.plan_pro_price'), popular: true,
-      features: [t('services.plan_pro_f1'), t('services.plan_pro_f2'), t('services.plan_pro_f3'), t('services.plan_pro_f4')],
-    },
-    {
-      name: t('services.plan_enterprise'), price: t('services.plan_enterprise_price'), popular: false,
-      features: [t('services.plan_enterprise_f1'), t('services.plan_enterprise_f2'), t('services.plan_enterprise_f3'), t('services.plan_enterprise_f4')],
-    },
   ];
 
   const faqs = [
@@ -101,43 +86,6 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="landing-section">
-        <div className="section-header">
-          <h2>{t('services.pricing_title')}</h2>
-          <p>{t('services.pricing_subtitle')}</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', maxWidth: '960px', margin: '0 auto' }}>
-          {plans.map(plan => (
-            <div key={plan.name} style={{
-              background: 'var(--bg-card)', borderRadius: '16px', padding: '2rem 1.5rem',
-              border: plan.popular ? '2px solid var(--accent-teal)' : '1px solid var(--border)',
-              position: 'relative', display: 'flex', flexDirection: 'column',
-            }}>
-              {plan.popular && (
-                <span style={{
-                  position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
-                  background: 'var(--accent-teal)', color: '#fff', fontSize: '0.72rem', fontWeight: 700,
-                  padding: '0.25rem 0.85rem', borderRadius: '99px', letterSpacing: '0.05em',
-                }}>{t('services.most_popular')}</span>
-              )}
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{plan.name}</h3>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-teal)', marginBottom: '1.25rem' }}>{plan.price}</div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', flex: 1 }}>
-                {plan.features.map((f, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.65rem' }}>
-                    <Check size={15} style={{ color: 'var(--accent-teal)', flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/register" className={plan.popular ? 'landing-btn-primary' : 'landing-btn-secondary'} style={{ textAlign: 'center', width: '100%', display: 'block' }}>
-                {plan.name === t('services.plan_enterprise') ? t('services.contact_us') : t('services.select_plan')}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* FAQ */}
       <section className="landing-section landing-section-alt">
         <div className="section-header">
@@ -147,24 +95,6 @@ export default function ServicesPage() {
           {faqs.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} />)}
         </div>
       </section>
-
-      {/* Emergency (Angola) */}
-      <div className="emergency-bar">
-        <a href="tel:113" className="emergency-bar-item emergency-bar-red">
-          <Phone size={18} />
-          <div>
-            <span className="emergency-bar-number">113</span>
-            <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
-          </div>
-        </a>
-        <a href="tel:+244923167950" className="emergency-bar-item emergency-bar-blue">
-          <Phone size={18} />
-          <div>
-            <span className="emergency-bar-number">SOS Médico</span>
-            <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
-          </div>
-        </a>
-      </div>
 
       <Footer />
     </>

@@ -10,7 +10,7 @@ import {
   ClipboardList, HeartPulse, AlertTriangle, CheckCircle2,
   Clock, Shield, Zap, TrendingUp, Siren, User,
   FileText, Pill, Video, Stethoscope, FileCheck, MoreHorizontal,
-  Phone, Droplets, Apple, Moon,
+  Droplets, Apple, Moon, Thermometer, Brain, Wind,
 } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -23,18 +23,21 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'summary' | 'triages' | 'consultations' | 'profile'>('summary');
   const [showBooking, setShowBooking] = useState(false);
+  const [chronicConditions, setChronicConditions] = useState<string[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [sRes, tRes, cRes] = await Promise.allSettled([
+        const [sRes, tRes, cRes, pRes] = await Promise.allSettled([
           api.get('/api/v1/dashboard/patient-state'),
           api.get('/api/v1/triage/history'),
           api.get('/api/v1/consultations/'),
+          api.get('/api/v1/patients/me'),
         ]);
         if (sRes.status === 'fulfilled') setState(sRes.value.data);
         if (tRes.status === 'fulfilled') setTriageHistory(tRes.value.data.slice(0, 5));
         if (cRes.status === 'fulfilled') setConsultations(cRes.value.data.slice(0, 5));
+        if (pRes.status === 'fulfilled') setChronicConditions(pRes.value.data?.chronic_conditions || []);
       } catch { /* ignore */ }
       setLoading(false);
     };
@@ -78,6 +81,45 @@ export default function DashboardPage() {
     { icon: Apple, title: t('dash.hl_nutrition'), desc: t('dash.hl_nutrition_desc'), color: '#22c55e' },
     { icon: HeartPulse, title: t('dash.hl_checkup'), desc: t('dash.hl_checkup_desc'), color: '#ef4444' },
   ];
+
+  /* Chronic disease config — icons + colors */
+  const chronicConfig: Record<string, { icon: typeof HeartPulse; color: string; tip: string }> = {
+    diabetes: { icon: Activity, color: '#e17055', tip: t('dash.chronic_tip_diabetes') },
+    hipertensão: { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_hypertension') },
+    hipertensao: { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_hypertension') },
+    hypertension: { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_hypertension') },
+    asma: { icon: Wind, color: '#6c5ce7', tip: t('dash.chronic_tip_asthma') },
+    asthma: { icon: Wind, color: '#6c5ce7', tip: t('dash.chronic_tip_asthma') },
+    dpoc: { icon: Wind, color: '#636e72', tip: t('dash.chronic_tip_copd') },
+    copd: { icon: Wind, color: '#636e72', tip: t('dash.chronic_tip_copd') },
+    epilepsia: { icon: Zap, color: '#0984e3', tip: t('dash.chronic_tip_epilepsy') },
+    epilepsy: { icon: Zap, color: '#0984e3', tip: t('dash.chronic_tip_epilepsy') },
+    drepanocitose: { icon: Droplets, color: '#e84393', tip: t('dash.chronic_tip_sickle') },
+    'sickle cell': { icon: Droplets, color: '#e84393', tip: t('dash.chronic_tip_sickle') },
+    vih: { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
+    'vih/sida': { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
+    hiv: { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
+    'hiv/aids': { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
+    tuberculose: { icon: Thermometer, color: '#b2bec3', tip: t('dash.chronic_tip_tb') },
+    tuberculosis: { icon: Thermometer, color: '#b2bec3', tip: t('dash.chronic_tip_tb') },
+    'insuficiência renal': { icon: Droplets, color: '#00b894', tip: t('dash.chronic_tip_kidney') },
+    'kidney failure': { icon: Droplets, color: '#00b894', tip: t('dash.chronic_tip_kidney') },
+    'doença cardíaca': { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_heart') },
+    'heart disease': { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_heart') },
+    'artrite reumatóide': { icon: Activity, color: '#e17055', tip: t('dash.chronic_tip_arthritis') },
+    'rheumatoid arthritis': { icon: Activity, color: '#e17055', tip: t('dash.chronic_tip_arthritis') },
+    parkinson: { icon: Brain, color: '#6c5ce7', tip: t('dash.chronic_tip_parkinson') },
+    alzheimer: { icon: Brain, color: '#636e72', tip: t('dash.chronic_tip_alzheimer') },
+    'esclerose múltipla': { icon: Brain, color: '#0984e3', tip: t('dash.chronic_tip_ms') },
+    'multiple sclerosis': { icon: Brain, color: '#0984e3', tip: t('dash.chronic_tip_ms') },
+    fibromialgia: { icon: Activity, color: '#a29bfe', tip: t('dash.chronic_tip_fibromyalgia') },
+    fibromyalgia: { icon: Activity, color: '#a29bfe', tip: t('dash.chronic_tip_fibromyalgia') },
+  };
+
+  const getChronicInfo = (condition: string) => {
+    const key = condition.toLowerCase().trim();
+    return chronicConfig[key] || { icon: HeartPulse, color: 'var(--accent-teal)', tip: t('dash.chronic_tip_default') };
+  };
 
   return (
     <>
@@ -209,6 +251,45 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* ── Chronic Diseases Section ── */}
+      <div className="dash-section-header" style={{ marginTop: '1.5rem' }}>
+        <h2>{t('dash.chronic_title')}</h2>
+      </div>
+      {chronicConditions.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+          {chronicConditions.map(condition => {
+            const info = getChronicInfo(condition);
+            const Icon = info.icon;
+            return (
+              <div key={condition} className="card" style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '12px',
+                  background: `${info.color}14`, color: info.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <Icon size={22} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem', textTransform: 'capitalize' }}>{condition}</div>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{info.tip}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+          <div style={{ marginBottom: '0.5rem' }}>
+            <HeartPulse size={28} style={{ color: 'var(--accent-teal)', opacity: 0.5 }} />
+          </div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>{t('dash.no_chronic')}</div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 0.75rem' }}>{t('dash.no_chronic_desc')}</p>
+          <Link to="/patient/profile" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            <User size={14} /> {t('dash.update_profile')}
+          </Link>
+        </div>
+      )}
 
       {/* ── Tab Navigation ── */}
       <div className="tab-nav" style={{ marginTop: '1.5rem', marginBottom: '1.25rem' }}>
@@ -452,24 +533,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* ── Emergency bar (bottom) ── */}
-      <div className="dash-emergency-bar">
-        <a href="tel:112" className="emergency-bar-item emergency-bar-red">
-          <Phone size={16} />
-          <div>
-            <span className="emergency-bar-number">112</span>
-            <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
-          </div>
-        </a>
-        <a href="tel:061" className="emergency-bar-item emergency-bar-blue">
-          <Phone size={16} />
-          <div>
-            <span className="emergency-bar-number">061</span>
-            <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
-          </div>
-        </a>
-      </div>
 
       {/* Book Consultation Modal */}
       <BookConsultationModal

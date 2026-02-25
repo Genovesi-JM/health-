@@ -4,18 +4,19 @@ import { Footer } from '../components/Footer';
 import { useT } from '../i18n/LanguageContext';
 import {
   HeartPulse, ClipboardCheck, Stethoscope, ArrowRight,
-  Phone, UserPlus, Star, Quote, Heart, Brain,
+  UserPlus, Heart, Brain,
   Activity, Pill, Wind, Smile, Shield, Droplets,
+  MapPin, CalendarCheck, Zap,
 } from 'lucide-react';
 
 export default function LandingPage() {
   const { t } = useT();
 
   const stats = [
-    { value: '150+', label: t('landing.stat_patients') },
-    { value: '25+', label: t('landing.stat_doctors') },
-    { value: '98%', label: t('landing.stat_satisfaction') },
-    { value: '20+', label: t('landing.stat_available') },
+    { label: t('landing.stat_patients') },
+    { label: t('landing.stat_doctors') },
+    { label: t('landing.stat_satisfaction') },
+    { label: t('landing.stat_available') },
   ];
 
   const steps = [
@@ -24,10 +25,10 @@ export default function LandingPage() {
     { icon: Stethoscope, num: '03', title: t('landing.step3_title'), desc: t('landing.step3_desc') },
   ];
 
-  const testimonials = [
-    { text: t('landing.testimonial1'), author: t('landing.testimonial1_author'), stars: 5 },
-    { text: t('landing.testimonial2'), author: t('landing.testimonial2_author'), stars: 5 },
-    { text: t('landing.testimonial3'), author: t('landing.testimonial3_author'), stars: 5 },
+  const features = [
+    { icon: MapPin, title: t('landing.feature1_title'), desc: t('landing.feature1_desc') },
+    { icon: CalendarCheck, title: t('landing.feature2_title'), desc: t('landing.feature2_desc') },
+    { icon: HeartPulse, title: t('landing.feature3_title'), desc: t('landing.feature3_desc') },
   ];
 
   return (
@@ -59,7 +60,6 @@ export default function LandingPage() {
       <section className="landing-stats-strip">
         {stats.map(s => (
           <div className="landing-stat" key={s.label}>
-            <span className="landing-stat-value">{s.value}</span>
             <span className="landing-stat-label">{s.label}</span>
           </div>
         ))}
@@ -130,10 +130,10 @@ export default function LandingPage() {
         </div>
         <div className="landing-services-grid">
           {[
-            { icon: Shield, title: t('landing.chronic_diabetes'), desc: t('landing.chronic_diabetes_desc'), color: '#e17055' },
-            { icon: Droplets, title: t('landing.chronic_hypertension'), desc: t('landing.chronic_hypertension_desc'), color: '#d63031' },
-            { icon: Activity, title: t('landing.chronic_asthma'), desc: t('landing.chronic_asthma_desc'), color: '#6c5ce7' },
-            { icon: Wind, title: t('landing.chronic_mental'), desc: t('landing.chronic_mental_desc'), color: '#0984e3' },
+            { icon: Activity, title: t('landing.chronic_diabetes'), desc: t('landing.chronic_diabetes_desc'), color: '#e17055' },
+            { icon: Heart, title: t('landing.chronic_hypertension'), desc: t('landing.chronic_hypertension_desc'), color: '#d63031' },
+            { icon: Wind, title: t('landing.chronic_asthma'), desc: t('landing.chronic_asthma_desc'), color: '#6c5ce7' },
+            { icon: Zap, title: t('landing.chronic_mental'), desc: t('landing.chronic_mental_desc'), color: '#0984e3' },
           ].map(c => (
             <div className="landing-service-card" key={c.title}>
               <div className="landing-service-icon" style={{ color: c.color }}><c.icon size={24} /></div>
@@ -144,20 +144,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
+      {/* ── Features ── */}
       <section className="landing-section landing-section-alt">
         <div className="section-header">
           <h2>{t('landing.trust_title')}</h2>
         </div>
-        <div className="landing-testimonials-grid">
-          {testimonials.map((tm, i) => (
-            <div className="landing-testimonial-card" key={i}>
-              <Quote size={24} className="landing-quote-icon" />
-              <p className="landing-testimonial-text">{tm.text}</p>
-              <div className="landing-testimonial-stars">
-                {[...Array(tm.stars)].map((_, j) => <Star key={j} size={14} fill="var(--accent-teal)" color="var(--accent-teal)" />)}
-              </div>
-              <span className="landing-testimonial-author">{tm.author}</span>
+        <div className="landing-services-grid">
+          {features.map((f, i) => (
+            <div className="landing-service-card" key={i}>
+              <div className="landing-service-icon" style={{ color: 'var(--accent-teal)' }}><f.icon size={24} /></div>
+              <h3>{f.title}</h3>
+              <p>{f.desc}</p>
             </div>
           ))}
         </div>
@@ -172,24 +169,6 @@ export default function LandingPage() {
           <Link to="/login" className="landing-btn-secondary">{t('landing.have_account')}</Link>
         </div>
       </section>
-
-      {/* ── Emergency Bar (Angola) ── */}
-      <div className="emergency-bar">
-        <a href="tel:113" className="emergency-bar-item emergency-bar-red">
-          <Phone size={18} />
-          <div>
-            <span className="emergency-bar-number">113</span>
-            <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
-          </div>
-        </a>
-        <a href="tel:+244923167950" className="emergency-bar-item emergency-bar-blue">
-          <Phone size={18} />
-          <div>
-            <span className="emergency-bar-number">SOS Médico</span>
-            <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
-          </div>
-        </a>
-      </div>
 
       <Footer />
     </>
