@@ -5,7 +5,7 @@ import { useT } from '../i18n/LanguageContext';
 import {
   HeartPulse, ClipboardCheck, Stethoscope, ArrowRight,
   Phone, UserPlus, Star, Quote, Heart, Brain,
-  Activity, Pill, Wind, Smile,
+  Activity, Pill, Wind, Smile, Shield, Droplets,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -15,7 +15,7 @@ export default function LandingPage() {
     { value: '150+', label: t('landing.stat_patients') },
     { value: '25+', label: t('landing.stat_doctors') },
     { value: '98%', label: t('landing.stat_satisfaction') },
-    { value: '15+', label: t('landing.stat_available') },
+    { value: '20+', label: t('landing.stat_available') },
   ];
 
   const steps = [
@@ -93,13 +93,13 @@ export default function LandingPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem', maxWidth: '900px', margin: '0 auto' }}>
           {[
             { icon: Heart, label: t('landing.spec_cardiology') },
-            { icon: Activity, label: t('landing.spec_endocrinology') },
-            { icon: Wind, label: t('landing.spec_pulmonology') },
-            { icon: Smile, label: t('landing.spec_dermatology') },
-            { icon: Brain, label: t('landing.spec_neurology') },
-            { icon: ClipboardCheck, label: t('landing.spec_orthopedics') },
-            { icon: HeartPulse, label: t('landing.spec_psychiatry') },
-            { icon: Stethoscope, label: t('landing.spec_general') },
+            { icon: Stethoscope, label: t('landing.spec_endocrinology') },
+            { icon: Shield, label: t('landing.spec_pulmonology') },
+            { icon: Droplets, label: t('landing.spec_dermatology') },
+            { icon: Wind, label: t('landing.spec_neurology') },
+            { icon: Activity, label: t('landing.spec_orthopedics') },
+            { icon: Pill, label: t('landing.spec_psychiatry') },
+            { icon: HeartPulse, label: t('landing.spec_general') },
           ].map(s => (
             <div key={s.label} style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -130,10 +130,10 @@ export default function LandingPage() {
         </div>
         <div className="landing-services-grid">
           {[
-            { icon: Activity, title: t('landing.chronic_diabetes'), desc: t('landing.chronic_diabetes_desc'), color: '#0984e3' },
-            { icon: Heart, title: t('landing.chronic_hypertension'), desc: t('landing.chronic_hypertension_desc'), color: '#d63031' },
-            { icon: Wind, title: t('landing.chronic_asthma'), desc: t('landing.chronic_asthma_desc'), color: '#00b894' },
-            { icon: Brain, title: t('landing.chronic_mental'), desc: t('landing.chronic_mental_desc'), color: '#6c5ce7' },
+            { icon: Shield, title: t('landing.chronic_diabetes'), desc: t('landing.chronic_diabetes_desc'), color: '#e17055' },
+            { icon: Droplets, title: t('landing.chronic_hypertension'), desc: t('landing.chronic_hypertension_desc'), color: '#d63031' },
+            { icon: Activity, title: t('landing.chronic_asthma'), desc: t('landing.chronic_asthma_desc'), color: '#6c5ce7' },
+            { icon: Wind, title: t('landing.chronic_mental'), desc: t('landing.chronic_mental_desc'), color: '#0984e3' },
           ].map(c => (
             <div className="landing-service-card" key={c.title}>
               <div className="landing-service-icon" style={{ color: c.color }}><c.icon size={24} /></div>
@@ -173,19 +173,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Emergency Bar ── */}
+      {/* ── Emergency Bar (Angola) ── */}
       <div className="emergency-bar">
-        <a href="tel:112" className="emergency-bar-item emergency-bar-red">
+        <a href="tel:113" className="emergency-bar-item emergency-bar-red">
           <Phone size={18} />
           <div>
-            <span className="emergency-bar-number">112</span>
+            <span className="emergency-bar-number">113</span>
             <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
           </div>
         </a>
-        <a href="tel:808242424" className="emergency-bar-item emergency-bar-blue">
+        <a href="tel:+244923167950" className="emergency-bar-item emergency-bar-blue">
           <Phone size={18} />
           <div>
-            <span className="emergency-bar-number">SNS 24</span>
+            <span className="emergency-bar-number">SOS Médico</span>
             <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
           </div>
         </a>

@@ -148,19 +148,19 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Emergency */}
+      {/* Emergency (Angola) */}
       <div className="emergency-bar">
-        <a href="tel:112" className="emergency-bar-item emergency-bar-red">
+        <a href="tel:113" className="emergency-bar-item emergency-bar-red">
           <Phone size={18} />
           <div>
-            <span className="emergency-bar-number">112</span>
+            <span className="emergency-bar-number">113</span>
             <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
           </div>
         </a>
-        <a href="tel:808242424" className="emergency-bar-item emergency-bar-blue">
+        <a href="tel:+244923167950" className="emergency-bar-item emergency-bar-blue">
           <Phone size={18} />
           <div>
-            <span className="emergency-bar-number">SNS 24</span>
+            <span className="emergency-bar-number">SOS Médico</span>
             <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
           </div>
         </a>

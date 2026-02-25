@@ -22,9 +22,9 @@ export default function AboutPage() {
 
   const numbers = [
     { icon: Users, value: '150+', label: t('landing.stat_patients') },
-    { icon: Stethoscope, value: '15+', label: t('landing.stat_available') },
+    { icon: Stethoscope, value: '20+', label: t('landing.stat_available') },
     { icon: Pill, value: '10K+', label: 'Prescrições' },
-    { icon: Heart, value: '4', label: 'Prog. Crónicos' },
+    { icon: Heart, value: '6', label: 'Prog. Doenças' },
     { icon: Globe, value: '3', label: 'Idiomas' },
     { icon: Clock, value: '<3 min', label: 'Triagem' },
   ];
