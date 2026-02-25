@@ -3,31 +3,12 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { useT } from '../i18n/LanguageContext';
 import {
-  Activity, Stethoscope, Shield, Clock, Heart, Users,
-  Zap, Lock, BarChart3, Smartphone, Globe, HeartPulse,
-  Phone,
+  HeartPulse, ClipboardCheck, Stethoscope, ArrowRight,
+  Phone, UserPlus, Star, Quote,
 } from 'lucide-react';
 
 export default function LandingPage() {
   const { t } = useT();
-
-  const services = [
-    { icon: Activity, title: t('landing.svc.triage'), desc: t('landing.svc.triage_desc') },
-    { icon: Stethoscope, title: t('landing.svc.teleconsult'), desc: t('landing.svc.teleconsult_desc') },
-    { icon: Shield, title: t('landing.svc.prescriptions'), desc: t('landing.svc.prescriptions_desc') },
-    { icon: Clock, title: t('landing.svc.followup'), desc: t('landing.svc.followup_desc') },
-    { icon: Users, title: t('landing.svc.corporate'), desc: t('landing.svc.corporate_desc') },
-    { icon: HeartPulse, title: t('landing.svc.emergency'), desc: t('landing.svc.emergency_desc') },
-  ];
-
-  const features = [
-    { icon: Zap, title: t('landing.feat.immediate'), desc: t('landing.feat.immediate_desc') },
-    { icon: Lock, title: t('landing.feat.secure'), desc: t('landing.feat.secure_desc') },
-    { icon: BarChart3, title: t('landing.feat.analytics'), desc: t('landing.feat.analytics_desc') },
-    { icon: Smartphone, title: t('landing.feat.universal'), desc: t('landing.feat.universal_desc') },
-    { icon: Globe, title: t('landing.feat.coverage'), desc: t('landing.feat.coverage_desc') },
-    { icon: Heart, title: t('landing.feat.humanized'), desc: t('landing.feat.humanized_desc') },
-  ];
 
   const stats = [
     { value: '150+', label: t('landing.stat_patients') },
@@ -36,11 +17,23 @@ export default function LandingPage() {
     { value: '24/7', label: t('landing.stat_available') },
   ];
 
+  const steps = [
+    { icon: UserPlus, num: '01', title: t('landing.step1_title'), desc: t('landing.step1_desc') },
+    { icon: ClipboardCheck, num: '02', title: t('landing.step2_title'), desc: t('landing.step2_desc') },
+    { icon: Stethoscope, num: '03', title: t('landing.step3_title'), desc: t('landing.step3_desc') },
+  ];
+
+  const testimonials = [
+    { text: t('landing.testimonial1'), author: t('landing.testimonial1_author'), stars: 5 },
+    { text: t('landing.testimonial2'), author: t('landing.testimonial2_author'), stars: 5 },
+    { text: t('landing.testimonial3'), author: t('landing.testimonial3_author'), stars: 5 },
+  ];
+
   return (
     <>
       <Navbar />
 
-      {/* ── Hero (La Meva Salut style) ── */}
+      {/* ── Hero ── */}
       <section className="landing-hero">
         <div className="landing-hero-bg" />
         <div className="landing-hero-content">
@@ -52,8 +45,9 @@ export default function LandingPage() {
           <div className="landing-hero-actions">
             <Link to="/login" className="landing-btn-primary">
               {t('landing.enter')}
+              <ArrowRight size={16} />
             </Link>
-            <Link to="/about" className="landing-btn-secondary">
+            <Link to="/services" className="landing-btn-secondary">
               {t('landing.discover_services')}
             </Link>
           </div>
@@ -70,35 +64,39 @@ export default function LandingPage() {
         ))}
       </section>
 
-      {/* ── Services ── */}
+      {/* ── How it works (3 steps) ── */}
       <section className="landing-section">
         <div className="section-header">
-          <h2>{t('landing.services_title')}</h2>
-          <p>{t('landing.services_subtitle')}</p>
+          <h2>{t('landing.highlights_title')}</h2>
+          <p>{t('landing.highlights_subtitle')}</p>
         </div>
-        <div className="landing-services-grid">
-          {services.map(s => (
-            <div className="landing-service-card" key={s.title}>
-              <div className="landing-service-icon"><s.icon size={24} /></div>
+        <div className="landing-steps-grid">
+          {steps.map((s, i) => (
+            <div className="landing-step-card" key={s.num}>
+              <div className="landing-step-num">{s.num}</div>
+              <div className="landing-step-icon"><s.icon size={28} /></div>
               <h3>{s.title}</h3>
               <p>{s.desc}</p>
+              {i < steps.length - 1 && <div className="landing-step-arrow"><ArrowRight size={20} /></div>}
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Features ── */}
+      {/* ── Testimonials ── */}
       <section className="landing-section landing-section-alt">
         <div className="section-header">
-          <h2>{t('landing.features_title')}</h2>
-          <p>{t('landing.features_subtitle')}</p>
+          <h2>{t('landing.trust_title')}</h2>
         </div>
-        <div className="landing-features-grid">
-          {features.map(f => (
-            <div className="landing-feature-card" key={f.title}>
-              <div className="landing-feature-icon"><f.icon size={22} /></div>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
+        <div className="landing-testimonials-grid">
+          {testimonials.map((tm, i) => (
+            <div className="landing-testimonial-card" key={i}>
+              <Quote size={24} className="landing-quote-icon" />
+              <p className="landing-testimonial-text">{tm.text}</p>
+              <div className="landing-testimonial-stars">
+                {[...Array(tm.stars)].map((_, j) => <Star key={j} size={14} fill="var(--accent-teal)" color="var(--accent-teal)" />)}
+              </div>
+              <span className="landing-testimonial-author">{tm.author}</span>
             </div>
           ))}
         </div>
@@ -114,7 +112,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Emergency Bar (La Meva Salut style) ── */}
+      {/* ── Emergency Bar ── */}
       <div className="emergency-bar">
         <a href="tel:112" className="emergency-bar-item emergency-bar-red">
           <Phone size={18} />
@@ -123,10 +121,10 @@ export default function LandingPage() {
             <span className="emergency-bar-label">{t('landing.emergency_112')}</span>
           </div>
         </a>
-        <a href="tel:061" className="emergency-bar-item emergency-bar-blue">
+        <a href="tel:808242424" className="emergency-bar-item emergency-bar-blue">
           <Phone size={18} />
           <div>
-            <span className="emergency-bar-number">061</span>
+            <span className="emergency-bar-number">SNS 24</span>
             <span className="emergency-bar-label">{t('landing.emergency_061')}</span>
           </div>
         </a>
