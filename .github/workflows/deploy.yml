@@ -32,6 +32,9 @@ jobs:
 
       - name: Build
         working-directory: frontend
+        env:
+          VITE_API_URL: http://46.101.150.184
+          VITE_BASE_PATH: /health-/
         run: npm run build
 
       - name: Upload artifact
