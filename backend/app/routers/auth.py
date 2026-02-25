@@ -686,11 +686,9 @@ def google_callback(code: str | None = None, state: str | None = None,
         log_audit(db, "oauth_login", user_id=user.id, user_email=email,
                   details={"provider": "google"}, request=request)
 
-        redirect_path = "/admin.html" if role == "admin" else "/dashboard.html"
+        redirect_path = "/admin" if role == "admin" else "/dashboard"
         frontend_base = settings.frontend_base.rstrip("/")
-        callback_url = f"{frontend_base}/auth-callback.html"
-        # Use URL fragment (#) instead of query params (?) so the token
-        # never appears in server logs, Referer headers, or browser history.
+        callback_url = f"{frontend_base}/auth/callback"
         params = urlencode({
             "token": token, "email": email, "role": role,
             "name": name or "",
@@ -698,7 +696,7 @@ def google_callback(code: str | None = None, state: str | None = None,
             "account_name": getattr(account, "name", ""),
             "redirect": redirect_path,
         })
-        return RedirectResponse(f"{callback_url}#{params}")
+        return RedirectResponse(f"{callback_url}?{params}")
 
     except HTTPException:
         raise
@@ -897,9 +895,9 @@ def microsoft_callback(code: str | None = None, state: str | None = None,
         log_audit(db, "oauth_login", user_id=user.id, user_email=email,
                   details={"provider": "microsoft"}, request=request)
 
-        redirect_path = "/admin.html" if role == "admin" else "/dashboard.html"
+        redirect_path = "/admin" if role == "admin" else "/dashboard"
         frontend_base = settings.frontend_base.rstrip("/")
-        callback_url = f"{frontend_base}/auth-callback.html"
+        callback_url = f"{frontend_base}/auth/callback"
         params = urlencode({
             "token": token, "email": email, "role": role,
             "name": name or "",
@@ -907,7 +905,7 @@ def microsoft_callback(code: str | None = None, state: str | None = None,
             "account_name": getattr(account, "name", ""),
             "redirect": redirect_path,
         })
-        return RedirectResponse(f"{callback_url}#{params}")
+        return RedirectResponse(f"{callback_url}?{params}")
 
     except HTTPException:
         raise

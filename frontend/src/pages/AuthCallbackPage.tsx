@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { Heart } from 'lucide-react';
+import type { Role } from '../types';
 
 export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -10,14 +11,26 @@ export default function AuthCallbackPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Backend sends: ?token=...&email=...&role=...&name=...&redirect=...
     const token = searchParams.get('token') || searchParams.get('access_token');
-    const userStr = searchParams.get('user');
+    const email = searchParams.get('email') || '';
+    const role = (searchParams.get('role') || 'patient') as Role;
+    const name = searchParams.get('name') || '';
+    const redirect = searchParams.get('redirect') || '/dashboard';
 
     if (token) {
       try {
-        const user = userStr ? JSON.parse(decodeURIComponent(userStr)) : { id: '', email: '', role: 'patient' };
-        login({ access_token: token, user: { ...user, is_active: true } });
-        navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
+        login({
+          access_token: token,
+          user: {
+            id: searchParams.get('account_id') || '',
+            email,
+            role,
+            name,
+            is_active: true,
+          },
+        });
+        navigate(redirect, { replace: true });
       } catch {
         setError('Erro ao processar autenticação.');
       }
