@@ -131,6 +131,15 @@ class AvailabilityOut(BaseModel):
 class TriageStartRequest(BaseModel):
     chief_complaint: Optional[str] = None
 
+    # Optional context for better question selection / downstream analytics.
+    # Frontend may send these fields.
+    age_group: Optional[str] = Field(default=None, description="adult | pediatric")
+    category: Optional[str] = Field(default=None, description="Complaint category slug")
+    answered_by_guardian: Optional[bool] = Field(default=None)
+
+    # Be lenient to keep backwards/forwards compatibility with clients.
+    model_config = {"extra": "allow"}
+
 
 class TriageStartResponse(BaseModel):
     triage_id: str

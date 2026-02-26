@@ -52,7 +52,7 @@ def start_triage(
     return TriageStartResponse(
         triage_id=session.id,
         status=session.status,
-        questions=get_triage_questions(),
+        questions=get_triage_questions(age_group=body.age_group, category=body.category),
     )
 
 

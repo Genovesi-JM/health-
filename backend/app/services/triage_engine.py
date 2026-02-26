@@ -14,6 +14,7 @@ Design:
 """
 import json
 import logging
+import contextlib
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -24,7 +25,8 @@ logger = logging.getLogger(__name__)
 # Triage Questions (config)
 # ═══════════════════════════════════════════════════════════════
 
-TRIAGE_QUESTIONS = [
+# Base questions used for scoring/red-flags. Keep keys stable.
+TRIAGE_QUESTIONS_BASE = [
     {
         "key": "age",
         "text": "Qual é a sua idade?",
@@ -118,6 +120,88 @@ TRIAGE_QUESTIONS = [
 ]
 
 
+def _num_question(key: str, text: str, required: bool = False) -> dict:
+    return {"key": key, "text": text, "type": "number", "required": required}
+
+
+def _bool_question(key: str, text: str, required: bool = False) -> dict:
+    return {"key": key, "text": text, "type": "boolean", "required": required}
+
+
+def _select_question(key: str, text: str, options: List[str], required: bool = False) -> dict:
+    return {"key": key, "text": text, "type": "select", "options": options, "required": required}
+
+
+# Pediatric-friendly versions (same keys where possible; adjust text only)
+TRIAGE_QUESTIONS_PEDIATRIC_BASE = [
+    _num_question("age", "Qual é a idade da criança (anos)?", required=True),
+    _num_question("temperature", "Temperatura (°C)? (0 se não sabe)", required=False),
+    _bool_question("chest_pain", "A criança tem dor no peito?", required=True),
+    _bool_question("breathing_difficulty", "A criança tem dificuldade em respirar?", required=True),
+    _bool_question("fainting", "A criança desmaiou ou parece que vai desmaiar?", required=True),
+    _bool_question("stroke_signs", "A criança tem sinais neurológicos graves (fraqueza num lado, fala estranha)?", required=True),
+    _bool_question("severe_bleeding", "Existe hemorragia grave que não para?", required=True),
+    _num_question("fever_days", "Há quantos dias tem febre? (0 se não tem)", required=False),
+    _num_question("pain_level", "Nível de dor (0 a 10)?", required=True),
+    _bool_question("chronic_conditions", "A criança tem doenças crónicas (asma, epilepsia, etc.)?", required=True),
+    _bool_question("pregnant", "(Ignorar se não aplicável) Pode estar grávida?", required=False),
+    _num_question("symptoms_duration_hours", "Há quantas horas começaram os sintomas?", required=False),
+    _bool_question("vomiting_diarrhea", "Há vómitos ou diarreia persistentes?", required=False),
+    _bool_question("rash_skin", "Há erupção cutânea ou lesões na pele?", required=False),
+    _bool_question("mental_health_crisis", "Existe risco imediato de autolesão/violência?", required=True),
+]
+
+
+# Category modules (additional questions). These do not change evaluation today,
+# but they enrich routing and can be used later without breaking the API.
+TRIAGE_MODULES: Dict[str, List[dict]] = {
+    "respiratory": [
+        _bool_question("cough", "Tem tosse?", required=False),
+        _bool_question("wheezing", "Tem chiado no peito (pieira)?", required=False),
+    ],
+    "gi": [
+        _bool_question("abdominal_pain", "Tem dor abdominal?", required=False),
+        _bool_question("blood_in_stool", "Há sangue nas fezes?", required=False),
+    ],
+    "urinary": [
+        _bool_question("pain_urination", "Tem dor/ardor ao urinar?", required=False),
+        _bool_question("blood_in_urine", "Há sangue na urina?", required=False),
+    ],
+    "skin": [
+        _bool_question("rash_skin", "Tem erupção cutânea ou lesões na pele?", required=False),
+        _bool_question("lip_tongue_swelling", "Tem inchaço de lábios/língua?", required=False),
+    ],
+    "cardiac": [
+        _bool_question("chest_pain", "Tem dor no peito?", required=True),
+        _bool_question("palpitations", "Tem palpitações (coração acelerado/irregular)?", required=False),
+    ],
+    "neuro": [
+        _bool_question("new_weakness", "Teve fraqueza súbita num lado do corpo?", required=False),
+        _bool_question("seizure", "Teve convulsão?", required=False),
+    ],
+    "injury": [
+        _bool_question("head_injury", "Bateu com a cabeça?", required=False),
+        _bool_question("open_fracture", "Existe suspeita de fratura exposta?", required=False),
+    ],
+    "mental": [
+        _bool_question("mental_health_crisis", "Está em crise (pensamentos suicidas, autolesão)?", required=True),
+        _bool_question("intoxication", "Existe intoxicação por álcool/drogas?", required=False),
+    ],
+    "womens": [
+        _bool_question("pregnant", "Está grávida ou pode estar grávida?", required=False),
+        _bool_question("heavy_bleeding", "Tem hemorragia vaginal intensa?", required=False),
+    ],
+    "medication": [
+        _bool_question("med_reaction", "Teve reação alérgica a um medicamento?", required=False),
+        _bool_question("took_too_much", "Tomou dose a mais por engano?", required=False),
+    ],
+    "chronic": [
+        _bool_question("chronic_conditions", "Tem doenças crónicas?", required=True),
+        _bool_question("missed_meds", "Falhou medicação recentemente?", required=False),
+    ],
+}
+
+
 # ═══════════════════════════════════════════════════════════════
 # Red Flag Rules (hard overrides → URGENT / ER_NOW)
 # ═══════════════════════════════════════════════════════════════
@@ -186,9 +270,29 @@ class TriageEvaluation:
 # Engine
 # ═══════════════════════════════════════════════════════════════
 
-def get_triage_questions() -> List[dict]:
-    """Return the list of triage questions for the frontend."""
-    return TRIAGE_QUESTIONS
+def get_triage_questions(age_group: Optional[str] = None, category: Optional[str] = None) -> List[dict]:
+    """Return the list of triage questions for the frontend.
+
+    Args:
+        age_group: 'adult' | 'pediatric' (optional)
+        category: complaint category slug (optional)
+    """
+    ag = (age_group or "adult").lower().strip()
+    cat = (category or "").lower().strip()
+
+    base = TRIAGE_QUESTIONS_PEDIATRIC_BASE if ag in ("pediatric", "child", "kids") else TRIAGE_QUESTIONS_BASE
+    module = TRIAGE_MODULES.get(cat, [])
+
+    # Avoid duplicate keys (module may re-include a base key)
+    seen = set()
+    out: List[dict] = []
+    for q in base + module:
+        key = q.get("key")
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(q)
+    return out
 
 
 def evaluate_triage(answers: Dict[str, Any]) -> TriageEvaluation:
@@ -227,12 +331,10 @@ def evaluate_triage(answers: Dict[str, Any]) -> TriageEvaluation:
     for key, condition_fn, points, reason in SCORING_RULES:
         val = answers.get(key)
         if val is not None:
-            try:
+            with contextlib.suppress(Exception):
                 if condition_fn(val):
                     score += points
                     triggered_rules.append(reason)
-            except Exception:
-                pass
 
     # 3) Classify based on score
     if score >= 40:

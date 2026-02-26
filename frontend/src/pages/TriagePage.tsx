@@ -9,12 +9,30 @@ import {
 
 type Step = 'start' | 'questions' | 'result' | 'history';
 
+type AgeGroup = 'adult' | 'pediatric';
+type TriageCategory =
+  | 'general'
+  | 'respiratory'
+  | 'cardiac'
+  | 'neuro'
+  | 'gi'
+  | 'urinary'
+  | 'skin'
+  | 'injury'
+  | 'mental'
+  | 'womens'
+  | 'medication'
+  | 'chronic';
+
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
 export default function TriagePage() {
   const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [step, setStep] = useState<Step>('history');
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>('adult');
+  const [category, setCategory] = useState<TriageCategory>('general');
+  const [guardian, setGuardian] = useState(false);
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [questions, setQuestions] = useState<TriageQuestion[]>([]);
@@ -38,8 +56,13 @@ export default function TriagePage() {
     if (!complaint.trim()) return;
     setLoading(true); setError('');
     try {
-      const r = await api.post('/api/v1/triage/start', { chief_complaint: complaint });
-      setSessionId(r.data.session_id);
+      const r = await api.post('/api/v1/triage/start', {
+        chief_complaint: complaint,
+        age_group: ageGroup,
+        category,
+        answered_by_guardian: ageGroup === 'pediatric' ? guardian : false,
+      });
+      setSessionId(r.data.triage_id ?? r.data.session_id);
       setQuestions(r.data.questions || []);
       setAnswers({});
       setStep('questions');
@@ -52,8 +75,20 @@ export default function TriagePage() {
   const submitAnswers = async () => {
     setLoading(true); setError('');
     try {
-      const r = await api.post(`/api/v1/triage/${sessionId}/submit`, { answers });
-      setResult(r.data);
+      // Backend expects a list of {question_key, answer}
+      const answerList = Object.entries(answers).map(([question_key, answer]) => ({ question_key, answer }));
+      await api.post(`/api/v1/triage/${sessionId}/answers`, { answers: answerList });
+
+      const r2 = await api.post(`/api/v1/triage/${sessionId}/complete`, {});
+      setResult({
+        id: r2.data.triage_id,
+        triage_session_id: r2.data.triage_id,
+        risk_level: r2.data.risk_level,
+        recommended_action: r2.data.recommended_action,
+        score: r2.data.score,
+        reasoning: r2.data.reasoning || {},
+        created_at: new Date().toISOString(),
+      });
       setStep('result');
       loadHistory();
     } catch (err: any) {
@@ -158,6 +193,60 @@ export default function TriagePage() {
           </div>
           <form onSubmit={startTriage} style={{ padding: '1.25rem' }}>
             <div className="form-group">
+              <label className="form-label">{t('triage.age_group')}</label>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${ageGroup === 'adult' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => { setAgeGroup('adult'); setGuardian(false); }}
+                >
+                  {t('triage.age_adult')}
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${ageGroup === 'pediatric' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setAgeGroup('pediatric')}
+                >
+                  {t('triage.age_child')}
+                </button>
+              </div>
+              {ageGroup === 'pediatric' && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <input
+                      type="checkbox"
+                      checked={guardian}
+                      onChange={e => setGuardian(e.target.checked)}
+                    />
+                    {t('triage.answered_by_parent')}
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">{t('triage.category')}</label>
+              <select
+                className="form-select"
+                value={category}
+                onChange={e => setCategory(e.target.value as TriageCategory)}
+              >
+                <option value="general">{t('triage.cat_general')}</option>
+                <option value="respiratory">{t('triage.cat_respiratory')}</option>
+                <option value="cardiac">{t('triage.cat_cardiac')}</option>
+                <option value="neuro">{t('triage.cat_neuro')}</option>
+                <option value="gi">{t('triage.cat_gi')}</option>
+                <option value="urinary">{t('triage.cat_urinary')}</option>
+                <option value="skin">{t('triage.cat_skin')}</option>
+                <option value="injury">{t('triage.cat_injury')}</option>
+                <option value="mental">{t('triage.cat_mental')}</option>
+                <option value="womens">{t('triage.cat_womens')}</option>
+                <option value="medication">{t('triage.cat_medication')}</option>
+                <option value="chronic">{t('triage.cat_chronic')}</option>
+              </select>
+            </div>
+
+            <div className="form-group">
               <label className="form-label">{t('triage.chief_complaint')}</label>
               <textarea className="form-textarea" rows={3}
                 placeholder={t('triage.describe_placeholder')}
@@ -181,7 +270,7 @@ export default function TriagePage() {
           <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.answer_questions')}</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-              Queixa: <strong style={{ color: 'var(--text-primary)' }}>{complaint}</strong>
+              {t('triage.summary')}: <strong style={{ color: 'var(--text-primary)' }}>{(ageGroup === 'adult' ? t('triage.age_adult') : t('triage.age_child'))} • {t(`triage.cat_${category}`)}</strong> — {t('triage.chief_complaint')}: <strong style={{ color: 'var(--text-primary)' }}>{complaint}</strong>
             </p>
           </div>
           <div style={{ padding: '1.25rem' }}>

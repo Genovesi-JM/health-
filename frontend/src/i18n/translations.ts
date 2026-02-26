@@ -219,6 +219,30 @@ const translations: Record<string, Record<Lang, string>> = {
   'services.faq5_a': { pt: 'Sim! A plataforma oferece gestão de doenças crónicas dos colaboradores, prescrições corporativas, consultas com todas as especialidades e relatórios de saúde ocupacional.', en: 'Yes! The platform offers employee chronic disease management, corporate prescriptions, consultations across all specialties and occupational health reports.', fr: 'Oui ! La plateforme offre la gestion des maladies chroniques des employés, les prescriptions corporate, les consultations dans toutes les spécialités et les rapports de santé au travail.' },
 
   /* ═══════════════════════════════════════════════════════════
+     TRIAGE — start flow additions (age group + category)
+     ═══════════════════════════════════════════════════════════ */
+  'triage.age_group': { pt: 'Para quem é a triagem?', en: 'Who is the triage for?', fr: 'Pour qui est le triage ?' },
+  'triage.age_adult': { pt: 'Adulto', en: 'Adult', fr: 'Adulte' },
+  'triage.age_child': { pt: 'Criança', en: 'Child', fr: 'Enfant' },
+  'triage.answered_by_parent': { pt: 'Estou a responder como pai/mãe ou responsável', en: 'I am answering as a parent/guardian', fr: 'Je réponds en tant que parent/tuteur' },
+
+  'triage.category': { pt: 'Categoria', en: 'Category', fr: 'Catégorie' },
+  'triage.cat_general': { pt: 'Geral / Não sei', en: 'General / Not sure', fr: 'Général / Je ne sais pas' },
+  'triage.cat_respiratory': { pt: 'Respiração (tosse, falta de ar)', en: 'Breathing (cough, shortness of breath)', fr: 'Respiration (toux, essoufflement)' },
+  'triage.cat_cardiac': { pt: 'Coração / Peito', en: 'Heart / Chest', fr: 'Cœur / Poitrine' },
+  'triage.cat_neuro': { pt: 'Neurológico (cabeça, tonturas, convulsões)', en: 'Neurologic (head, dizziness, seizures)', fr: 'Neurologique (tête, vertiges, crises)' },
+  'triage.cat_gi': { pt: 'Gastrointestinal (dor abdominal, vómitos, diarreia)', en: 'Gastrointestinal (abdominal pain, vomiting, diarrhea)', fr: 'Gastro-intestinal (douleur abdominale, vomissements, diarrhée)' },
+  'triage.cat_urinary': { pt: 'Urinário / Genital', en: 'Urinary / Genital', fr: 'Urinaire / Génital' },
+  'triage.cat_skin': { pt: 'Pele (alergia, erupção)', en: 'Skin (allergy, rash)', fr: 'Peau (allergie, éruption)' },
+  'triage.cat_injury': { pt: 'Trauma / Lesão', en: 'Trauma / Injury', fr: 'Traumatisme / Blessure' },
+  'triage.cat_mental': { pt: 'Saúde mental', en: 'Mental health', fr: 'Santé mentale' },
+  'triage.cat_womens': { pt: 'Saúde da mulher / Gravidez', en: "Women's health / Pregnancy", fr: 'Santé de la femme / Grossesse' },
+  'triage.cat_medication': { pt: 'Medicação (efeitos, dose, reação)', en: 'Medication (effects, dose, reaction)', fr: 'Médicaments (effets, dose, réaction)' },
+  'triage.cat_chronic': { pt: 'Doença crónica (controlo, crise)', en: 'Chronic condition (control, flare)', fr: 'Maladie chronique (contrôle, crise)' },
+
+   'triage.summary': { pt: 'Resumo', en: 'Summary', fr: 'Résumé' },
+
+  /* ═══════════════════════════════════════════════════════════
      LOGIN PAGE
      ═══════════════════════════════════════════════════════════ */
   'login.title': { pt: 'Iniciar Sessão', en: 'Sign In', fr: 'Connexion' },
