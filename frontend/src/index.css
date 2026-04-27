@@ -1805,3 +1805,129 @@ input:focus, select:focus, textarea:focus {
   font-size: 0.75rem; color: #64748b;
 }
 
+/* ════════════════════════════════════════════
+   CareFast+ — Triage KPIs, Score, Ecosystem,
+   Honest commitments
+   ════════════════════════════════════════════ */
+
+/* ── Ecosystem — card layout ── */
+.cf-ecosystem-full {
+  display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+}
+@media (min-width: 700px) {
+  .cf-ecosystem-full { flex-direction: row; align-items: flex-start; justify-content: center; gap: 2rem; }
+}
+.cf-ecosystem-center-box {
+  width: 96px; height: 96px; border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 0.2rem;
+  color: #fff; font-weight: 800; font-size: 0.65rem;
+  letter-spacing: 0.08em; text-align: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(13,148,136,0.3);
+}
+.cf-ecosystem-cards {
+  display: flex; flex-direction: column; gap: 0.7rem;
+  max-width: 560px; width: 100%;
+}
+.cf-ecosystem-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-left: 4px solid;
+  border-radius: 12px; padding: 0.85rem 1.1rem;
+  transition: transform 0.2s;
+}
+.cf-ecosystem-card:hover { transform: translateX(4px); }
+.cf-ecosystem-card-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 0.2rem; }
+.cf-ecosystem-card-desc  { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; }
+
+/* ── KPI triage dashboard ── */
+.cf-kpi-title {
+  font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+  text-align: center; margin-bottom: 0.9rem; letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cf-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem; margin-bottom: 1.75rem;
+  max-width: 780px; margin-left: auto; margin-right: auto;
+}
+.cf-kpi-card {
+  border: 1px solid; border-radius: 14px;
+  padding: 1rem 1.1rem; text-align: center;
+  transition: transform 0.2s;
+}
+.cf-kpi-card:hover { transform: translateY(-2px); }
+.cf-kpi-label {
+  font-size: 0.68rem; color: var(--text-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem;
+}
+.cf-kpi-value {
+  font-size: 1.3rem; font-weight: 800; color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+.cf-kpi-badge {
+  display: inline-block; color: #fff; font-size: 0.68rem; font-weight: 700;
+  border-radius: 99px; padding: 0.2rem 0.65rem;
+}
+
+/* ── Score + booking block ── */
+.cf-score-block {
+  display: flex; flex-wrap: wrap; gap: 1.25rem;
+  align-items: center; justify-content: center;
+  background: var(--bg-card); border: 1px solid #fecaca;
+  border-radius: 16px; padding: 1.4rem 1.6rem;
+  max-width: 780px; margin: 0 auto 0.5rem;
+  box-shadow: 0 2px 12px rgba(239,68,68,0.07);
+}
+.cf-score-left { flex: 1; min-width: 180px; }
+.cf-score-label {
+  font-size: 0.68rem; color: var(--text-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem;
+}
+.cf-score-value { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+.cf-score-sub   { font-size: 0.72rem; color: var(--text-muted); }
+.cf-score-right {
+  display: flex; flex-direction: column; gap: 0.6rem;
+  flex: 1; min-width: 220px;
+}
+.cf-score-suggestion {
+  font-size: 0.82rem; font-weight: 600; color: #92400e;
+  background: #fffbeb; border: 1px solid #fde68a;
+  border-radius: 8px; padding: 0.55rem 0.85rem;
+}
+.cf-score-btn {
+  font-size: 0.82rem !important; padding: 0.6rem 1rem !important;
+  display: inline-flex !important; align-items: center; gap: 0.4rem;
+}
+
+/* ── Honest commitments grid ── */
+.cf-honest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem; margin-bottom: 1.25rem;
+}
+.cf-honest-col { border-radius: 14px; padding: 1.4rem 1.5rem; border: 1px solid; }
+.cf-honest-yes { background: #f0fdf4; border-color: #bbf7d0; }
+.cf-honest-no  { background: #fffbeb; border-color: #fde68a; }
+.cf-honest-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-weight: 700; font-size: 0.9rem; margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+.cf-honest-col ul {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.cf-honest-col ul li {
+  display: flex; align-items: flex-start; gap: 0.45rem;
+  font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;
+}
+.cf-honest-note {
+  text-align: center;
+  background: #fef2f2; border: 1px solid #fecaca;
+  border-radius: 10px; padding: 0.85rem 1rem;
+  font-size: 0.82rem; color: #991b1b;
+  max-width: 680px; margin: 0 auto;
+}
