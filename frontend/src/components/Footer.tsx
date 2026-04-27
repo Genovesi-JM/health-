@@ -11,8 +11,17 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <Heart size={22} style={{ color: 'var(--accent-teal)' }} />
-              <span style={{ fontWeight: 700, letterSpacing: '2px', fontSize: '0.95rem' }}>HEALTH PLATFORM</span>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: 'var(--gradient-primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ color: '#fff', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>+</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>CareFast<span style={{ color: 'var(--accent-teal)' }}>+</span></span>
+                <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>O seu sistema de saúde</span>
+              </div>
             </div>
             <p>{t('footer.brand_desc')}</p>
           </div>

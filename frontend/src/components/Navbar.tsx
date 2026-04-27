@@ -30,8 +30,19 @@ export function Navbar() {
     <nav className="navbar">
       <div className="navbar-inner">
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', textDecoration: 'none', color: 'var(--text-primary)' }}>
-          <Heart size={28} style={{ color: 'var(--accent-teal)' }} />
-          <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.15em' }}>HEALTH PLATFORM</span>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: 'var(--gradient-primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ color: '#fff', fontWeight: 900, fontSize: '1.1rem', lineHeight: 1 }}>+</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.04em', color: 'var(--text-primary)' }}>
+              CareFast<span style={{ color: 'var(--accent-teal)' }}>+</span>
+            </span>
+            <span style={{ fontSize: '0.64rem', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.02em' }}>O seu sistema de saúde</span>
+          </div>
         </Link>
 
         <div style={{

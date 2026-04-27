@@ -1399,3 +1399,409 @@ input:focus, select:focus, textarea:focus {
 }
 .chat-send:hover { transform: scale(1.06); }
 .chat-send:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+/* ════════════════════════════════════════════
+   CareFast+ Landing — New Design System
+   ════════════════════════════════════════════ */
+
+/* ── Section tag / eyebrow ── */
+.cf-section-tag {
+  display: inline-block;
+  background: rgba(13,148,136,0.1);
+  color: var(--accent-teal);
+  border: 1px solid rgba(13,148,136,0.2);
+  border-radius: 99px;
+  padding: 0.25rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Hero ── */
+.cf-hero {
+  position: relative;
+  min-height: 88vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  justify-items: center;
+  padding: 6rem 1.5rem 4rem;
+  overflow: hidden;
+  gap: 2.5rem;
+}
+@media (min-width: 900px) {
+  .cf-hero {
+    grid-template-columns: 1fr 1fr;
+    justify-items: start;
+    padding: 7rem 4rem 5rem;
+  }
+}
+.cf-hero-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 60% 40%, rgba(13,148,136,0.12) 0%, rgba(8,145,178,0.06) 50%, transparent 70%);
+  pointer-events: none;
+}
+.cf-hero-content {
+  position: relative; z-index: 2;
+  max-width: 560px;
+  display: flex; flex-direction: column;
+}
+.cf-hero-badge {
+  display: inline-flex; align-items: center;
+  background: rgba(13,148,136,0.08);
+  border: 1px solid rgba(13,148,136,0.2);
+  color: var(--accent-teal);
+  border-radius: 99px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.75rem; font-weight: 600;
+  margin-bottom: 1.25rem;
+  width: fit-content;
+}
+.cf-hero-title {
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  font-weight: 800; line-height: 1.1;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+}
+.cf-hero-accent {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.cf-hero-sub {
+  font-size: 1rem; color: var(--text-secondary);
+  line-height: 1.7; margin-bottom: 1.25rem;
+  max-width: 480px;
+}
+.cf-hero-actions {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+/* Hero visual cards (right column) */
+.cf-hero-visual {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  width: 100%; max-width: 320px;
+}
+.cf-hero-card {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  animation: slideIn 0.4s ease;
+}
+.cf-hero-card-main  { border-left: 3px solid #0d9488; }
+.cf-hero-card-alert { border-left: 3px solid #0891b2; }
+.cf-hero-card-device { border-left: 3px solid #7c3aed; }
+
+/* ── Value props strip ── */
+.cf-props-strip {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 0.5rem 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+.cf-prop {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── 4-Layer differential cards ── */
+.cf-layers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+.cf-layer-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--accent-teal);
+  border-radius: 14px;
+  padding: 1.4rem 1.25rem;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.cf-layer-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
+.cf-layer-badge {
+  display: inline-block;
+  font-size: 0.65rem; font-weight: 800; color: #fff;
+  border-radius: 4px; padding: 0.15rem 0.5rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+.cf-layer-card h3 {
+  font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;
+}
+.cf-layer-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.cf-layer-list li {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+
+/* ── Smart Flow ── */
+.cf-flow-steps {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 0; margin-bottom: 2rem;
+  position: relative;
+}
+.cf-flow-step {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.35rem; text-align: center;
+  font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;
+  background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 1rem 1.1rem;
+  min-width: 130px; position: relative;
+  transition: border-color 0.2s;
+}
+.cf-flow-step:hover { border-color: var(--accent-teal); }
+.cf-flow-step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--gradient-primary); color: #fff;
+  font-weight: 800; font-size: 0.78rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.cf-flow-arrow {
+  color: var(--text-muted);
+  align-self: center;
+  margin: 0 0.25rem;
+}
+.cf-flow-outcomes {
+  display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;
+  margin-bottom: 1.25rem;
+}
+.cf-outcome-card {
+  display: flex; align-items: center; gap: 0.75rem;
+  border: 1px solid;
+  border-radius: 12px;
+  padding: 0.85rem 1.1rem;
+  min-width: 200px;
+}
+.cf-flow-tagline {
+  text-align: center; font-size: 0.82rem;
+  font-weight: 700; color: var(--accent-teal);
+  letter-spacing: 0.03em;
+}
+
+/* ── Pharmacy flow ── */
+.cf-pharmacy-flow {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: center; gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.cf-pharmacy-step {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.4rem; font-size: 0.78rem; font-weight: 600;
+  color: var(--text-secondary); text-align: center;
+}
+.cf-pharmacy-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--gradient-glow); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent-teal);
+}
+.cf-pharm-arrow { color: var(--text-muted); align-self: center; }
+.cf-pharmacy-benefits {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem;
+}
+.cf-benefit-chip {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: #f0fdf4; border: 1px solid #bbf7d0;
+  border-radius: 99px; padding: 0.35rem 0.85rem;
+  font-size: 0.78rem; font-weight: 600; color: #166534;
+}
+
+/* ── Devices grid ── */
+.cf-devices-grid {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 0.6rem; margin-bottom: 2rem;
+}
+.cf-device-chip {
+  display: flex; align-items: center; gap: 0.45rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 99px; padding: 0.45rem 1rem;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-primary);
+  transition: border-color 0.2s, transform 0.2s;
+}
+.cf-device-chip:hover { border-color: var(--accent-teal); transform: translateY(-1px); }
+.cf-device-formula {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: center; gap: 0.4rem;
+}
+.cf-formula-box {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0.55rem 0.85rem;
+  font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.cf-formula-box-accent {
+  background: var(--gradient-primary); color: #fff;
+  border-color: transparent;
+}
+
+/* ── Ecosystem ── */
+.cf-ecosystem {
+  display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+}
+@media (min-width: 700px) {
+  .cf-ecosystem { flex-direction: row; justify-content: center; }
+}
+.cf-ecosystem-center {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 0.2rem;
+  color: #fff; font-weight: 800; font-size: 0.7rem;
+  letter-spacing: 0.08em; text-align: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(13,148,136,0.3);
+}
+.cf-ecosystem-nodes {
+  display: flex; flex-wrap: wrap; gap: 0.6rem;
+  justify-content: center; max-width: 500px;
+}
+.cf-ecosystem-node {
+  border: 2px solid;
+  border-radius: 10px; padding: 0.5rem 1rem;
+  font-size: 0.8rem; font-weight: 700;
+  background: var(--bg-card);
+  transition: transform 0.2s;
+}
+.cf-ecosystem-node:hover { transform: scale(1.03); }
+
+/* ── Roadmap ── */
+.cf-roadmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  position: relative;
+}
+.cf-phase-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 4px solid;
+  border-radius: 14px;
+  padding: 1.4rem 1.25rem;
+  position: relative;
+  transition: transform 0.25s;
+}
+.cf-phase-card:hover { transform: translateY(-3px); }
+.cf-phase-badge {
+  display: inline-block;
+  color: #fff; font-size: 0.65rem; font-weight: 800;
+  border-radius: 4px; padding: 0.15rem 0.5rem;
+  letter-spacing: 0.06em; margin-bottom: 0.35rem;
+}
+.cf-phase-range {
+  font-size: 0.72rem; color: var(--text-muted);
+  font-weight: 600; margin-bottom: 0.5rem;
+}
+.cf-phase-card h3 {
+  font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;
+}
+.cf-phase-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.cf-phase-list li {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+.cf-phase-arrow {
+  display: none; color: var(--text-muted);
+}
+@media (min-width: 900px) {
+  .cf-phase-arrow { display: block; position: absolute; right: -20px; top: 50%; }
+}
+
+/* ── Device Packs ── */
+.cf-packs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+.cf-pack-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 4px solid;
+  border-radius: 14px;
+  padding: 1.4rem 1.25rem;
+  display: flex; flex-direction: column;
+  position: relative;
+  transition: transform 0.25s;
+}
+.cf-pack-card:hover { transform: translateY(-3px); }
+.cf-pack-highlight {
+  box-shadow: 0 4px 20px rgba(180,87,9,0.12);
+}
+.cf-pack-tag {
+  position: absolute; top: -1px; right: 1.25rem;
+  color: #fff; font-size: 0.65rem; font-weight: 800;
+  border-radius: 0 0 6px 6px;
+  padding: 0.2rem 0.6rem; letter-spacing: 0.06em;
+}
+.cf-pack-card h3 {
+  font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;
+}
+.cf-pack-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 0.35rem; flex: 1;
+}
+.cf-pack-list li {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+.cf-packs-tagline {
+  text-align: center; margin-top: 1.25rem;
+  font-size: 0.82rem; color: var(--text-muted); font-style: italic;
+}
+
+/* ── CTA section ── */
+.cf-cta {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  padding: 5rem 1.5rem;
+  text-align: center;
+}
+.cf-cta-inner { max-width: 640px; margin: 0 auto; }
+.cf-cta-tag {
+  display: inline-block;
+  background: rgba(13,148,136,0.2);
+  color: #5eead4; border: 1px solid rgba(13,148,136,0.3);
+  border-radius: 99px; padding: 0.3rem 0.9rem;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; margin-bottom: 1rem;
+}
+.cf-cta h2 {
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  font-weight: 800; color: #fff; margin-bottom: 0.75rem; line-height: 1.25;
+}
+.cf-cta p {
+  font-size: 0.95rem; color: #94a3b8; margin-bottom: 1.75rem;
+}
+.cf-cta-actions {
+  display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
+}
+.cf-cta .landing-btn-secondary {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+  color: #fff;
+}
+.cf-cta .landing-btn-secondary:hover {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
+}
+.cf-cta-footnote {
+  margin-top: 1.5rem;
+  font-size: 0.75rem; color: #64748b;
+}
+
