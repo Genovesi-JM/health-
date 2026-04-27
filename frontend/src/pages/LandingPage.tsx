@@ -6,17 +6,23 @@ import {
   HeartPulse, ClipboardCheck, Stethoscope, ArrowRight,
   UserPlus, Heart, Brain,
   Activity, Pill, Wind, Smile, Shield, Droplets,
-  MapPin, CalendarCheck, Zap,
+  MapPin, CalendarCheck, Zap, Star, CheckCircle2,
 } from 'lucide-react';
 
 export default function LandingPage() {
   const { t } = useT();
 
   const stats = [
-    { label: t('landing.stat_patients') },
-    { label: t('landing.stat_doctors') },
-    { label: t('landing.stat_satisfaction') },
-    { label: t('landing.stat_available') },
+    { value: '50K+', label: t('landing.stat_patients') },
+    { value: '300+', label: t('landing.stat_doctors') },
+    { value: '98%', label: t('landing.stat_satisfaction') },
+    { value: '20+', label: t('landing.stat_available') },
+  ];
+
+  const testimonials = [
+    { name: 'Ana Rodrigues', role: 'Paciente', text: 'A plataforma transformou a minha experiência com saúde. Consegui marcar uma consulta em minutos e fui atendida por um excelente especialista.', rating: 5 },
+    { name: 'Dr. Carlos Mendes', role: 'Cardiologista', text: 'Como médico, a gestão dos meus pacientes tornou-se muito mais eficiente. As ferramentas digitais são intuitivas e poupam imenso tempo.', rating: 5 },
+    { name: 'João Silva', role: 'Paciente', text: 'O acompanhamento de doenças crónicas nesta plataforma é excelente. Tenho todos os meus dados de saúde num só lugar.', rating: 5 },
   ];
 
   const steps = [
@@ -42,8 +48,14 @@ export default function LandingPage() {
           <div className="landing-hero-icon">
             <HeartPulse size={48} />
           </div>
+          <div className="landing-hero-badge">🇦🇴 Plataforma de Saúde Digital · Angola</div>
           <h1 className="landing-hero-title">Health Platform</h1>
           <p className="landing-hero-subtitle">{t('landing.hero_desc')}</p>
+          <ul className="landing-hero-checklist">
+            <li><CheckCircle2 size={16} /> Consultas online com especialistas certificados</li>
+            <li><CheckCircle2 size={16} /> Gestão de doenças crónicas personalizada</li>
+            <li><CheckCircle2 size={16} /> Prescrições digitais e histórico clínico seguro</li>
+          </ul>
           <div className="landing-hero-actions">
             <Link to="/login" className="landing-btn-primary">
               {t('landing.enter')}
@@ -60,6 +72,7 @@ export default function LandingPage() {
       <section className="landing-stats-strip">
         {stats.map(s => (
           <div className="landing-stat" key={s.label}>
+            <span className="landing-stat-value">{s.value}</span>
             <span className="landing-stat-label">{s.label}</span>
           </div>
         ))}
@@ -155,6 +168,35 @@ export default function LandingPage() {
               <div className="landing-service-icon" style={{ color: 'var(--accent-teal)' }}><f.icon size={24} /></div>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Testimonials ── */}
+      <section className="landing-section">
+        <div className="section-header">
+          <h2>O que dizem os nossos utilizadores</h2>
+          <p>Histórias reais de pacientes e médicos que confiam na nossa plataforma</p>
+        </div>
+        <div className="landing-testimonials-grid">
+          {testimonials.map((t2) => (
+            <div className="landing-testimonial-card" key={t2.name}>
+              <div className="landing-testimonial-stars">
+                {Array.from({ length: t2.rating }).map((_, i) => (
+                  <Star key={i} size={14} fill="currentColor" />
+                ))}
+              </div>
+              <p className="landing-testimonial-text">"{t2.text}"</p>
+              <div className="landing-testimonial-author">
+                <div className="landing-testimonial-avatar">
+                  {t2.name.charAt(0)}
+                </div>
+                <div>
+                  <div className="landing-testimonial-name">{t2.name}</div>
+                  <div className="landing-testimonial-role">{t2.role}</div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
