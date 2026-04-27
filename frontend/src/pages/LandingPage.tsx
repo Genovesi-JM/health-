@@ -79,7 +79,7 @@ export default function LandingPage() {
   const ecosystemNodes = [
     { label: 'Médicos Digitais',      color: '#0d9488', desc: 'Validam triagem, emitem receitas e orientam o paciente' },
     { label: 'Clínicas & Hospitais',  color: '#0891b2', desc: 'Parceiros para bookings, urgências e consultas presenciais' },
-    { label: 'Farmácias Parceiras',   color: '#7c3aed', desc: 'Recebem a receita digital e entregam ao domicílio' },
+    { label: 'Farmácias Parceiras',   color: '#7c3aed', desc: 'Recebem a receita digital emitida pelo médico parceiro' },
     { label: 'Devices Conectados',    color: '#b45309', desc: 'Enviam sinais vitais em tempo real para o historial' },
     { label: 'Historial Clínico',     color: '#db2777', desc: 'Dados do paciente acessíveis ao médico em qualquer consulta' },
   ];
@@ -312,7 +312,6 @@ export default function LandingPage() {
             { icon: UserPlus,       label: 'Médico Parceiro Avalia' },
             { icon: ClipboardCheck, label: 'Receita Digital Emitida' },
             { icon: Package,        label: 'Farmácia Parceira' },
-            { icon: Truck,          label: 'Entrega ao Paciente' },
           ].map((s, i, arr) => (
             <div className="cf-pharmacy-step" key={s.label}>
               <div className="cf-pharmacy-icon"><s.icon size={22} /></div>
@@ -326,7 +325,6 @@ export default function LandingPage() {
             'Receita sempre emitida por médico',
             'Mais adesão ao tratamento',
             'Menos deslocações desnecessárias',
-            'Entrega rápida e rastreada',
           ].map(b => (
             <div className="cf-benefit-chip" key={b}>
               <CheckCircle2 size={14} style={{ color: '#16a34a' }} /> {b}
@@ -732,10 +730,9 @@ export default function LandingPage() {
         <div className="cf-pharmacy-flow">
           {[
             { icon: ClipboardCheck, label: 'Pedido do Paciente' },
-            { icon: Brain,          label: 'Verificação Inteligente' },
             { icon: UserPlus,       label: 'Médico Parceiro Avalia' },
+            { icon: ClipboardCheck, label: 'Receita Digital Emitida' },
             { icon: Package,        label: 'Farmácia Parceira' },
-            { icon: Truck,          label: 'Entrega ao Paciente' },
           ].map((s, i, arr) => (
             <div className="cf-pharmacy-step" key={s.label}>
               <div className="cf-pharmacy-icon"><s.icon size={22} /></div>
@@ -749,7 +746,6 @@ export default function LandingPage() {
             'Mais adesão ao tratamento',
             'Menos idas desnecessárias',
             'Segurança + Conveniência',
-            'Entrega rápida e rastreada',
           ].map(b => (
             <div className="cf-benefit-chip" key={b}>
               <CheckCircle2 size={14} style={{ color: '#16a34a' }} /> {b}

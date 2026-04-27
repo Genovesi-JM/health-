@@ -33,6 +33,50 @@ type TriageCategory =
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
+const QUESTION_LABELS: Record<string, string> = {
+  fever:                    'Tem febre actualmente?',
+  chest_pain:               'Tem dor no peito?',
+  shortness_of_breath:      'Tem falta de ar ou dificuldade em respirar?',
+  nausea:                   'Tem náuseas?',
+  vomiting:                 'Tem vómitos?',
+  headache:                 'Tem dor de cabeça?',
+  dizziness:                'Tem tonturas ou sensação de desmaio?',
+  abdominal_pain:           'Tem dor abdominal?',
+  pain_scale:               'Numa escala de 1 a 10, como classifica a dor?',
+  duration:                 'Há quanto tempo tem estes sintomas?',
+  onset:                    'Os sintomas começaram de forma súbita ou gradual?',
+  frequency:                'Com que frequência ocorrem os sintomas?',
+  previous_episodes:        'Já teve episódios semelhantes anteriormente?',
+  medications_taken:        'Tomou algum medicamento para aliviar os sintomas?',
+  allergic_reaction:        'Tem algum sinal de reacção alérgica (erupção, inchaço)?',
+  blood_pressure_high:      'Tem tensão arterial habitualmente elevada?',
+  heart_palpitations:       'Sente palpitações ou batimentos cardíacos irregulares?',
+  cough:                    'Tem tosse?',
+  productive_cough:         'A tosse é produtiva (com expetoração)?',
+  urinary_symptoms:         'Tem sintomas urinários (ardor, frequência, cor alterada)?',
+  skin_rash:                'Tem erupção cutânea ou alterações na pele?',
+  swelling:                 'Tem inchaço em alguma parte do corpo?',
+  fatigue:                  'Tem cansaço ou fadiga intensa?',
+  loss_of_consciousness:    'Perdeu ou quase perdeu a consciência?',
+  severity:                 'Como avalia a gravidade geral do seu estado?',
+  chronic_condition_flare:  'É um agravamento de uma condição crónica conhecida?',
+  appetite_loss:            'Perdeu o apetite?',
+  weight_loss:              'Tem perdido peso sem razão aparente?',
+  night_sweats:             'Tem suores nocturnos?',
+  blurred_vision:           'Tem visão turva ou alterações visuais?',
+  ear_pain:                 'Tem dor de ouvido?',
+  sore_throat:              'Tem dor de garganta?',
+  runny_nose:               'Tem corrimento nasal?',
+  back_pain:                'Tem dor nas costas?',
+  joint_pain:               'Tem dor nas articulações?',
+  muscle_pain:              'Tem dores musculares?',
+  trauma:                   'Sofreu algum traumatismo ou queda recente?',
+  bleeding:                 'Tem sangramento activo?',
+  confusion:                'Tem confusão mental ou desorientação?',
+  anxiety:                  'Sente ansiedade ou ataques de pânico?',
+  depression_symptoms:      'Tem sentimentos de tristeza persistente ou depressão?',
+};
+
 export default function TriagePage() {
   const { t, lang } = useT();
   const location = useLocation();
@@ -520,7 +564,7 @@ export default function TriagePage() {
               <div key={q.key} className="form-group triage-question-group">
                 <label className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>
                   <span style={{ color: 'var(--accent-teal)', marginRight: '0.4rem', fontSize: '0.75rem' }}>{qi + 1}.</span>
-                  {q.label && q.label.trim() ? q.label : q.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  {q.label && q.label.trim() ? q.label : (QUESTION_LABELS[q.key] ?? q.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}
                 </label>
                 {q.type === 'boolean' && (
                   <div style={{ display: 'flex', gap: '0.75rem' }}>

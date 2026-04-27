@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import type { Patient } from '../types';
-import { User, Save, AlertCircle, Plus, Trash2, Users, Pill, Activity } from 'lucide-react';
+import { User, Save, AlertCircle, Plus, Trash2, Users, Pill, Activity, Building2, Stethoscope, Hospital, MonitorSmartphone, CheckCircle2 } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
 // ─── Local Types ─────────────────────────────────────────────
@@ -26,6 +26,38 @@ function calcAge(dob: string): number {
   const diff = Date.now() - new Date(dob).getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
 }
+
+// ─── Partners Data ────────────────────────────────────────────
+
+interface Partner {
+  id: string;
+  name: string;
+  type: 'clinic' | 'online_doctor' | 'hospital';
+  detail: string;
+}
+
+const PARTNERS: Partner[] = [
+  { id: 'girassol',       name: 'Clínica Girassol',            type: 'clinic',         detail: 'Luanda — Clínica geral e especialidades' },
+  { id: 'multiperfil',    name: 'Clínica Multiperfil',         type: 'clinic',         detail: 'Luanda — Multiespecialidades e urgência' },
+  { id: 'sagrada',        name: 'Clínica Sagrada Esperança',   type: 'clinic',         detail: 'Luanda — Internamento e cirurgia' },
+  { id: 'dr_consulta',    name: 'Dr. Consulta Online',         type: 'online_doctor',  detail: 'Consulta médica em vídeo — sem deslocação' },
+  { id: 'medonline',      name: 'MedOnline Angola',            type: 'online_doctor',  detail: 'Médicos disponíveis 7 dias por semana' },
+  { id: 'boavida',        name: 'Hospital Américo Boavida',    type: 'hospital',       detail: 'Luanda — Hospital público de referência' },
+  { id: 'hlu',            name: 'Hospital de Luanda',          type: 'hospital',       detail: 'Luanda — Urgências e internamento' },
+  { id: 'hmp',            name: 'Hospital Militar Principal',  type: 'hospital',       detail: 'Luanda — Urgências e especialidades' },
+];
+
+const PARTNER_TYPE_ICON: Record<Partner['type'], ReactNode> = {
+  clinic:        <Stethoscope size={14} />,
+  online_doctor: <MonitorSmartphone size={14} />,
+  hospital:      <Hospital size={14} />,
+};
+
+const PARTNER_TYPE_LABEL: Record<Partner['type'], string> = {
+  clinic:        'Clínica',
+  online_doctor: 'Médico Online',
+  hospital:      'Hospital',
+};
 
 export default function PatientProfilePage() {
   const { t } = useT();
@@ -58,6 +90,19 @@ export default function PatientProfilePage() {
   const [newDepName, setNewDepName] = useState('');
   const [newDepDob, setNewDepDob] = useState('');
   const [newDepRel, setNewDepRel] = useState<'filho' | 'filha' | 'outro'>('filho');
+
+  // ── Partners ──────────────────────────────────────────────
+  const [selectedPartners, setSelectedPartners] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('cf_partners') || '[]'); } catch { return []; }
+  });
+
+  const togglePartner = (id: string) => {
+    setSelectedPartners(prev => {
+      const next = prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id];
+      localStorage.setItem('cf_partners', JSON.stringify(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     api.get('/api/v1/patients/me')
@@ -395,6 +440,46 @@ export default function PatientProfilePage() {
                 <button className="btn btn-outline btn-sm" onClick={() => setShowDepForm(false)}>{t('family.cancel_add')}</button>
               </div>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* ══ PARCEIROS DE SAÚDE ══ */}
+      <div className="card" style={{ maxWidth: '700px', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
+          <Building2 size={18} style={{ color: 'var(--accent-teal)' }} />
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Parceiros de Saúde</h3>
+        </div>
+        <div style={{ padding: '1.25rem' }}>
+          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
+            Seleccione os parceiros que pretende associar ao seu perfil. Ao marcar uma consulta, os seus dados de triagem serão partilhados com o parceiro seleccionado.
+          </p>
+          <div className="partners-grid">
+            {PARTNERS.map(p => {
+              const selected = selectedPartners.includes(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`partner-card${selected ? ' partner-card--selected' : ''}`}
+                  onClick={() => togglePartner(p.id)}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span className={`partner-type-badge partner-type-badge--${p.type}`}>
+                      {PARTNER_TYPE_ICON[p.type]} {PARTNER_TYPE_LABEL[p.type]}
+                    </span>
+                    {selected && <CheckCircle2 size={16} style={{ color: 'var(--accent-teal)', flexShrink: 0 }} />}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem', marginTop: '0.5rem' }}>{p.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{p.detail}</div>
+                </button>
+              );
+            })}
+          </div>
+          {selectedPartners.length > 0 && (
+            <p style={{ fontSize: '0.78rem', color: 'var(--accent-teal)', marginTop: '1rem' }}>
+              {selectedPartners.length} parceiro(s) seleccionado(s) — dados de triagem serão partilhados na próxima consulta agendada.
+            </p>
           )}
         </div>
       </div>
