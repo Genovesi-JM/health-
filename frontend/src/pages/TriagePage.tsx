@@ -1,11 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import type { TriageQuestion, TriageResult, TriageHistoryItem } from '../types';
 import {
   Activity, ChevronRight, AlertTriangle, CheckCircle2,
-  Clock, ArrowLeft, RotateCcw,
+  Clock, ArrowLeft, RotateCcw, Bluetooth, Wifi, Thermometer,
+  Heart, Droplets, Zap, Users,
 } from 'lucide-react';
+import {
+  isBluetoothAvailable, scanBluetooth, connectBluetooth, readBluetoothVitals,
+  connectWifi, readWifiVitals,
+} from '../utils/deviceApi';
+import type { DeviceInfo, VitalReadings } from '../utils/deviceApi';
 
 type Step = 'start' | 'questions' | 'result' | 'history';
 
@@ -28,6 +35,7 @@ const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-F
 
 export default function TriagePage() {
   const { t, lang } = useT();
+  const location = useLocation();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [step, setStep] = useState<Step>('history');
   const [ageGroup, setAgeGroup] = useState<AgeGroup>('adult');
@@ -42,7 +50,82 @@ export default function TriagePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { loadHistory(); }, []);
+  // ── Dependent selector ─────────────────────────────────────
+  const [dependents, setDependents] = useState<{ id: string; name: string; is_minor: boolean }[]>([]);
+  const [selectedDependent, setSelectedDependent] = useState<string>('me');
+
+  // ── Vitals state ───────────────────────────────────────────
+  const [vitals, setVitals] = useState<Partial<VitalReadings>>({});
+  const [deviceTab, setDeviceTab] = useState<'manual' | 'bluetooth' | 'wifi'>('manual');
+  const [btScanning, setBtScanning] = useState(false);
+  const [btDevices, setBtDevices] = useState<DeviceInfo[]>([]);
+  const [connectedDevice, setConnectedDevice] = useState<DeviceInfo | null>(null);
+  const [deviceReading, setDeviceReading] = useState(false);
+  const [wifiIp, setWifiIp] = useState('');
+  const [btError, setBtError] = useState('');
+
+  useEffect(() => {
+    loadHistory();
+    // Load dependents from localStorage
+    const stored = localStorage.getItem('cf_dependents');
+    if (stored) setDependents(JSON.parse(stored));
+    // Pre-select dependent if navigated from ProfilePage
+    if (location.state?.dependent) {
+      const dep = location.state.dependent;
+      setSelectedDependent(dep.id);
+      if (dep.is_minor) { setAgeGroup('pediatric'); setGuardian(true); }
+      setStep('start');
+    }
+  }, []);
+
+  // Vital colour coding
+  const vitalStatus = (key: keyof VitalReadings, val?: number) => {
+    if (val === undefined) return '';
+    const thresholds: Record<string, [number, number]> = {
+      systolic: [90, 140], diastolic: [60, 90], spo2: [95, 100],
+      temperature: [36.0, 37.5], glucose: [70, 140],
+    };
+    const [lo, hi] = thresholds[key as string] ?? [0, 999];
+    if (val < lo || val > hi) return '#ef4444';
+    if (val === lo || val === hi) return '#eab308';
+    return '#22c55e';
+  };
+
+  const handleBtScan = async () => {
+    setBtError('');
+    if (!isBluetoothAvailable()) { setBtError(t('vitals.not_supported')); return; }
+    setBtScanning(true);
+    try {
+      const devices = await scanBluetooth();
+      setBtDevices(devices);
+    } catch (e: any) { setBtError(e.message); }
+    setBtScanning(false);
+  };
+
+  const handleBtConnect = async (device: DeviceInfo) => {
+    const connected = await connectBluetooth(device.id);
+    setConnectedDevice(connected);
+  };
+
+  const handleReadDevice = async () => {
+    setDeviceReading(true);
+    try {
+      let readings: VitalReadings;
+      if (connectedDevice?.type === 'wifi') {
+        readings = await readWifiVitals(wifiIp);
+      } else {
+        readings = await readBluetoothVitals(connectedDevice!.id);
+      }
+      setVitals(v => ({ ...v, ...readings }));
+    } catch { /* ignore */ }
+    setDeviceReading(false);
+  };
+
+  const handleWifiConnect = async () => {
+    if (!wifiIp.trim()) return;
+    const device = await connectWifi(wifiIp.trim());
+    setConnectedDevice(device);
+  };
 
   const loadHistory = async () => {
     try {
@@ -61,6 +144,8 @@ export default function TriagePage() {
         age_group: ageGroup,
         category,
         answered_by_guardian: ageGroup === 'pediatric' ? guardian : false,
+        dependent_id: selectedDependent !== 'me' ? selectedDependent : undefined,
+        vital_signs: Object.keys(vitals).length > 0 ? vitals : undefined,
       });
       setSessionId(r.data.triage_id ?? r.data.session_id);
       setQuestions(r.data.questions || []);
@@ -187,11 +272,38 @@ export default function TriagePage() {
 
       {/* ─── Start ─── */}
       {step === 'start' && (
-        <div className="card" style={{ maxWidth: '600px' }}>
+        <div className="card" style={{ maxWidth: '640px' }}>
           <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.describe')}</h3>
           </div>
           <form onSubmit={startTriage} style={{ padding: '1.25rem' }}>
+
+            {/* Dependent selector */}
+            {dependents.length > 0 && (
+              <div className="form-group">
+                <label className="form-label">
+                  <Users size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />
+                  {t('triage.for_whom')}
+                </label>
+                <select className="form-select" value={selectedDependent}
+                  onChange={e => {
+                    const id = e.target.value;
+                    setSelectedDependent(id);
+                    if (id !== 'me') {
+                      const dep = dependents.find(d => d.id === id);
+                      if (dep?.is_minor) { setAgeGroup('pediatric'); setGuardian(true); }
+                    } else {
+                      setAgeGroup('adult'); setGuardian(false);
+                    }
+                  }}>
+                  <option value="me">{t('triage.for_me')}</option>
+                  {dependents.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}{d.is_minor ? ' (Pediatria)' : ''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">{t('triage.age_group')}</label>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -213,11 +325,7 @@ export default function TriagePage() {
               {ageGroup === 'pediatric' && (
                 <div style={{ marginTop: '0.75rem' }}>
                   <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    <input
-                      type="checkbox"
-                      checked={guardian}
-                      onChange={e => setGuardian(e.target.checked)}
-                    />
+                    <input type="checkbox" checked={guardian} onChange={e => setGuardian(e.target.checked)} />
                     {t('triage.answered_by_parent')}
                   </label>
                 </div>
@@ -226,11 +334,7 @@ export default function TriagePage() {
 
             <div className="form-group">
               <label className="form-label">{t('triage.category')}</label>
-              <select
-                className="form-select"
-                value={category}
-                onChange={e => setCategory(e.target.value as TriageCategory)}
-              >
+              <select className="form-select" value={category} onChange={e => setCategory(e.target.value as TriageCategory)}>
                 <option value="general">{t('triage.cat_general')}</option>
                 <option value="respiratory">{t('triage.cat_respiratory')}</option>
                 <option value="cardiac">{t('triage.cat_cardiac')}</option>
@@ -257,6 +361,144 @@ export default function TriagePage() {
                   borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.88rem', resize: 'vertical',
                 }} />
             </div>
+
+            {/* ── Vitals Panel ── */}
+            <div className="vitals-panel">
+              <div className="vitals-panel__header">
+                <Heart size={15} style={{ color: '#ef4444' }} />
+                <span>{t('vitals.title')}</span>
+              </div>
+
+              {/* Tab switcher */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                {(['manual', 'bluetooth', 'wifi'] as const).map(tab => (
+                  <button key={tab} type="button"
+                    className={`btn btn-sm ${deviceTab === tab ? 'btn-primary' : 'btn-outline'}`}
+                    style={{ fontSize: '0.75rem' }}
+                    onClick={() => setDeviceTab(tab)}>
+                    {tab === 'manual' && <>{t('vitals.manual')}</>}
+                    {tab === 'bluetooth' && <><Bluetooth size={12} /> Bluetooth</>}
+                    {tab === 'wifi' && <><Wifi size={12} /> WiFi</>}
+                  </button>
+                ))}
+              </div>
+
+              {/* Manual entry */}
+              {deviceTab === 'manual' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                  {[
+                    { key: 'systolic', label: t('vitals.bp_sys'), icon: <Heart size={12} />, unit: 'mmHg' },
+                    { key: 'diastolic', label: t('vitals.bp_dia'), icon: <Heart size={12} />, unit: 'mmHg' },
+                    { key: 'spo2', label: t('vitals.spo2'), icon: <Droplets size={12} />, unit: '%' },
+                    { key: 'temperature', label: t('vitals.temp'), icon: <Thermometer size={12} />, unit: '°C' },
+                    { key: 'glucose', label: t('vitals.glucose'), icon: <Zap size={12} />, unit: 'mg/dL' },
+                  ].map(({ key, label, icon, unit }) => {
+                    const val = vitals[key as keyof VitalReadings] as number | undefined;
+                    const color = vitalStatus(key as keyof VitalReadings, val);
+                    return (
+                      <div key={key} style={{ position: 'relative' }}>
+                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.2rem' }}>
+                          {icon} {label}
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <input type="number" className="form-input" style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                            placeholder="—"
+                            value={val ?? ''}
+                            onChange={e => setVitals((v: any) => ({ ...v, [key]: e.target.value ? Number(e.target.value) : undefined }))} />
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{unit}</span>
+                          {val !== undefined && (
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} title={color === '#22c55e' ? 'Normal' : color === '#eab308' ? 'Limite' : 'Fora do normal'} />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bluetooth */}
+              {deviceTab === 'bluetooth' && (
+                <div>
+                  {btError && <p style={{ fontSize: '0.78rem', color: '#ef4444', marginBottom: '0.5rem' }}>{btError}</p>}
+                  {!connectedDevice ? (
+                    <>
+                      <button type="button" className="btn btn-sm btn-outline" onClick={handleBtScan} disabled={btScanning}
+                        style={{ marginBottom: '0.75rem' }}>
+                        <Bluetooth size={13} /> {btScanning ? t('vitals.bt_scanning') : t('vitals.bt_scan')}
+                      </button>
+                      {btDevices.map(d => (
+                        <div key={d.id} className="device-row">
+                          <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>{d.name}</span>
+                          <button type="button" className="btn btn-sm btn-primary" style={{ fontSize: '0.75rem' }}
+                            onClick={() => handleBtConnect(d)}>
+                            {t('vitals.connect')}
+                          </button>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '0.82rem', color: '#22c55e', fontWeight: 600 }}>✓ {t('vitals.connected')}: {connectedDevice.name}</span>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={handleReadDevice} disabled={deviceReading}>
+                        {deviceReading ? '…' : t('vitals.read')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* WiFi */}
+              {deviceTab === 'wifi' && (
+                <div>
+                  {!connectedDevice ? (
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
+                          {t('vitals.wifi_label')}
+                        </label>
+                        <input className="form-input" style={{ fontSize: '0.85rem' }} type="text" placeholder="192.168.1.50"
+                          value={wifiIp} onChange={e => setWifiIp(e.target.value)} />
+                      </div>
+                      <button type="button" className="btn btn-sm btn-outline" onClick={handleWifiConnect}>
+                        <Wifi size={13} /> {t('vitals.connect')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '0.82rem', color: '#22c55e', fontWeight: 600 }}>✓ {t('vitals.connected')}: {connectedDevice.name}</span>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={handleReadDevice} disabled={deviceReading}>
+                        {deviceReading ? '…' : t('vitals.read')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Vitals preview badges */}
+              {Object.keys(vitals).filter(k => k !== 'readAt').length > 0 && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                  {[
+                    { key: 'systolic', label: 'SBP', unit: 'mmHg' },
+                    { key: 'diastolic', label: 'DBP', unit: 'mmHg' },
+                    { key: 'spo2', label: 'SpO₂', unit: '%' },
+                    { key: 'temperature', label: 'Temp', unit: '°C' },
+                    { key: 'glucose', label: 'Gli', unit: 'mg/dL' },
+                  ].filter(({ key }) => vitals[key as keyof VitalReadings] !== undefined).map(({ key, label, unit }) => {
+                    const val = vitals[key as keyof VitalReadings] as number;
+                    const color = vitalStatus(key as keyof VitalReadings, val);
+                    return (
+                      <span key={key} style={{
+                        padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 600,
+                        background: `${color}18`, color, border: `1px solid ${color}40`,
+                      }}>
+                        {label}: {val} {unit}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? t('triage.starting') : <><ChevronRight size={16} /> {t('triage.start_btn')}</>}
             </button>
@@ -274,9 +516,12 @@ export default function TriagePage() {
             </p>
           </div>
           <div style={{ padding: '1.25rem' }}>
-            {questions.map(q => (
-              <div key={q.key} className="form-group">
-                <label className="form-label">{q.label}</label>
+            {questions.map((q, qi) => (
+              <div key={q.key} className="form-group triage-question-group">
+                <label className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  <span style={{ color: 'var(--accent-teal)', marginRight: '0.4rem', fontSize: '0.75rem' }}>{qi + 1}.</span>
+                  {q.label && q.label.trim() ? q.label : q.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                </label>
                 {q.type === 'boolean' && (
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     {[t('triage.yes'), t('triage.no')].map(opt => (

@@ -8,8 +8,15 @@ import BookConsultationModal from '../components/BookConsultationModal';
 import { useEffect } from 'react';
 import {
   CheckCircle2, Droplets, Moon, Eye, Pill, Apple, Dumbbell,
-  AlertTriangle, Activity, ArrowLeft,
+  AlertTriangle, Activity, RefreshCw, User, ChevronRight,
 } from 'lucide-react';
+
+interface Medication {
+  id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+}
 
 export default function SelfCarePage() {
   const { t } = useT();
@@ -18,13 +25,33 @@ export default function SelfCarePage() {
   const [patientState, setPatientState] = useState<PatientState | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [renewingId, setRenewingId] = useState<string | null>(null);
+  const [renewMsg, setRenewMsg] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api.get('/api/v1/dashboard/patient-state')
-      .then(res => setPatientState(res.data))
+      .then((res: any) => setPatientState(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    // Load medications from localStorage (set in PatientProfilePage)
+    const stored = localStorage.getItem('cf_medications');
+    if (stored) setMedications(JSON.parse(stored));
   }, []);
+
+  const requestRenewal = async (med: Medication) => {
+    setRenewingId(med.id);
+    try {
+      // TODO: POST /api/v1/prescriptions/request when endpoint is ready
+      // await api.post('/api/v1/prescriptions/request', { medication_name: med.name, reason: 'renewal' });
+      await new Promise(res => setTimeout(res, 800)); // stub delay
+      setRenewMsg(m => ({ ...m, [med.id]: t('meds.renew_sent') }));
+    } catch {
+      setRenewMsg(m => ({ ...m, [med.id]: t('meds.renew_error') }));
+    }
+    setRenewingId(null);
+  };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
 
@@ -58,7 +85,7 @@ export default function SelfCarePage() {
       {/* Good News Banner */}
       <div style={{
         background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff',
-        borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
+        borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1rem',
         display: 'flex', alignItems: 'center', gap: '1rem',
         boxShadow: '0 4px 20px rgba(34,197,94,0.3)',
       }}>
@@ -73,6 +100,82 @@ export default function SelfCarePage() {
           {patientState?.last_triage_complaint && (
             <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', opacity: 0.85 }}>
               {t('selfcare.complaint_label')} {patientState.last_triage_complaint}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Action Strip */}
+      <div className="selfcare-quick-strip">
+        <button className="selfcare-quick-btn" onClick={() => navigate('/triage')}>
+          <Activity size={16} />
+          <span>{t('selfcare.new_triage')}</span>
+        </button>
+        <button className="selfcare-quick-btn" onClick={() => setShowBooking(true)}>
+          <ChevronRight size={16} />
+          <span>{t('selfcare.book_anyway')}</span>
+        </button>
+        <button className="selfcare-quick-btn selfcare-quick-btn--renew"
+          onClick={() => navigate('/patient/profile')}>
+          <RefreshCw size={16} />
+          <span>Renovar Receita</span>
+        </button>
+        <button className="selfcare-quick-btn" onClick={() => navigate('/patient/profile')}>
+          <User size={16} />
+          <span>Ver Perfil</span>
+        </button>
+      </div>
+
+      {/* Current Medications Card */}
+      <div className="card selfcare-meds-card" style={{ marginBottom: '1.25rem' }}>
+        <div style={{
+          padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Pill size={16} style={{ color: '#ef4444' }} />
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>{t('meds.title')}</h3>
+          </div>
+          <Link to="/patient/profile" style={{ fontSize: '0.78rem', color: 'var(--accent-teal)', textDecoration: 'none' }}>
+            Gerir medicações →
+          </Link>
+        </div>
+        <div style={{ padding: '1rem 1.25rem' }}>
+          {medications.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                {t('meds.none')}
+              </span>
+              <Link to="/patient/profile" style={{ fontSize: '0.82rem', color: 'var(--accent-teal)' }}>
+                {t('meds.none_hint')}
+              </Link>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {medications.map(med => (
+                <div key={med.id} className="selfcare-med-row">
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{med.name}</span>
+                    {med.dosage && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>• {med.dosage}</span>}
+                    {med.frequency && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>• {med.frequency}</span>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {renewMsg[med.id] && (
+                      <span style={{ fontSize: '0.72rem', color: renewMsg[med.id] === t('meds.renew_sent') ? '#22c55e' : '#ef4444' }}>
+                        {renewMsg[med.id]}
+                      </span>
+                    )}
+                    <button
+                      className="btn btn-sm"
+                      style={{ fontSize: '0.75rem', background: 'rgba(20,184,166,0.1)', color: 'var(--accent-teal)', border: '1px solid rgba(20,184,166,0.25)' }}
+                      disabled={renewingId === med.id}
+                      onClick={() => requestRenewal(med)}
+                    >
+                      <RefreshCw size={12} /> {renewingId === med.id ? '…' : t('meds.renew')}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -124,16 +227,6 @@ export default function SelfCarePage() {
             ))}
           </ul>
         </div>
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <Link to="/triage" className="btn btn-primary">
-          <Activity size={16} /> {t('selfcare.new_triage')}
-        </Link>
-        <button onClick={() => setShowBooking(true)} className="btn btn-secondary">
-          {t('selfcare.book_anyway')}
-        </button>
       </div>
 
       <Link to="/dashboard" style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textDecoration: 'none' }}>

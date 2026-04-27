@@ -732,6 +732,66 @@ const translations: Record<string, Record<Lang, string>> = {
   'booking.error': { pt: 'Erro ao marcar consulta.', en: 'Error booking consultation.', fr: 'Erreur lors de la réservation.' },
   'booking.based_on': { pt: 'Com base na sua triagem:', en: 'Based on your triage:', fr: 'Selon votre triage :' },
   'booking.risk_label': { pt: 'Risco', en: 'Risk', fr: 'Risque' },
+
+  /* ═══════════════════════════════════════════════════════════
+     MEDICATIONS & PRESCRIPTIONS
+     ═══════════════════════════════════════════════════════════ */
+  'meds.title': { pt: 'Medicações Actuais', en: 'Current Medications', fr: 'Médicaments Actuels' },
+  'meds.add': { pt: 'Adicionar Medicação', en: 'Add Medication', fr: 'Ajouter Médicament' },
+  'meds.none': { pt: 'Nenhuma medicação registada.', en: 'No medications registered.', fr: 'Aucun médicament enregistré.' },
+  'meds.none_hint': { pt: 'Adicione as suas medicações para que apareçam no autocuidado e triagem.', en: 'Add your medications to have them appear in self-care and triage.', fr: 'Ajoutez vos médicaments pour qu\'ils apparaissent dans les soins et le triage.' },
+  'meds.name': { pt: 'Nome do medicamento', en: 'Medication name', fr: 'Nom du médicament' },
+  'meds.dosage': { pt: 'Dosagem (ex: 500mg)', en: 'Dosage (e.g.: 500mg)', fr: 'Posologie (ex : 500mg)' },
+  'meds.frequency': { pt: 'Frequência (ex: 1×/dia)', en: 'Frequency (e.g.: 1×/day)', fr: 'Fréquence (ex : 1×/jour)' },
+  'meds.renew': { pt: 'Pedir Renovação', en: 'Request Renewal', fr: 'Demander Renouvellement' },
+  'meds.renew_sent': { pt: 'Pedido enviado!', en: 'Request sent!', fr: 'Demande envoyée !' },
+  'meds.renew_error': { pt: 'Erro ao enviar pedido.', en: 'Error sending request.', fr: 'Erreur lors de l\'envoi.' },
+  'meds.remove': { pt: 'Remover', en: 'Remove', fr: 'Supprimer' },
+  'meds.save': { pt: 'Guardar', en: 'Save', fr: 'Enregistrer' },
+
+  /* ═══════════════════════════════════════════════════════════
+     FAMILY / DEPENDENTS
+     ═══════════════════════════════════════════════════════════ */
+  'family.title': { pt: 'Perfis Familiares', en: 'Family Profiles', fr: 'Profils Familiaux' },
+  'family.subtitle': { pt: 'Gerir contas de menores e dependentes ligadas ao seu perfil', en: 'Manage minors and dependent accounts linked to your profile', fr: 'Gérer les mineurs et dépendants liés à votre profil' },
+  'family.add': { pt: 'Adicionar Familiar', en: 'Add Family Member', fr: 'Ajouter Membre' },
+  'family.none': { pt: 'Nenhum perfil familiar registado.', en: 'No family profiles registered.', fr: 'Aucun profil familial enregistré.' },
+  'family.name': { pt: 'Nome completo', en: 'Full name', fr: 'Nom complet' },
+  'family.dob': { pt: 'Data de nascimento', en: 'Date of birth', fr: 'Date de naissance' },
+  'family.rel': { pt: 'Relação', en: 'Relationship', fr: 'Relation' },
+  'family.rel_son': { pt: 'Filho', en: 'Son', fr: 'Fils' },
+  'family.rel_daughter': { pt: 'Filha', en: 'Daughter', fr: 'Fille' },
+  'family.rel_other': { pt: 'Outro', en: 'Other', fr: 'Autre' },
+  'family.minor_badge': { pt: 'Menor de 16 anos', en: 'Under 16', fr: 'Moins de 16 ans' },
+  'family.triage_for': { pt: 'Fazer Triagem', en: 'Start Triage', fr: 'Commencer Triage' },
+  'family.remove': { pt: 'Remover', en: 'Remove', fr: 'Supprimer' },
+  'family.save': { pt: 'Guardar Familiar', en: 'Save Member', fr: 'Enregistrer Membre' },
+  'family.cancel_add': { pt: 'Cancelar', en: 'Cancel', fr: 'Annuler' },
+  'family.minor_note': { pt: 'Perfil pediátrico — triagem com modo criança activa', en: 'Pediatric profile — triage in child mode', fr: 'Profil pédiatrique — triage en mode enfant' },
+
+  /* ═══════════════════════════════════════════════════════════
+     VITALS & DEVICES (TRIAGE)
+     ═══════════════════════════════════════════════════════════ */
+  'vitals.title': { pt: 'Sinais Vitais (opcional)', en: 'Vital Signs (optional)', fr: 'Signes Vitaux (optionnel)' },
+  'vitals.manual': { pt: 'Inserção manual', en: 'Manual entry', fr: 'Saisie manuelle' },
+  'vitals.device': { pt: 'Ligar dispositivo', en: 'Connect device', fr: 'Connecter appareil' },
+  'vitals.bp_sys': { pt: 'Tensão sistólica (mmHg)', en: 'Systolic BP (mmHg)', fr: 'Pression systolique (mmHg)' },
+  'vitals.bp_dia': { pt: 'Tensão diastólica (mmHg)', en: 'Diastolic BP (mmHg)', fr: 'Pression diastolique (mmHg)' },
+  'vitals.spo2': { pt: 'SpO₂ (%)', en: 'SpO₂ (%)', fr: 'SpO₂ (%)' },
+  'vitals.temp': { pt: 'Temperatura (°C)', en: 'Temperature (°C)', fr: 'Température (°C)' },
+  'vitals.glucose': { pt: 'Glicémia (mg/dL)', en: 'Blood Glucose (mg/dL)', fr: 'Glycémie (mg/dL)' },
+  'vitals.bt_scan': { pt: 'Procurar via Bluetooth', en: 'Scan via Bluetooth', fr: 'Scanner via Bluetooth' },
+  'vitals.bt_scanning': { pt: 'A procurar…', en: 'Scanning…', fr: 'Recherche…' },
+  'vitals.wifi_label': { pt: 'IP do dispositivo (WiFi)', en: 'Device IP (WiFi)', fr: 'IP de l\'appareil (WiFi)' },
+  'vitals.connect': { pt: 'Ligar', en: 'Connect', fr: 'Connecter' },
+  'vitals.connected': { pt: 'Ligado', en: 'Connected', fr: 'Connecté' },
+  'vitals.read': { pt: 'Ler valores', en: 'Read values', fr: 'Lire les valeurs' },
+  'vitals.not_supported': { pt: 'Bluetooth não disponível neste browser.', en: 'Bluetooth not available in this browser.', fr: 'Bluetooth non disponible dans ce navigateur.' },
+
+  /* TRIAGE — dependent selector */
+  'triage.for_whom': { pt: 'Para quem é a triagem?', en: 'Who is this triage for?', fr: 'Pour qui est ce triage ?' },
+  'triage.for_me': { pt: 'Para mim', en: 'For me', fr: 'Pour moi' },
+  'triage.for_dependent': { pt: 'Para um familiar', en: 'For a family member', fr: 'Pour un membre de la famille' },
 };
 
 export default translations;
