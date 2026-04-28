@@ -507,3 +507,45 @@ class FileDownloadResponse(BaseModel):
     download_url: str
     filename: str
     expires_in_seconds: int = 3600
+
+
+# ── Prescription Requests (renewal / pre-consult) ──
+
+class PrescriptionRequestCreate(BaseModel):
+    doctor_id: str
+    medication_name: str
+    dose: Optional[str] = None
+    frequency: Optional[str] = None
+    reason: Optional[str] = None
+
+class PrescriptionRequestDecide(BaseModel):
+    action: str  # approve | adjust | consult_requested | exams_requested | reject
+    doctor_note: Optional[str] = None
+    adjusted_dose: Optional[str] = None
+    adjusted_frequency: Optional[str] = None
+
+class PrescriptionRequestOut(BaseModel):
+    id: str
+    patient_id: str
+    doctor_id: str
+    medication_name: str
+    dose: Optional[str]
+    frequency: Optional[str]
+    reason: Optional[str]
+    status: str
+    risk_level: Optional[str]
+    risk_alert: Optional[str]
+    doctor_note: Optional[str]
+    adjusted_dose: Optional[str]
+    adjusted_frequency: Optional[str]
+    created_at: datetime
+    decided_at: Optional[datetime]
+    # enriched patient info (populated by router)
+    patient_name: Optional[str] = None
+    patient_age: Optional[int] = None
+    patient_gender: Optional[str] = None
+    chronic_conditions: Optional[List[str]] = None
+    allergies: Optional[List[str]] = None
+
+    class Config:
+        from_attributes = True

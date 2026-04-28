@@ -402,3 +402,30 @@ class HealthAuditLog(Base):
     __table_args__ = (
         Index("ix_health_audit_logs_created_at", "created_at"),
     )
+
+
+# ── Prescription Renewal Request (patient → doctor) ──────────────────────────
+
+class PrescriptionRequest(Base):
+    """A patient asks a doctor to renew/prescribe a medication without a consultation."""
+    __tablename__ = "prescription_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    medication_name: Mapped[str] = mapped_column(String(300), nullable=False)
+    dose: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # pending | approved | adjusted | consult_requested | exams_requested | rejected
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="pending")
+    risk_level: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)   # low | medium | high
+    risk_alert: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    doctor_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    adjusted_dose: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    adjusted_frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    patient = relationship("Patient", backref="prescription_requests")
+    doctor = relationship("Doctor", backref="prescription_requests")

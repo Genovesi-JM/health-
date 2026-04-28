@@ -27,6 +27,7 @@ from .routers import (
     triage,
     consultations,
     prescriptions,
+    prescription_requests,
     corporate,
     health_billing,
     compliance,
@@ -123,6 +124,7 @@ def create_application() -> FastAPI:
     application.include_router(triage.router)             # /api/v1/triage/*
     application.include_router(consultations.router)      # /api/v1/consultations/*, /api/v1/doctor/*
     application.include_router(prescriptions.router)      # /api/v1/consultations/*/prescription|referral, /api/v1/files/*
+    application.include_router(prescription_requests.router)  # /api/v1/prescription-requests, /api/v1/doctor/prescription-requests
     application.include_router(corporate.router)          # /api/v1/corporate/*
     application.include_router(health_billing.router)     # /api/v1/billing/*
     application.include_router(compliance.router)         # /api/v1/compliance/*

@@ -1,107 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FileText, AlertTriangle, CheckCircle2, X, ChevronDown, ChevronUp,
-  User, Clock, Pill, Activity, Calendar, MessageSquare, Search,
-  Filter, Stethoscope, AlertCircle, RefreshCw, ExternalLink,
+  Activity, Calendar, Stethoscope, AlertCircle, RefreshCw,
+  Search, Loader2, SidebarOpen,
 } from 'lucide-react';
+import api from '../api';
 
-interface Medication { name: string; dose: string; frequency: string; since?: string }
-interface Prescription {
+interface RxRequest {
   id: string;
-  patient: string;
-  age: number;
-  gender: 'M' | 'F';
-  province: string;
-  avatar: string;
-  photo?: string;
-  condition: string;
-  chronic: string[];
-  allergies: string[];
-  currentMeds: Medication[];
-  requested: Medication;
-  reason: string;
-  lastConsult: string;
-  lastDoctor: string;
-  risk: 'low' | 'medium' | 'high';
-  riskAlert?: string;
-  requestedAt: string;
-  vitals?: { bp?: string; weight?: string; glucose?: string; spo2?: string };
+  patient_id: string;
+  doctor_id: string;
+  medication_name: string;
+  dose?: string;
+  frequency?: string;
+  reason?: string;
+  status: string;
+  risk_level?: string;
+  risk_alert?: string;
+  doctor_note?: string;
+  adjusted_dose?: string;
+  adjusted_frequency?: string;
+  created_at: string;
+  decided_at?: string;
+  patient_name?: string;
+  patient_age?: number;
+  patient_gender?: string;
+  chronic_conditions?: string[];
+  allergies?: string[];
 }
-
-const MOCK_PRESCRIPTIONS: Prescription[] = [
-  {
-    id: 'rx1',
-    patient: 'Maria Fernanda Santos',
-    age: 52,
-    gender: 'F',
-    province: 'Luanda',
-    avatar: 'MS',
-    condition: 'HTA + Diabetes Tipo 2',
-    chronic: ['Hipertensão arterial', 'Diabetes mellitus T2'],
-    allergies: ['Penicilina', 'AAS'],
-    currentMeds: [
-      { name: 'Metformina 850mg', dose: '1 comprimido', frequency: '2×/dia' },
-      { name: 'Amlodipina 5mg', dose: '1 comprimido', frequency: '1×/dia' },
-      { name: 'Losartan 50mg', dose: '1 comprimido', frequency: '1×/dia' },
-    ],
-    requested: { name: 'Metformina 850mg', dose: '1 comprimido', frequency: '2×/dia' },
-    reason: 'Renovação mensal habitual. Paciente crónica, bem controlada.',
-    lastConsult: '12/03/2026',
-    lastDoctor: 'Dr. Carlos Mendonça',
-    risk: 'low',
-    requestedAt: 'há 2 horas',
-    vitals: { bp: '132/84 mmHg', weight: '68 kg', glucose: '112 mg/dL' },
-  },
-  {
-    id: 'rx2',
-    patient: 'José Eduardo Almeida',
-    age: 67,
-    gender: 'M',
-    province: 'Benguela',
-    avatar: 'JA',
-    condition: 'Insuficiência cardíaca congestiva · FEVE 35%',
-    chronic: ['ICC', 'FA permanente', 'DRC G3a'],
-    allergies: ['Contraste iodado'],
-    currentMeds: [
-      { name: 'Furosemida 40mg', dose: '1 comprimido', frequency: '1×/dia' },
-      { name: 'Espironolactona 25mg', dose: '1 comprimido', frequency: '1×/dia' },
-      { name: 'Bisoprolol 5mg', dose: '1 comprimido', frequency: '1×/dia' },
-      { name: 'Rivaroxabana 20mg', dose: '1 comprimido', frequency: '1×/dia (jantar)' },
-    ],
-    requested: { name: 'Furosemida 80mg', dose: '1 comprimido', frequency: '2×/dia' },
-    reason: 'Edemas maleolares há 3 dias. Ganhou 2 kg em 1 semana.',
-    lastConsult: '02/04/2026',
-    lastDoctor: 'Dr. Rui Ferreira (Cardiologia)',
-    risk: 'high',
-    riskAlert: 'Aumento de dose em doente com DRC G3a — risco de hipocaliemia e deterioração renal. Verificar creatinina e K⁺ antes de aprovar.',
-    requestedAt: 'há 5 horas',
-    vitals: { bp: '155/92 mmHg', weight: '74 kg' },
-  },
-  {
-    id: 'rx3',
-    patient: 'Beatriz Maria Lima',
-    age: 34,
-    gender: 'F',
-    province: 'Huambo',
-    avatar: 'BL',
-    condition: 'Asma brônquica moderada persistente',
-    chronic: ['Asma brônquica', 'Rinite alérgica'],
-    allergies: ['AINE', 'Paracetamol (leve)'],
-    currentMeds: [
-      { name: 'Budesonida/Formoterol 160/4.5 μg', dose: '2 inalações', frequency: '2×/dia' },
-      { name: 'Salbutamol inalador', dose: '2 inalações', frequency: 'SOS' },
-      { name: 'Cetirizina 10mg', dose: '1 comprimido', frequency: '1×/dia (noite)' },
-    ],
-    requested: { name: 'Salbutamol inalador', dose: '2 inalações', frequency: 'SOS' },
-    reason: 'Acabou o inalador de resgate. Período polínico.',
-    lastConsult: '18/02/2026',
-    lastDoctor: 'Dra. Ana Ferreira',
-    risk: 'medium',
-    riskAlert: 'Paciente usou SOS >4×/semana no último mês — avaliar se controlo adequado.',
-    requestedAt: 'há 1 dia',
-    vitals: { spo2: '97%', weight: '58 kg' },
-  },
-];
 
 const riskConfig = {
   low:    { label: 'Baixo risco',  color: '#059669', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)' },
@@ -109,244 +35,263 @@ const riskConfig = {
   high:   { label: 'Alto risco',  color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.3)'   },
 };
 
-type Action = 'approve' | 'adjust' | 'consult' | 'exams' | 'reject' | null;
+const actionMap: Record<string, string> = {
+  approve:            '✓ Aprovada',
+  adjust:             '~ Dose ajustada',
+  consult_requested:  '📅 Consulta solicitada',
+  exams_requested:    '🔬 Exames pedidos',
+  reject:             '✗ Recusada',
+};
+
+type Action = 'approve' | 'adjust' | 'consult_requested' | 'exams_requested' | 'reject';
 
 export default function DoctorPrescriptionsPage() {
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
-  const [expanded, setExpanded] = useState<string | null>('rx2'); // open high risk by default
-  const [actions, setActions] = useState<Record<string, { action: Action; note?: string; done?: boolean }>>({});
-  const [noteFor, setNoteFor] = useState<string | null>(null);
+  const [requests, setRequests] = useState<RxRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [noteFor, setNoteFor] = useState<{ id: string; action: Action } | null>(null);
   const [noteText, setNoteText] = useState('');
+  const [adjDoseText, setAdjDoseText] = useState('');
+  const [adjFreqText, setAdjFreqText] = useState('');
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
+  const [quickView, setQuickView] = useState<RxRequest | null>(null);
 
-  const filtered = MOCK_PRESCRIPTIONS.filter(rx => {
-    if (filter !== 'all' && rx.risk !== filter) return false;
-    if (search && !rx.patient.toLowerCase().includes(search.toLowerCase()) && !rx.requested.name.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }).filter(rx => !actions[rx.id]?.done);
-
-  const done = MOCK_PRESCRIPTIONS.filter(rx => actions[rx.id]?.done);
-
-  const handleAction = (id: string, action: Action) => {
-    if (action === 'reject' || action === 'adjust') {
-      setNoteFor(id);
-      setNoteText('');
-      return;
-    }
-    setActions(prev => ({ ...prev, [id]: { action, done: true } }));
+  const load = async () => {
+    setLoading(true); setError('');
+    try {
+      const params = filter === 'all' ? {} : { status: 'pending' };
+      const { data } = await api.get<RxRequest[]>('/api/v1/doctor/prescription-requests', { params });
+      setRequests(data);
+      if (data.length > 0) setExpanded(data[0].id);
+    } catch (e: any) {
+      setError(e?.response?.data?.detail ?? 'Erro ao carregar pedidos.');
+    } finally { setLoading(false); }
   };
 
-  const confirmWithNote = (id: string, action: Action) => {
-    setActions(prev => ({ ...prev, [id]: { action, note: noteText, done: true } }));
-    setNoteFor(null);
-    setNoteText('');
+  useEffect(() => { load(); }, [filter]);
+
+  const decide = async (id: string, action: Action, note?: string, adjDose?: string, adjFreq?: string) => {
+    setSubmitting(id);
+    try {
+      const { data } = await api.post<RxRequest>(`/api/v1/doctor/prescription-requests/${id}/decide`, {
+        action, doctor_note: note || undefined,
+        adjusted_dose: adjDose || undefined, adjusted_frequency: adjFreq || undefined,
+      });
+      setRequests(prev => prev.map(r => r.id === id ? data : r));
+    } catch (e: any) {
+      alert(e?.response?.data?.detail ?? 'Erro ao processar decisão.');
+    } finally { setSubmitting(null); setNoteFor(null); setNoteText(''); setAdjDoseText(''); setAdjFreqText(''); }
   };
+
+  const handleAction = (rx: RxRequest, action: Action) => {
+    if (action === 'reject' || action === 'adjust') { setNoteFor({ id: rx.id, action }); setNoteText(''); setAdjDoseText(''); setAdjFreqText(''); }
+    else decide(rx.id, action);
+  };
+
+  const pending = requests.filter(r => r.status === 'pending');
+  const done    = requests.filter(r => r.status !== 'pending');
+  const shown   = pending.filter(r =>
+    !search || (r.patient_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    r.medication_name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={20} style={{ color: '#ef4444' }} /> Prescrições Pendentes
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>
-            Avalie com segurança — todas as informações relevantes estão aqui
-          </p>
+    <div style={{ display: 'flex', gap: '1rem', maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FileText size={20} style={{ color: '#ef4444' }} /> Prescrições Pendentes
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>Contexto clínico completo disponível</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {pending.length > 0 && <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '0.35rem 0.75rem', borderRadius: 999 }}>{pending.length} pendentes</span>}
+            <button onClick={load} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.75rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
+              <RefreshCw size={13} /> Actualizar
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '0.35rem 0.75rem', borderRadius: 999 }}>{filtered.length} pendentes</span>
-          <button style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.75rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
-            <RefreshCw size={13} /> Actualizar
-          </button>
-        </div>
-      </div>
 
-      {/* Search + filter */}
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
-          <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input className="form-input" placeholder="Pesquisar paciente ou medicamento…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.1rem' }} />
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 180, position: 'relative' }}>
+            <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input className="form-input" placeholder="Pesquisar…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.1rem' }} />
+          </div>
+          {(['pending', 'all'] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)} style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}>
+              {f === 'pending' ? 'Pendentes' : 'Todos'}
+            </button>
+          ))}
         </div>
-        {(['all', 'high', 'medium', 'low'] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}>
-            {f === 'all' ? 'Todos' : riskConfig[f].label}
-          </button>
-        ))}
-      </div>
 
-      {/* Cards */}
-      {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-          <CheckCircle2 size={40} style={{ color: '#10b981', margin: '0 auto 0.75rem', display: 'block' }} />
-          <div style={{ fontWeight: 700, fontSize: '1rem', color: '#10b981' }}>Tudo em dia!</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>Sem prescrições pendentes.</div>
-        </div>
-      )}
+        {loading && <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}><Loader2 size={28} style={{ display: 'block', margin: '0 auto 0.5rem' }} />A carregar…</div>}
+        {!loading && error && <div style={{ padding: '1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', fontSize: '0.85rem' }}>{error}</div>}
+        {!loading && !error && shown.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+            <CheckCircle2 size={40} style={{ color: '#10b981', margin: '0 auto 0.75rem', display: 'block' }} />
+            <div style={{ fontWeight: 700, color: '#10b981' }}>Tudo em dia!</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>Sem prescrições pendentes.</div>
+          </div>
+        )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {filtered.map(rx => {
-          const risk = riskConfig[rx.risk];
-          const isOpen = expanded === rx.id;
-          return (
-            <div key={rx.id} className="card" style={{ padding: 0, overflow: 'hidden', border: rx.risk === 'high' ? `2px solid ${risk.border}` : undefined }}>
-              {/* Card header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.1rem 1.25rem', cursor: 'pointer', background: rx.risk === 'high' ? 'rgba(239,68,68,0.03)' : undefined }}
-                onClick={() => setExpanded(isOpen ? null : rx.id)}>
-                {/* Avatar */}
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: risk.bg, color: risk.color, fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `2px solid ${risk.border}` }}>
-                  {rx.avatar}
-                </div>
-                {/* Patient info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{rx.patient}</span>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{rx.age} anos · {rx.gender === 'F' ? 'Feminino' : 'Masculino'} · {rx.province}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {shown.map(rx => {
+            const risk = riskConfig[(rx.risk_level as keyof typeof riskConfig) ?? 'low'];
+            const isOpen = expanded === rx.id;
+            const isBusy = submitting === rx.id;
+            return (
+              <div key={rx.id} className="card" style={{ padding: 0, overflow: 'hidden', border: rx.risk_level === 'high' ? `2px solid ${risk.border}` : undefined }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', cursor: 'pointer', background: rx.risk_level === 'high' ? 'rgba(239,68,68,0.03)' : undefined }}
+                  onClick={() => setExpanded(isOpen ? null : rx.id)}>
+                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: risk.bg, color: risk.color, fontWeight: 800, fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `2px solid ${risk.border}` }}>
+                    {(rx.patient_name ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>{rx.condition}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.2rem' }}>💊 Pedido: <strong>{rx.requested.name}</strong> — {rx.requested.dose} {rx.requested.frequency}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700 }}>{rx.patient_name ?? 'Paciente'}{rx.patient_age ? ` · ${rx.patient_age} anos` : ''}</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 500, marginTop: '0.1rem' }}>💊 {rx.medication_name}{rx.dose ? ` — ${rx.dose}` : ''}{rx.frequency ? ` ${rx.frequency}` : ''}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem', flexShrink: 0 }}>
+                    {rx.risk_level && <span style={{ fontSize: '0.73rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 999, background: risk.bg, color: risk.color }}>{risk.label}</span>}
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(rx.created_at).toLocaleDateString('pt-PT')}</span>
+                    <button onClick={e => { e.stopPropagation(); setQuickView(quickView?.id === rx.id ? null : rx); }} style={{ fontSize: '0.72rem', background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <SidebarOpen size={13} /> Perfil
+                    </button>
+                    {isOpen ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />}
+                  </div>
                 </div>
-                {/* Risk + time */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem', flexShrink: 0 }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.25rem 0.65rem', borderRadius: 999, background: risk.bg, color: risk.color, border: `1px solid ${risk.border}` }}>
-                    {rx.risk === 'high' ? <><AlertTriangle size={11} style={{ display: 'inline', marginRight: 3 }} /></> : null}
-                    {risk.label}
-                  </span>
-                  <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>{rx.requestedAt}</span>
-                  {isOpen ? <ChevronUp size={16} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} />}
-                </div>
-              </div>
 
-              {/* RISK ALERT */}
-              {rx.riskAlert && (
-                <div style={{ display: 'flex', gap: '0.6rem', padding: '0.7rem 1.25rem', background: rx.risk === 'high' ? 'rgba(239,68,68,0.07)' : 'rgba(234,179,8,0.07)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-                  <AlertCircle size={16} style={{ color: risk.color, flexShrink: 0, marginTop: 1 }} />
-                  <span style={{ fontSize: '0.8rem', color: risk.color, fontWeight: 500 }}>{rx.riskAlert}</span>
-                </div>
-              )}
+                {rx.risk_alert && (
+                  <div style={{ display: 'flex', gap: '0.6rem', padding: '0.6rem 1.25rem', background: rx.risk_level === 'high' ? 'rgba(239,68,68,0.07)' : 'rgba(234,179,8,0.06)', borderTop: '1px solid var(--border)' }}>
+                    <AlertCircle size={15} style={{ color: risk.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.8rem', color: risk.color, fontWeight: 500 }}>{rx.risk_alert}</span>
+                  </div>
+                )}
 
-              {/* EXPANDED DETAIL */}
-              {isOpen && (
-                <div style={{ padding: '1.25rem', borderTop: rx.riskAlert ? undefined : '1px solid var(--border)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
-
-                    {/* Condições + Alergias */}
-                    <DetailBlock title="🩺 Condições crónicas">
-                      {rx.chronic.map(c => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
-                    </DetailBlock>
-                    <DetailBlock title="⚠️ Alergias">
-                      {rx.allergies.map(a => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
-                    </DetailBlock>
-                    <DetailBlock title="📋 Última consulta">
-                      <div style={{ fontSize: '0.82rem' }}><strong>{rx.lastConsult}</strong></div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{rx.lastDoctor}</div>
-                    </DetailBlock>
-
-                    {/* Medicação actual */}
-                    <div style={{ gridColumn: '1 / 3' }}>
-                      <DetailBlock title="💊 Medicação actual">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                          {rx.currentMeds.map((m, i) => (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.3rem 0.5rem', borderRadius: '6px', background: 'var(--bg-subtle, rgba(0,0,0,0.02))' }}>
-                              <span style={{ fontWeight: 600 }}>{m.name}</span>
-                              <span style={{ color: 'var(--text-muted)' }}>{m.dose} · {m.frequency}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </DetailBlock>
+                {isOpen && (
+                  <div style={{ padding: '1.25rem', borderTop: rx.risk_alert ? undefined : '1px solid var(--border)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      {(rx.chronic_conditions ?? []).length > 0 && (
+                        <DetailBlock title="🩺 Condições crónicas">
+                          {(rx.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
+                        </DetailBlock>
+                      )}
+                      {(rx.allergies ?? []).length > 0 && (
+                        <DetailBlock title="⚠️ Alergias">
+                          {(rx.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
+                        </DetailBlock>
+                      )}
                     </div>
-
-                    {/* Sinais vitais */}
-                    {rx.vitals && (
-                      <DetailBlock title="📊 Sinais vitais recentes">
-                        {rx.vitals.bp && <VitalLine label="PA" value={rx.vitals.bp} />}
-                        {rx.vitals.glucose && <VitalLine label="Glicemia" value={rx.vitals.glucose} />}
-                        {rx.vitals.weight && <VitalLine label="Peso" value={rx.vitals.weight} />}
-                        {rx.vitals.spo2 && <VitalLine label="SpO₂" value={rx.vitals.spo2} />}
-                      </DetailBlock>
+                    {rx.reason && (
+                      <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.025)', border: '1px solid var(--border)', marginBottom: '1.25rem', fontSize: '0.83rem' }}>
+                        <span style={{ fontWeight: 700 }}>Motivo: </span>{rx.reason}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <ActionBtn onClick={() => handleAction(rx, 'approve')} disabled={isBusy} color="#059669" bg="rgba(16,185,129,0.1)" border="rgba(16,185,129,0.3)" icon={<CheckCircle2 size={15} />} label={isBusy ? '…' : 'Aprovar'} />
+                      <ActionBtn onClick={() => handleAction(rx, 'adjust')} disabled={isBusy} color="#d97706" bg="rgba(234,179,8,0.1)" border="rgba(234,179,8,0.3)" icon={<Stethoscope size={15} />} label="Ajustar dose" />
+                      <ActionBtn onClick={() => handleAction(rx, 'consult_requested')} disabled={isBusy} color="#3b82f6" bg="rgba(59,130,246,0.1)" border="rgba(59,130,246,0.3)" icon={<Calendar size={15} />} label="Solicitar consulta" />
+                      <ActionBtn onClick={() => handleAction(rx, 'exams_requested')} disabled={isBusy} color="#8b5cf6" bg="rgba(139,92,246,0.1)" border="rgba(139,92,246,0.3)" icon={<Activity size={15} />} label="Pedir exames" />
+                      <ActionBtn onClick={() => handleAction(rx, 'reject')} disabled={isBusy} color="#dc2626" bg="rgba(239,68,68,0.08)" border="rgba(239,68,68,0.25)" icon={<X size={15} />} label="Recusar" />
+                    </div>
+                    {noteFor?.id === rx.id && (
+                      <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '0.4rem' }}>
+                          {noteFor.action === 'reject' ? 'Motivo da recusa *' : 'Ajuste pretendido *'}
+                        </label>
+                        {noteFor.action === 'adjust' && (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <input className="form-input" placeholder="Nova dose" value={adjDoseText} onChange={e => setAdjDoseText(e.target.value)} />
+                            <input className="form-input" placeholder="Nova frequência" value={adjFreqText} onChange={e => setAdjFreqText(e.target.value)} />
+                          </div>
+                        )}
+                        <textarea className="form-input" rows={2} value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Justificação clínica…" style={{ resize: 'vertical', marginBottom: '0.6rem' }} />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => decide(rx.id, noteFor.action, noteText, adjDoseText, adjFreqText)} disabled={!noteText.trim()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>Confirmar</button>
+                          <button onClick={() => setNoteFor(null)} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'none', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>Cancelar</button>
+                        </div>
+                      </div>
                     )}
                   </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-                  {/* Motivo */}
-                  <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', background: 'var(--bg-subtle, rgba(0,0,0,0.025))', border: '1px solid var(--border)', marginBottom: '1.25rem', fontSize: '0.83rem' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Motivo do pedido: </span>
-                    <span style={{ color: 'var(--text-primary)' }}>{rx.reason}</span>
-                  </div>
-
-                  {/* ACTION BUTTONS */}
-                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                    <ActionBtn onClick={() => handleAction(rx.id, 'approve')} color="#059669" bg="rgba(16,185,129,0.1)" border="rgba(16,185,129,0.3)" icon={<CheckCircle2 size={15} />} label="Aprovar" />
-                    <ActionBtn onClick={() => handleAction(rx.id, 'adjust')} color="#d97706" bg="rgba(234,179,8,0.1)" border="rgba(234,179,8,0.3)" icon={<Stethoscope size={15} />} label="Ajustar dose" />
-                    <ActionBtn onClick={() => handleAction(rx.id, 'consult')} color="#3b82f6" bg="rgba(59,130,246,0.1)" border="rgba(59,130,246,0.3)" icon={<Calendar size={15} />} label="Solicitar consulta" />
-                    <ActionBtn onClick={() => handleAction(rx.id, 'exams')} color="#8b5cf6" bg="rgba(139,92,246,0.1)" border="rgba(139,92,246,0.3)" icon={<Activity size={15} />} label="Pedir exames" />
-                    <ActionBtn onClick={() => handleAction(rx.id, 'reject')} color="#dc2626" bg="rgba(239,68,68,0.08)" border="rgba(239,68,68,0.25)" icon={<X size={15} />} label="Recusar" />
-                  </div>
-
-                  {/* Note modal inline */}
-                  {noteFor === rx.id && (
-                    <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
-                      <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '0.4rem' }}>
-                        {actions[rx.id]?.action === 'reject' ? 'Motivo da recusa' : 'Ajuste pretendido'}
-                      </label>
-                      <textarea className="form-input" rows={2} value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Escreva a justificação…" style={{ resize: 'vertical', marginBottom: '0.6rem' }} />
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => confirmWithNote(rx.id, noteFor === rx.id ? 'reject' : 'adjust')} disabled={!noteText.trim()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>Confirmar</button>
-                        <button onClick={() => setNoteFor(null)} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'none', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>Cancelar</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {done.length > 0 && (
+          <div style={{ marginTop: '2rem' }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Processadas ({done.length})</div>
+            {done.map(rx => (
+              <div key={rx.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 1rem', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', marginBottom: '0.4rem', opacity: 0.6 }}>
+                <CheckCircle2 size={15} style={{ color: '#10b981' }} />
+                <span style={{ flex: 1, fontSize: '0.82rem', fontWeight: 500 }}>{rx.patient_name ?? 'Paciente'} — {rx.medication_name}</span>
+                <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontWeight: 600 }}>{actionMap[rx.status] ?? rx.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Done */}
-      {done.length > 0 && (
-        <div style={{ marginTop: '2rem' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Processadas nesta sessão ({done.length})</div>
-          {done.map(rx => (
-            <div key={rx.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', marginBottom: '0.5rem', opacity: 0.65 }}>
-              <CheckCircle2 size={16} style={{ color: '#10b981' }} />
-              <span style={{ flex: 1, fontSize: '0.83rem', fontWeight: 500 }}>{rx.patient} — {rx.requested.name}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                {actions[rx.id]?.action === 'approve' ? '✓ Aprovada' : actions[rx.id]?.action === 'reject' ? '✗ Recusada' : actions[rx.id]?.action === 'adjust' ? '~ Ajustada' : actions[rx.id]?.action === 'consult' ? '📅 Consulta solicitada' : '🔬 Exames pedidos'}
-              </span>
+      {quickView && (
+        <div style={{ width: 260, flexShrink: 0 }}>
+          <div className="card" style={{ padding: '1.25rem', position: 'sticky', top: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.88rem' }}>Perfil do Paciente</span>
+              <button onClick={() => setQuickView(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
             </div>
-          ))}
+            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--brand-light)', color: 'var(--brand-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem', fontSize: '0.9rem' }}>
+                {(quickView.patient_name ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+              </div>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{quickView.patient_name ?? 'Paciente'}</div>
+              {quickView.patient_age && <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{quickView.patient_age} anos · {quickView.patient_gender ?? '—'}</div>}
+            </div>
+            {(quickView.chronic_conditions ?? []).length > 0 && (
+              <div style={{ marginBottom: '0.85rem' }}>
+                <SectionLabel>Condições crónicas</SectionLabel>
+                {(quickView.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
+              </div>
+            )}
+            {(quickView.allergies ?? []).length > 0 && (
+              <div style={{ marginBottom: '0.85rem' }}>
+                <SectionLabel>Alergias</SectionLabel>
+                {(quickView.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
+              </div>
+            )}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+              <SectionLabel>Pedido actual</SectionLabel>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{quickView.medication_name}</div>
+              {quickView.dose && <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{quickView.dose} · {quickView.frequency}</div>}
+              {quickView.reason && <div style={{ fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>"{quickView.reason}"</div>}
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.35rem' }}>{children}</div>;
+}
 function DetailBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{title}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>{children}</div>
+      <div style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>{title}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>{children}</div>
     </div>
   );
 }
-
 function Tag({ label, color, textColor }: { label: string; color: string; textColor: string }) {
-  return <span style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: 999, background: color, color: textColor, fontSize: '0.77rem', fontWeight: 600, width: 'fit-content' }}>{label}</span>;
+  return <span style={{ display: 'inline-block', padding: '0.18rem 0.55rem', borderRadius: 999, background: color, color: textColor, fontSize: '0.75rem', fontWeight: 600, width: 'fit-content', marginBottom: '0.18rem' }}>{label}</span>;
 }
-
-function VitalLine({ label, value }: { label: string; value: string }) {
+function ActionBtn({ onClick, disabled, color, bg, border, icon, label }: { onClick: () => void; disabled?: boolean; color: string; bg: string; border: string; icon: React.ReactNode; label: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0' }}>
-      <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span style={{ fontWeight: 600 }}>{value}</span>
-    </div>
-  );
-}
-
-function ActionBtn({ onClick, color, bg, border, icon, label }: { onClick: () => void; color: string; bg: string; border: string; icon: React.ReactNode; label: string }) {
-  return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 0.95rem', borderRadius: '10px', background: bg, color, border: `1.5px solid ${border}`, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+    <button onClick={onClick} disabled={disabled} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.9rem', borderRadius: '10px', background: bg, color, border: `1.5px solid ${border}`, fontWeight: 700, fontSize: '0.82rem', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
       {icon} {label}
     </button>
   );
