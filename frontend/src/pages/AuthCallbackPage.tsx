@@ -16,7 +16,8 @@ export default function AuthCallbackPage() {
     const email = searchParams.get('email') || '';
     const role = (searchParams.get('role') || 'patient') as Role;
     const name = searchParams.get('name') || '';
-    const redirect = searchParams.get('redirect') || '/dashboard';
+    const redirect = searchParams.get('redirect') ||
+      (role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/dashboard');
 
     if (token) {
       try {

@@ -30,7 +30,7 @@ export default function LoginPage() {
       const res = await api.post('/auth/login', { email, password });
       login(res.data);
       const role = res.data.user?.role;
-      navigate(role === 'admin' ? '/admin' : '/dashboard');
+      navigate(role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.detail || t('login.invalid'));
     } finally { setLoading(false); }

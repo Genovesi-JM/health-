@@ -31,6 +31,7 @@ import PatientProfilePage from './pages/PatientProfilePage';
 import TriagePage from './pages/TriagePage';
 import ConsultationsPage from './pages/ConsultationsPage';
 import ConsentsPage from './pages/ConsentsPage';
+import DoctorDashboardPage from './pages/DoctorDashboardPage';
 import DoctorProfileEditPage from './pages/DoctorProfileEditPage';
 import DoctorQueuePage from './pages/DoctorQueuePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="/consents" element={<ConsentsPage />} />
 
             {/* Doctor */}
+            <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
             <Route path="/doctor/profile" element={<DoctorProfileEditPage />} />
             <Route path="/doctor/queue" element={<DoctorQueuePage />} />
 

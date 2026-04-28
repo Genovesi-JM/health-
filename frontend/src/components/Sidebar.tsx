@@ -75,8 +75,9 @@ export function Sidebar({ open, onClose }: Props) {
           {/* Doctor */}
           {(role === 'doctor' || role === 'admin') && (
             <SidebarSection title={t('sidebar.doctor')}>
-              <SidebarLink to="/doctor/profile"  icon={Stethoscope} label={t('sidebar.doctor_profile')} onClick={onClose} />
-              <SidebarLink to="/doctor/queue"    icon={ClipboardList} label={t('sidebar.queue')}        onClick={onClose} />
+              <SidebarLink to="/doctor/dashboard" icon={LayoutDashboard} label="Dashboard"                   onClick={onClose} />
+              <SidebarLink to="/doctor/profile"   icon={Stethoscope}     label={t('sidebar.doctor_profile')} onClick={onClose} />
+              <SidebarLink to="/doctor/queue"     icon={ClipboardList}   label={t('sidebar.queue')}          onClick={onClose} />
             </SidebarSection>
           )}
 
