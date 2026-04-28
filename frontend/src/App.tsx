@@ -34,6 +34,15 @@ import ConsentsPage from './pages/ConsentsPage';
 import DoctorDashboardPage from './pages/DoctorDashboardPage';
 import DoctorProfileEditPage from './pages/DoctorProfileEditPage';
 import DoctorQueuePage from './pages/DoctorQueuePage';
+import DoctorAgendaPage from './pages/DoctorAgendaPage';
+import DoctorPatientsPage from './pages/DoctorPatientsPage';
+import DoctorLivePage from './pages/DoctorLivePage';
+import DoctorPrescriptionsPage from './pages/DoctorPrescriptionsPage';
+import DoctorMessagesPage from './pages/DoctorMessagesPage';
+import DoctorFinancePage from './pages/DoctorFinancePage';
+import DoctorReviewsPage from './pages/DoctorReviewsPage';
+import DoctorSecurityPage from './pages/DoctorSecurityPage';
+import DoctorSuportePage from './pages/DoctorSuportePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminDoctorsPage from './pages/AdminDoctorsPage';
 import AdminPatientsPage from './pages/AdminPatientsPage';
@@ -84,6 +93,15 @@ export default function App() {
             <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
             <Route path="/doctor/profile" element={<DoctorProfileEditPage />} />
             <Route path="/doctor/queue" element={<DoctorQueuePage />} />
+            <Route path="/doctor/agenda" element={<DoctorAgendaPage />} />
+            <Route path="/doctor/pacientes" element={<DoctorPatientsPage />} />
+            <Route path="/doctor/consultas" element={<DoctorLivePage />} />
+            <Route path="/doctor/prescricoes" element={<DoctorPrescriptionsPage />} />
+            <Route path="/doctor/mensagens" element={<DoctorMessagesPage />} />
+            <Route path="/doctor/financeiro" element={<DoctorFinancePage />} />
+            <Route path="/doctor/avaliacoes" element={<DoctorReviewsPage />} />
+            <Route path="/doctor/security" element={<DoctorSecurityPage />} />
+            <Route path="/doctor/suporte" element={<DoctorSuportePage />} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminDashboardPage />} />
