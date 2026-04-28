@@ -4,6 +4,8 @@ Doctors Router — Doctor profile, availability, and verification.
 """
 import json
 import logging
+import re
+import unicodedata
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -27,18 +29,57 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/doctors", tags=["doctors"])
 
 
+def _json_list(val):
+    if not val:
+        return []
+    try:
+        return json.loads(val)
+    except Exception:
+        return []
+
+
 # ── Public ──
 
 @router.get("/", response_model=List[DoctorPublic])
 def list_verified_doctors(
     specialty: str = Query(None),
+    city: str = Query(None),
+    consultation_type: str = Query(None),
     db: Session = Depends(get_db),
 ):
-    """List verified doctors (public). Optional specialty filter."""
+    """List verified doctors (public). Optional filters."""
     q = db.query(Doctor).filter(Doctor.verification_status == "verified")
     if specialty:
         q = q.filter(Doctor.specialization == specialty)
-    return q.all()
+    if city:
+        q = q.filter(Doctor.location_city.ilike(f"%{city}%"))
+    doctors = q.all()
+    result = []
+    for d in doctors:
+        pub = DoctorPublic.model_validate(d)
+        pub.consultation_types = _json_list(d.consultation_types_json)
+        pub.languages = _json_list(d.languages_json)
+        pub.education = _json_list(d.education_json)
+        if consultation_type and consultation_type not in (pub.consultation_types or []):
+            continue
+        result.append(pub)
+    return result
+
+
+@router.get("/by-slug/{slug}", response_model=DoctorPublic)
+def get_doctor_by_slug(slug: str, db: Session = Depends(get_db)):
+    """Get a single public doctor profile by slug."""
+    doctor = db.query(Doctor).filter(
+        Doctor.slug == slug,
+        Doctor.verification_status == "verified",
+    ).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Médico não encontrado.")
+    pub = DoctorPublic.model_validate(doctor)
+    pub.consultation_types = _json_list(doctor.consultation_types_json)
+    pub.languages = _json_list(doctor.languages_json)
+    pub.education = _json_list(doctor.education_json)
+    return pub
 
 
 # ── Doctor self-management ──
@@ -88,10 +129,49 @@ def update_my_doctor_profile(
         doctor.specialization = body.specialization
     if body.bio is not None:
         doctor.bio = body.bio
+    if body.display_name is not None:
+        doctor.display_name = body.display_name
+    if body.title is not None:
+        doctor.title = body.title
+    if body.license_number is not None:
+        doctor.license_number = body.license_number
+    if body.phone is not None:
+        doctor.phone = body.phone
+    if body.location_city is not None:
+        doctor.location_city = body.location_city
+    if body.location_province is not None:
+        doctor.location_province = body.location_province
+    if body.years_experience is not None:
+        doctor.years_experience = body.years_experience
+    if body.accepts_new_patients is not None:
+        doctor.accepts_new_patients = body.accepts_new_patients
+    if body.consultation_types is not None:
+        doctor.consultation_types_json = json.dumps(body.consultation_types)
+    if body.languages is not None:
+        doctor.languages_json = json.dumps(body.languages)
+    if body.education is not None:
+        doctor.education_json = json.dumps(body.education)
+    if body.price_min is not None:
+        doctor.price_min = body.price_min
+    if body.price_max is not None:
+        doctor.price_max = body.price_max
+    if body.photo_url is not None:
+        doctor.photo_url = body.photo_url
+
+    # Regenerate slug if display_name changed and no slug yet
+    if body.display_name and not doctor.slug:
+        from app.routers.auth import _unique_slug
+        doctor.slug = _unique_slug(db, body.display_name)
+
     db.add(doctor)
     db.commit()
     db.refresh(doctor)
-    return doctor
+
+    out = DoctorOut.model_validate(doctor)
+    out.consultation_types = _json_list(doctor.consultation_types_json)
+    out.languages = _json_list(doctor.languages_json)
+    out.education = _json_list(doctor.education_json)
+    return out
 
 
 # ── Availability ──

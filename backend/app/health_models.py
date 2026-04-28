@@ -57,6 +57,22 @@ class Patient(Base):
     consents = relationship("PatientConsent", back_populates="patient", cascade="all, delete-orphan")
 
 
+# ── Doctor Invite (token-based onboarding) ──
+
+class DoctorInvite(Base):
+    __tablename__ = "doctor_invites"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    invited_email: Mapped[Optional[str]] = mapped_column(String(254), nullable=True)  # hint only
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # admin note
+    created_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    used_by_user_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 # ── Doctor Profile (extends User) ──
 
 class Doctor(Base):
@@ -67,15 +83,39 @@ class Doctor(Base):
         String(36), ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False, unique=True, index=True,
     )
-    license_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    # Core credentials
+    license_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     specialization: Mapped[str] = mapped_column(String(100), nullable=False, default="clinica_geral")
-    bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     verification_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="pending",
     )  # pending, verified, rejected, suspended
     verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     verified_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
-    document_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # license scan
+    document_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Public profile fields
+    display_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    title: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="Dr.")  # Dr., Prof., Dra.
+    bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    slug: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, unique=True, index=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    location_city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    location_province: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    years_experience: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    accepts_new_patients: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # JSON arrays stored as text
+    consultation_types_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default='["teleconsulta"]')
+    # e.g. ["presencial","teleconsulta"]
+    languages_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default='["PT"]')
+    education_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default='[]')
+    # e.g. [{"institution":"FMUAN","degree":"Medicina","year":2015}]
+
+    # Pricing (optional, informational)
+    price_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Kz
+    price_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

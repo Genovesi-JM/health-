@@ -70,22 +70,52 @@ class PatientAdminOut(PatientOut):
 # ── Doctor ──
 
 class DoctorCreate(BaseModel):
-    license_number: str = Field(..., min_length=3)
+    license_number: Optional[str] = None  # optional at registration
     specialization: str = Field(default="clinica_geral")
     bio: Optional[str] = None
+    display_name: Optional[str] = None
+    title: Optional[str] = "Dr."
 
 
 class DoctorUpdate(BaseModel):
     specialization: Optional[str] = None
     bio: Optional[str] = None
+    display_name: Optional[str] = None
+    title: Optional[str] = None
+    license_number: Optional[str] = None
+    phone: Optional[str] = None
+    location_city: Optional[str] = None
+    location_province: Optional[str] = None
+    years_experience: Optional[int] = None
+    accepts_new_patients: Optional[bool] = None
+    consultation_types: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    education: Optional[List[dict]] = None
+    price_min: Optional[int] = None
+    price_max: Optional[int] = None
+    photo_url: Optional[str] = None
 
 
 class DoctorOut(BaseModel):
     id: str
     user_id: str
-    license_number: str
+    license_number: Optional[str] = None
     specialization: str
     bio: Optional[str] = None
+    display_name: Optional[str] = None
+    title: Optional[str] = None
+    phone: Optional[str] = None
+    location_city: Optional[str] = None
+    location_province: Optional[str] = None
+    years_experience: Optional[int] = None
+    accepts_new_patients: bool = True
+    consultation_types: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    education: Optional[List[dict]] = None
+    price_min: Optional[int] = None
+    price_max: Optional[int] = None
+    photo_url: Optional[str] = None
+    slug: Optional[str] = None
     verification_status: str
     verified_at: Optional[datetime] = None
     created_at: datetime
@@ -94,12 +124,60 @@ class DoctorOut(BaseModel):
 
 
 class DoctorPublic(BaseModel):
-    """Minimal doctor info shown to patients."""
+    """Full public doctor card shown to patients."""
     id: str
+    slug: Optional[str] = None
+    display_name: Optional[str] = None
+    title: Optional[str] = "Dr."
     specialization: str
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    location_city: Optional[str] = None
+    location_province: Optional[str] = None
+    years_experience: Optional[int] = None
+    accepts_new_patients: bool = True
+    consultation_types: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    education: Optional[List[dict]] = None
+    price_min: Optional[int] = None
+    price_max: Optional[int] = None
     verification_status: str
 
     model_config = {"from_attributes": True}
+
+
+# ── Doctor Invite ──
+
+class DoctorInviteCreate(BaseModel):
+    invited_email: Optional[str] = None
+    note: Optional[str] = None
+    expires_days: int = Field(default=7, ge=1, le=90)
+
+
+class DoctorInviteOut(BaseModel):
+    id: str
+    token: str
+    invited_email: Optional[str] = None
+    note: Optional[str] = None
+    used_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    created_at: datetime
+    invite_url: Optional[str] = None  # injected by endpoint
+
+    model_config = {"from_attributes": True}
+
+
+class DoctorRegisterWithToken(BaseModel):
+    token: str
+    email: str
+    password: Optional[str] = None  # None if OAuth
+    display_name: str
+    title: Optional[str] = "Dr."
+    specialization: str = "clinica_geral"
+    license_number: Optional[str] = None
+    phone: Optional[str] = None
+    location_city: Optional[str] = None
+    bio: Optional[str] = None
 
 
 class DoctorVerifyRequest(BaseModel):

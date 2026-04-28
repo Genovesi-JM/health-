@@ -913,3 +913,149 @@ def microsoft_callback(code: str | None = None, state: str | None = None,
         print("[GeoVision] Unhandled error in microsoft_callback")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Erro interno: {type(exc).__name__}: {exc}")
+
+
+# ═══════════════════════════════════════════════════════════════
+# Doctor Invite Flow
+# ═══════════════════════════════════════════════════════════════
+
+from ..health_models import DoctorInvite, Doctor
+from ..health_schemas import DoctorInviteCreate, DoctorInviteOut, DoctorRegisterWithToken
+from ..deps import get_current_user
+import re as _re
+import unicodedata as _ud
+
+
+def _slugify(text: str) -> str:
+    """Convert a display name to a URL-safe slug."""
+    text = _ud.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+    text = text.lower().strip()
+    text = _re.sub(r"[^\w\s-]", "", text)
+    text = _re.sub(r"[\s_-]+", "-", text)
+    return text[:100]
+
+
+def _unique_slug(db: Session, name: str) -> str:
+    base = _slugify(name)
+    slug = base
+    counter = 1
+    while db.query(Doctor).filter(Doctor.slug == slug).first():
+        slug = f"{base}-{counter}"
+        counter += 1
+    return slug
+
+
+@router.get("/doctor-invite/{token}")
+def validate_doctor_invite(token: str, db: Session = Depends(get_db)):
+    """Public endpoint — validate invite token before showing register form."""
+    invite = db.query(DoctorInvite).filter(DoctorInvite.token == token).first()
+    if not invite:
+        raise HTTPException(status_code=404, detail="Convite não encontrado ou inválido.")
+    if invite.used_at:
+        raise HTTPException(status_code=410, detail="Este convite já foi utilizado.")
+    if invite.expires_at and invite.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=410, detail="Este convite expirou.")
+    return {
+        "valid": True,
+        "invited_email": invite.invited_email,
+        "note": invite.note,
+        "expires_at": invite.expires_at,
+    }
+
+
+@router.post("/register/doctor", status_code=201)
+def register_doctor_with_token(
+    payload: DoctorRegisterWithToken,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Register a new doctor using a valid invite token."""
+    # 1. Validate invite
+    invite = db.query(DoctorInvite).filter(DoctorInvite.token == payload.token).first()
+    if not invite:
+        raise HTTPException(status_code=404, detail="Convite inválido.")
+    if invite.used_at:
+        raise HTTPException(status_code=410, detail="Convite já utilizado.")
+    if invite.expires_at and invite.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=410, detail="Convite expirou.")
+
+    # 2. Create or find user
+    email_lower = payload.email.strip().lower()
+    existing = db.query(User).filter(User.email == email_lower).first()
+    if existing and existing.role == "doctor":
+        raise HTTPException(status_code=409, detail="Email já registado como médico.")
+
+    if existing:
+        user = existing
+        user.role = "doctor"
+    else:
+        if not payload.password:
+            raise HTTPException(status_code=400, detail="Palavra-passe obrigatória.")
+        user = User(
+            email=email_lower,
+            password_hash=hash_password(payload.password),
+            role="doctor",
+            is_active=True,
+        )
+        db.add(user)
+        db.flush()
+
+    # 3. Ensure profile
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+    if not profile:
+        profile = UserProfile(user_id=user.id, full_name=payload.display_name)
+        db.add(profile)
+    else:
+        if payload.display_name:
+            profile.full_name = payload.display_name
+    db.flush()
+
+    # 4. Create doctor record
+    existing_doc = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+    if not existing_doc:
+        slug = _unique_slug(db, payload.display_name)
+        doctor = Doctor(
+            user_id=user.id,
+            license_number=payload.license_number,
+            specialization=payload.specialization,
+            bio=payload.bio,
+            display_name=payload.display_name,
+            title=payload.title or "Dr.",
+            phone=payload.phone,
+            location_city=payload.location_city,
+            slug=slug,
+            verification_status="pending",
+        )
+        db.add(doctor)
+
+    # 5. Mark invite as used
+    invite.used_at = datetime.utcnow()
+    invite.used_by_user_id = user.id
+
+    # 6. Ensure account
+    _ensure_default_account(db, user)
+
+    db.commit()
+    db.refresh(user)
+
+    # 7. Return auth tokens
+    access_token = create_access_token({
+        "sub": user.email, "email": user.email,
+        "role": "doctor", "uid": user.id,
+    })
+    refresh_token = _create_refresh_token(db, user.id)
+
+    log_audit(db, "doctor_register", user_id=user.id, user_email=user.email,
+              resource_type="user", resource_id=user.id, request=request)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "role": "doctor",
+            "name": payload.display_name,
+        },
+    }
+

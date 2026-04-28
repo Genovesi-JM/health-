@@ -1256,3 +1256,71 @@ async def list_alerts(db: Session = Depends(get_db)):
         db.rollback()
 
     return alerts
+
+
+# ═══════════════════════════════════════════════════════════════
+# Doctor Invite Management (admin only)
+# ═══════════════════════════════════════════════════════════════
+
+import secrets as _secrets
+from app.health_models import DoctorInvite
+from app.health_schemas import DoctorInviteCreate, DoctorInviteOut
+from app.deps import get_current_user
+from app.models import User
+from app.config import settings as _settings
+
+
+@router.post("/doctor-invites", response_model=DoctorInviteOut, status_code=201)
+def create_doctor_invite(
+    body: DoctorInviteCreate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_user),
+):
+    """Generate a one-time doctor invite link (admin only)."""
+    from datetime import timedelta
+    token = _secrets.token_urlsafe(40)
+    expires_at = datetime.utcnow() + timedelta(days=body.expires_days)
+
+    invite = DoctorInvite(
+        id=str(uuid.uuid4()),
+        token=token,
+        invited_email=body.invited_email,
+        note=body.note,
+        created_by=admin.id,
+        expires_at=expires_at,
+    )
+    db.add(invite)
+    db.commit()
+    db.refresh(invite)
+
+    frontend_base = getattr(_settings, "frontend_url", "https://genovesi-jm.github.io/health-")
+    invite_url = f"{frontend_base}/register/doctor?token={token}"
+
+    result = DoctorInviteOut.model_validate(invite)
+    result.invite_url = invite_url
+    return result
+
+
+@router.get("/doctor-invites", response_model=list[DoctorInviteOut])
+def list_doctor_invites(db: Session = Depends(get_db)):
+    """List all doctor invites (admin only)."""
+    frontend_base = getattr(_settings, "frontend_url", "https://genovesi-jm.github.io/health-")
+    invites = db.query(DoctorInvite).order_by(DoctorInvite.created_at.desc()).all()
+    results = []
+    for inv in invites:
+        out = DoctorInviteOut.model_validate(inv)
+        out.invite_url = f"{frontend_base}/register/doctor?token={inv.token}"
+        results.append(out)
+    return results
+
+
+@router.delete("/doctor-invites/{invite_id}")
+def delete_doctor_invite(invite_id: str, db: Session = Depends(get_db)):
+    """Revoke / delete an invite (admin only)."""
+    invite = db.query(DoctorInvite).filter(DoctorInvite.id == invite_id).first()
+    if not invite:
+        raise HTTPException(status_code=404, detail="Convite não encontrado.")
+    db.delete(invite)
+    db.commit()
+    return {"detail": "Convite removido."}
+

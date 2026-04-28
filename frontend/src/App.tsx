@@ -21,6 +21,9 @@ import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import DoctorRegisterPage from './pages/DoctorRegisterPage';
+import DoctorsListPage from './pages/DoctorsListPage';
+import PublicDoctorPage from './pages/PublicDoctorPage';
 
 /* Protected pages */
 import DashboardPage from './pages/DashboardPage';
@@ -28,7 +31,7 @@ import PatientProfilePage from './pages/PatientProfilePage';
 import TriagePage from './pages/TriagePage';
 import ConsultationsPage from './pages/ConsultationsPage';
 import ConsentsPage from './pages/ConsentsPage';
-import DoctorProfilePage from './pages/DoctorProfilePage';
+import DoctorProfileEditPage from './pages/DoctorProfileEditPage';
 import DoctorQueuePage from './pages/DoctorQueuePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminDoctorsPage from './pages/AdminDoctorsPage';
@@ -62,6 +65,9 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/register/doctor" element={<DoctorRegisterPage />} />
+          <Route path="/medicos" element={<DoctorsListPage />} />
+          <Route path="/medicos/:slug" element={<PublicDoctorPage />} />
 
           {/* Protected — wrapped with sidebar layout */}
           <Route element={<ProtectedRoute />}>
@@ -74,7 +80,7 @@ export default function App() {
             <Route path="/consents" element={<ConsentsPage />} />
 
             {/* Doctor */}
-            <Route path="/doctor/profile" element={<DoctorProfilePage />} />
+            <Route path="/doctor/profile" element={<DoctorProfileEditPage />} />
             <Route path="/doctor/queue" element={<DoctorQueuePage />} />
 
             {/* Admin */}
