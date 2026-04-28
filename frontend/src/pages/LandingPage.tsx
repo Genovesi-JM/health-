@@ -98,7 +98,7 @@ export default function LandingPage() {
           <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> Criar conta grátis</Link>
           <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={17} /> Teleconsulta imediata</Link>
           <Link to="/chronic-care" className="lp-cta lp-cta--outline"><Heart size={17} /> Cuidado Crónico</Link>
-          <Link to="/clinics" className="lp-cta lp-cta--outline"><Building2 size={17} /> Para Clínicas</Link>
+          <Link to="/clinics" className="lp-cta lp-cta--outline"><Building2 size={17} /> Para Parceiros</Link>
           <Link to="/devices" className="lp-cta lp-cta--outline"><Activity size={17} /> Smart Devices</Link>
           <Link to="/login" className="lp-cta lp-cta--portal"><ArrowRight size={17} /> Entrar no Portal</Link>
         </div>
@@ -175,7 +175,7 @@ export default function LandingPage() {
         <div className="ecosystem-grid">
           {[
             { icon: Users,     color: '#0d9488', to: '/patients',    label: 'Para Pacientes',    desc: 'Marcações, vitals, teleconsulta, família.' },
-            { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Clínicas',     desc: 'Modernize o atendimento, reduza no-shows.' },
+            { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Parceiros',     desc: 'Médicos particulares, clínicas e hospitais.' },
             { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: 'Cuidado Crónico',   desc: 'Hipertensão, diabetes, asma — contínuos.' },
             { icon: Activity,  color: '#d97706', to: '/devices',     label: 'Smart Devices',     desc: 'Tensiómetros, glicómetros, oxímetros.' },
             { icon: TrendingUp,color: '#7c3aed', to: '/pricing',     label: 'Preços Simples',    desc: 'Grátis para começar, premium ao crescer.' },
