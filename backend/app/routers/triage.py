@@ -184,3 +184,35 @@ def triage_history(
             completed_at=s.completed_at,
         ))
     return items
+
+
+@router.delete("/{triage_id}", status_code=204)
+def delete_triage(
+    triage_id: str,
+    patient: Patient = Depends(get_patient_for_user),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a triage session (and its answers/result) belonging to the current patient."""
+    session = db.query(TriageSession).filter(
+        TriageSession.id == triage_id,
+        TriageSession.patient_id == patient.id,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Triagem não encontrada.")
+
+    # Delete related records first
+    db.query(TriageAnswer).filter(TriageAnswer.triage_session_id == triage_id).delete()
+    db.query(TriageResult).filter(TriageResult.triage_session_id == triage_id).delete()
+    db.delete(session)
+    db.commit()
+
+    log_health_audit(
+        db,
+        action="triage_deleted",
+        actor_user_id=user.id,
+        resource_type="triage_session",
+        resource_id=triage_id,
+        metadata={"reason": "patient_requested_deletion"},
+    )
+    return

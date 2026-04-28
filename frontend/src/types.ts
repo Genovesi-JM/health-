@@ -62,6 +62,7 @@ export interface TriageResult {
 }
 
 export interface TriageHistoryItem {
+  id?: string;
   session_id: string;
   chief_complaint: string;
   status: string;

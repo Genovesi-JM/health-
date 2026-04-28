@@ -6,7 +6,7 @@ import type { TriageQuestion, TriageResult, TriageHistoryItem } from '../types';
 import {
   Activity, ChevronRight, AlertTriangle, CheckCircle2,
   Clock, ArrowLeft, RotateCcw, Bluetooth, Wifi, Thermometer,
-  Heart, Droplets, Zap, Users,
+  Heart, Droplets, Zap, Users, Trash2,
 } from 'lucide-react';
 import {
   isBluetoothAvailable, scanBluetooth, connectBluetooth, readBluetoothVitals,
@@ -93,6 +93,7 @@ export default function TriagePage() {
   const [history, setHistory] = useState<TriageHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // triage id pending delete
 
   // ── Dependent selector ─────────────────────────────────────
   const [dependents, setDependents] = useState<{ id: string; name: string; is_minor: boolean }[]>([]);
@@ -176,6 +177,16 @@ export default function TriagePage() {
       const r = await api.get('/api/v1/triage/history');
       setHistory(r.data);
     } catch { /* ignore */ }
+  };
+
+  const deleteTriage = async (id: string) => {
+    try {
+      await api.delete(`/api/v1/triage/${id}`);
+      setHistory(prev => prev.filter(h => h.id !== id && (h as any).session_id !== id));
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao eliminar triagem.');
+    }
+    setDeleteConfirm(null);
   };
 
   const startTriage = async (e: FormEvent) => {
@@ -295,18 +306,52 @@ export default function TriagePage() {
                     <th>{t('table.recommendation')}</th>
                     <th>{t('table.score')}</th>
                     <th>{t('table.date')}</th>
+                    <th style={{ width: '80px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {history.map(h => (
-                    <tr key={h.session_id}>
-                      <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{h.chief_complaint}</td>
-                      <td><span className={`badge ${riskBadge(h.risk_level)}`}>{h.risk_level || h.status}</span></td>
-                      <td style={{ fontSize: '0.8rem' }}>{h.recommended_action || '—'}</td>
-                      <td>{h.score ?? '—'}</td>
-                      <td>{new Date(h.created_at).toLocaleDateString(locale)}</td>
-                    </tr>
-                  ))}
+                  {history.map(h => {
+                    const rowId = (h as any).session_id || h.id;
+                    const isPending = deleteConfirm === rowId;
+                    return (
+                      <tr key={rowId} style={isPending ? { background: 'rgba(239,68,68,0.04)' } : {}}>
+                        <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{h.chief_complaint}</td>
+                        <td><span className={`badge ${riskBadge(h.risk_level)}`}>{h.risk_level || h.status}</span></td>
+                        <td style={{ fontSize: '0.8rem' }}>{h.recommended_action || '—'}</td>
+                        <td>{h.score ?? '—'}</td>
+                        <td>{new Date(h.created_at).toLocaleDateString(locale)}</td>
+                        <td>
+                          {isPending ? (
+                            <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem' }}
+                                onClick={() => deleteTriage(rowId)}
+                              >
+                                Confirmar
+                              </button>
+                              <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '0.2rem 0.45rem', fontSize: '0.72rem' }}
+                                onClick={() => setDeleteConfirm(null)}
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              title="Eliminar triagem"
+                              style={{ color: 'var(--text-muted)', padding: '0.25rem 0.5rem' }}
+                              onClick={() => setDeleteConfirm(rowId)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
