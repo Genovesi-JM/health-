@@ -116,9 +116,10 @@ def seed_admin_users() -> int:
                 .first()
             )
             if exists:
+                exists.password_hash = hash_password(password)
                 if not getattr(exists, "role", None):
                     exists.role = user_data.get("role", "admin")
-                    db.add(exists)
+                db.add(exists)
                 continue
 
             db.add(
@@ -147,6 +148,8 @@ def seed_patient_users() -> int:
         for pdata in PATIENT_USERS:
             exists = db.query(models.User).filter(models.User.email == pdata["email"]).first()
             if exists:
+                exists.password_hash = hash_password(password)
+                db.add(exists)
                 continue
 
             user = models.User(
@@ -188,6 +191,9 @@ def seed_doctor_users() -> int:
         for ddata in DOCTOR_USERS:
             exists = db.query(models.User).filter(models.User.email == ddata["email"]).first()
             if exists:
+                # Always sync password so test credentials stay predictable
+                exists.password_hash = hash_password(password)
+                db.add(exists)
                 continue
 
             user = models.User(
