@@ -1472,10 +1472,25 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .navbar-desktop-nav {
   display: flex; align-items: center; gap: 1.75rem;
 }
-.navbar-mobile-toggle { display: none; }
+.navbar-mobile-toggle {
+  display: none;
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+}
 @media (max-width: 767px) {
-  .navbar-desktop-nav { display: none; }
-  .navbar-mobile-toggle { display: block !important; }
+  .navbar-desktop-nav { display: none !important; }
+  .navbar-auth-btns { display: none !important; }
+  .navbar-mobile-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 40px;
+    min-height: 40px;
+    color: var(--text-primary);
+    z-index: 110;
+  }
 }
 
 /* ============ Navbar (public) ============ */

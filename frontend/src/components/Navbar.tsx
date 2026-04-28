@@ -116,7 +116,7 @@ export function Navbar() {
               </span>
             </Link>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="navbar-auth-btns" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Link to="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500 }}>
                 {t('nav.portal')}
               </Link>
