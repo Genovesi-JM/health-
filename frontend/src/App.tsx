@@ -13,6 +13,11 @@ import UrgenciaPage from './pages/UrgenciaPage';
 import EmpresasPage from './pages/EmpresasPage';
 import FAQPage from './pages/FAQPage';
 import ContactoPage from './pages/ContactoPage';
+import PatientsPage from './pages/PatientsPage';
+import ClinicsPage from './pages/ClinicsPage';
+import ChronicCarePage from './pages/ChronicCarePage';
+import DevicesPage from './pages/DevicesPage';
+import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -49,6 +54,11 @@ export default function App() {
           <Route path="/empresas" element={<EmpresasPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/contacto" element={<ContactoPage />} />
+          <Route path="/patients" element={<PatientsPage />} />
+          <Route path="/clinics" element={<ClinicsPage />} />
+          <Route path="/chronic-care" element={<ChronicCarePage />} />
+          <Route path="/devices" element={<DevicesPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />

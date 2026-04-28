@@ -71,27 +71,35 @@ export default function LandingPage() {
       {/* ══ HERO ══════════════════════════════════════════ */}
       <section className="lp-hero">
         <div className="lp-hero__badge">
-          <HeartPulse size={13} /> Plataforma de saúde digital — Luanda, Angola
+          <HeartPulse size={13} /> Plataforma de saúde digital — Angola, África
         </div>
         <h1 className="lp-hero__title">
-          Cuidados de saúde<br />
-          <span className="lp-hero__accent">rápidos, inteligentes</span><br />
-          e contínuos.
+          Smarter healthcare<br />
+          <span className="lp-hero__accent">starts at home.</span>
         </h1>
         <p className="lp-hero__sub">
-          O seu portal de saúde pessoal — médicos reais, historial organizado, renovação de receita e triagem segura. Tudo acessível, em qualquer momento.
+          Meça os seus vitais, marque consultas, fale com médicos por vídeo e acompanhe a saúde da família —
+          tudo num portal seguro, construído para Angola e escalável para toda a África.
         </p>
         <div className="lp-hero__ctas">
-          <Link to="/login" className="lp-cta lp-cta--primary"><Calendar size={17} /> Marcar Consulta</Link>
-          <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={17} /> Teleconsulta Imediata</Link>
-          <Link to="/login" className="lp-cta lp-cta--outline"><RefreshCw size={17} /> Repetir Medicação</Link>
-          <Link to="/especialistas" className="lp-cta lp-cta--outline"><Search size={17} /> Encontrar Especialista</Link>
-          <Link to="/triage" className="lp-cta lp-cta--outline"><Activity size={17} /> Verificar Sintomas</Link>
+          <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> Criar conta grátis</Link>
+          <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={17} /> Teleconsulta imediata</Link>
+          <Link to="/chronic-care" className="lp-cta lp-cta--outline"><Heart size={17} /> Cuidado Crónico</Link>
+          <Link to="/clinics" className="lp-cta lp-cta--outline"><Building2 size={17} /> Para Clínicas</Link>
+          <Link to="/devices" className="lp-cta lp-cta--outline"><Activity size={17} /> Smart Devices</Link>
           <Link to="/login" className="lp-cta lp-cta--portal"><ArrowRight size={17} /> Entrar no Portal</Link>
         </div>
         <div className="lp-hero__stats">
-          {[{ value: '8+', label: 'Parceiros clínicos' }, { value: '13', label: 'Especialidades' }, { value: '24/7', label: 'Suporte digital' }, { value: '100%', label: 'Médico real na validação' }].map(s => (
-            <div key={s.label} className="lp-stat"><span className="lp-stat__val">{s.value}</span><span className="lp-stat__lbl">{s.label}</span></div>
+          {[
+            { value: '8+',    label: 'Parceiros clínicos' },
+            { value: '13',    label: 'Especialidades' },
+            { value: '24/7',  label: 'Suporte digital' },
+            { value: '100%',  label: 'Médico real na validação' },
+          ].map(s => (
+            <div key={s.label} className="lp-stat">
+              <span className="lp-stat__val">{s.value}</span>
+              <span className="lp-stat__lbl">{s.label}</span>
+            </div>
           ))}
         </div>
       </section>
@@ -115,12 +123,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══ TRIAGEM ══════════════════════════════════════ */}
+      {/* ══ VERIFICAÇÃO PRÉ-CONSULTA ══════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Triagem & Orientação</div>
-          <h2>Saiba o que fazer. Agora.</h2>
-          <p>Não chamamos de diagnóstico — chamamos de <strong>orientação inicial</strong>. Um protocolo clínico sugere os próximos passos. Um médico real valida.</p>
+          <div className="lp-tag">Verificação Pré-Consulta</div>
+          <h2>Envie as suas leituras antes de chegar.</h2>
+          <p>Tensão arterial, glicemia, temperatura — o médico recebe os seus dados e a consulta começa com contexto completo. <strong>Médico real interpreta. Sempre.</strong></p>
         </div>
         <div className="lp-triage-outcomes">
           {TRIAGE_OUTCOMES.map(o => (
@@ -134,7 +142,37 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link to="/triage" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex' }}><Activity size={16} /> Iniciar Triagem Segura</Link>
+          <Link to="/register" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex' }}><Activity size={16} /> Começar verificação pré-consulta</Link>
+        </div>
+      </section>
+
+      {/* ══ ECOSYSTEM ══════════════════════════════════ */}
+      <section className="lp-section">
+        <div className="lp-section__header">
+          <div className="lp-tag">Ecossistema CareFast+</div>
+          <h2>Um sistema de saúde completo.</h2>
+          <p>Do paciente à clínica, do device ao médico — tudo conectado numa só plataforma.</p>
+        </div>
+        <div className="ecosystem-grid">
+          {[
+            { icon: Users,     color: '#0d9488', to: '/patients',    label: 'Para Pacientes',    desc: 'Marcações, vitals, teleconsulta, família.' },
+            { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Clínicas',     desc: 'Modernize o atendimento, reduza no-shows.' },
+            { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: 'Cuidado Crónico',   desc: 'Hipertensão, diabetes, asma — contínuos.' },
+            { icon: Activity,  color: '#d97706', to: '/devices',     label: 'Smart Devices',     desc: 'Tensiómetros, glicómetros, oxímetros.' },
+            { icon: TrendingUp,color: '#7c3aed', to: '/pricing',     label: 'Preços Simples',    desc: 'Grátis para começar, premium ao crescer.' },
+            { icon: Phone,     color: '#059669', to: '/contacto',    label: 'Contacto',          desc: 'Fale com a equipa CareFast+.' },
+          ].map(item => (
+            <Link key={item.to} to={item.to} className="ecosystem-card">
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}15`, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                <item.icon size={22} />
+              </div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.3rem' }}>{item.label}</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</div>
+              <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', color: item.color, fontWeight: 600 }}>
+                Saber mais <ArrowRight size={13} />
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 

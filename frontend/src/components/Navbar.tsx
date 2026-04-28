@@ -1,30 +1,51 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X } from 'lucide-react';
+import { Heart, Menu, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { getSession, getInitials } from '../api';
 import { useT } from '../i18n/LanguageContext';
 import LanguageSelector from './LanguageSelector';
 
-/**
- * Public navbar — equivalent to GeoVision's .navbar on every public page.
- * If user is logged in, shows avatar dropdown instead of "Portal" button.
- */
+interface NavGroup {
+  label: string;
+  links: { to: string; label: string; sub?: string }[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Para Pacientes',
+    links: [
+      { to: '/patients',    label: 'Pacientes',        sub: 'Marque consultas e acompanhe a saúde' },
+      { to: '/especialistas', label: 'Especialistas',  sub: 'Encontre o médico certo' },
+      { to: '/telemedicina', label: 'Teleconsulta',    sub: 'Consulta online imediata' },
+      { to: '/chronic-care', label: 'Cuidado Crónico', sub: 'Hipertensão, diabetes, asma' },
+    ],
+  },
+  {
+    label: 'Para Clínicas',
+    links: [
+      { to: '/clinics',   label: 'Clínicas & Hospitais', sub: 'Torne-se parceiro CareFast+' },
+      { to: '/empresas',  label: 'Empresas',             sub: 'Saúde ocupacional para equipas' },
+    ],
+  },
+  {
+    label: 'Soluções',
+    links: [
+      { to: '/devices',   label: 'Devices & Kits',   sub: 'Tensiómetros, glicómetros e mais' },
+      { to: '/pricing',   label: 'Preços',            sub: 'Planos para pacientes e clínicas' },
+      { to: '/urgencia',  label: 'Urgência',          sub: 'Pré-alerta hospitalar' },
+      { to: '/faq',       label: 'FAQ',               sub: 'Perguntas frequentes' },
+    ],
+  },
+];
+
 export function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const session = getSession();
   const { t } = useT();
 
-  const navLinks = [
-    { to: '/', label: t('nav.home') },
-    { to: '/especialistas', label: 'Especialistas' },
-    { to: '/telemedicina', label: 'Teleconsulta' },
-    { to: '/urgencia', label: 'Urgência' },
-    { to: '/empresas', label: 'Empresas' },
-    { to: '/faq', label: 'FAQ' },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
   const dashUrl = session?.role === 'admin' ? '/admin' : '/dashboard';
   const initials = session ? getInitials(session.name, session.email) : '';
   const displayName = session ? (session.name || session.email.split('@')[0]) : '';
@@ -32,48 +53,51 @@ export function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', textDecoration: 'none', color: 'var(--text-primary)' }}>
+        {/* ── Brand ── */}
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', textDecoration: 'none', color: 'var(--text-primary)', flexShrink: 0 }}>
           <div style={{
             width: 34, height: 34, borderRadius: 10,
             background: 'var(--gradient-primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ color: '#fff', fontWeight: 900, fontSize: '1.1rem', lineHeight: 1 }}>+</span>
+            <span style={{ color: '#fff', fontWeight: 900, fontSize: '1.2rem', lineHeight: 1 }}>+</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-            <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.04em', color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.04em' }}>
               CareFast<span style={{ color: 'var(--accent-teal)' }}>+</span>
             </span>
-            <span style={{ fontSize: '0.64rem', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.02em' }}>O seu sistema de saúde</span>
+            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>O seu sistema de saúde</span>
           </div>
         </Link>
 
-        <div style={{
-          display: mobileOpen ? 'flex' : undefined,
-          ...(mobileOpen ? {
-            flexDirection: 'column' as const, position: 'absolute' as const, top: '100%', right: 0,
-            background: '#ffffff', border: '1px solid var(--border)', borderRadius: '12px',
-            padding: '0.5rem 0', minWidth: '200px', zIndex: 9999,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-          } : {}),
-        }}
-          className={mobileOpen ? '' : 'navbar-desktop-nav'}
-        >
-          {navLinks.map(l => (
-            <Link key={l.to} to={l.to}
-              onClick={() => setMobileOpen(false)}
-              style={{
-                color: isActive(l.to) ? 'var(--accent-teal)' : 'var(--text-secondary)',
-                textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500,
-                padding: mobileOpen ? '0.9rem 1.4rem' : '0.5rem 0',
-                ...(mobileOpen ? { borderBottom: '1px solid var(--border)' } : {}),
-                transition: 'color 0.2s',
-              }}>
-              {l.label}
-            </Link>
+        {/* ── Desktop nav ── */}
+        <div className="navbar-desktop-nav">
+          {NAV_GROUPS.map(group => (
+            <div key={group.label} className="nav-group"
+              onMouseEnter={() => setOpenGroup(group.label)}
+              onMouseLeave={() => setOpenGroup(null)}
+            >
+              <button className={`nav-group__trigger${NAV_GROUPS.find(g => g.label === group.label)?.links.some(l => isActive(l.to)) ? ' nav-group__trigger--active' : ''}`}>
+                {group.label} <ChevronDown size={13} className={`nav-chevron${openGroup === group.label ? ' nav-chevron--open' : ''}`} />
+              </button>
+              {openGroup === group.label && (
+                <div className="nav-dropdown">
+                  {group.links.map(l => (
+                    <Link key={l.to} to={l.to} className={`nav-dropdown__item${isActive(l.to) ? ' nav-dropdown__item--active' : ''}`}>
+                      <span className="nav-dropdown__label">{l.label}</span>
+                      {l.sub && <span className="nav-dropdown__sub">{l.sub}</span>}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
+        </div>
+
+        {/* ── Right side ── */}
+        <div className="navbar-actions">
           {session ? (
-            <Link to={dashUrl} onClick={() => setMobileOpen(false)}
+            <Link to={dashUrl}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                 padding: '0.35rem 0.8rem 0.35rem 0.35rem',
@@ -82,46 +106,87 @@ export function Navbar() {
                 fontSize: '0.85rem', fontWeight: 500, textDecoration: 'none',
               }}>
               <span style={{
-                width: '30px', height: '30px', borderRadius: '50%',
+                width: '28px', height: '28px', borderRadius: '50%',
                 background: 'var(--gradient-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.7rem', fontWeight: 700, color: '#ffffff',
+                fontSize: '0.7rem', fontWeight: 700, color: '#fff',
               }}>{initials}</span>
-              <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {displayName.split(' ')[0]}
               </span>
             </Link>
           ) : (
-            <Link to="/login" onClick={() => setMobileOpen(false)}
-              style={{
-                padding: '0.6rem 1.4rem', borderRadius: '8px',
-                background: 'var(--gradient-primary)', color: '#ffffff',
-                fontWeight: 600, textDecoration: 'none', fontSize: '0.85rem',
-                display: 'inline-block',
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Link to="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500 }}>
+                {t('nav.portal')}
+              </Link>
+              <Link to="/register" style={{
+                padding: '0.5rem 1.1rem', borderRadius: '8px',
+                background: 'var(--gradient-primary)', color: '#fff',
+                fontWeight: 700, textDecoration: 'none', fontSize: '0.83rem',
               }}>
-              {t('nav.portal')}
-            </Link>
+                Começar grátis
+              </Link>
+            </div>
           )}
           <LanguageSelector />
-        </div>
 
-        <button onClick={() => setMobileOpen(!mobileOpen)}
-          className="navbar-mobile-toggle"
-          aria-label="Menu"
-          style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
-          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+          {/* ── Mobile toggle ── */}
+          <button onClick={() => setMobileOpen(!mobileOpen)}
+            className="navbar-mobile-toggle"
+            aria-label="Menu"
+            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.25rem' }}>
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
+
+      {/* ── Mobile menu ── */}
+      {mobileOpen && (
+        <div className="navbar-mobile-menu">
+          {NAV_GROUPS.map(group => (
+            <div key={group.label} className="mobile-group">
+              <div className="mobile-group__label">{group.label}</div>
+              {group.links.map(l => (
+                <Link key={l.to} to={l.to}
+                  className={`mobile-nav-link${isActive(l.to) ? ' mobile-nav-link--active' : ''}`}
+                  onClick={() => setMobileOpen(false)}>
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          ))}
+          <div style={{ padding: '1rem 1.25rem', display: 'flex', gap: '0.5rem' }}>
+            {session ? (
+              <Link to={dashUrl} className="lp-cta lp-cta--primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>
+                Portal
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="lp-cta lp-cta--outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>Entrar</Link>
+                <Link to="/register" className="lp-cta lp-cta--primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>Começar grátis</Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <style>{`
         .navbar-desktop-nav {
-          display: flex; align-items: center; gap: 2.5rem;
+          display: flex; align-items: center; gap: 0.25rem;
         }
-        @media (max-width: 768px) {
+        .navbar-actions {
+          display: flex; align-items: center; gap: 0.75rem;
+        }
+        .navbar-mobile-toggle { display: none !important; }
+        .navbar-mobile-menu { display: none; }
+        @media (max-width: 900px) {
           .navbar-desktop-nav { display: none !important; }
-          .navbar-mobile-toggle { display: block !important; }
+          .navbar-mobile-toggle { display: flex !important; }
+          .navbar-mobile-menu { display: block; }
         }
       `}</style>
     </nav>
   );
 }
+
