@@ -78,9 +78,9 @@ export default function ClinicsPage() {
       <div className="clinic-stats-bar">
         {[
           { val: '48h',   label: 'Onboarding rápido' },
-          { val: '8+',    label: 'Parceiros activos' },
           { val: '24/7',  label: 'Marcações online' },
           { val: '100%',  label: 'Verificados' },
+          { val: 'Grátis', label: 'Sem custo inicial' },
         ].map(s => (
           <div key={s.label} className="clinic-stat">
             <span className="clinic-stat__val">{s.val}</span>

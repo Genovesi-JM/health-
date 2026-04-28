@@ -55,7 +55,7 @@ export default function UrgenciaPage() {
           {[
             { icon: Clock,        label: 'Menos tempo de espera',     desc: 'Hospital preparado para receber antes da chegada.' },
             { icon: HeartPulse,   label: 'Mais segurança clínica',    desc: 'Médicos com contexto antes de o ver.' },
-            { icon: Building2,    label: 'Parceiros em Luanda',       desc: 'Hospital Américo Boavida, Hospital de Luanda e mais.' },
+            { icon: Building2,    label: 'Rede em crescimento',      desc: 'Estamos a estabelecer parcerias com hospitais e urgências em Angola.' },
             { icon: CheckCircle2, label: 'Simples de activar',        desc: 'Menos de 2 minutos no portal ou na app.' },
           ].map(tp => (
             <div key={tp.label} className="lp-trust-card">

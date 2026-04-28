@@ -39,15 +39,28 @@ const PREMIUM_PLANS = [
   { icon: Zap,       label: 'Priority Access', color: '#b45309', desc: 'Acesso prioritário e chegada pre-alerta em hospitais.', features: ['Fila prioritária', 'Pre-alerta hospitalar', 'Médico dedicado', 'Teleconsulta imediata'], cta: 'Priority', featured: false },
 ];
 
-const PARTNERS = [
-  { name: 'Clínica Girassol',          type: 'Clínica',  city: 'Luanda' },
-  { name: 'Clínica Multiperfil',        type: 'Clínica',  city: 'Luanda' },
-  { name: 'Clínica Sagrada Esperança',  type: 'Clínica',  city: 'Luanda' },
-  { name: 'Hospital Américo Boavida',   type: 'Hospital', city: 'Luanda' },
-  { name: 'Hospital de Luanda',         type: 'Hospital', city: 'Luanda' },
-  { name: 'Dr. Consulta Online',        type: 'Digital',  city: 'Online' },
-  { name: 'MedOnline Angola',           type: 'Digital',  city: 'Online' },
-  { name: 'Hospital Militar Principal', type: 'Hospital', city: 'Luanda' },
+const PARTNERSHIP_TYPES = [
+  {
+    icon: Stethoscope,
+    color: '#0d9488',
+    title: 'Médico individual / independente',
+    desc: 'Consulta presencial ou teleconsulta. Integração simples, sem mensalidades de entrada. O portal trata das marcações e do historial do paciente.',
+    cta: 'Candidatar-me como médico',
+  },
+  {
+    icon: Building2,
+    color: '#2563eb',
+    title: 'Clínica ou centro de saúde',
+    desc: 'Gestão de agenda, triagem digital pré-consulta e acesso ao histórico do paciente. Dashboard próprio para a equipa clínica.',
+    cta: 'Candidatar a minha clínica',
+  },
+  {
+    icon: HeartPulse,
+    color: '#7c3aed',
+    title: 'Hospital ou instituição',
+    desc: 'Integração de fluxos de urgência, pré-alertas e continuidade de cuidados pós-alta. Fale connosco para uma proposta à medida.',
+    cta: 'Falar com a equipa',
+  },
 ];
 
 const TRUST_POINTS = [
@@ -91,10 +104,10 @@ export default function LandingPage() {
         </div>
         <div className="lp-hero__stats">
           {[
-            { value: '8+',    label: 'Parceiros clínicos' },
             { value: '13',    label: 'Especialidades' },
             { value: '24/7',  label: 'Suporte digital' },
             { value: '100%',  label: 'Médico real na validação' },
+            { value: 'Grátis', label: 'Registo sem cartão' },
           ].map(s => (
             <div key={s.label} className="lp-stat">
               <span className="lp-stat__val">{s.value}</span>
@@ -248,18 +261,32 @@ export default function LandingPage() {
       {/* ══ PARCEIROS ════════════════════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Rede de Parceiros</div>
-          <h2>Clínicas, hospitais e médicos que confiam no CareFast+.</h2>
-          <p>Todos verificados. Marcação directa pelo portal.</p>
+          <div className="lp-tag">Parcerias abertas</div>
+          <h2>Trabalhe connosco — seja quem for.</h2>
+          <p>
+            Estamos a construir a rede. Se é médico independente, tem uma clínica ou dirige uma instituição,
+            há um lugar para si no CareFast+.
+          </p>
         </div>
-        <div className="lp-partners-grid">
-          {PARTNERS.map(p => (
-            <div key={p.name} className="lp-partner-card">
-              <div className="lp-partner-type">{p.type}</div>
-              <div className="lp-partner-name">{p.name}</div>
-              <div className="lp-partner-city">{p.city}</div>
+        <div className="feat-grid" style={{ maxWidth: 900, margin: '0 auto' }}>
+          {PARTNERSHIP_TYPES.map(p => (
+            <div key={p.title} className="feat-card hover-lift" style={{ borderTop: `3px solid ${p.color}` }}>
+              <div className="feat-icon" style={{ background: `${p.color}15`, color: p.color }}>
+                <p.icon size={22} />
+              </div>
+              <div>
+                <h3 className="feat-title">{p.title}</h3>
+                <p className="feat-desc">{p.desc}</p>
+                <a href="mailto:parcerias@carefast.ao" className="btn btn-ghost btn-sm"
+                  style={{ marginTop: '0.75rem', color: p.color, borderColor: `${p.color}40` }}>
+                  {p.cta} →
+                </a>
+              </div>
             </div>
           ))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          Contacto de parcerias: <a href="mailto:parcerias@carefast.ao" style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>parcerias@carefast.ao</a>
         </div>
       </section>
 
