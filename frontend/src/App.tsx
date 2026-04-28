@@ -7,6 +7,12 @@ import { ProtectedRoute } from './ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
+import EspecialistasPage from './pages/EspecialistasPage';
+import TeleconsultaPage from './pages/TeleconsultaPage';
+import UrgenciaPage from './pages/UrgenciaPage';
+import EmpresasPage from './pages/EmpresasPage';
+import FAQPage from './pages/FAQPage';
+import ContactoPage from './pages/ContactoPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -37,6 +43,12 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/services" element={<ServicesPage />} />
+          <Route path="/especialistas" element={<EspecialistasPage />} />
+          <Route path="/telemedicina" element={<TeleconsultaPage />} />
+          <Route path="/urgencia" element={<UrgenciaPage />} />
+          <Route path="/empresas" element={<EmpresasPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/contacto" element={<ContactoPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />

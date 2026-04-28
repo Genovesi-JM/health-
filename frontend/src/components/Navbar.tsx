@@ -17,8 +17,11 @@ export function Navbar() {
 
   const navLinks = [
     { to: '/', label: t('nav.home') },
-    { to: '/about', label: t('nav.about') },
-    { to: '/services', label: t('nav.services') },
+    { to: '/especialistas', label: 'Especialistas' },
+    { to: '/telemedicina', label: 'Teleconsulta' },
+    { to: '/urgencia', label: 'Urgência' },
+    { to: '/empresas', label: 'Empresas' },
+    { to: '/faq', label: 'FAQ' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
