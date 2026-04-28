@@ -23,7 +23,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Para Clínicas',
     links: [
-      { to: '/clinics',   label: 'Clínicas & Hospitais', sub: 'Torne-se parceiro CareFast+' },
+      { to: '/clinics',   label: 'Para Profissionais', sub: 'Médicos, clínicas e instituições' },
       { to: '/empresas',  label: 'Empresas',             sub: 'Saúde ocupacional para equipas' },
     ],
   },

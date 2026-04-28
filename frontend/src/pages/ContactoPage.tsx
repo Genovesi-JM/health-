@@ -50,7 +50,8 @@ export default function ContactoPage() {
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>Assunto</label>
               <select style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(15,23,42,0.8)', color: 'var(--text-primary)', fontSize: '0.88rem', boxSizing: 'border-box' }}>
                 <option>Suporte geral</option>
-                <option>Parceria clínica/hospital</option>
+                <option>Médico independente — quero trabalhar no portal</option>
+                <option>Parceria institucional (clínica / hospital)</option>
                 <option>Solução corporativa</option>
                 <option>Media / imprensa</option>
                 <option>Outro</option>
