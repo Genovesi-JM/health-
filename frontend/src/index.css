@@ -157,9 +157,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   background: rgba(0,0,0,0.3);
   display: none;
 }
-@media (max-width: 1023px) {
-  .sidebar-backdrop { display: block; }
-}
+/* Backdrop only shows when sidebar is open on mobile — controlled via JS (always rendered but hidden) */
 
 .sidebar {
   position: fixed; top: 0; left: 0; bottom: 0; z-index: 999;
@@ -293,21 +291,29 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 }
 .app-topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.7rem 1.5rem;
-  background: rgba(255,255,255,0.92);
+  padding: 0.7rem 1rem;
+  background: rgba(255,255,255,0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 50;
-  gap: 1rem;
+  position: sticky; top: 0; z-index: 100;
+  gap: 0.75rem;
+  min-height: 52px;
 }
 .app-topbar-toggle {
-  display: none; background: none; border: none;
-  color: var(--text-secondary); cursor: pointer;
-  padding: 0.3rem; border-radius: var(--radius-sm);
+  display: none;
+  align-items: center; justify-content: center;
+  background: none; border: none;
+  color: var(--text-primary); cursor: pointer;
+  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  min-width: 36px; min-height: 36px;
+  -webkit-tap-highlight-color: transparent;
 }
+.app-topbar-toggle:active { background: var(--bg-darker); }
 @media (max-width: 1023px) {
-  .app-topbar-toggle { display: block; }
+  .app-topbar-toggle { display: flex; }
 }
 .app-topbar-title {
   font-size: 1rem; font-weight: 600; color: var(--text-primary);
