@@ -4,7 +4,7 @@ import { Footer } from '../components/Footer';
 import {
   Activity, Wind, TrendingUp, Zap, Heart,
   Bluetooth, Smartphone, ArrowRight, CheckCircle2,
-  Shield, AlertTriangle,
+  Shield, AlertTriangle, Lock, BadgeCheck,
 } from 'lucide-react';
 
 const KITS = [
@@ -72,6 +72,11 @@ export default function DevicesPage() {
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
           <Link to="#kits" className="lp-cta lp-cta--primary"><Activity size={15} /> Ver kits disponíveis</Link>
           <Link to="/chronic-care" className="lp-cta lp-cta--secondary"><Heart size={15} /> Programa crónico</Link>
+        </div>
+        <div className="trust-strip" style={{ justifyContent: 'center', marginTop: '1.5rem' }}>
+          <span className="trust-badge trust-badge--encrypted"><Lock size={11} /> Dados encriptados</span>
+          <span className="trust-badge trust-badge--verified"><BadgeCheck size={11} /> Clínicas certificadas</span>
+          <span className="trust-badge trust-badge--hipaa"><Shield size={11} /> Privacidade garantida</span>
         </div>
       </section>
 

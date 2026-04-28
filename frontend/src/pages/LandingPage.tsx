@@ -102,6 +102,12 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+        <div className="trust-strip" style={{ justifyContent: 'center', marginTop: '1.5rem' }}>
+          <span className="trust-badge trust-badge--encrypted"><Lock size={11} /> Dados encriptados</span>
+          <span className="trust-badge trust-badge--verified"><Shield size={11} /> Médicos verificados</span>
+          <span className="trust-badge trust-badge--private"><HeartPulse size={11} /> Privacidade médica</span>
+          <span className="trust-badge trust-badge--secure"><CheckCircle2 size={11} /> Pagamentos seguros</span>
+        </div>
       </section>
 
       {/* ══ COMO FUNCIONA ════════════════════════════════ */}
