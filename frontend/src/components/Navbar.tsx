@@ -171,21 +171,6 @@ export function Navbar() {
         </div>
       )}
 
-      <style>{`
-        .navbar-desktop-nav {
-          display: flex; align-items: center; gap: 0.25rem;
-        }
-        .navbar-actions {
-          display: flex; align-items: center; gap: 0.75rem;
-        }
-        .navbar-mobile-toggle { display: none !important; }
-        .navbar-mobile-menu { display: none; }
-        @media (max-width: 900px) {
-          .navbar-desktop-nav { display: none !important; }
-          .navbar-mobile-toggle { display: flex !important; }
-          .navbar-mobile-menu { display: block; }
-        }
-      `}</style>
     </nav>
   );
 }

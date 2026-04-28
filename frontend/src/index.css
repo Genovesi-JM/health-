@@ -1470,7 +1470,10 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 
 /* ============ Navbar desktop link visibility ============ */
 .navbar-desktop-nav {
-  display: flex; align-items: center; gap: 1.75rem;
+  display: flex; align-items: center; gap: 0.25rem;
+}
+.navbar-actions {
+  display: flex; align-items: center; gap: 0.75rem;
 }
 .navbar-mobile-toggle {
   display: none;
@@ -1478,9 +1481,11 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   min-width: 40px;
   min-height: 40px;
 }
-@media (max-width: 767px) {
-  .navbar-desktop-nav { display: none !important; }
-  .navbar-auth-btns { display: none !important; }
+.navbar-mobile-menu { display: none; }
+@media (max-width: 900px) {
+  .navbar-desktop-nav  { display: none !important; }
+  .navbar-auth-btns    { display: none !important; }
+  .navbar-mobile-menu  { display: block !important; }
   .navbar-mobile-toggle {
     display: flex !important;
     align-items: center;
