@@ -33,10 +33,15 @@ export function ProtectedRoute() {
     '/consultations': t('topbar.consultations'),
     '/self-care': t('topbar.self_care'),
     '/consents': t('topbar.consents'),
-    '/doctor/profile': t('topbar.doctor_profile'),
-    '/doctor/queue': t('topbar.queue'),
+    '/doctor/dashboard': 'Dashboard',
+    '/doctor/agenda': 'Agenda',
+    '/doctor/pacientes': 'Os Meus Pacientes',
+    '/doctor/consultas': 'Consultas Ao Vivo',
+    '/doctor/queue': 'Fila de Espera',
+    '/doctor/prescricoes': 'Prescrições Pendentes',
     '/admin': t('topbar.admin_dashboard'),
     '/admin/doctors': t('topbar.verify_doctors'),
+    '/admin/patients': 'Pacientes',
     '/settings': t('topbar.settings'),
   };
   const pageTitle = crumbs[location.pathname] || 'Dashboard';

@@ -31,7 +31,7 @@ export function Sidebar({ open, onClose }: Props) {
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         {/* Brand */}
         <div className="sidebar-brand">
-          <Link to="/" className="sidebar-brand-link">
+          <Link to={role === 'doctor' ? '/doctor/dashboard' : role === 'admin' ? '/admin' : '/dashboard'} className="sidebar-brand-link">
             <Heart className="sidebar-brand-icon" />
             <div>
               <div className="sidebar-brand-name">HEALTH</div>

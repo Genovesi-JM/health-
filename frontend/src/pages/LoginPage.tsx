@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
@@ -9,6 +9,7 @@ import LanguageSelector from '../components/LanguageSelector';
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useT();
 
   const [email, setEmail] = useState('');
@@ -30,7 +31,9 @@ export default function LoginPage() {
       const res = await api.post('/auth/login', { email, password });
       login(res.data);
       const role = res.data.user?.role;
-      navigate(role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/dashboard');
+      const from = (location.state as any)?.from?.pathname;
+      const defaultDest = role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/dashboard';
+      navigate(from || defaultDest, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || t('login.invalid'));
     } finally { setLoading(false); }

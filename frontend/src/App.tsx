@@ -1,7 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './AuthContext';
+import { AuthProvider, useAuth } from './AuthContext';
 import { I18nProvider } from './i18n/LanguageContext';
 import { ProtectedRoute } from './ProtectedRoute';
+
+/* Root smart redirect: send logged-in users to their dashboard */
+function RootRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <LandingPage />;
+  if (user.role === 'doctor') return <Navigate to="/doctor/dashboard" replace />;
+  if (user.role === 'admin') return <Navigate to="/admin" replace />;
+  return <Navigate to="/dashboard" replace />;
+}
 
 /* Public pages */
 import LandingPage from './pages/LandingPage';
@@ -58,7 +68,7 @@ export default function App() {
       <BrowserRouter basename={BASE}>
         <Routes>
           {/* Public */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/especialistas" element={<EspecialistasPage />} />
@@ -112,8 +122,8 @@ export default function App() {
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Catch-all → login (preserves destination for redirect after login) */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
