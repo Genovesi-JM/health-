@@ -31,7 +31,7 @@ export default function DashboardPage() {
         const [sRes, tRes, cRes, pRes] = await Promise.allSettled([
           api.get('/api/v1/dashboard/patient-state'),
           api.get('/api/v1/triage/history'),
-          api.get('/api/v1/consultations/'),
+          api.get('/api/v1/consultations/me'),
           api.get('/api/v1/patients/me'),
         ]);
         if (sRes.status === 'fulfilled') setState(sRes.value.data);

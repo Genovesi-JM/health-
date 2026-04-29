@@ -24,14 +24,14 @@ export default function DoctorQueuePage() {
 
   const startConsultation = async (id: string) => {
     try {
-      await api.post(`/api/v1/consultations/${id}/start`);
+      await api.post(`/api/v1/doctor/queue/${id}/accept`);
       loadQueue();
     } catch { /* ignore */ }
   };
 
   const completeConsultation = async (id: string) => {
     try {
-      await api.post(`/api/v1/consultations/${id}/complete`);
+      await api.post(`/api/v1/consultations/${id}/complete`, { outcome: 'resolved' });
       loadQueue();
     } catch { /* ignore */ }
   };

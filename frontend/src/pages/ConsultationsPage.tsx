@@ -19,7 +19,7 @@ export default function ConsultationsPage() {
 
   useEffect(() => {
     Promise.allSettled([
-      api.get('/api/v1/consultations/'),
+      api.get('/api/v1/consultations/me'),
       api.get('/api/v1/dashboard/patient-state'),
     ]).then(([cRes, sRes]) => {
       if (cRes.status === 'fulfilled') setConsultations(cRes.value.data);

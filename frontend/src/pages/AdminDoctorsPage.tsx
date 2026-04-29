@@ -74,7 +74,8 @@ export default function AdminDoctorsPage() {
 
   const updateStatus = async (id: string, status: 'verified' | 'rejected') => {
     try {
-      await api.put(`/api/v1/doctors/${id}/verify`, { status });
+      const action = status === 'verified' ? 'verify' : 'reject';
+      await api.post(`/api/v1/doctors/${id}/verify`, { action });
       loadDoctors();
     } catch { /* ignore */ }
   };

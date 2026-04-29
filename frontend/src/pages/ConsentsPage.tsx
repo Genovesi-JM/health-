@@ -16,15 +16,13 @@ export default function ConsentsPage() {
   const [msg, setMsg] = useState('');
 
   const consentTypes = [
-    { value: 'Partilha de Dados Clínicos', label: t('consents.type_data') },
-    { value: 'Teleconsulta', label: t('consents.type_teleconsult') },
-    { value: 'Prescrição Digital', label: t('consents.type_prescription') },
-    { value: 'Notificações de Saúde', label: t('consents.type_notifications') },
-    { value: 'Investigação Clínica', label: t('consents.type_research') },
+    { value: 'privacy_policy', label: t('consents.type_data') },
+    { value: 'telemedicine_consent', label: t('consents.type_teleconsult') },
+    { value: 'terms_of_service', label: t('consents.type_prescription') },
   ];
 
   useEffect(() => {
-    api.get('/api/v1/patients/me/consents')
+    api.get('/api/v1/compliance/consents')
       .then(r => setConsents(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -34,7 +32,7 @@ export default function ConsentsPage() {
     if (!consentType) return;
     setAdding(true); setMsg('');
     try {
-      const r = await api.post('/api/v1/patients/me/consents', { consent_type: consentType });
+      const r = await api.post('/api/v1/compliance/consent', { consent_type: consentType });
       setConsents(c => [...c, r.data]);
       setConsentType('');
       setMsg(t('consents.registered'));

@@ -40,7 +40,7 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post('/api/v1/consultations/', {
+      const res = await api.post('/api/v1/consultations/book', {
         specialty,
         triage_session_id: patientState?.last_triage_session_id || undefined,
       });
