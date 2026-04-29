@@ -38,6 +38,15 @@ const SPECIALTY_LABELS: Record<string, string> = {
   medicina_interna: 'Medicina Interna', urgencia: 'Urgência', outro: 'Outra',
 };
 
+interface PendingRx {
+  id: string;
+  patient_name?: string;
+  patient_age?: number;
+  medication_name: string;
+  risk_level?: string;
+  created_at: string;
+}
+
 // Mock data for UI richness — replaced by real API when available
 const MOCK_AGENDA = [
   { id: '1', time: '09:00', patient: 'Maria Santos', type: 'teleconsulta', reason: 'Renovação de prescrição', status: 'confirmed', avatar: 'MS' },
@@ -47,21 +56,18 @@ const MOCK_AGENDA = [
   { id: '5', time: '15:30', patient: 'Luísa Pinto', type: 'teleconsulta', reason: 'Primeira consulta', status: 'pending', avatar: 'LP' },
 ];
 
-const MOCK_PRESCRIPTIONS = [
-  { id: 'p1', patient: 'Maria Santos', age: 52, condition: 'HTA + Diabetes T2', med: 'Metformina 850mg', risk: 'low', avatar: 'MS', since: 'há 2 dias' },
-  { id: 'p2', patient: 'José Almeida', age: 67, condition: 'Insuficiência cardíaca', med: 'Furosemida 40mg', risk: 'high', avatar: 'JA', since: 'há 5 horas' },
-  { id: 'p3', patient: 'Beatriz Lima', age: 34, condition: 'Asma brônquica', med: 'Salbutamol inalador', risk: 'medium', avatar: 'BL', since: 'há 1 dia' },
-];
-
 export default function DoctorDashboardPage() {
   const session = getSession();
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [pendingRx, setPendingRx] = useState<PendingRx[]>([]);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
     api.get('/api/v1/doctors/me').then(r => setProfile(r.data)).catch(() => {});
     api.get('/api/v1/doctor/queue').then(r => setQueue(r.data)).catch(() => {});
+    api.get<PendingRx[]>('/api/v1/doctor/prescription-requests', { params: { status: 'pending' } })
+      .then(r => setPendingRx(r.data)).catch(() => {});
   }, [lastRefresh]);
 
   const refresh = () => setLastRefresh(new Date());
@@ -109,7 +115,7 @@ export default function DoctorDashboardPage() {
               <HeroBtn to="/doctor/consultas" icon={<Video size={14} />} label="Entrar Online" primary />
               <HeroBtn to="/doctor/agenda" icon={<Calendar size={14} />} label="Abrir Agenda" />
               <HeroBtn to="/doctor/queue" icon={<ClipboardList size={14} />} label="Ver Fila" badge={waitingQ > 0 ? waitingQ : undefined} />
-              <HeroBtn to="/doctor/prescricoes" icon={<FileText size={14} />} label="Prescrições" badge={MOCK_PRESCRIPTIONS.length} />
+              <HeroBtn to="/doctor/prescricoes" icon={<FileText size={14} />} label="Prescrições" badge={pendingRx.length > 0 ? pendingRx.length : undefined} />
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
@@ -132,7 +138,7 @@ export default function DoctorDashboardPage() {
         <KpiCard icon={<Video size={18} />} label="Em consulta" value={activeQ} color="rgba(59,130,246,0.12)" iconColor="#3b82f6" />
         <KpiCard icon={<Calendar size={18} />} label="Consultas hoje" value={todayConsultations} color="rgba(16,185,129,0.12)" iconColor="#10b981" />
         <KpiCard icon={<CheckCircle2 size={18} />} label="Concluídas esta semana" value={12} color="rgba(99,102,241,0.12)" iconColor="#6366f1" />
-        <KpiCard icon={<FileText size={18} />} label="Prescrições pendentes" value={MOCK_PRESCRIPTIONS.length} color="rgba(239,68,68,0.1)" iconColor="#ef4444" urgent={MOCK_PRESCRIPTIONS.length > 0} />
+        <KpiCard icon={<FileText size={18} />} label="Prescrições pendentes" value={pendingRx.length} color="rgba(239,68,68,0.1)" iconColor="#ef4444" urgent={pendingRx.length > 0} />
         <KpiCard icon={<DollarSign size={18} />} label="Receita este mês (Kz)" value="142.500" color="rgba(16,185,129,0.1)" iconColor="#059669" />
         <KpiCard icon={<Star size={18} />} label="Rating médio" value="4.8 ★" color="rgba(251,191,36,0.12)" iconColor="#f59e0b" />
         <KpiCard icon={<MessageSquare size={18} />} label="Mensagens por responder" value={2} color="rgba(139,92,246,0.12)" iconColor="#8b5cf6" />
@@ -175,19 +181,23 @@ export default function DoctorDashboardPage() {
           </div>
 
           {/* PRESCRIÇÕES PENDENTES */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden', border: MOCK_PRESCRIPTIONS.length > 0 ? '1.5px solid rgba(239,68,68,0.25)' : undefined }}>
-            <SectionHeader title="Prescrições Pendentes" icon={<FileText size={16} />} count={MOCK_PRESCRIPTIONS.length} to="/doctor/prescricoes" urgent={MOCK_PRESCRIPTIONS.length > 0} />
-            {MOCK_PRESCRIPTIONS.map((rx, i) => (
-              <div key={rx.id} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.9rem 1.25rem', borderBottom: i < MOCK_PRESCRIPTIONS.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: rx.risk === 'high' ? 'rgba(239,68,68,0.12)' : rx.risk === 'medium' ? 'rgba(234,179,8,0.12)' : 'var(--brand-light)', color: rx.risk === 'high' ? '#dc2626' : rx.risk === 'medium' ? '#d97706' : 'var(--brand-primary)', fontWeight: 700, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{rx.avatar}</div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden', border: pendingRx.length > 0 ? '1.5px solid rgba(239,68,68,0.25)' : undefined }}>
+            <SectionHeader title="Prescrições Pendentes" icon={<FileText size={16} />} count={pendingRx.length} to="/doctor/prescricoes" urgent={pendingRx.length > 0} />
+            {pendingRx.length === 0 && (
+              <div style={{ padding: '1.25rem', color: 'var(--text-muted)', fontSize: '0.83rem', textAlign: 'center' }}>Sem pedidos pendentes.</div>
+            )}
+            {pendingRx.map((rx, i) => (
+              <div key={rx.id} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.9rem 1.25rem', borderBottom: i < pendingRx.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: rx.risk_level === 'high' ? 'rgba(239,68,68,0.12)' : rx.risk_level === 'medium' ? 'rgba(234,179,8,0.12)' : 'var(--brand-light)', color: rx.risk_level === 'high' ? '#dc2626' : rx.risk_level === 'medium' ? '#d97706' : 'var(--brand-primary)', fontWeight: 700, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {(rx.patient_name ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{rx.patient}, {rx.age} anos</div>
-                  <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{rx.condition}</div>
-                  <div style={{ fontSize: '0.77rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.15rem' }}>💊 {rx.med}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{rx.patient_name ?? 'Paciente'}{rx.patient_age ? `, ${rx.patient_age} anos` : ''}</div>
+                  <div style={{ fontSize: '0.77rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.15rem' }}>💊 {rx.medication_name}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end' }}>
-                  {rx.risk === 'high' && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#dc2626', background: 'rgba(239,68,68,0.1)', padding: '0.15rem 0.5rem', borderRadius: 999 }}>⚠ Alto risco</span>}
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{rx.since}</div>
+                  {rx.risk_level === 'high' && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#dc2626', background: 'rgba(239,68,68,0.1)', padding: '0.15rem 0.5rem', borderRadius: 999 }}>⚠ Alto risco</span>}
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(rx.created_at).toLocaleDateString('pt-PT')}</div>
                   <Link to="/doctor/prescricoes" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--brand-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                     Avaliar <ChevronRight size={12} />
                   </Link>

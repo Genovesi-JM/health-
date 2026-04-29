@@ -2,6 +2,7 @@ import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { getInitials } from '../api';
 import { useT } from '../i18n/LanguageContext';
+import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
   Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse,
@@ -18,6 +19,7 @@ export function Sidebar({ open, onClose }: Props) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useT();
+  const unreadNotifs = useUnreadNotifications();
   const role = user?.role;
   const initials = getInitials(user?.name, user?.email);
   const displayName = user?.name || user?.email?.split('@')[0] || t('sidebar.user_fallback');
@@ -58,7 +60,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/patient/readings" icon={Activity}  label="Medições"     onClick={onClose} />
               <SidebarLink to="/devices"          icon={Cpu}       label="Dispositivos"  onClick={onClose} />
               <SidebarLink to="/family"           icon={UserCheck} label="Família"       onClick={onClose} />
-              <SidebarLink to="/notifications"    icon={Bell}      label="Alertas"       onClick={onClose} badge={3} badgeVariant="alert" />
+              <SidebarLink to="/notifications"    icon={Bell}      label="Alertas"       onClick={onClose} badge={unreadNotifs > 0 ? unreadNotifs : undefined} badgeVariant="alert" />
             </SidebarSection>
           )}
           {(role === 'patient' || role === 'cliente') && (

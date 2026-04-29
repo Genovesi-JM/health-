@@ -545,6 +545,9 @@ class PrescriptionRequestOut(BaseModel):
     # enriched patient info (populated by router)
     patient_name: Optional[str] = None
     patient_age: Optional[int] = None
+    patient_gender: Optional[str] = None
+    chronic_conditions: Optional[list] = None
+    allergies: Optional[list] = None
 
 
 # ── Device Readings ──
@@ -707,3 +710,28 @@ class FamilyMemberOut(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Notifications ─────────────────────────────────────────────────────────────
+
+class NotificationOut(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    message: str
+    type: str
+    is_read: bool
+    related_entity_type: Optional[str] = None
+    related_entity_id: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class NotificationCreate(BaseModel):
+    user_id: str
+    title: str
+    message: str
+    type: str = "info"  # info | success | warning | error
+    related_entity_type: Optional[str] = None
+    related_entity_id: Optional[str] = None

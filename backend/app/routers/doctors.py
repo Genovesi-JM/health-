@@ -23,6 +23,7 @@ from app.rbac import (
     require_verified_doctor, get_doctor_for_user,
     require_admin_or_support, log_health_audit,
 )
+from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)
 
@@ -269,5 +270,18 @@ def verify_doctor(
         resource_id=doctor.id,
         metadata={"reason": body.reason},
     )
+
+    # Notify the doctor of the verification outcome
+    _ver_labels = {
+        "verify":  ("Perfil verificado",  "A sua conta foi verificada. Pode agora receber consultas.", "success"),
+        "reject":  ("Verificação recusada", f"A sua verificação foi recusada.{' Motivo: ' + body.reason if body.reason else ''}", "error"),
+        "suspend": ("Conta suspensa",     f"A sua conta foi suspensa.{' Motivo: ' + body.reason if body.reason else ''}", "warning"),
+    }
+    if body.action in _ver_labels:
+        title, msg, ntype = _ver_labels[body.action]
+        try:
+            create_notification(db, user_id=doctor.user_id, title=title, message=msg, type=ntype, entity_type="doctor", entity_id=doctor.id)
+        except Exception:
+            pass
 
     return doctor

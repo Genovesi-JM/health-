@@ -38,6 +38,7 @@ from app.rbac import (
     require_consents, require_verified_doctor,
     log_health_audit,
 )
+from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,19 @@ def book_consultation(
         resource_type="consultation",
         resource_id=consultation.id,
     )
+
+    try:
+        create_notification(
+            db,
+            user_id=user.id,
+            title="Consulta agendada",
+            message=f"A sua consulta de {consultation.specialty.replace('_', ' ')} foi registada com sucesso.",
+            type="success",
+            entity_type="consultation",
+            entity_id=consultation.id,
+        )
+    except Exception:
+        pass
 
     return consultation
 

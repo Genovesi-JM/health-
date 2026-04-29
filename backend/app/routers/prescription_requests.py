@@ -27,6 +27,7 @@ from app.health_schemas import (
     PrescriptionRequestDecide,
     PrescriptionRequestOut,
 )
+from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["prescription-requests"])
@@ -195,4 +196,32 @@ def decide_prescription_request(
 
     db.commit()
     db.refresh(req)
+
+    # ── Notify patient ────────────────────────────────────────────────────────
+    _action_labels = {
+        "approve":           ("Prescrição aprovada",           "success"),
+        "adjust":            ("Prescrição com ajuste de dose", "info"),
+        "consult_requested": ("Consulta solicitada",           "warning"),
+        "exams_requested":   ("Exames solicitados",            "warning"),
+        "reject":            ("Prescrição recusada",           "error"),
+    }
+    label, notif_type = _action_labels.get(body.action, ("Pedido processado", "info"))
+    patient_obj = db.query(Patient).filter(Patient.id == req.patient_id).first()
+    if patient_obj:
+        msg = f"O seu pedido de {req.medication_name} foi processado."
+        if body.doctor_note:
+            msg += f" Nota: {body.doctor_note}"
+        try:
+            create_notification(
+                db,
+                user_id=patient_obj.user_id,
+                title=label,
+                message=msg,
+                type=notif_type,
+                entity_type="prescription_request",
+                entity_id=req.id,
+            )
+        except Exception:
+            pass  # never block the response
+
     return _enrich(req, db)

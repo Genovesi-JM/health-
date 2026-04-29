@@ -537,3 +537,31 @@ class FamilyMember(Base):
     )
 
     owner = relationship("Patient", backref="family_members")
+
+
+# ── In-App Notification ───────────────────────────────────────────────────────
+
+class Notification(Base):
+    """In-app notification stored per user. Supports future push/email expansion."""
+    __tablename__ = "notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    # info | success | warning | error
+    type: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Optional: link back to the entity that triggered this (e.g. consultation, prescription_request)
+    related_entity_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    related_entity_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", backref="notifications")
+
+    __table_args__ = (
+        Index("ix_notifications_user_created", "user_id", "created_at"),
+    )

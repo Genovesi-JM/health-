@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
-import { useAuth } from '../AuthContext';
 import api from '../api';
 import type { PatientState } from '../types';
 import BookConsultationModal from '../components/BookConsultationModal';
@@ -21,14 +20,11 @@ interface Medication {
 
 export default function SelfCarePage() {
   const { t } = useT();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [patientState, setPatientState] = useState<PatientState | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [renewingId, setRenewingId] = useState<string | null>(null);
-  const [renewMsg, setRenewMsg] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api.get('/api/v1/dashboard/patient-state')
@@ -42,17 +38,11 @@ export default function SelfCarePage() {
       .catch(() => {});
   }, []);
 
-  const requestRenewal = async (med: Medication) => {
-    setRenewingId(med.id);
-    try {
-      // TODO: POST /api/v1/prescriptions/request when endpoint is ready
-      // await api.post('/api/v1/prescriptions/request', { medication_name: med.medication_name, reason: 'renewal' });
-      await new Promise(res => setTimeout(res, 800)); // stub delay
-      setRenewMsg(m => ({ ...m, [med.id]: t('meds.renew_sent') }));
-    } catch {
-      setRenewMsg(m => ({ ...m, [med.id]: t('meds.renew_error') }));
-    }
-    setRenewingId(null);
+  const requestRenewal = (med: Medication) => {
+    const params = new URLSearchParams({ med: med.medication_name });
+    if (med.dosage) params.set('dose', med.dosage);
+    if (med.frequency) params.set('freq', med.frequency);
+    navigate(`/prescricoes/pedido?${params.toString()}`);
   };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
@@ -162,18 +152,12 @@ export default function SelfCarePage() {
                     {med.frequency && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>• {med.frequency}</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {renewMsg[med.id] && (
-                      <span style={{ fontSize: '0.72rem', color: renewMsg[med.id] === t('meds.renew_sent') ? '#22c55e' : '#ef4444' }}>
-                        {renewMsg[med.id]}
-                      </span>
-                    )}
                     <button
                       className="btn btn-sm"
                       style={{ fontSize: '0.75rem', background: 'rgba(20,184,166,0.1)', color: 'var(--accent-teal)', border: '1px solid rgba(20,184,166,0.25)' }}
-                      disabled={renewingId === med.id}
                       onClick={() => requestRenewal(med)}
                     >
-                      <RefreshCw size={12} /> {renewingId === med.id ? '…' : t('meds.renew')}
+                      <RefreshCw size={12} /> {t('meds.renew')}
                     </button>
                   </div>
                 </div>

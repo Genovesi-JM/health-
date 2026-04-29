@@ -48,6 +48,7 @@ import DoctorAgendaPage from './pages/DoctorAgendaPage';
 import DoctorPatientsPage from './pages/DoctorPatientsPage';
 import DoctorLivePage from './pages/DoctorLivePage';
 import DoctorPrescriptionsPage from './pages/DoctorPrescriptionsPage';
+import PatientPrescriptionRequestPage from './pages/PatientPrescriptionRequestPage';
 import DoctorMessagesPage from './pages/DoctorMessagesPage';
 import DoctorFinancePage from './pages/DoctorFinancePage';
 import DoctorReviewsPage from './pages/DoctorReviewsPage';
@@ -100,6 +101,7 @@ export default function App() {
             <Route path="/triage" element={<TriagePage />} />
             <Route path="/consultations" element={<ConsultationsPage />} />
             <Route path="/self-care" element={<SelfCarePage />} />
+            <Route path="/prescricoes/pedido" element={<PatientPrescriptionRequestPage />} />
             <Route path="/consents" element={<ConsentsPage />} />
             <Route path="/family" element={<FamilyPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
