@@ -33,8 +33,11 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          VITE_API_URL: https://health.geovisionops.com
-          VITE_BASE_PATH: /health-/
+          # Set VITE_API_URL in GitHub → Settings → Secrets and variables → Actions → Variables
+          # For GitHub Pages + DO backend: https://health.geovisionops.com
+          # For Docker-only deployment:    (leave empty — nginx proxies /api/ → backend)
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://health.geovisionops.com' }}
+          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/health-/' }}
         run: npm run build
 
       - name: Upload artifact

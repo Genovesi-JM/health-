@@ -1,12 +1,23 @@
 # ═══════════════════════════════════════════════════════════════
 # Health Platform — Production Docker Compose (DigitalOcean)
-# Usage:
-#   cp .env.production .env
+#
+# Option A — Local Docker PostgreSQL (simple / testing):
+#   cp .env.production .env   # set DB_PASSWORD
 #   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Option B — DigitalOcean Managed PostgreSQL (recommended for production):
+#   1. Add to your .env:
+#      DATABASE_URL=postgresql://doadmin:<pw>@<host>.db.ondigitalocean.com:25060/defaultdb?sslmode=require
+#   2. Comment out (or remove) the `db` service below — it is not needed.
+#   3. Remove `db` from the backend `depends_on` block below.
+#   4. docker compose -f docker-compose.prod.yml up -d --build
+#
+# The backend reads DATABASE_URL directly; the `db` service is only used when
+# DATABASE_URL is not set (falls back to the local postgres container).
 # ═══════════════════════════════════════════════════════════════
 
 services:
-  # ── PostgreSQL ──
+  # ── PostgreSQL (local — Option A only, skip for Managed DB) ──
   db:
     image: postgres:16-alpine
     restart: always
@@ -46,7 +57,9 @@ services:
     environment:
       - ENV=production
       - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=postgresql://health_user:${DB_PASSWORD}@db:5432/health_platform
+      # DATABASE_URL: if set in .env (Managed PostgreSQL), it takes precedence.
+      # Otherwise falls back to the local `db` container (Option A).
+      - DATABASE_URL=${DATABASE_URL:-postgresql://health_user:${DB_PASSWORD}@db:5432/health_platform}
       - REDIS_URL=redis://redis:6379/0
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
