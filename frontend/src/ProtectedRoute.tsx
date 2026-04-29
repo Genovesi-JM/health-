@@ -35,6 +35,7 @@ export function ProtectedRoute() {
     '/consents': t('topbar.consents'),
     '/family': 'Família',
     '/notifications': 'Alertas',
+    '/patient/readings': 'Minhas Medições',
     '/doctor/dashboard': 'Dashboard',
     '/doctor/agenda': 'Agenda',
     '/doctor/pacientes': 'Os Meus Pacientes',

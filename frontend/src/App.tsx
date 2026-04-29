@@ -60,6 +60,7 @@ import SettingsPage from './pages/SettingsPage';
 import SelfCarePage from './pages/SelfCarePage';
 import FamilyPage from './pages/FamilyPage';
 import NotificationsPage from './pages/NotificationsPage';
+import PatientReadingsPage from './pages/PatientReadingsPage';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
 
@@ -102,6 +103,7 @@ export default function App() {
             <Route path="/consents" element={<ConsentsPage />} />
             <Route path="/family" element={<FamilyPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/patient/readings" element={<PatientReadingsPage />} />
 
             {/* Doctor */}
             <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />

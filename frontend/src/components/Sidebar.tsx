@@ -55,9 +55,10 @@ export function Sidebar({ open, onClose }: Props) {
           )}
           {(role === 'patient' || role === 'cliente') && (
             <SidebarSection title="Saúde & Dispositivos">
-              <SidebarLink to="/devices"       icon={Cpu}       label="Dispositivos"  onClick={onClose} />
-              <SidebarLink to="/family"        icon={UserCheck} label="Família"       onClick={onClose} />
-              <SidebarLink to="/notifications" icon={Bell}      label="Alertas"       onClick={onClose} badge={3} badgeVariant="alert" />
+              <SidebarLink to="/patient/readings" icon={Activity}  label="Medições"     onClick={onClose} />
+              <SidebarLink to="/devices"          icon={Cpu}       label="Dispositivos"  onClick={onClose} />
+              <SidebarLink to="/family"           icon={UserCheck} label="Família"       onClick={onClose} />
+              <SidebarLink to="/notifications"    icon={Bell}      label="Alertas"       onClick={onClose} badge={3} badgeVariant="alert" />
             </SidebarSection>
           )}
           {(role === 'patient' || role === 'cliente') && (
