@@ -663,3 +663,47 @@ class PatientMedicationOut(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Family Member ──
+
+class FamilyMemberCreate(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=200)
+    relationship: str = Field(..., min_length=1, max_length=50)
+    date_of_birth: Optional[str] = None    # YYYY-MM-DD
+    gender: Optional[str] = Field(None, max_length=20)
+    phone: Optional[str] = Field(None, max_length=30)
+    email: Optional[str] = Field(None, max_length=200)
+    is_minor: bool = False
+    emergency_contact: bool = False
+    notes: Optional[str] = None
+
+
+class FamilyMemberUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    relationship: Optional[str] = Field(None, min_length=1, max_length=50)
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = Field(None, max_length=20)
+    phone: Optional[str] = Field(None, max_length=30)
+    email: Optional[str] = Field(None, max_length=200)
+    is_minor: Optional[bool] = None
+    emergency_contact: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class FamilyMemberOut(BaseModel):
+    id: str
+    owner_patient_id: str
+    full_name: str
+    relationship: str
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    is_minor: bool
+    emergency_contact: bool
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}

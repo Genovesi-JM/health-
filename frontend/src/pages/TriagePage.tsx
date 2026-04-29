@@ -111,9 +111,10 @@ export default function TriagePage() {
 
   useEffect(() => {
     loadHistory();
-    // Load dependents from localStorage
-    const stored = localStorage.getItem('cf_dependents');
-    if (stored) setDependents(JSON.parse(stored));
+    // Load family members from backend
+    api.get('/api/v1/family/me')
+      .then((r: any) => setDependents(r.data.map((m: any) => ({ id: m.id, name: m.full_name, is_minor: m.is_minor }))))
+      .catch(() => {});
     // Pre-select dependent if navigated from ProfilePage
     if (location.state?.dependent) {
       const dep = location.state.dependent;

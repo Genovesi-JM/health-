@@ -509,3 +509,31 @@ class PatientMedication(Base):
     )
 
     patient = relationship("Patient", backref="medications_list")
+
+
+# ── Family Member (patient-linked profiles for dependents/relatives) ──────────
+
+class FamilyMember(Base):
+    """A family member or dependent linked to a patient's account."""
+    __tablename__ = "family_members"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_patient_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    full_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    relationship: Mapped[str] = mapped_column(String(50), nullable=False)   # filho, filha, pai, mãe, cônjuge, outro
+    date_of_birth: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)   # ISO date YYYY-MM-DD
+    gender: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    is_minor: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    emergency_contact: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    owner = relationship("Patient", backref="family_members")

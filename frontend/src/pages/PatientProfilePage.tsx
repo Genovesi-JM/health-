@@ -19,9 +19,9 @@ interface Medication {
 
 interface Dependent {
   id: string;
-  name: string;
-  date_of_birth: string;
-  relationship: 'filho' | 'filha' | 'outro';
+  full_name: string;
+  relationship: string;
+  date_of_birth: string | null;
   is_minor: boolean;
 }
 
@@ -62,10 +62,12 @@ export default function PatientProfilePage() {
 
   // ── Family / Dependents ───────────────────────────────────
   const [dependents, setDependents] = useState<Dependent[]>([]);
+  const [depsLoading, setDepsLoading] = useState(false);
   const [showDepForm, setShowDepForm] = useState(false);
   const [newDepName, setNewDepName] = useState('');
   const [newDepDob, setNewDepDob] = useState('');
-  const [newDepRel, setNewDepRel] = useState<'filho' | 'filha' | 'outro'>('filho');
+  const [newDepRel, setNewDepRel] = useState('filho');
+  const [savingDep, setSavingDep] = useState(false);
 
   useEffect(() => {
     api.get('/api/v1/patients/me')
@@ -90,9 +92,12 @@ export default function PatientProfilePage() {
       .catch(() => setMedsError('Não foi possível carregar os medicamentos.'))
       .finally(() => setMedsLoading(false));
 
-    // TODO: Replace with GET /api/v1/patients/dependents when endpoint is ready
-    const stored = localStorage.getItem('cf_dependents');
-    if (stored) setDependents(JSON.parse(stored));
+    // Load family members from backend
+    setDepsLoading(true);
+    api.get('/api/v1/family/me')
+      .then((r: any) => setDependents(r.data))
+      .catch(() => {})
+      .finally(() => setDepsLoading(false));
   }, []);
 
   const handleSave = async (e: FormEvent) => {
@@ -149,29 +154,29 @@ export default function PatientProfilePage() {
   };
 
   // ── Dependent helpers ─────────────────────────────────────
-  const addDependent = () => {
-    if (!newDepName.trim() || !newDepDob) return;
-    const age = calcAge(newDepDob);
-    const dep: Dependent = {
-      id: `dep-${Date.now()}`,
-      name: newDepName.trim(),
-      date_of_birth: newDepDob,
-      relationship: newDepRel,
-      is_minor: age < 16,
-    };
-    // TODO: POST /api/v1/patients/dependents
-    const updated = [...dependents, dep];
-    setDependents(updated);
-    localStorage.setItem('cf_dependents', JSON.stringify(updated));
-    setNewDepName(''); setNewDepDob(''); setNewDepRel('filho');
-    setShowDepForm(false);
+  const addDependent = async () => {
+    if (!newDepName.trim()) return;
+    setSavingDep(true);
+    try {
+      const age = newDepDob ? calcAge(newDepDob) : 99;
+      const r: any = await api.post('/api/v1/family', {
+        full_name: newDepName.trim(),
+        relationship: newDepRel,
+        date_of_birth: newDepDob || null,
+        is_minor: age < 16,
+      });
+      setDependents(prev => [...prev, r.data]);
+      setNewDepName(''); setNewDepDob(''); setNewDepRel('filho');
+      setShowDepForm(false);
+    } catch { /* silent */ }
+    setSavingDep(false);
   };
 
-  const removeDependent = (id: string) => {
-    // TODO: DELETE /api/v1/patients/dependents/{id}
-    const updated = dependents.filter(d => d.id !== id);
-    setDependents(updated);
-    localStorage.setItem('cf_dependents', JSON.stringify(updated));
+  const removeDependent = async (id: string) => {
+    try {
+      await api.delete(`/api/v1/family/${id}`);
+      setDependents(prev => prev.filter(d => d.id !== id));
+    } catch { /* silent */ }
   };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
@@ -334,7 +339,8 @@ export default function PatientProfilePage() {
         </div>
 
         <div style={{ padding: '1.25rem' }}>
-          {dependents.length === 0 && !showDepForm && (
+          {depsLoading && <div style={{ textAlign: 'center', padding: '1rem' }}><div className="spinner" /></div>}
+          {!depsLoading && dependents.length === 0 && !showDepForm && (
             <div className="empty-state" style={{ padding: '2rem' }}>
               <div className="empty-state-icon"><Users size={22} style={{ color: 'var(--accent-teal)' }} /></div>
               <div className="empty-state-title">{t('family.none')}</div>
@@ -347,7 +353,7 @@ export default function PatientProfilePage() {
               <div key={dep.id} className="profile-dependent-card">
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{dep.name}</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{dep.full_name}</span>
                     {dep.is_minor && (
                       <span style={{
                         fontSize: '0.68rem', padding: '0.1rem 0.45rem', borderRadius: '20px',
@@ -368,7 +374,7 @@ export default function PatientProfilePage() {
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                  <button className="btn btn-sm btn-primary" onClick={() => navigate('/triage', { state: { dependent: dep } })}>
+                  <button className="btn btn-sm btn-primary" onClick={() => navigate('/triage', { state: { dependent: { id: dep.id, name: dep.full_name, is_minor: dep.is_minor } } })}>
                     <Activity size={13} /> {t('family.triage_for')}
                   </button>
                   <button className="btn btn-sm"
@@ -397,7 +403,7 @@ export default function PatientProfilePage() {
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('family.rel')}</label>
                   <select className="form-select" style={{ fontSize: '0.85rem' }} value={newDepRel}
-                    onChange={e => setNewDepRel(e.target.value as 'filho' | 'filha' | 'outro')}>
+                    onChange={e => setNewDepRel(e.target.value)}>
                     <option value="filho">{t('family.rel_son')}</option>
                     <option value="filha">{t('family.rel_daughter')}</option>
                     <option value="outro">{t('family.rel_other')}</option>
@@ -411,7 +417,7 @@ export default function PatientProfilePage() {
                 </p>
               )}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="btn btn-primary btn-sm" onClick={addDependent}><Save size={13} /> {t('family.save')}</button>
+                <button className="btn btn-primary btn-sm" onClick={addDependent} disabled={savingDep}><Save size={13} /> {savingDep ? '...' : t('family.save')}</button>
                 <button className="btn btn-outline btn-sm" onClick={() => setShowDepForm(false)}>{t('family.cancel_add')}</button>
               </div>
             </div>
