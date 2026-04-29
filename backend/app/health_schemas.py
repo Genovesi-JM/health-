@@ -426,7 +426,11 @@ class InvoiceOut(BaseModel):
 
 class ConsentRequest(BaseModel):
     consent_type: str = Field(
-        ..., pattern="^(privacy_policy|telemedicine_consent|terms_of_service)$"
+        ...,
+        pattern=(
+            "^(privacy_policy|telemedicine_consent|terms_of_service"
+            "|medical_disclaimer|health_data_processing)$"
+        ),
     )
 
 

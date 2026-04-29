@@ -34,6 +34,9 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import DoctorRegisterPage from './pages/DoctorRegisterPage';
 import DoctorsListPage from './pages/DoctorsListPage';
 import PublicDoctorPage from './pages/PublicDoctorPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import MedicalDisclaimerPage from './pages/MedicalDisclaimerPage';
 
 /* Protected pages */
 import DashboardPage from './pages/DashboardPage';
@@ -62,6 +65,7 @@ import SelfCarePage from './pages/SelfCarePage';
 import FamilyPage from './pages/FamilyPage';
 import NotificationsPage from './pages/NotificationsPage';
 import PatientReadingsPage from './pages/PatientReadingsPage';
+import ConsentGatePage from './pages/ConsentGatePage';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
 
@@ -92,9 +96,16 @@ export default function App() {
           <Route path="/register/doctor" element={<DoctorRegisterPage />} />
           <Route path="/medicos" element={<DoctorsListPage />} />
           <Route path="/medicos/:slug" element={<PublicDoctorPage />} />
+          {/* Legal / public */}
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/medical-disclaimer" element={<MedicalDisclaimerPage />} />
 
           {/* Protected — wrapped with sidebar layout */}
           <Route element={<ProtectedRoute />}>
+            {/* Consent gate (patient-only, no sidebar needed but lives inside ProtectedRoute) */}
+            <Route path="/consent-gate" element={<ConsentGatePage />} />
+            <Route path="/data-consent" element={<ConsentGatePage />} />
             {/* Patient */}
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/patient/profile" element={<PatientProfilePage />} />

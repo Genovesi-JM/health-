@@ -6,6 +6,8 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
 
+const REQUIRED_CONSENTS = ['terms_of_service', 'medical_disclaimer', 'health_data_processing'] as const;
+
 export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -20,6 +22,14 @@ export default function RegisterPage() {
   const [showCpw, setShowCpw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Consent checkboxes
+  const [consents, setConsents] = useState({
+    terms_of_service: false,
+    medical_disclaimer: false,
+    health_data_processing: false,
+  });
+  const allConsentsChecked = REQUIRED_CONSENTS.every(c => consents[c]);
 
   const sectors = [
     { value: '', label: t('register.sector_select') },
@@ -36,6 +46,7 @@ export default function RegisterPage() {
     setError('');
     if (password !== confirmPw) { setError(t('register.pw_mismatch')); return; }
     if (password.length < 6) { setError(t('register.pw_short')); return; }
+    if (!allConsentsChecked) { setError('Please accept all required consents to register.'); return; }
 
     setLoading(true);
     try {
@@ -51,6 +62,11 @@ export default function RegisterPage() {
       };
       const res = await api.post('/auth/register', body);
       login(res.data);
+      // Post consents in background (best-effort; ConsentGate will catch any failures)
+      for (const ct of REQUIRED_CONSENTS) {
+        api.post('/api/v1/compliance/consent', { consent_type: ct }).catch(() => {});
+      }
+      sessionStorage.setItem('consents_accepted', 'true');
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.detail || t('register.error'));
@@ -127,7 +143,51 @@ export default function RegisterPage() {
             </select>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-lg" disabled={loading}
+          {/* ── Required consents ── */}
+          <div style={{ margin: '0.25rem 0 1rem', padding: '1rem', borderRadius: '8px',
+            border: '1px solid var(--border, #e2e8f0)', background: 'var(--bg, #f8fafc)',
+            display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600,
+              color: 'var(--text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Required consents
+            </p>
+
+            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
+              <input type="checkbox" checked={consents.terms_of_service}
+                onChange={() => setConsents(p => ({ ...p, terms_of_service: !p.terms_of_service }))}
+                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
+              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
+                I accept the{' '}
+                <Link to="/terms" target="_blank"
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Terms of Service</Link>
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
+              <input type="checkbox" checked={consents.medical_disclaimer}
+                onChange={() => setConsents(p => ({ ...p, medical_disclaimer: !p.medical_disclaimer }))}
+                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
+              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
+                I acknowledge the{' '}
+                <Link to="/medical-disclaimer" target="_blank"
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Medical Disclaimer</Link>
+                {' '}— this platform is not an emergency service and does not replace in-person care
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
+              <input type="checkbox" checked={consents.health_data_processing}
+                onChange={() => setConsents(p => ({ ...p, health_data_processing: !p.health_data_processing }))}
+                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
+              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
+                I consent to processing of my health-related data as described in the{' '}
+                <Link to="/privacy" target="_blank"
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Privacy Policy</Link>
+              </span>
+            </label>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !allConsentsChecked}
             style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem' }}>
             {loading ? t('register.loading') : t('register.submit')}
           </button>
