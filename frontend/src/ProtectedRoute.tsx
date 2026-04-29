@@ -33,6 +33,8 @@ export function ProtectedRoute() {
     '/consultations': t('topbar.consultations'),
     '/self-care': t('topbar.self_care'),
     '/consents': t('topbar.consents'),
+    '/family': 'Família',
+    '/notifications': 'Alertas',
     '/doctor/dashboard': 'Dashboard',
     '/doctor/agenda': 'Agenda',
     '/doctor/pacientes': 'Os Meus Pacientes',
