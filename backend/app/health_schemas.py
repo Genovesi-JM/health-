@@ -543,6 +543,74 @@ class PrescriptionRequestOut(BaseModel):
     # enriched patient info (populated by router)
     patient_name: Optional[str] = None
     patient_age: Optional[int] = None
+
+
+# ── Device Readings ──
+
+READING_TYPES = (
+    "blood_pressure",
+    "glucose",
+    "temperature",
+    "oxygen_saturation",
+    "weight",
+    "heart_rate",
+)
+
+_reading_type_pattern = "^(" + "|".join(READING_TYPES) + ")$"
+
+
+class DeviceReadingCreate(BaseModel):
+    reading_type: str = Field(..., pattern=_reading_type_pattern)
+    # Generic scalar (glucose, temperature, oxygen_saturation, weight, heart_rate)
+    value: Optional[float] = None
+    unit: Optional[str] = Field(default=None, max_length=20)
+    # Blood pressure
+    systolic: Optional[int] = None
+    diastolic: Optional[int] = None
+    pulse: Optional[int] = None
+    # Metadata
+    measured_at: Optional[datetime] = None
+    source: Optional[str] = Field(default="manual", max_length=30)
+    device_brand: Optional[str] = Field(default=None, max_length=100)
+    device_model: Optional[str] = Field(default=None, max_length=100)
+    notes: Optional[str] = None
+
+
+class DeviceReadingUpdate(BaseModel):
+    value: Optional[float] = None
+    unit: Optional[str] = Field(default=None, max_length=20)
+    systolic: Optional[int] = None
+    diastolic: Optional[int] = None
+    pulse: Optional[int] = None
+    measured_at: Optional[datetime] = None
+    device_brand: Optional[str] = Field(default=None, max_length=100)
+    device_model: Optional[str] = Field(default=None, max_length=100)
+    notes: Optional[str] = None
+
+
+class DeviceReadingOut(BaseModel):
+    id: str
+    patient_id: str
+    reading_type: str
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    systolic: Optional[int] = None
+    diastolic: Optional[int] = None
+    pulse: Optional[int] = None
+    measured_at: datetime
+    source: Optional[str] = None
+    device_brand: Optional[str] = None
+    device_model: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class DeviceReadingListOut(BaseModel):
+    total: int
+    readings: List[DeviceReadingOut]
     patient_gender: Optional[str] = None
     chronic_conditions: Optional[List[str]] = None
     allergies: Optional[List[str]] = None

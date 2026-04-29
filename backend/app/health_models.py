@@ -429,3 +429,55 @@ class PrescriptionRequest(Base):
 
     patient = relationship("Patient", backref="prescription_requests")
     doctor = relationship("Doctor", backref="prescription_requests")
+
+
+# ── Device Reading (patient home monitoring) ──────────────────────────────────
+
+READING_TYPES = (
+    "blood_pressure",
+    "glucose",
+    "temperature",
+    "oxygen_saturation",
+    "weight",
+    "heart_rate",
+)
+
+
+class DeviceReading(Base):
+    """Manual health measurement entered by a patient from a home device."""
+    __tablename__ = "device_readings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    # one of READING_TYPES
+    reading_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+
+    # Generic value + unit (glucose, temperature, oxygen_saturation, weight, heart_rate)
+    value: Mapped[Optional[float]] = mapped_column(Numeric(10, 4), nullable=True)
+    unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+
+    # Blood-pressure specific
+    systolic: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    diastolic: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    pulse: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # When and how
+    measured_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    source: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="manual")
+    device_brand: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    device_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    patient = relationship("Patient", backref="device_readings")
+
+    __table_args__ = (
+        Index("ix_device_readings_patient_measured", "patient_id", "measured_at"),
+    )
