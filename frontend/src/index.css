@@ -3564,3 +3564,161 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 @media (max-width: 400px) {
   .ecosystem-grid { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PWA / MOBILE RESPONSIVE ENHANCEMENTS
+   Applied on top of existing layout for phones (≤ 640px)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Safe-area padding for notched phones ── */
+.app-topbar {
+  padding-top: max(0.7rem, var(--safe-top, 0px));
+  padding-left:  max(1rem, var(--safe-left, 0px));
+  padding-right: max(1rem, var(--safe-right, 0px));
+}
+
+/* ── Dashboard KPI row — 2-col grid on mobile ── */
+.dash-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+@media (max-width: 480px) {
+  .dash-kpi-row { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .dash-kpi { padding: 1rem 0.875rem; }
+  .dash-kpi-value { font-size: 1.35rem; }
+  .dash-kpi-label { font-size: 0.72rem; }
+}
+
+/* ── Page header compact on mobile ── */
+@media (max-width: 640px) {
+  .page-header { margin-bottom: 1rem; }
+  .page-header h1 { font-size: 1.25rem; }
+  .page-header p { font-size: 0.82rem; }
+}
+
+/* ── Cards: reduce padding on small screens ── */
+@media (max-width: 480px) {
+  .card { padding: 1rem; border-radius: var(--radius-md); }
+  .kpi-card { padding: 1rem; }
+  .app-content { padding: 0.875rem; }
+}
+
+/* ── Auth pages (Login / Register) ── */
+@media (max-width: 480px) {
+  .auth-shell { padding: 1rem; align-items: flex-start; padding-top: 2rem; }
+  .auth-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 100%;
+  }
+  .auth-title { font-size: 1.3rem; }
+}
+
+/* ── Tables: horizontal scroll on mobile ── */
+@media (max-width: 640px) {
+  .table-wrapper, .cf-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  table { min-width: 520px; }
+}
+
+/* ── Doctor queue / patient list rows ── */
+@media (max-width: 640px) {
+  .queue-row, .patient-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .queue-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* ── Consultations list ── */
+@media (max-width: 640px) {
+  .consultation-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.875rem 1rem;
+  }
+  .consultation-meta { font-size: 0.78rem; flex-wrap: wrap; gap: 0.3rem; }
+}
+
+/* ── Readings page ── */
+@media (max-width: 640px) {
+  .readings-grid { grid-template-columns: 1fr !important; }
+  .reading-card-value { font-size: 2rem; }
+}
+
+/* ── Forms: full-width on mobile ── */
+@media (max-width: 480px) {
+  .form-row { flex-direction: column; }
+  .form-group + .form-group { margin-top: 0; }
+  .btn-lg { font-size: 0.9rem; padding: 0.65rem 1rem; }
+}
+
+/* ── Modal / dialog: full-screen on mobile ── */
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal-box {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    overflow-y: auto;
+    padding-bottom: max(1.5rem, var(--safe-bottom, 0px));
+  }
+}
+
+/* ── Toast: full-width on mobile ── */
+@media (max-width: 480px) {
+  .toast {
+    left: 1rem !important;
+    right: 1rem !important;
+    bottom: max(1rem, var(--safe-bottom, 0px)) !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ── Sidebar: touch-friendly tap targets ── */
+@media (max-width: 1023px) {
+  .sidebar-link {
+    min-height: 44px;    /* iOS HIG minimum tap target */
+    padding: 0.6rem 1rem;
+  }
+  .sidebar {
+    padding-top: max(0px, var(--safe-top, 0px));
+    padding-bottom: max(1rem, var(--safe-bottom, 0px));
+  }
+}
+
+/* ── Topbar: larger hamburger tap target on mobile ── */
+@media (max-width: 1023px) {
+  .app-topbar-toggle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ── Prevent text overflow on mobile ── */
+@media (max-width: 640px) {
+  h1, h2, h3 { word-break: break-word; overflow-wrap: break-word; }
+  .card { word-break: break-word; }
+}
+
+/* ── Bottom navigation bar pattern (optional, activate if needed) ──
+   Adds bottom padding so content doesn't hide behind OS gesture bar
+   on iPhone/Android. */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .app-content {
+    padding-bottom: max(1.5rem, calc(1rem + env(safe-area-inset-bottom)));
+  }
+}

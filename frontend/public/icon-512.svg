@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="100" fill="#0F766E"/>
+  <!-- Heart outline with cross overlay — health brand mark -->
+  <path d="M256 370
+    C220 340 130 280 130 200
+    C130 160 160 130 200 130
+    C222 130 242 142 256 160
+    C270 142 290 130 312 130
+    C352 130 382 160 382 200
+    C382 280 292 340 256 370Z"
+    fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round"/>
+  <!-- Medical cross inside heart -->
+  <rect x="236" y="196" width="40" height="120" rx="8" fill="#FFFFFF"/>
+  <rect x="196" y="236" width="120" height="40" rx="8" fill="#FFFFFF"/>
+</svg>

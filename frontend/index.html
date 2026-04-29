@@ -1,10 +1,43 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Health Platform — Triage & Teleconsulta</title>
+
+    <!-- ── Viewport / Mobile ── -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Health" />
+
+    <!-- ── Theme colour (matches brand primary) ── -->
+    <meta name="theme-color" content="#0F766E" />
+    <meta name="msapplication-TileColor" content="#0F766E" />
+
+    <!-- ── Icons ── -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/icon-512.svg" color="#0F766E" />
+
+    <!-- ── PWA Manifest ── -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- ── SEO / Meta ── -->
+    <title>Health Platform — Triage &amp; Teleconsulta</title>
+    <meta name="description"
+      content="Plataforma digital de saúde — triagem, teleconsulta e gestão de cuidados." />
+    <meta name="application-name" content="Health Platform" />
+
+    <!-- ── Safe-area insets for notched phones ── -->
+    <style>
+      :root {
+        --safe-top:    env(safe-area-inset-top,    0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left:   env(safe-area-inset-left,   0px);
+        --safe-right:  env(safe-area-inset-right,  0px);
+      }
+    </style>
+
     <!-- GitHub Pages SPA redirect handler -->
     <script type="text/javascript">
       (function(l) {

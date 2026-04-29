@@ -66,6 +66,7 @@ import FamilyPage from './pages/FamilyPage';
 import NotificationsPage from './pages/NotificationsPage';
 import PatientReadingsPage from './pages/PatientReadingsPage';
 import ConsentGatePage from './pages/ConsentGatePage';
+import InstallPrompt from './components/InstallPrompt';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
 
@@ -144,6 +145,7 @@ export default function App() {
           {/* Catch-all → login (preserves destination for redirect after login) */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        <InstallPrompt />
       </BrowserRouter>
     </AuthProvider>
     </I18nProvider>
