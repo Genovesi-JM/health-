@@ -297,6 +297,8 @@ class ConsultationCancelRequest(BaseModel):
 class ConsultationQueueItem(BaseModel):
     """Item in the doctor's unassigned queue (minimal patient info)."""
     id: str
+    patient_id: Optional[str] = None
+    patient_name: Optional[str] = None
     specialty: str
     status: str
     risk_level: Optional[str] = None

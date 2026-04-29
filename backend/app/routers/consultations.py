@@ -146,8 +146,21 @@ def doctor_queue(
                 if result:
                     risk_level = result.risk_level
 
+        # Resolve patient display name
+        patient_name = None
+        try:
+            pat = db.query(Patient).filter(Patient.id == c.patient_id).first()
+            if pat:
+                u = db.get(User, pat.user_id)
+                if u:
+                    patient_name = u.name or u.email.split("@")[0]
+        except Exception:
+            pass
+
         items.append(ConsultationQueueItem(
             id=c.id,
+            patient_id=c.patient_id,
+            patient_name=patient_name,
             specialty=c.specialty,
             status=c.status,
             risk_level=risk_level,

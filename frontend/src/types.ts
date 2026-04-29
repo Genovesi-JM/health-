@@ -89,10 +89,13 @@ export interface Consultation {
 
 export interface ConsultationQueueItem {
   id: string;
-  patient_name: string;
+  patient_id?: string;
+  patient_name?: string;
   specialty: string;
   risk_level?: string;
   status: string;
+  chief_complaint?: string;
+  scheduled_at?: string;
   created_at: string;
 }
 
