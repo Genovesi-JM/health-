@@ -481,3 +481,31 @@ class DeviceReading(Base):
     __table_args__ = (
         Index("ix_device_readings_patient_measured", "patient_id", "measured_at"),
     )
+
+
+# ── Patient Medication (patient-reported current medications) ─────────────────
+
+class PatientMedication(Base):
+    """Self-reported medication entry by a patient."""
+    __tablename__ = "patient_medications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    medication_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    dosage: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    start_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)   # ISO date string
+    end_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    is_current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    reason: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    prescribed_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    patient = relationship("Patient", backref="medications_list")

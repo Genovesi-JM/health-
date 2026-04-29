@@ -13,9 +13,10 @@ import {
 
 interface Medication {
   id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
+  medication_name: string;
+  dosage: string | null;
+  frequency: string | null;
+  is_current: boolean;
 }
 
 export default function SelfCarePage() {
@@ -35,16 +36,17 @@ export default function SelfCarePage() {
       .catch(() => {})
       .finally(() => setLoading(false));
 
-    // Load medications from localStorage (set in PatientProfilePage)
-    const stored = localStorage.getItem('cf_medications');
-    if (stored) setMedications(JSON.parse(stored));
+    // Load medications from backend
+    api.get('/api/v1/medications/me')
+      .then((res: any) => setMedications(res.data))
+      .catch(() => {});
   }, []);
 
   const requestRenewal = async (med: Medication) => {
     setRenewingId(med.id);
     try {
       // TODO: POST /api/v1/prescriptions/request when endpoint is ready
-      // await api.post('/api/v1/prescriptions/request', { medication_name: med.name, reason: 'renewal' });
+      // await api.post('/api/v1/prescriptions/request', { medication_name: med.medication_name, reason: 'renewal' });
       await new Promise(res => setTimeout(res, 800)); // stub delay
       setRenewMsg(m => ({ ...m, [med.id]: t('meds.renew_sent') }));
     } catch {
@@ -155,7 +157,7 @@ export default function SelfCarePage() {
               {medications.map(med => (
                 <div key={med.id} className="selfcare-med-row">
                   <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{med.name}</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{med.medication_name}</span>
                     {med.dosage && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>• {med.dosage}</span>}
                     {med.frequency && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>• {med.frequency}</span>}
                   </div>

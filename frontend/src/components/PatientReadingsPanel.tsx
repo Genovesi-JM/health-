@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import {
   Activity, Heart, Droplets, ThermometerSun, Wind,
-  Weight, HeartPulse, AlertTriangle, Loader2, RefreshCw,
+  Weight, HeartPulse, AlertTriangle, Loader2, RefreshCw, Pill,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -29,6 +29,16 @@ interface DeviceReading {
 interface ReadingListOut {
   total: number;
   readings: DeviceReading[];
+}
+
+interface PatientMedication {
+  id: string;
+  medication_name: string;
+  dosage: string | null;
+  frequency: string | null;
+  is_current: boolean;
+  reason: string | null;
+  prescribed_by: string | null;
 }
 
 // ── Range flags (visual only — NOT diagnosis) ─────────────────────────────────
@@ -147,6 +157,8 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [medications, setMedications] = useState<PatientMedication[]>([]);
+  const [medsLoading, setMedsLoading] = useState(true);
 
   const load = () => {
     setLoading(true);
@@ -155,6 +167,12 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
       .then(r => { setReadings(r.data.readings); setTotal(r.data.total); })
       .catch(() => setError('Não foi possível carregar as medições.'))
       .finally(() => setLoading(false));
+
+    setMedsLoading(true);
+    api.get<PatientMedication[]>(`/api/v1/medications/patient/${patientId}`)
+      .then(r => setMedications(r.data))
+      .catch(() => {})
+      .finally(() => setMedsLoading(false));
   };
 
   useEffect(() => { if (patientId) load(); }, [patientId]);
@@ -269,6 +287,51 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
           </div>
         </>
       )}
+
+      {/* ── Medications section ── */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+          <Pill size={15} style={{ color: '#ef4444' }} />
+          <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>Medicação actual</span>
+          {medications.length > 0 && (
+            <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.45rem', borderRadius: 999, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: 700 }}>
+              {medications.filter(m => m.is_current).length} actual
+            </span>
+          )}
+        </div>
+        {medsLoading ? (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Loader2 size={13} className="spin" /> A carregar medicamentos…
+          </div>
+        ) : medications.length === 0 ? (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sem medicamentos registados.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {medications.map(med => (
+              <div key={med.id} style={{
+                display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
+                background: 'var(--surface, #fff)', border: '1px solid var(--border)',
+                borderRadius: 10, padding: '0.6rem 0.85rem',
+                opacity: med.is_current ? 1 : 0.55,
+              }}>
+                <Pill size={13} style={{ color: '#ef4444', marginTop: 2, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                    {med.medication_name}
+                    {!med.is_current && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>(histórico)</span>}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                    {med.dosage && <span style={{ marginRight: '0.65rem' }}>💊 {med.dosage}</span>}
+                    {med.frequency && <span style={{ marginRight: '0.65rem' }}>🔁 {med.frequency}</span>}
+                    {med.reason && <span style={{ marginRight: '0.65rem' }}>📋 {med.reason}</span>}
+                    {med.prescribed_by && <span>👤 {med.prescribed_by}</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

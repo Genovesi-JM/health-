@@ -619,3 +619,47 @@ class DeviceReadingListOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ── Patient Medication ──
+
+class PatientMedicationCreate(BaseModel):
+    medication_name: str = Field(..., min_length=1, max_length=200)
+    dosage: Optional[str] = Field(None, max_length=100)
+    frequency: Optional[str] = Field(None, max_length=100)
+    start_date: Optional[str] = None        # ISO date string YYYY-MM-DD
+    end_date: Optional[str] = None
+    is_current: bool = True
+    reason: Optional[str] = Field(None, max_length=300)
+    prescribed_by: Optional[str] = Field(None, max_length=200)
+    notes: Optional[str] = None
+
+
+class PatientMedicationUpdate(BaseModel):
+    medication_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    dosage: Optional[str] = Field(None, max_length=100)
+    frequency: Optional[str] = Field(None, max_length=100)
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    is_current: Optional[bool] = None
+    reason: Optional[str] = Field(None, max_length=300)
+    prescribed_by: Optional[str] = Field(None, max_length=200)
+    notes: Optional[str] = None
+
+
+class PatientMedicationOut(BaseModel):
+    id: str
+    patient_id: str
+    medication_name: str
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    is_current: bool
+    reason: Optional[str] = None
+    prescribed_by: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}

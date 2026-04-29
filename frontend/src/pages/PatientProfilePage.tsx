@@ -9,9 +9,12 @@ import { useT } from '../i18n/LanguageContext';
 
 interface Medication {
   id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
+  medication_name: string;
+  dosage: string | null;
+  frequency: string | null;
+  is_current: boolean;
+  reason: string | null;
+  prescribed_by: string | null;
 }
 
 interface Dependent {
@@ -49,10 +52,13 @@ export default function PatientProfilePage() {
 
   // ── Medications ───────────────────────────────────────────
   const [medications, setMedications] = useState<Medication[]>([]);
+  const [medsLoading, setMedsLoading] = useState(false);
+  const [medsError, setMedsError] = useState('');
   const [showMedForm, setShowMedForm] = useState(false);
   const [newMedName, setNewMedName] = useState('');
   const [newMedDosage, setNewMedDosage] = useState('');
   const [newMedFreq, setNewMedFreq] = useState('');
+  const [savingMed, setSavingMed] = useState(false);
 
   // ── Family / Dependents ───────────────────────────────────
   const [dependents, setDependents] = useState<Dependent[]>([]);
@@ -73,16 +79,20 @@ export default function PatientProfilePage() {
         setChronic((p.chronic_conditions || []).join(', '));
         setEmergName(p.emergency_contact_name || '');
         setEmergPhone(p.emergency_contact_phone || '');
-        if (p.medications) setMedications(p.medications);
       })
       .catch(() => { /* No profile yet */ })
       .finally(() => setLoading(false));
 
+    // Load medications from backend
+    setMedsLoading(true);
+    api.get('/api/v1/medications/me')
+      .then((r: any) => setMedications(r.data))
+      .catch(() => setMedsError('Não foi possível carregar os medicamentos.'))
+      .finally(() => setMedsLoading(false));
+
     // TODO: Replace with GET /api/v1/patients/dependents when endpoint is ready
     const stored = localStorage.getItem('cf_dependents');
     if (stored) setDependents(JSON.parse(stored));
-    const storedMeds = localStorage.getItem('cf_medications');
-    if (storedMeds) setMedications(JSON.parse(storedMeds));
   }, []);
 
   const handleSave = async (e: FormEvent) => {
@@ -96,7 +106,6 @@ export default function PatientProfilePage() {
       chronic_conditions: chronic ? chronic.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
       emergency_contact_name: emergName || null,
       emergency_contact_phone: emergPhone || null,
-      medications,
     };
     try {
       if (profile) {
@@ -112,24 +121,31 @@ export default function PatientProfilePage() {
   };
 
   // ── Medication helpers ────────────────────────────────────
-  const addMedication = () => {
+  const addMedication = async () => {
     if (!newMedName.trim()) return;
-    const updated = [...medications, {
-      id: `med-${Date.now()}`,
-      name: newMedName.trim(),
-      dosage: newMedDosage.trim(),
-      frequency: newMedFreq.trim(),
-    }];
-    setMedications(updated);
-    setNewMedName(''); setNewMedDosage(''); setNewMedFreq('');
-    setShowMedForm(false);
-    localStorage.setItem('cf_medications', JSON.stringify(updated));
+    setSavingMed(true);
+    try {
+      const res = await api.post('/api/v1/medications', {
+        medication_name: newMedName.trim(),
+        dosage: newMedDosage.trim() || null,
+        frequency: newMedFreq.trim() || null,
+      });
+      setMedications(prev => [...prev, res.data]);
+      setNewMedName(''); setNewMedDosage(''); setNewMedFreq('');
+      setShowMedForm(false);
+    } catch {
+      setMedsError('Erro ao guardar medicamento.');
+    }
+    setSavingMed(false);
   };
 
-  const removeMedication = (id: string) => {
-    const updated = medications.filter(m => m.id !== id);
-    setMedications(updated);
-    localStorage.setItem('cf_medications', JSON.stringify(updated));
+  const removeMedication = async (id: string) => {
+    try {
+      await api.delete(`/api/v1/medications/${id}`);
+      setMedications(prev => prev.filter(m => m.id !== id));
+    } catch {
+      setMedsError('Erro ao remover medicamento.');
+    }
   };
 
   // ── Dependent helpers ─────────────────────────────────────
@@ -248,7 +264,9 @@ export default function PatientProfilePage() {
         </div>
 
         <div style={{ padding: '1.25rem' }}>
-          {medications.length === 0 && !showMedForm && (
+          {medsLoading && <div style={{ textAlign: 'center', padding: '1rem' }}><div className="spinner" /></div>}
+          {medsError && <div style={{ fontSize: '0.82rem', color: '#fca5a5', marginBottom: '0.75rem' }}>{medsError}</div>}
+          {!medsLoading && medications.length === 0 && !showMedForm && (
             <div className="empty-state" style={{ padding: '2rem' }}>
               <div className="empty-state-icon"><Pill size={22} style={{ color: '#ef4444' }} /></div>
               <div className="empty-state-title">{t('meds.none')}</div>
@@ -259,7 +277,7 @@ export default function PatientProfilePage() {
           {medications.map(med => (
             <div key={med.id} className="profile-med-card">
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{med.name}</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{med.medication_name}</div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                   {med.dosage && <span style={{ marginRight: '0.75rem' }}>💊 {med.dosage}</span>}
                   {med.frequency && <span>🔁 {med.frequency}</span>}
@@ -292,7 +310,7 @@ export default function PatientProfilePage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="btn btn-primary btn-sm" onClick={addMedication}><Save size={13} /> {t('meds.save')}</button>
+                <button className="btn btn-primary btn-sm" onClick={addMedication} disabled={savingMed}><Save size={13} /> {savingMed ? '...' : t('meds.save')}</button>
                 <button className="btn btn-outline btn-sm" onClick={() => setShowMedForm(false)}>{t('family.cancel_add')}</button>
               </div>
             </div>
