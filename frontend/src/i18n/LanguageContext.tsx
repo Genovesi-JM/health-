@@ -18,7 +18,7 @@ const STORAGE_KEY = 'health_lang';
 function getInitialLang(): Lang {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'pt' || saved === 'en' || saved === 'fr') return saved;
+    if (saved === 'pt' || saved === 'en' || saved === 'fr' || saved === 'es') return saved;
   } catch { /* SSR / no localStorage */ }
   return 'pt';
 }
