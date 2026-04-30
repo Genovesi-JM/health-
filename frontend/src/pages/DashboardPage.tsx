@@ -328,7 +328,7 @@ export default function DashboardPage() {
                       {triageHistory.slice(0, 3).map(th => {
                         const r = riskConfig(th.risk_level);
                         return (
-                          <tr key={th.session_id}>
+                          <tr key={th.id}>
                             <td style={{ color: 'var(--text-primary)' }}>{th.chief_complaint}</td>
                             <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{th.risk_level || th.status}</span></td>
                             <td>{new Date(th.created_at).toLocaleDateString(locale)}</td>
@@ -418,7 +418,7 @@ export default function DashboardPage() {
                     {triageHistory.map(th => {
                       const r = riskConfig(th.risk_level);
                       return (
-                        <tr key={th.session_id}>
+                        <tr key={th.id}>
                           <td style={{ color: 'var(--text-primary)' }}>{th.chief_complaint}</td>
                           <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{th.risk_level || th.status}</span></td>
                           <td style={{ fontSize: '0.82rem' }}>{th.recommended_action || '—'}</td>
