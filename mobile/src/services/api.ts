@@ -4,7 +4,7 @@
  *
  * Base URL is read from EXPO_PUBLIC_API_BASE_URL env var (falls back to localhost).
  */
-import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
@@ -23,6 +23,20 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   }
   return config;
 });
+
+// Normalise API errors so callers get a consistent shape
+api.interceptors.response.use(
+  response => response,
+  (error: AxiosError<{ detail?: string }>) => {
+    // Attach a human-readable message to the error so screens can use
+    // err.message as a fallback instead of drilling into err.response?.data
+    const detail = error.response?.data?.detail;
+    if (detail && typeof detail === 'string') {
+      error.message = detail;
+    }
+    return Promise.reject(error);
+  },
+);
 
 // ----- Token helpers -----
 

@@ -11,12 +11,14 @@ import SettingsScreen from '../screens/SettingsScreen';
 import BookConsultationScreen from '../screens/BookConsultationScreen';
 import PrescriptionRequestScreen from '../screens/PrescriptionRequestScreen';
 import FamilyScreen from '../screens/FamilyScreen';
+import ConsentGateScreen from '../screens/ConsentGateScreen';
 
 export type AppStackParamList = {
   HomeTabs: undefined;
   BookConsultation: undefined;
   PrescriptionRequest: undefined;
   Family: undefined;
+  ConsentGate: undefined;
 };
 
 export type TabParamList = {
@@ -70,6 +72,8 @@ export default function AppStack() {
         options={{ title: 'Request Prescription', headerTintColor: TEAL }} />
       <Stack.Screen name="Family" component={FamilyScreen}
         options={{ title: 'Family Members', headerTintColor: TEAL }} />
+      <Stack.Screen name="ConsentGate" component={ConsentGateScreen}
+        options={{ title: 'Required Consents', headerTintColor: TEAL }} />
     </Stack.Navigator>
   );
 }

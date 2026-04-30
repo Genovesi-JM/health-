@@ -27,7 +27,6 @@
       "apiBaseUrl": "http://localhost:8000"
     },
     "plugins": [
-      "expo-router",
       "expo-secure-store"
     ],
     "scheme": "healthplatform"

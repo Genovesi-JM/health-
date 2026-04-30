@@ -5,10 +5,11 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
 
-type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'ConsentGate'> };
+// ConsentGateScreen is reachable from both AuthStack (new users)
+// and AppStack (existing users who need to re-consent).
+// After successful consent, RootNavigation auto-swaps to AppStack
+// because the user is already authenticated (token in SecureStore).
 
 const REQUIRED_CONSENTS = [
   'terms_of_service',
@@ -41,8 +42,8 @@ const CONSENT_INFO: Record<string, { label: string; description: string }> = {
   },
 };
 
-export default function ConsentGateScreen({ navigation }: Props) {
-  const { login } = useAuth();
+export default function ConsentGateScreen() {
+  const { user: _user } = useAuth(); // presence checked by RootNavigation
   const [existing, setExisting] = useState<string[]>([]);
   const [checked, setChecked] = useState<Record<string, boolean>>(
     Object.fromEntries(REQUIRED_CONSENTS.map(c => [c, false])),
@@ -81,8 +82,11 @@ export default function ConsentGateScreen({ navigation }: Props) {
           await api.post('/api/v1/compliance/consent', { consent_type: ct });
         }
       }
-      // Navigate to main app — pop the ConsentGate screen
-      navigation.replace('Login'); // re-login to refresh user state, or trigger AppStack directly
+      // Mark all as accepted locally so the UI transitions to the
+      // "already accepted" confirmation view.
+      // RootNavigation will auto-swap to AppStack because the user
+      // is already authenticated (token stored in SecureStore).
+      setExisting([...REQUIRED_CONSENTS]);
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.detail ?? 'Failed to save consents.');
     } finally {
