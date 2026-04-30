@@ -137,7 +137,7 @@ def list_patient_medications(
     patient_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_roles(RoleEnum.DOCTOR, RoleEnum.ADMIN, RoleEnum.SUPPORT)
+        require_roles([RoleEnum.DOCTOR, RoleEnum.ADMIN, RoleEnum.SUPPORT])
     ),
 ):
     patient = db.query(Patient).filter_by(id=patient_id).first()

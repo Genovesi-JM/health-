@@ -54,7 +54,7 @@ export default function RegisterScreen({ navigation }: Props) {
         email: email.toLowerCase().trim(),
         password,
         full_name: fullName || email.split('@')[0],
-        sector_focus: 'general',
+        sector_focus: 'health',
         org_name: 'Health Platform',
         account_name: fullName || email.split('@')[0],
         entity_type: 'individual',

@@ -523,7 +523,7 @@ class FamilyMember(Base):
         nullable=False, index=True,
     )
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    relationship: Mapped[str] = mapped_column(String(50), nullable=False)   # filho, filha, pai, mãe, cônjuge, outro
+    relationship_type: Mapped[str] = mapped_column(String(50), nullable=False)   # filho, filha, pai, mãe, cônjuge, outro
     date_of_birth: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)   # ISO date YYYY-MM-DD
     gender: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
