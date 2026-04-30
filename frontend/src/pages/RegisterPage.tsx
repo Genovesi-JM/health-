@@ -6,7 +6,7 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
 
-const REQUIRED_CONSENTS = ['terms_of_service', 'medical_disclaimer', 'health_data_processing'] as const;
+const REQUIRED_CONSENTS = ['terms_of_service', 'privacy_policy', 'medical_disclaimer', 'health_data_processing', 'telemedicine_consent'] as const;
 
 export default function RegisterPage() {
   const { login } = useAuth();
@@ -26,8 +26,10 @@ export default function RegisterPage() {
   // Consent checkboxes
   const [consents, setConsents] = useState({
     terms_of_service: false,
+    privacy_policy: false,
     medical_disclaimer: false,
     health_data_processing: false,
+    telemedicine_consent: false,
   });
   const allConsentsChecked = REQUIRED_CONSENTS.every(c => consents[c]);
 
@@ -183,6 +185,26 @@ export default function RegisterPage() {
                 I consent to processing of my health-related data as described in the{' '}
                 <Link to="/privacy" target="_blank"
                   style={{ color: 'var(--accent-teal, #0d9488)' }}>Privacy Policy</Link>
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
+              <input type="checkbox" checked={consents.privacy_policy}
+                onChange={() => setConsents(p => ({ ...p, privacy_policy: !p.privacy_policy }))}
+                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
+              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
+                I have read and accept the{' '}
+                <Link to="/privacy" target="_blank"
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Privacy Policy</Link>
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
+              <input type="checkbox" checked={consents.telemedicine_consent}
+                onChange={() => setConsents(p => ({ ...p, telemedicine_consent: !p.telemedicine_consent }))}
+                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
+              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
+                I consent to receiving telemedicine services through this platform
               </span>
             </label>
           </div>

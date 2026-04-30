@@ -114,9 +114,9 @@ export default function PatientProfilePage() {
     };
     try {
       if (profile) {
-        await api.put('/api/v1/patients/me', body);
+        await api.patch('/api/v1/patients/me', body);
       } else {
-        await api.post('/api/v1/patients/', body);
+        await api.post('/api/v1/patients/profile', body);
       }
       setMsg(t('profile.saved'));
     } catch (err: any) {

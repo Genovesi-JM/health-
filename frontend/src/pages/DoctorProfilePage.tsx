@@ -49,9 +49,9 @@ export default function DoctorProfilePage() {
     const body = { license_number: license, specialization, bio: bio || null };
     try {
       if (profile) {
-        await api.put('/api/v1/doctors/me', body);
+        await api.patch('/api/v1/doctors/me', body);
       } else {
-        await api.post('/api/v1/doctors/', body);
+        await api.post('/api/v1/doctors/profile', body);
       }
       setMsg(t('doctor.saved'));
     } catch (err: any) {

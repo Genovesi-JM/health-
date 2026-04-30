@@ -16,7 +16,7 @@ export default function DoctorSecurityPage() {
     if (form.next.length < 8) { setErr('A nova palavra-passe deve ter pelo menos 8 caracteres.'); return; }
     setLoading(true);
     try {
-      await api.patch('/api/v1/me/password', { current_password: form.current, new_password: form.next });
+      await api.post('/auth/change-password', { old_password: form.current, new_password: form.next });
       setMsg('Palavra-passe actualizada com sucesso!');
       setForm({ current: '', next: '', confirm: '' });
     } catch (e: any) {

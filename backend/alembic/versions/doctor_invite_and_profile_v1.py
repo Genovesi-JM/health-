@@ -14,7 +14,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "doctor_invite_profile_v1"
-down_revision = None
+down_revision = 'add_notifications_v1'
 branch_labels = None
 depends_on = None
 

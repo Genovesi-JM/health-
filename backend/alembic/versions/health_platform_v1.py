@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'health_platform_v1'
-down_revision = None  # Set to latest existing migration if chaining
+down_revision = 'doctor_invite_profile_v1'
 branch_labels = None
 depends_on = None
 

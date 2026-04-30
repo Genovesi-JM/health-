@@ -11,14 +11,18 @@ import api from '../api';
  *
  * Required consents:
  *   - terms_of_service
+ *   - privacy_policy
  *   - medical_disclaimer
  *   - health_data_processing
+ *   - telemedicine_consent
  */
 
 const REQUIRED_CONSENTS = [
   'terms_of_service',
+  'privacy_policy',
   'medical_disclaimer',
   'health_data_processing',
+  'telemedicine_consent',
 ] as const;
 
 export default function ConsentGatePage() {
@@ -26,8 +30,10 @@ export default function ConsentGatePage() {
   const [existing, setExisting] = useState<string[]>([]);
   const [checked, setChecked] = useState({
     terms_of_service: false,
+    privacy_policy: false,
     medical_disclaimer: false,
     health_data_processing: false,
+    telemedicine_consent: false,
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -41,8 +47,10 @@ export default function ConsentGatePage() {
         // Pre-check boxes for already-accepted consents
         setChecked({
           terms_of_service: types.includes('terms_of_service'),
+          privacy_policy: types.includes('privacy_policy'),
           medical_disclaimer: types.includes('medical_disclaimer'),
           health_data_processing: types.includes('health_data_processing'),
+          telemedicine_consent: types.includes('telemedicine_consent'),
         });
       })
       .catch(() => {})
@@ -57,7 +65,7 @@ export default function ConsentGatePage() {
   const handleSubmit = async () => {
     const allChecked = REQUIRED_CONSENTS.every(c => checked[c as keyof typeof checked]);
     if (!allChecked) {
-      setError('Please accept all three items to continue.');
+      setError('Please accept all five items to continue.');
       return;
     }
     setSubmitting(true);
@@ -186,6 +194,29 @@ export default function ConsentGatePage() {
               </>
             }
             description="Health data is processed to provide care coordination services. You can request deletion or export at any time from Settings."
+          />
+
+          <ConsentItem
+            checked={checked.privacy_policy}
+            already={existing.includes('privacy_policy')}
+            onChange={() => toggle('privacy_policy')}
+            label={
+              <>
+                I have read and accept the{' '}
+                <Link to="/privacy" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
+                  Privacy Policy
+                </Link>
+              </>
+            }
+            description="Describes how we collect, use, store, and protect your personal data in compliance with GDPR."
+          />
+
+          <ConsentItem
+            checked={checked.telemedicine_consent}
+            already={existing.includes('telemedicine_consent')}
+            onChange={() => toggle('telemedicine_consent')}
+            label="I consent to receiving telemedicine services through this platform"
+            description="Telemedicine consultations are provided by licensed professionals. You acknowledge the limitations of remote care and your right to in-person alternatives."
           />
         </div>
 

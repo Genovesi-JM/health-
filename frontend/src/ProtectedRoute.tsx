@@ -9,7 +9,13 @@ import LanguageSelector from './components/LanguageSelector';
 import api from './api';
 
 /** Consent types patients must accept before accessing the portal */
-const REQUIRED_CONSENTS = ['terms_of_service', 'medical_disclaimer', 'health_data_processing'];
+const REQUIRED_CONSENTS = [
+  'terms_of_service',
+  'privacy_policy',
+  'medical_disclaimer',
+  'health_data_processing',
+  'telemedicine_consent',
+];
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();

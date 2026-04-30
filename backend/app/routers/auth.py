@@ -587,8 +587,39 @@ def reset_password(payload: ResetPasswordRequest, request: Request, db: Session 
     return {"message": "Password atualizada com sucesso."}
 
 
-# ═══════════════════════════════════════════════════════════════
-# Google OAuth
+# ── Change Password (authenticated) ──
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = ""
+    current_password: str = ""  # alias accepted from DoctorSecurityPage
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    old_pw = payload.old_password or payload.current_password
+    if not old_pw:
+        raise HTTPException(status_code=400, detail="Palavra-passe actual é obrigatória.")
+    if not current_user.password_hash:
+        raise HTTPException(status_code=400, detail="Conta sem senha local — utilize OAuth.")
+    if not verify_password(old_pw, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Palavra-passe actual incorrecta.")
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Nova palavra-passe deve ter pelo menos 6 caracteres.")
+    current_user.password_hash = hash_password(payload.new_password)
+    db.add(current_user)
+    db.commit()
+    log_audit(db, "change_password", user_id=current_user.id, resource_type="user",
+              resource_id=current_user.id, request=request)
+    return {"message": "Palavra-passe alterada com sucesso."}
+
+
+
 # ═══════════════════════════════════════════════════════════════
 
 @router.get("/google/login")
