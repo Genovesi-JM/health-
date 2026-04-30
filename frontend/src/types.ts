@@ -62,14 +62,14 @@ export interface TriageResult {
 }
 
 export interface TriageHistoryItem {
-  id?: string;
-  session_id: string;
+  id: string;           // session UUID — matches backend TriageHistoryItem.id
   chief_complaint: string;
   status: string;
   risk_level?: string;
   recommended_action?: string;
   score?: number;
   created_at: string;
+  completed_at?: string;
 }
 
 export interface Consultation {

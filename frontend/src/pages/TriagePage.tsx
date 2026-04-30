@@ -183,7 +183,7 @@ export default function TriagePage() {
   const deleteTriage = async (id: string) => {
     try {
       await api.delete(`/api/v1/triage/${id}`);
-      setHistory(prev => prev.filter(h => h.id !== id && (h as any).session_id !== id));
+      setHistory(prev => prev.filter(h => h.id !== id));
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Erro ao eliminar triagem.');
     }
@@ -312,7 +312,7 @@ export default function TriagePage() {
                 </thead>
                 <tbody>
                   {history.map(h => {
-                    const rowId = (h as any).session_id || h.id;
+                    const rowId = h.id;
                     const isPending = deleteConfirm === rowId;
                     return (
                       <tr key={rowId} style={isPending ? { background: 'rgba(239,68,68,0.04)' } : {}}>

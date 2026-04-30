@@ -201,9 +201,15 @@ def delete_triage(
     if not session:
         raise HTTPException(status_code=404, detail="Triagem não encontrada.")
 
-    # Delete related records first
-    db.query(TriageAnswer).filter(TriageAnswer.triage_session_id == triage_id).delete()
-    db.query(TriageResult).filter(TriageResult.triage_session_id == triage_id).delete()
+    # Delete related records first.
+    # Use synchronize_session=False to avoid StaleDataError when the ORM
+    # cascade also tries to delete already-gone rows.
+    db.query(TriageAnswer).filter(
+        TriageAnswer.triage_session_id == triage_id
+    ).delete(synchronize_session=False)
+    db.query(TriageResult).filter(
+        TriageResult.triage_session_id == triage_id
+    ).delete(synchronize_session=False)
     db.delete(session)
     db.commit()
 
