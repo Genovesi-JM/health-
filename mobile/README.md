@@ -2,6 +2,42 @@
 
 React Native + Expo + TypeScript mobile client for the Health Platform.
 
+## Quick Start
+
+```bash
+cd mobile
+npm install
+cp .env.example .env
+```
+
+Edit `.env` and set your DigitalOcean backend URL:
+```
+EXPO_PUBLIC_API_URL=https://<your-droplet-or-app>.ondigitalocean.app
+```
+> ⚠️ Do **not** use `localhost` — iOS Simulator cannot reach your Mac's localhost via that hostname.
+
+Start the app:
+```bash
+npx expo start
+# Press  i  to open iOS Simulator
+```
+
+## Test Credentials
+
+| Field    | Value                 |
+|----------|-----------------------|
+| Email    | `paciente@health.com` |
+| Password | `SeedDefault@1234`    |
+
+> If `ADMIN_PASSWORD` is set in the backend `.env`, the seed password may differ — use that value instead.
+
+## Backend Health Check
+
+The HomeScreen shows a live status badge:
+- 🟢 **Backend online** — `GET /api/v1/health` returned 200
+- 🔴 **Backend unavailable** — request failed or timed out
+- 🟡 **Checking…** — request in flight
+
 ## Setup
 
 ```bash

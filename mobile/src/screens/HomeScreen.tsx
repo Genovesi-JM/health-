@@ -15,12 +15,25 @@ interface DashboardData {
   last_reading?: { value: number; unit: string; recorded_at: string } | null;
 }
 
+type BackendStatus = 'checking' | 'online' | 'unavailable';
+
 export default function HomeScreen() {
   const { user, logout } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [data, setData] = useState<DashboardData>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking');
+
+  const checkBackend = async () => {
+    setBackendStatus('checking');
+    try {
+      await api.get('/api/v1/health');
+      setBackendStatus('online');
+    } catch {
+      setBackendStatus('unavailable');
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -39,12 +52,13 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    checkBackend();
     fetchDashboard().finally(() => setLoading(false));
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchDashboard();
+    await Promise.allSettled([checkBackend(), fetchDashboard()]);
     setRefreshing(false);
   };
 
@@ -73,6 +87,21 @@ export default function HomeScreen() {
         <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Backend status */}
+      <View style={[styles.statusBadge, {
+        backgroundColor: backendStatus === 'online' ? '#dcfce7'
+          : backendStatus === 'unavailable' ? '#fee2e2' : '#fef9c3',
+      }]}>
+        <Text style={[styles.statusText, {
+          color: backendStatus === 'online' ? '#15803d'
+            : backendStatus === 'unavailable' ? '#b91c1c' : '#92400e',
+        }]}>
+          {backendStatus === 'online' ? '🟢 Backend online'
+            : backendStatus === 'unavailable' ? '🔴 Backend unavailable'
+            : '🟡 Checking backend…'}
+        </Text>
       </View>
 
       {/* Quick stats */}
@@ -141,6 +170,8 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 28, fontWeight: '700', marginBottom: 4 },
   statLabel: { fontSize: 12, color: '#64748b' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 14 },
+  statusBadge: { borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 20, alignSelf: 'flex-start' },
+  statusText: { fontSize: 13, fontWeight: '600' },
   actionsGrid: { gap: 12 },
   actionCard: {
     backgroundColor: '#fff', borderRadius: 12, padding: 16,
