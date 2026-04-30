@@ -525,7 +525,13 @@ class PrescriptionRequestCreate(BaseModel):
     reason: Optional[str] = None
 
 class PrescriptionRequestDecide(BaseModel):
-    action: str  # approve | adjust | consult_requested | exams_requested | reject
+    # Valid actions and the status they produce:
+    #   approve           → approved
+    #   adjust / adjusted → adjusted
+    #   consult_requested → consult_requested
+    #   exams_requested   → exams_requested
+    #   reject / rejected → rejected
+    action: str
     doctor_note: Optional[str] = None
     adjusted_dose: Optional[str] = None
     adjusted_frequency: Optional[str] = None

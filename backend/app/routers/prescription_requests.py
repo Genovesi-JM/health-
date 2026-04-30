@@ -32,7 +32,18 @@ from app.routers.notifications import create_notification
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["prescription-requests"])
 
-VALID_ACTIONS = {"approve", "adjust", "consult_requested", "exams_requested", "reject"}
+# Maps the action submitted by the doctor → the normalized status stored in DB.
+# Status vocabulary: pending | approved | adjusted | consult_requested | exams_requested | rejected
+ACTION_TO_STATUS: dict[str, str] = {
+    "approve":           "approved",
+    "adjusted":          "adjusted",   # alias: doctor can POST action=adjusted
+    "adjust":            "adjusted",
+    "consult_requested": "consult_requested",
+    "exams_requested":   "exams_requested",
+    "reject":            "rejected",
+    "rejected":          "rejected",   # alias
+}
+VALID_ACTIONS = set(ACTION_TO_STATUS.keys())
 
 
 def _enrich(req: PrescriptionRequest, db: Session) -> dict:
@@ -143,8 +154,8 @@ def list_doctor_prescription_requests(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if user.role not in ("doctor", "admin"):
-        raise HTTPException(status_code=403, detail="Acesso negado.")
+    if user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Acesso reservado a médicos.")
 
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
@@ -169,11 +180,22 @@ def decide_prescription_request(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if user.role not in ("doctor", "admin"):
+    # Only doctors may decide prescription requests.
+    # Admins must not process clinical requests unless they are explicitly
+    # impersonating a doctor (indicated by the X-Impersonate-Doctor header,
+    # which is validated separately). Plain admin access is denied here.
+    if user.role == "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Administradores não podem processar pedidos de prescrição directamente. "
+                   "Utilize o modo de suporte/impersonalização se for necessário.",
+        )
+    if user.role != "doctor":
         raise HTTPException(status_code=403, detail="Acesso negado.")
 
     if body.action not in VALID_ACTIONS:
-        raise HTTPException(status_code=422, detail=f"Acção inválida. Válidas: {', '.join(VALID_ACTIONS)}")
+        valid_display = sorted({"approve", "adjust", "consult_requested", "exams_requested", "reject"})
+        raise HTTPException(status_code=422, detail=f"Acção inválida. Válidas: {', '.join(valid_display)}")
 
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
@@ -188,7 +210,7 @@ def decide_prescription_request(
     if req.status != "pending":
         raise HTTPException(status_code=409, detail="Este pedido já foi processado.")
 
-    req.status = body.action
+    req.status = ACTION_TO_STATUS[body.action]
     req.doctor_note = body.doctor_note
     req.adjusted_dose = body.adjusted_dose
     req.adjusted_frequency = body.adjusted_frequency
@@ -198,14 +220,14 @@ def decide_prescription_request(
     db.refresh(req)
 
     # ── Notify patient ────────────────────────────────────────────────────────
-    _action_labels = {
-        "approve":           ("Prescrição aprovada",           "success"),
-        "adjust":            ("Prescrição com ajuste de dose", "info"),
+    _status_labels = {
+        "approved":          ("Prescrição aprovada",           "success"),
+        "adjusted":          ("Prescrição com ajuste de dose", "info"),
         "consult_requested": ("Consulta solicitada",           "warning"),
         "exams_requested":   ("Exames solicitados",            "warning"),
-        "reject":            ("Prescrição recusada",           "error"),
+        "rejected":          ("Prescrição recusada",           "error"),
     }
-    label, notif_type = _action_labels.get(body.action, ("Pedido processado", "info"))
+    label, notif_type = _status_labels.get(req.status, ("Pedido processado", "info"))
     patient_obj = db.query(Patient).filter(Patient.id == req.patient_id).first()
     if patient_obj:
         msg = f"O seu pedido de {req.medication_name} foi processado."

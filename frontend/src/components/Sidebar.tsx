@@ -1,8 +1,10 @@
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { getInitials } from '../api';
+import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
+import { useState, useEffect } from 'react';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
   Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse,
@@ -24,6 +26,22 @@ export function Sidebar({ open, onClose }: Props) {
   const initials = getInitials(user?.name, user?.email);
   const displayName = user?.name || user?.email?.split('@')[0] || t('sidebar.user_fallback');
   const roleLabel = role === 'admin' ? t('sidebar.role_admin') : role === 'doctor' ? t('sidebar.role_doctor') : t('sidebar.role_patient');
+
+  // Live pending prescription-request count (doctor only)
+  const [pendingRxCount, setPendingRxCount] = useState<number>(0);
+  useEffect(() => {
+    if (role !== 'doctor') return;
+    api.get('/api/v1/doctor/prescription-requests', { params: { status: 'pending' } })
+      .then(r => setPendingRxCount(Array.isArray(r.data) ? r.data.length : 0))
+      .catch(() => {});
+    // Refresh every 2 minutes while sidebar is mounted
+    const id = setInterval(() => {
+      api.get('/api/v1/doctor/prescription-requests', { params: { status: 'pending' } })
+        .then(r => setPendingRxCount(Array.isArray(r.data) ? r.data.length : 0))
+        .catch(() => {});
+    }, 2 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [role]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -77,7 +95,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/doctor/pacientes"    icon={Users}           label="Pacientes"              onClick={onClose} />
               <SidebarLink to="/doctor/consultas"    icon={Video}           label="Consultas Ao Vivo"      onClick={onClose} />
               <SidebarLink to="/doctor/queue"        icon={ClipboardList}   label="Fila de Espera"         onClick={onClose} />
-              <SidebarLink to="/doctor/prescricoes"  icon={FileText}        label="Prescrições Pendentes"  onClick={onClose} badge={3} badgeVariant="alert" />
+              <SidebarLink to="/doctor/prescricoes"  icon={FileText}        label="Prescrições Pendentes"  onClick={onClose} badge={pendingRxCount > 0 ? pendingRxCount : undefined} badgeVariant="alert" />
               <SidebarLink to="/doctor/mensagens"    icon={MessageSquare}   label="Mensagens"              onClick={onClose} />
               <SidebarLink to="/doctor/financeiro"   icon={DollarSign}      label="Financeiro"             onClick={onClose} />
               <SidebarLink to="/doctor/avaliacoes"   icon={Star}            label="Avaliações"             onClick={onClose} />

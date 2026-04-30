@@ -47,20 +47,24 @@ interface PendingRx {
   created_at: string;
 }
 
-// Mock data for UI richness — replaced by real API when available
-const MOCK_AGENDA = [
-  { id: '1', time: '09:00', patient: 'Maria Santos', type: 'teleconsulta', reason: 'Renovação de prescrição', status: 'confirmed', avatar: 'MS' },
-  { id: '2', time: '10:30', patient: 'João Ferreira', type: 'presencial', reason: 'Consulta de seguimento — HTA', status: 'confirmed', avatar: 'JF' },
-  { id: '3', time: '11:30', patient: 'Ana Rodrigues', type: 'teleconsulta', reason: 'Dor abdominal recorrente', status: 'waiting', avatar: 'AR' },
-  { id: '4', time: '14:00', patient: 'Carlos Neto', type: 'presencial', reason: 'Resultados exames laboratoriais', status: 'confirmed', avatar: 'CN' },
-  { id: '5', time: '15:30', patient: 'Luísa Pinto', type: 'teleconsulta', reason: 'Primeira consulta', status: 'pending', avatar: 'LP' },
-];
+interface AgendaItem {
+  id: string;
+  time: string;
+  patient: string;
+  patient_id: string;
+  type: 'teleconsulta' | 'presencial' | string;
+  specialty?: string;
+  reason?: string | null;
+  status: 'confirmed' | 'pending' | 'waiting' | 'in_progress' | 'cancelled' | string;
+  avatar: string;
+}
 
 export default function DoctorDashboardPage() {
   const session = getSession();
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [pendingRx, setPendingRx] = useState<PendingRx[]>([]);
+  const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
@@ -68,6 +72,8 @@ export default function DoctorDashboardPage() {
     api.get('/api/v1/doctor/queue').then(r => setQueue(r.data)).catch(() => {});
     api.get<PendingRx[]>('/api/v1/doctor/prescription-requests', { params: { status: 'pending' } })
       .then(r => setPendingRx(r.data)).catch(() => {});
+    api.get<AgendaItem[]>('/api/v1/doctor/agenda/today')
+      .then(r => setAgenda(r.data)).catch(() => {});
   }, [lastRefresh]);
 
   const refresh = () => setLastRefresh(new Date());
@@ -80,8 +86,8 @@ export default function DoctorDashboardPage() {
 
   const waitingQ = queue.filter(q => q.status === 'waiting').length;
   const activeQ = queue.filter(q => q.status === 'in_progress').length;
-  const todayConsultations = MOCK_AGENDA.length;
-  const confirmedToday = MOCK_AGENDA.filter(a => a.status === 'confirmed').length;
+  const todayConsultations = agenda.length;
+  const confirmedToday = agenda.filter(a => a.status === 'confirmed').length;
 
   const now = new Date();
   const hour = now.getHours();
@@ -152,10 +158,13 @@ export default function DoctorDashboardPage() {
 
           {/* AGENDA HOJE */}
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <SectionHeader title="Agenda Hoje" icon={<Calendar size={16} />} count={MOCK_AGENDA.length} to="/doctor/agenda" />
+            <SectionHeader title="Agenda Hoje" icon={<Calendar size={16} />} count={agenda.length} to="/doctor/agenda" />
+            {agenda.length === 0 && (
+              <div style={{ padding: '1.25rem', color: 'var(--text-muted)', fontSize: '0.83rem', textAlign: 'center' }}>Sem consultas agendadas para hoje.</div>
+            )}
             <div>
-              {MOCK_AGENDA.map((appt, i) => (
-                <div key={appt.id} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', borderBottom: i < MOCK_AGENDA.length - 1 ? '1px solid var(--border)' : 'none', transition: 'background 0.15s' }}
+              {agenda.map((appt, i) => (
+                <div key={appt.id} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', borderBottom: i < agenda.length - 1 ? '1px solid var(--border)' : 'none', transition: 'background 0.15s' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle, rgba(0,0,0,0.025))')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}>
                   <div style={{ width: 52, textAlign: 'center', flexShrink: 0 }}>
@@ -164,14 +173,14 @@ export default function DoctorDashboardPage() {
                   <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--brand-light)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{appt.avatar}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{appt.patient}</div>
-                    <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{appt.reason}</div>
+                    <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{appt.reason ?? appt.specialty ?? ''}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', borderRadius: 999, background: appt.type === 'teleconsulta' ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)', color: appt.type === 'teleconsulta' ? '#3b82f6' : '#059669', fontWeight: 600 }}>
                       {appt.type === 'teleconsulta' ? '📹 Telec.' : '🏥 Presencial'}
                     </span>
                     <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', borderRadius: 999, fontWeight: 600, background: appt.status === 'confirmed' ? 'rgba(16,185,129,0.1)' : appt.status === 'waiting' ? 'rgba(239,68,68,0.1)' : 'rgba(234,179,8,0.1)', color: appt.status === 'confirmed' ? '#059669' : appt.status === 'waiting' ? '#dc2626' : '#d97706' }}>
-                      {appt.status === 'confirmed' ? 'Confirmada' : appt.status === 'waiting' ? 'A aguardar' : 'Pendente'}
+                      {appt.status === 'confirmed' ? 'Confirmada' : appt.status === 'waiting' ? 'A aguardar' : appt.status === 'in_progress' ? 'Em curso' : 'Pendente'}
                     </span>
                   </div>
                   <Link to="/doctor/agenda" style={{ color: 'var(--text-muted)', textDecoration: 'none', padding: '0.3rem' }}><ChevronRight size={15} /></Link>

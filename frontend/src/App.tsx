@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { I18nProvider } from './i18n/LanguageContext';
 import { ProtectedRoute } from './ProtectedRoute';
+import { RoleRoute } from './RoleRoute';
 
 /* Root smart redirect: send logged-in users to their dashboard */
 function RootRedirect() {
@@ -104,42 +105,48 @@ export default function App() {
 
           {/* Protected — wrapped with sidebar layout */}
           <Route element={<ProtectedRoute />}>
-            {/* Consent gate (patient-only, no sidebar needed but lives inside ProtectedRoute) */}
+            {/* Consent gate — accessible to any authenticated user */}
             <Route path="/consent-gate" element={<ConsentGatePage />} />
             <Route path="/data-consent" element={<ConsentGatePage />} />
-            {/* Patient */}
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/patient/profile" element={<PatientProfilePage />} />
-            <Route path="/triage" element={<TriagePage />} />
-            <Route path="/consultations" element={<ConsultationsPage />} />
-            <Route path="/self-care" element={<SelfCarePage />} />
-            <Route path="/prescricoes/pedido" element={<PatientPrescriptionRequestPage />} />
-            <Route path="/consents" element={<ConsentsPage />} />
-            <Route path="/family" element={<FamilyPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/patient/readings" element={<PatientReadingsPage />} />
-
-            {/* Doctor */}
-            <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
-            <Route path="/doctor/profile" element={<DoctorProfileEditPage />} />
-            <Route path="/doctor/queue" element={<DoctorQueuePage />} />
-            <Route path="/doctor/agenda" element={<DoctorAgendaPage />} />
-            <Route path="/doctor/pacientes" element={<DoctorPatientsPage />} />
-            <Route path="/doctor/consultas" element={<DoctorLivePage />} />
-            <Route path="/doctor/prescricoes" element={<DoctorPrescriptionsPage />} />
-            <Route path="/doctor/mensagens" element={<DoctorMessagesPage />} />
-            <Route path="/doctor/financeiro" element={<DoctorFinancePage />} />
-            <Route path="/doctor/avaliacoes" element={<DoctorReviewsPage />} />
-            <Route path="/doctor/security" element={<DoctorSecurityPage />} />
-            <Route path="/doctor/suporte" element={<DoctorSuportePage />} />
-
-            {/* Admin */}
-            <Route path="/admin" element={<AdminDashboardPage />} />
-            <Route path="/admin/doctors" element={<AdminDoctorsPage />} />
-            <Route path="/admin/patients" element={<AdminPatientsPage />} />
-
-            {/* Settings */}
+            {/* Settings — accessible to all roles */}
             <Route path="/settings" element={<SettingsPage />} />
+
+            {/* ── PATIENT only ── */}
+            <Route element={<RoleRoute allowedRoles={['patient', 'cliente']} />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/patient/profile" element={<PatientProfilePage />} />
+              <Route path="/triage" element={<TriagePage />} />
+              <Route path="/consultations" element={<ConsultationsPage />} />
+              <Route path="/self-care" element={<SelfCarePage />} />
+              <Route path="/prescricoes/pedido" element={<PatientPrescriptionRequestPage />} />
+              <Route path="/consents" element={<ConsentsPage />} />
+              <Route path="/family" element={<FamilyPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/patient/readings" element={<PatientReadingsPage />} />
+            </Route>
+
+            {/* ── DOCTOR only ── */}
+            <Route element={<RoleRoute allowedRoles={['doctor']} />}>
+              <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
+              <Route path="/doctor/profile" element={<DoctorProfileEditPage />} />
+              <Route path="/doctor/queue" element={<DoctorQueuePage />} />
+              <Route path="/doctor/agenda" element={<DoctorAgendaPage />} />
+              <Route path="/doctor/pacientes" element={<DoctorPatientsPage />} />
+              <Route path="/doctor/consultas" element={<DoctorLivePage />} />
+              <Route path="/doctor/prescricoes" element={<DoctorPrescriptionsPage />} />
+              <Route path="/doctor/mensagens" element={<DoctorMessagesPage />} />
+              <Route path="/doctor/financeiro" element={<DoctorFinancePage />} />
+              <Route path="/doctor/avaliacoes" element={<DoctorReviewsPage />} />
+              <Route path="/doctor/security" element={<DoctorSecurityPage />} />
+              <Route path="/doctor/suporte" element={<DoctorSuportePage />} />
+            </Route>
+
+            {/* ── ADMIN only ── */}
+            <Route element={<RoleRoute allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/admin/doctors" element={<AdminDoctorsPage />} />
+              <Route path="/admin/patients" element={<AdminPatientsPage />} />
+            </Route>
           </Route>
 
           {/* Catch-all → login (preserves destination for redirect after login) */}
