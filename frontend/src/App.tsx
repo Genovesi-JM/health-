@@ -33,6 +33,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import DoctorRegisterPage from './pages/DoctorRegisterPage';
+import DoctorApplyPage from './pages/DoctorApplyPage';
 import DoctorsListPage from './pages/DoctorsListPage';
 import PublicDoctorPage from './pages/PublicDoctorPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -96,6 +97,7 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/register/doctor" element={<DoctorRegisterPage />} />
+          <Route path="/candidatura" element={<DoctorApplyPage />} />
           <Route path="/medicos" element={<DoctorsListPage />} />
           <Route path="/medicos/:slug" element={<PublicDoctorPage />} />
           {/* Legal / public */}

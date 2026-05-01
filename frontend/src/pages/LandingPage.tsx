@@ -103,7 +103,7 @@ const AUDIENCES = [
       '✅ Historial e triagens do paciente',
       '✅ Notificações de urgência',
     ],
-    cta: { label: 'Registar como médico', to: '/doctor-register' },
+    cta: { label: 'Registar como médico', to: '/candidatura' },
     stat: { val: '0€', lbl: 'Taxa de entrada' },
   },
   {
@@ -120,7 +120,7 @@ const AUDIENCES = [
       '✅ Relatórios e notas clínicas',
       '✅ 13 especialidades disponíveis',
     ],
-    cta: { label: 'Candidatar-me', to: '/doctor-register' },
+    cta: { label: 'Candidatar-me', to: '/candidatura' },
     stat: { val: '13', lbl: 'Especialidades' },
   },
   {
@@ -137,7 +137,7 @@ const AUDIENCES = [
       '✅ Faturação integrada',
       '✅ Integração hospitalar',
     ],
-    cta: { label: 'Candidatar a minha clínica', to: '/clinics' },
+    cta: { label: 'Candidatar a minha clínica', to: '/candidatura' },
     stat: { val: '100%', lbl: 'Digital, sem papel' },
   },
   {
