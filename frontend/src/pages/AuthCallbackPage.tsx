@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { Heart } from 'lucide-react';
 import type { Role } from '../types';
+import kayaLogo from '/kaya-logo.svg';
 
 export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -44,7 +45,7 @@ export default function AuthCallbackPage() {
     <div className="auth-shell">
       <div className="auth-card" style={{ textAlign: 'center' }}>
         <div className="auth-brand">
-          <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 48, height: 48 }} />
+          <img src={kayaLogo} alt="KAYA" style={{ width: 48, height: 48 }} />
           <span className="auth-brand-text">KAYA</span>
         </div>
         {error ? (

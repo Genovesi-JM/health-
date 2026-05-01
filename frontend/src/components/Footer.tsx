@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
+import kayaLogo from '/kaya-logo.svg';
 
 export function Footer() {
   const { t } = useT();
@@ -11,7 +12,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 30, height: 30, display: 'block' }} />
+              <img src={kayaLogo} alt="KAYA" style={{ width: 30, height: 30, display: 'block' }} />
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
                 <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>KAYA</span>
                 <span style={{ fontSize: '0.6rem', color: '#0d9488' }}>Saúde na sua mão</span>

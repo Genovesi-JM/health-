@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { getSession, getInitials } from '../api';
 import { useT } from '../i18n/LanguageContext';
 import LanguageSelector from './LanguageSelector';
+import kayaLogo from '/kaya-logo.svg';
 
 interface NavGroup {
   label: string;
@@ -55,7 +56,7 @@ export function Navbar() {
       <div className="navbar-inner">
         {/* ── Brand ── */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--text-primary)', flexShrink: 0 }}>
-          <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 36, height: 36, display: 'block' }} />
+          <img src={kayaLogo} alt="KAYA" style={{ width: 36, height: 36, display: 'block' }} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
             <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.08em', color: '#0f172a' }}>
               KAYA

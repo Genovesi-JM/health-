@@ -2324,7 +2324,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .profile-med-card:hover { background: rgba(239,68,68,0.09); }
 
 .profile-med-form {
-  background: rgba(15,23,42,0.4);
+  background: #f8fafc;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem;
@@ -2416,7 +2416,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 }
 
 .triage-question-group {
-  background: rgba(15,23,42,0.3);
+  background: #f8fafc;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1rem 1.1rem;
@@ -2430,7 +2430,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   padding: 0.6rem 0.8rem;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: rgba(15,23,42,0.3);
+  background: #f8fafc;
   margin-bottom: 0.5rem;
 }
 
@@ -2442,7 +2442,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 }
 
 .partner-card {
-  background: rgba(15,23,42,0.45);
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 0.9rem 1rem;
@@ -2583,10 +2583,20 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .kaya-tab:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
 .kaya-tab--active { background: rgba(13,148,136,0.06); font-weight: 700; }
 .kaya-panel__body {
-  padding: 1.5rem 1.25rem;
+  padding: 0;
   transition: opacity 0.2s, transform 0.2s;
 }
+.kaya-panel__body--img {
+  line-height: 0;
+}
 .kaya-panel__body--out { opacity: 0; transform: translateY(6px); }
+.kaya-panel__img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0 0 18px 18px;
+  object-fit: cover;
+}
 .kaya-panel__icon {
   width: 52px; height: 52px;
   border-radius: 14px;
@@ -2773,7 +2783,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   margin: 0 auto;
 }
 .lp-section--alt {
-  background: rgba(15,23,42,0.5);
+  background: #f0fdf9;
   max-width: 100%;
   padding: 5rem 1.5rem;
 }

@@ -4,6 +4,7 @@ import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
+import kayaLogo from '/kaya-logo.svg';
 import LanguageSelector from '../components/LanguageSelector';
 
 export default function LoginPage() {
@@ -65,7 +66,7 @@ export default function LoginPage() {
       <div className="auth-card">
         {/* Brand */}
         <div className="auth-brand">
-          <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 48, height: 48 }} />
+          <img src={kayaLogo} alt="KAYA" style={{ width: 48, height: 48 }} />
           <span className="auth-brand-text">KAYA</span>
         </div>
 
