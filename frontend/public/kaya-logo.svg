@@ -1,23 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" fill="none">
   <defs>
-    <linearGradient id="kg1" x1="30" y1="20" x2="170" y2="180" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#5eead4"/>
+    <linearGradient id="g1" x1="30" y1="20" x2="180" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7de8d8"/>
       <stop offset="100%" stop-color="#0d9488"/>
     </linearGradient>
-    <linearGradient id="kg2" x1="80" y1="80" x2="170" y2="180" gradientUnits="userSpaceOnUse">
+    <linearGradient id="g2" x1="60" y1="120" x2="220" y2="240" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#14b8a6"/>
-      <stop offset="100%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#0a5c56"/>
     </linearGradient>
   </defs>
+
   <!-- K vertical bar -->
-  <rect x="28" y="22" width="30" height="156" rx="15" fill="url(#kg1)"/>
-  <!-- K upper diagonal arm -->
-  <path d="M58 98 L148 22 Q162 14 168 26 Q174 38 162 48 L88 108 Z" rx="10" fill="url(#kg1)"/>
-  <!-- K lower diagonal — hand shape -->
-  <path d="M80 108 L160 174 Q170 182 160 190 Q150 198 140 190 L58 130 Z" fill="url(#kg2)" opacity="0.9"/>
-  <!-- Palm curve at bottom -->
-  <ellipse cx="130" cy="170" rx="28" ry="18" transform="rotate(-35 130 170)" fill="url(#kg2)"/>
-  <!-- Medical cross -->
-  <rect x="105" y="108" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
-  <rect x="98" y="115" width="24" height="10" rx="5" fill="white" opacity="0.95"/>
+  <rect x="32" y="28" width="38" height="204" rx="19" fill="url(#g1)"/>
+
+  <!-- K upper arm (diagonal top-right, rounded ends) -->
+  <path d="M70 132 L70 58 Q70 36 94 30 L194 30 Q218 30 220 50 Q222 70 200 78 L92 132 Z" fill="url(#g1)"/>
+
+  <!-- K lower arm + hand (diagonal bottom-right) -->
+  <!-- Main body of lower arm -->
+  <path d="M92 128 L70 128 L70 200 Q70 226 94 230 Q114 234 126 216 L216 148 Q232 136 222 116 Q212 96 194 106 Z" fill="url(#g2)"/>
+
+  <!-- Hand palm highlight (lighter inner curve suggestion) -->
+  <path d="M155 148 Q185 138 200 155 Q216 172 194 182 L155 207 Q140 215 132 202 Q124 188 138 178 Z" fill="#5eead4" opacity="0.28"/>
+
+  <!-- Medical cross (white) -->
+  <rect x="146" y="126" width="13" height="38" rx="6.5" fill="white" opacity="0.95"/>
+  <rect x="132" y="140" width="40" height="13" rx="6.5" fill="white" opacity="0.95"/>
 </svg>

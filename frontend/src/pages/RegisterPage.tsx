@@ -84,7 +84,7 @@ export default function RegisterPage() {
       <div className="auth-card">
         {/* Brand */}
         <div className="auth-brand">
-          <Heart size={32} className="auth-brand-icon" />
+          <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 48, height: 48 }} />
           <span className="auth-brand-text">KAYA</span>
         </div>
 

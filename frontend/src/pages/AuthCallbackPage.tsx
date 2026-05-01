@@ -44,7 +44,7 @@ export default function AuthCallbackPage() {
     <div className="auth-shell">
       <div className="auth-card" style={{ textAlign: 'center' }}>
         <div className="auth-brand">
-          <Heart size={32} className="auth-brand-icon" />
+          <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 48, height: 48 }} />
           <span className="auth-brand-text">KAYA</span>
         </div>
         {error ? (
