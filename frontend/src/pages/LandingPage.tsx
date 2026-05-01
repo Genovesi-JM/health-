@@ -71,6 +71,7 @@ const TRUST_POINTS = [
   { icon: TrendingUp,   label: 'Continuidade real',        desc: 'O cuidado não termina com a consulta. Acompanhamos.' },
 ];
 
+const AUDIENCES = [
   {
     key: 'pacientes',
     label: 'Pacientes',
