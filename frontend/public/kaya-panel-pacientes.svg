@@ -1,6 +1,130 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380" viewBox="0 0 600 380">
-  <rect width="600" height="380" fill="#f0fdf9"/>
-  <text x="300" y="170" text-anchor="middle" font-family="sans-serif" font-size="48">🧑‍⚕️</text>
-  <text x="300" y="220" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#0d9488" font-weight="bold">Pacientes</text>
-  <text x="300" y="255" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#64748b">Imagem a substituir</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 340">
+  <defs>
+    <linearGradient id="pg-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fdf9"/>
+      <stop offset="100%" stop-color="#ccfbf1"/>
+    </linearGradient>
+    <linearGradient id="pg-card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fffe"/>
+    </linearGradient>
+    <linearGradient id="pg-pulse" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0d9488"/>
+      <stop offset="100%" stop-color="#5eead4"/>
+    </linearGradient>
+    <linearGradient id="pg-bar1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <filter id="pg-shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0d9488" flood-opacity="0.10"/>
+    </filter>
+    <filter id="pg-card-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <clipPath id="pg-clip">
+      <rect x="14" y="14" width="512" height="312" rx="16"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="540" height="340" rx="20" fill="url(#pg-bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="490" cy="50" r="70" fill="#0d9488" opacity="0.05"/>
+  <circle cx="60" cy="300" r="55" fill="#14b8a6" opacity="0.07"/>
+
+  <!-- ── Header bar ── -->
+  <rect x="20" y="18" width="500" height="48" rx="12" fill="white" filter="url(#pg-card-shadow)"/>
+  <!-- Avatar -->
+  <circle cx="50" cy="42" r="15" fill="#0d9488"/>
+  <text x="50" y="47" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="white">AM</text>
+  <!-- Name -->
+  <text x="74" y="38" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#0f172a">Ana Mbala</text>
+  <text x="74" y="52" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">Portal do Paciente</text>
+  <!-- Status badge -->
+  <rect x="440" y="30" width="70" height="22" rx="11" fill="#dcfce7"/>
+  <circle cx="455" cy="41" r="4" fill="#22c55e"/>
+  <text x="462" y="45" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#16a34a">Ativo</text>
+
+  <!-- ── Vitals row ── -->
+  <!-- Heart rate card -->
+  <rect x="20" y="78" width="150" height="72" rx="12" fill="white" filter="url(#pg-card-shadow)"/>
+  <text x="36" y="99" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">❤️ Freq. Cardíaca</text>
+  <text x="36" y="122" font-family="system-ui,sans-serif" font-size="26" font-weight="800" fill="#0f172a">78</text>
+  <text x="80" y="122" font-family="system-ui,sans-serif" font-size="12" fill="#64748b">bpm</text>
+  <!-- mini heartbeat -->
+  <polyline points="100,130 108,130 112,120 116,138 120,122 124,130 132,130 136,125 140,130"
+            stroke="#0d9488" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Blood pressure card -->
+  <rect x="182" y="78" width="150" height="72" rx="12" fill="white" filter="url(#pg-card-shadow)"/>
+  <text x="198" y="99" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">💉 Tensão Arterial</text>
+  <text x="198" y="122" font-family="system-ui,sans-serif" font-size="22" font-weight="800" fill="#0f172a">120</text>
+  <text x="232" y="122" font-family="system-ui,sans-serif" font-size="14" fill="#64748b">/80</text>
+  <text x="198" y="140" font-family="system-ui,sans-serif" font-size="10" fill="#22c55e" font-weight="600">● Normal</text>
+
+  <!-- SpO2 card -->
+  <rect x="344" y="78" width="176" height="72" rx="12" fill="white" filter="url(#pg-card-shadow)"/>
+  <text x="360" y="99" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">🫁 SpO₂</text>
+  <text x="360" y="122" font-family="system-ui,sans-serif" font-size="26" font-weight="800" fill="#0f172a">98</text>
+  <text x="396" y="122" font-family="system-ui,sans-serif" font-size="12" fill="#64748b">%</text>
+  <!-- Ring gauge -->
+  <circle cx="485" cy="112" r="20" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+  <circle cx="485" cy="112" r="20" fill="none" stroke="#0d9488" stroke-width="5"
+          stroke-dasharray="113" stroke-dashoffset="5" stroke-linecap="round"
+          transform="rotate(-90 485 112)"/>
+  <text x="485" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#0d9488">98%</text>
+
+  <!-- ── Next appointment card ── -->
+  <rect x="20" y="162" width="305" height="80" rx="12" fill="url(#pg-card)" filter="url(#pg-card-shadow)" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="20" y="162" width="4" height="80" rx="2" fill="#0d9488"/>
+  <text x="36" y="180" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">📅 Próxima Consulta</text>
+  <text x="36" y="200" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#0f172a">Dr. João Costa — Cardiologia</text>
+  <text x="36" y="217" font-family="system-ui,sans-serif" font-size="11" fill="#0d9488" font-weight="600">Quinta-feira, 8 Mai · 14:30</text>
+  <rect x="36" y="228" width="80" height="20" rx="10" fill="#0d9488"/>
+  <text x="76" y="242" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="white">Entrar →</text>
+
+  <!-- ── Prescription card ── -->
+  <rect x="335" y="162" width="185" height="80" rx="12" fill="white" filter="url(#pg-card-shadow)"/>
+  <text x="351" y="182" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">💊 Receitas Ativas</text>
+  <text x="351" y="201" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#0f172a">Ramipril 5mg</text>
+  <text x="351" y="216" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">1× por dia · 30 dias restantes</text>
+  <rect x="351" y="225" width="70" height="20" rx="10" fill="#fef9c3"/>
+  <text x="386" y="239" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#854d0e" font-weight="600">Renovar</text>
+
+  <!-- ── Weekly activity chart ── -->
+  <rect x="20" y="255" width="500" height="68" rx="12" fill="white" filter="url(#pg-card-shadow)"/>
+  <text x="36" y="273" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">📊 Atividade Semanal — Passos</text>
+  <!-- Bars -->
+  <g>
+    <!-- Mon -->
+    <rect x="60" y="284" width="32" height="22" rx="4" fill="#0d9488" opacity="0.3"/>
+    <text x="76" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Seg</text>
+    <!-- Tue -->
+    <rect x="106" y="270" width="32" height="36" rx="4" fill="#0d9488" opacity="0.55"/>
+    <text x="122" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Ter</text>
+    <!-- Wed -->
+    <rect x="152" y="278" width="32" height="28" rx="4" fill="#0d9488" opacity="0.45"/>
+    <text x="168" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Qua</text>
+    <!-- Thu -->
+    <rect x="198" y="263" width="32" height="43" rx="4" fill="#0d9488" opacity="0.85"/>
+    <text x="214" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Qui</text>
+    <!-- Fri -->
+    <rect x="244" y="272" width="32" height="34" rx="4" fill="#0d9488" opacity="0.5"/>
+    <text x="260" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Sex</text>
+    <!-- Sat -->
+    <rect x="290" y="281" width="32" height="25" rx="4" fill="#0d9488" opacity="0.35"/>
+    <text x="306" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Sáb</text>
+    <!-- Sun -->
+    <rect x="336" y="290" width="32" height="16" rx="4" fill="#0d9488" opacity="0.2"/>
+    <text x="352" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Dom</text>
+    <!-- Goal line -->
+    <line x1="50" y1="278" x2="390" y2="278" stroke="#0d9488" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
+    <text x="396" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#0d9488" opacity="0.7">Meta</text>
+    <!-- Summary -->
+    <text x="430" y="278" font-family="system-ui,sans-serif" font-size="18" font-weight="800" fill="#0f172a">7 240</text>
+    <text x="430" y="292" font-family="system-ui,sans-serif" font-size="9" fill="#64748b">passos hoje</text>
+    <text x="430" y="307" font-family="system-ui,sans-serif" font-size="9" fill="#22c55e" font-weight="600">↑ 12% vs ontem</text>
+  </g>
 </svg>
