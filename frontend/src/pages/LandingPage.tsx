@@ -71,91 +71,40 @@ const TRUST_POINTS = [
   { icon: TrendingUp,   label: 'Continuidade real',        desc: 'O cuidado não termina com a consulta. Acompanhamos.' },
 ];
 
-const AUDIENCES = [
   {
     key: 'pacientes',
     label: 'Pacientes',
     icon: '🧑‍⚕️',
     color: '#0d9488',
-    title: 'A tua saúde começa em casa.',
-    desc: 'Faz triagem dos teus sintomas, marca consultas, recebe receitas digitais e acompanha a tua saúde crónica — tudo num portal seguro, 24/7.',
-    benefits: [
-      '✅ Triagem de sintomas em minutos',
-      '✅ Teleconsulta com médico real',
-      '✅ Receitas e renovações digitais',
-      '✅ Historial clínico pessoal',
-      '✅ Saúde familiar num só lugar',
-    ],
-    cta: { label: 'Criar conta grátis', to: '/register' },
-    stat: { val: 'Grátis', lbl: 'Registo sem cartão' },
+    imgColor: '#f0fdf9',
   },
   {
     key: 'medicos',
     label: 'Médicos',
     icon: '👨‍⚕️',
     color: '#2563eb',
-    title: 'A tua agenda. Os teus pacientes.',
-    desc: 'Gere consultas presenciais e teleconsultas, acede ao historial completo do paciente e emite receitas digitais em segundos.',
-    benefits: [
-      '✅ Agenda online integrada',
-      '✅ Teleconsulta por vídeo',
-      '✅ Emissão de receitas digitais',
-      '✅ Historial e triagens do paciente',
-      '✅ Notificações de urgência',
-    ],
-    cta: { label: 'Registar como médico', to: '/candidatura' },
-    stat: { val: '0€', lbl: 'Taxa de entrada' },
+    imgColor: '#eff6ff',
   },
   {
     key: 'especialistas',
     label: 'Especialistas',
     icon: '🔬',
     color: '#7c3aed',
-    title: 'Mais visibilidade. Mais pacientes.',
-    desc: 'Aparece no mapa KAYA, recebe referenciações automáticas e gere os teus pacientes especializados com ferramentas clínicas dedicadas.',
-    benefits: [
-      '✅ Perfil público verificado',
-      '✅ Referenciações automáticas',
-      '✅ Dashboard de especialidade',
-      '✅ Relatórios e notas clínicas',
-      '✅ 13 especialidades disponíveis',
-    ],
-    cta: { label: 'Candidatar-me', to: '/candidatura' },
-    stat: { val: '13', lbl: 'Especialidades' },
+    imgColor: '#f5f3ff',
   },
   {
     key: 'clinicas',
     label: 'Clínicas',
     icon: '🏥',
     color: '#0891b2',
-    title: 'A tua clínica no digital.',
-    desc: 'Dashboard para toda a equipa, triagem digital pré-consulta, gestão de agenda e acesso ao historial do paciente — sem burocracia.',
-    benefits: [
-      '✅ Dashboard multi-utilizador',
-      '✅ Triagem digital pré-consulta',
-      '✅ Gestão de agenda da equipa',
-      '✅ Faturação integrada',
-      '✅ Integração hospitalar',
-    ],
-    cta: { label: 'Candidatar a minha clínica', to: '/candidatura' },
-    stat: { val: '100%', lbl: 'Digital, sem papel' },
+    imgColor: '#ecfeff',
   },
   {
     key: 'dispositivos',
     label: 'Dispositivos',
     icon: '📱',
     color: '#ea580c',
-    title: 'Vitais em tempo real.',
-    desc: 'Liga os teus dispositivos de saúde — tensão, glicose, SpO₂, ECG — ao teu perfil KAYA e recebe alertas inteligentes automáticos.',
-    benefits: [
-      '✅ Monitorização de tensão arterial',
-      '✅ Glucómetro digital',
-      '✅ Oxímetro & ECG portátil',
-      '✅ Alertas de risco automáticos',
-      '✅ Partilha direta com o médico',
-    ],
-    cta: { label: 'Ver dispositivos', to: '/devices' },
-    stat: { val: '24/7', lbl: 'Monitorização contínua' },
+    imgColor: '#fff7ed',
   },
 ];
 
@@ -249,25 +198,15 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Panel content */}
-          <div className={`kaya-panel__body${animating ? ' kaya-panel__body--out' : ''}`}>
-            <div className="kaya-panel__icon" style={{ background: `${aud.color}18`, color: aud.color }}>
-              <span style={{ fontSize: '2rem' }}>{aud.icon}</span>
-            </div>
-            <h3 className="kaya-panel__heading" style={{ color: aud.color }}>{aud.title}</h3>
-            <p className="kaya-panel__desc">{aud.desc}</p>
-            <ul className="kaya-panel__benefits">
-              {aud.benefits.map(b => <li key={b}>{b}</li>)}
-            </ul>
-            <div className="kaya-panel__footer">
-              <div className="kaya-panel__stat">
-                <span style={{ fontSize: '1.4rem', fontWeight: 800, color: aud.color }}>{aud.stat.val}</span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{aud.stat.lbl}</span>
-              </div>
-              <Link to={aud.cta.to} className="lp-cta lp-cta--primary" style={{ background: aud.color, fontSize: '0.82rem', padding: '0.5rem 1rem' }}>
-                {aud.cta.label} →
-              </Link>
-            </div>
+          {/* Panel content — image only */}
+          <div className={`kaya-panel__body kaya-panel__body--img${animating ? ' kaya-panel__body--out' : ''}`}
+               style={{ background: aud.imgColor }}>
+            <img
+              src={`/kaya-panel-${aud.key}.png`}
+              alt={aud.label}
+              className="kaya-panel__img"
+              onError={(e) => { (e.target as HTMLImageElement).src = `/kaya-panel-${aud.key}.svg`; }}
+            />
           </div>
         </div>
       </section>
