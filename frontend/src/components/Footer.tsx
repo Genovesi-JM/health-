@@ -11,16 +11,10 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: 'var(--gradient-primary)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <span style={{ color: '#fff', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>+</span>
-              </div>
+              <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 30, height: 30, display: 'block' }} />
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
                 <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>KAYA</span>
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Saúde na sua mão</span>
+                <span style={{ fontSize: '0.6rem', color: '#0d9488' }}>Saúde na sua mão</span>
               </div>
             </div>
             <p>{t('footer.brand_desc')}</p>

@@ -54,19 +54,13 @@ export function Navbar() {
     <nav className="navbar">
       <div className="navbar-inner">
         {/* ── Brand ── */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', textDecoration: 'none', color: 'var(--text-primary)', flexShrink: 0 }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 10,
-            background: 'var(--gradient-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <span style={{ color: '#fff', fontWeight: 900, fontSize: '1.2rem', lineHeight: 1 }}>+</span>
-          </div>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--text-primary)', flexShrink: 0 }}>
+          <img src="/kaya-logo.svg" alt="KAYA" style={{ width: 36, height: 36, display: 'block' }} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-            <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.08em', color: '#0f172a' }}>
               KAYA
             </span>
-            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>Saúde na sua mão</span>
+            <span style={{ fontSize: '0.62rem', color: '#0d9488', fontWeight: 500 }}>Saúde na sua mão</span>
           </div>
         </Link>
 

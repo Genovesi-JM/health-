@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="kg1" x1="30" y1="20" x2="170" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5eead4"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <linearGradient id="kg2" x1="80" y1="80" x2="170" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <!-- K vertical bar -->
+  <rect x="28" y="22" width="30" height="156" rx="15" fill="url(#kg1)"/>
+  <!-- K upper diagonal arm -->
+  <path d="M58 98 L148 22 Q162 14 168 26 Q174 38 162 48 L88 108 Z" rx="10" fill="url(#kg1)"/>
+  <!-- K lower diagonal — hand shape -->
+  <path d="M80 108 L160 174 Q170 182 160 190 Q150 198 140 190 L58 130 Z" fill="url(#kg2)" opacity="0.9"/>
+  <!-- Palm curve at bottom -->
+  <ellipse cx="130" cy="170" rx="28" ry="18" transform="rotate(-35 130 170)" fill="url(#kg2)"/>
+  <!-- Medical cross -->
+  <rect x="105" y="108" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
+  <rect x="98" y="115" width="24" height="10" rx="5" fill="white" opacity="0.95"/>
+</svg>
