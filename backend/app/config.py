@@ -9,7 +9,7 @@ from typing import Optional
 _INSECURE_DEFAULT = "CHANGE_ME"
 
 class Settings(BaseSettings):
-    app_name: str = "Health Platform API"
+    app_name: str = "KAYA Health API"
     env: str = "dev"
 
     # JWT / Auth — MUST be set via SECRET_KEY env var in production

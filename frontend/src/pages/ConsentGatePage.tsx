@@ -128,7 +128,7 @@ export default function ConsentGatePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
           <Heart size={22} style={{ color: 'var(--accent-teal, #0d9488)' }} />
           <span style={{ fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em',
-            color: 'var(--accent-teal, #0d9488)' }}>HEALTH PLATFORM</span>
+            color: 'var(--accent-teal, #0d9488)' }}>KAYA</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>

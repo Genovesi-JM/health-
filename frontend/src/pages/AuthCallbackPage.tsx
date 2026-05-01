@@ -45,7 +45,7 @@ export default function AuthCallbackPage() {
       <div className="auth-card" style={{ textAlign: 'center' }}>
         <div className="auth-brand">
           <Heart size={32} className="auth-brand-icon" />
-          <span className="auth-brand-text">HEALTH PLATFORM</span>
+          <span className="auth-brand-text">KAYA</span>
         </div>
         {error ? (
           <>

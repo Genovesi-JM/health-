@@ -19,8 +19,8 @@ export function Footer() {
                 <span style={{ color: '#fff', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>+</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>CareFast<span style={{ color: 'var(--accent-teal)' }}>+</span></span>
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>O seu sistema de saúde</span>
+                <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>KAYA</span>
+                <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Saúde na sua mão</span>
               </div>
             </div>
             <p>{t('footer.brand_desc')}</p>
@@ -59,7 +59,7 @@ export function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <span>&copy; {new Date().getFullYear()} Health Platform. {t('footer.rights')}</span>
+          <span>&copy; {new Date().getFullYear()} KAYA. {t('footer.rights')}</span>
           <div style={{ display: 'flex', gap: '1.25rem' }}>
             <Link to="/privacy">{t('footer.privacy')}</Link>
             <Link to="/terms">{t('footer.terms')}</Link>

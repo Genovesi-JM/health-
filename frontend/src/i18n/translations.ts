@@ -261,7 +261,7 @@ const translations: Record<string, Record<Lang, string>> = {
      LOGIN PAGE
      ═══════════════════════════════════════════════════════════ */
   'login.title': { pt: 'Iniciar Sessão', en: 'Sign In', fr: 'Connexion', es: 'Iniciar Sesión' },
-  'login.subtitle': { pt: 'Aceda ao portal Health Platform', en: 'Access the Health Platform portal', fr: 'Accédez au portail Health Platform', es: 'Accede al portal Health Platform' },
+  'login.subtitle': { pt: 'Aceda ao portal KAYA', en: 'Access the KAYA portal', fr: 'Accédez au portail KAYA', es: 'Accede al portal KAYA' },
   'login.email': { pt: 'Email', en: 'Email', fr: 'Email', es: 'Email' },
   'login.password': { pt: 'Palavra-passe', en: 'Password', fr: 'Mot de passe', es: 'Contraseña' },
   'login.submit': { pt: 'Iniciar Sessão', en: 'Sign In', fr: 'Se connecter', es: 'Iniciar Sesión' },

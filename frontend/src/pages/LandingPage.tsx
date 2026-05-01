@@ -87,12 +87,12 @@ export default function LandingPage() {
           <HeartPulse size={13} /> Plataforma de saúde digital — Angola, África
         </div>
         <h1 className="lp-hero__title">
-          Smarter healthcare<br />
-          <span className="lp-hero__accent">starts at home.</span>
+          Saúde na sua mão.<br />
+          <span className="lp-hero__accent">KAYA.</span>
         </h1>
         <p className="lp-hero__sub">
-          Meça os seus vitais, marque consultas, fale com médicos por vídeo e acompanhe a saúde da família —
-          tudo num portal seguro, construído para Angola e escalável para toda a África.
+          Triagem, teleconsulta, receitas digitais e acompanhamento crónico — tudo num portal seguro,
+          construído para que a tua saúde comece em casa.
         </p>
         <div className="lp-hero__ctas">
           <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> Criar conta grátis</Link>

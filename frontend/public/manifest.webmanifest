@@ -1,7 +1,7 @@
 {
-  "name": "Health Platform",
-  "short_name": "Health",
-  "description": "Digital health coordination — triage, teleconsultation, and care management",
+  "name": "KAYA",
+  "short_name": "KAYA",
+  "description": "KAYA — Saúde na sua mão. Triagem, teleconsulta e gestão de cuidados.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -64,9 +64,9 @@ export function Navbar() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
             <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.04em' }}>
-              CareFast<span style={{ color: 'var(--accent-teal)' }}>+</span>
+              KAYA
             </span>
-            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>O seu sistema de saúde</span>
+            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>Saúde na sua mão</span>
           </div>
         </Link>
 
