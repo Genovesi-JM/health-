@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import {
@@ -70,56 +71,204 @@ const TRUST_POINTS = [
   { icon: TrendingUp,   label: 'Continuidade real',        desc: 'O cuidado não termina com a consulta. Acompanhamos.' },
 ];
 
-const TRIAGE_OUTCOMES = [
+const AUDIENCES = [
+  {
+    key: 'pacientes',
+    label: 'Pacientes',
+    icon: '🧑‍⚕️',
+    color: '#0d9488',
+    title: 'A tua saúde começa em casa.',
+    desc: 'Faz triagem dos teus sintomas, marca consultas, recebe receitas digitais e acompanha a tua saúde crónica — tudo num portal seguro, 24/7.',
+    benefits: [
+      '✅ Triagem de sintomas em minutos',
+      '✅ Teleconsulta com médico real',
+      '✅ Receitas e renovações digitais',
+      '✅ Historial clínico pessoal',
+      '✅ Saúde familiar num só lugar',
+    ],
+    cta: { label: 'Criar conta grátis', to: '/register' },
+    stat: { val: 'Grátis', lbl: 'Registo sem cartão' },
+  },
+  {
+    key: 'medicos',
+    label: 'Médicos',
+    icon: '👨‍⚕️',
+    color: '#2563eb',
+    title: 'A tua agenda. Os teus pacientes.',
+    desc: 'Gere consultas presenciais e teleconsultas, acede ao historial completo do paciente e emite receitas digitais em segundos.',
+    benefits: [
+      '✅ Agenda online integrada',
+      '✅ Teleconsulta por vídeo',
+      '✅ Emissão de receitas digitais',
+      '✅ Historial e triagens do paciente',
+      '✅ Notificações de urgência',
+    ],
+    cta: { label: 'Registar como médico', to: '/doctor-register' },
+    stat: { val: '0€', lbl: 'Taxa de entrada' },
+  },
+  {
+    key: 'especialistas',
+    label: 'Especialistas',
+    icon: '🔬',
+    color: '#7c3aed',
+    title: 'Mais visibilidade. Mais pacientes.',
+    desc: 'Aparece no mapa KAYA, recebe referenciações automáticas e gere os teus pacientes especializados com ferramentas clínicas dedicadas.',
+    benefits: [
+      '✅ Perfil público verificado',
+      '✅ Referenciações automáticas',
+      '✅ Dashboard de especialidade',
+      '✅ Relatórios e notas clínicas',
+      '✅ 13 especialidades disponíveis',
+    ],
+    cta: { label: 'Candidatar-me', to: '/doctor-register' },
+    stat: { val: '13', lbl: 'Especialidades' },
+  },
+  {
+    key: 'clinicas',
+    label: 'Clínicas',
+    icon: '🏥',
+    color: '#0891b2',
+    title: 'A tua clínica no digital.',
+    desc: 'Dashboard para toda a equipa, triagem digital pré-consulta, gestão de agenda e acesso ao historial do paciente — sem burocracia.',
+    benefits: [
+      '✅ Dashboard multi-utilizador',
+      '✅ Triagem digital pré-consulta',
+      '✅ Gestão de agenda da equipa',
+      '✅ Faturação integrada',
+      '✅ Integração hospitalar',
+    ],
+    cta: { label: 'Candidatar a minha clínica', to: '/clinics' },
+    stat: { val: '100%', lbl: 'Digital, sem papel' },
+  },
+  {
+    key: 'dispositivos',
+    label: 'Dispositivos',
+    icon: '📱',
+    color: '#ea580c',
+    title: 'Vitais em tempo real.',
+    desc: 'Liga os teus dispositivos de saúde — tensão, glicose, SpO₂, ECG — ao teu perfil KAYA e recebe alertas inteligentes automáticos.',
+    benefits: [
+      '✅ Monitorização de tensão arterial',
+      '✅ Glucómetro digital',
+      '✅ Oxímetro & ECG portátil',
+      '✅ Alertas de risco automáticos',
+      '✅ Partilha direta com o médico',
+    ],
+    cta: { label: 'Ver dispositivos', to: '/devices' },
+    stat: { val: '24/7', lbl: 'Monitorização contínua' },
+  },
+];
+
+
   { icon: AlertTriangle,    color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',   label: '🔴 Urgência',          sub: 'Dirige-se imediatamente. Hospital pré-alertado.' },
   { icon: MonitorSmartphone,color: '#0891b2', bg: 'rgba(8,145,178,0.08)',   border: 'rgba(8,145,178,0.2)',   label: '🟠 Teleconsulta',       sub: 'Médico disponível em minutos.' },
   { icon: Calendar,         color: '#16a34a', bg: 'rgba(22,163,74,0.08)',   border: 'rgba(22,163,74,0.2)',   label: '🟢 Consulta Agendada',  sub: 'Marcação na clínica mais próxima.' },
 ];
 
 export default function LandingPage() {
+  const [activeAudience, setActiveAudience] = useState(0);
+  const [animating, setAnimating] = useState(false);
+
+  // Auto-rotate every 4 seconds
+  useEffect(() => {
+    const t = setInterval(() => {
+      setAnimating(true);
+      setTimeout(() => {
+        setActiveAudience(a => (a + 1) % AUDIENCES.length);
+        setAnimating(false);
+      }, 200);
+    }, 4000);
+    return () => clearInterval(t);
+  }, []);
+
+  const switchAudience = (idx: number) => {
+    if (idx === activeAudience) return;
+    setAnimating(true);
+    setTimeout(() => { setActiveAudience(idx); setAnimating(false); }, 200);
+  };
+
+  const aud = AUDIENCES[activeAudience];
+
   return (
     <div className="landing-wrapper">
       <Navbar />
 
       {/* ══ HERO ══════════════════════════════════════════ */}
-      <section className="lp-hero">
-        <div className="lp-hero__badge">
-          <HeartPulse size={13} /> Plataforma de saúde digital — Angola, África
+      <section className="kaya-hero">
+        {/* LEFT — text */}
+        <div className="kaya-hero__left">
+          <div className="lp-hero__badge">
+            <HeartPulse size={13} /> Plataforma de saúde digital — Angola, África
+          </div>
+          <h1 className="kaya-hero__title">
+            Saúde na sua mão.<br />
+            <span className="lp-hero__accent">KAYA.</span>
+          </h1>
+          <p className="kaya-hero__sub">
+            Triagem, teleconsulta, receitas digitais e acompanhamento crónico —
+            construído para que a tua saúde comece em casa.
+          </p>
+          <div className="kaya-hero__ctas">
+            <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> Criar conta grátis</Link>
+            <Link to="/login" className="lp-cta lp-cta--secondary"><ArrowRight size={17} /> Entrar no Portal</Link>
+          </div>
+          <div className="lp-hero__stats" style={{ justifyContent: 'flex-start', marginTop: '2rem' }}>
+            {[
+              { value: '13', label: 'Especialidades' },
+              { value: '24/7', label: 'Suporte digital' },
+              { value: '100%', label: 'Médico real' },
+              { value: 'Grátis', label: 'Registo' },
+            ].map(s => (
+              <div key={s.label} className="lp-stat">
+                <span className="lp-stat__val">{s.value}</span>
+                <span className="lp-stat__lbl">{s.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <h1 className="lp-hero__title">
-          Saúde na sua mão.<br />
-          <span className="lp-hero__accent">KAYA.</span>
-        </h1>
-        <p className="lp-hero__sub">
-          Triagem, teleconsulta, receitas digitais e acompanhamento crónico — tudo num portal seguro,
-          construído para que a tua saúde comece em casa.
-        </p>
-        <div className="lp-hero__ctas">
-          <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> Criar conta grátis</Link>
-          <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={17} /> Teleconsulta imediata</Link>
-          <Link to="/chronic-care" className="lp-cta lp-cta--outline"><Heart size={17} /> Cuidado Crónico</Link>
-          <Link to="/clinics" className="lp-cta lp-cta--outline"><Building2 size={17} /> Para Parceiros</Link>
-          <Link to="/devices" className="lp-cta lp-cta--outline"><Activity size={17} /> Smart Devices</Link>
-          <Link to="/login" className="lp-cta lp-cta--portal"><ArrowRight size={17} /> Entrar no Portal</Link>
-        </div>
-        <div className="lp-hero__stats">
-          {[
-            { value: '13',    label: 'Especialidades' },
-            { value: '24/7',  label: 'Suporte digital' },
-            { value: '100%',  label: 'Médico real na validação' },
-            { value: 'Grátis', label: 'Registo sem cartão' },
-          ].map(s => (
-            <div key={s.label} className="lp-stat">
-              <span className="lp-stat__val">{s.value}</span>
-              <span className="lp-stat__lbl">{s.label}</span>
+
+        {/* RIGHT — interactive panel */}
+        <div className="kaya-panel">
+          {/* Panel header with status */}
+          <div className="kaya-panel__header">
+            <span className="kaya-panel__title">Portal KAYA</span>
+            <span className="kaya-panel__status">● ATIVO</span>
+          </div>
+
+          {/* Audience buttons */}
+          <div className="kaya-panel__tabs">
+            {AUDIENCES.map((a, i) => (
+              <button
+                key={a.key}
+                className={`kaya-tab${i === activeAudience ? ' kaya-tab--active' : ''}`}
+                style={i === activeAudience ? { borderColor: a.color, color: a.color } : {}}
+                onClick={() => switchAudience(i)}
+              >
+                {a.icon} {a.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Panel content */}
+          <div className={`kaya-panel__body${animating ? ' kaya-panel__body--out' : ''}`}>
+            <div className="kaya-panel__icon" style={{ background: `${aud.color}18`, color: aud.color }}>
+              <span style={{ fontSize: '2rem' }}>{aud.icon}</span>
             </div>
-          ))}
-        </div>
-        <div className="trust-strip" style={{ justifyContent: 'center', marginTop: '1.5rem' }}>
-          <span className="trust-badge trust-badge--encrypted"><Lock size={11} /> Dados encriptados</span>
-          <span className="trust-badge trust-badge--verified"><Shield size={11} /> Médicos verificados</span>
-          <span className="trust-badge trust-badge--private"><HeartPulse size={11} /> Privacidade médica</span>
-          <span className="trust-badge trust-badge--secure"><CheckCircle2 size={11} /> Pagamentos seguros</span>
+            <h3 className="kaya-panel__heading" style={{ color: aud.color }}>{aud.title}</h3>
+            <p className="kaya-panel__desc">{aud.desc}</p>
+            <ul className="kaya-panel__benefits">
+              {aud.benefits.map(b => <li key={b}>{b}</li>)}
+            </ul>
+            <div className="kaya-panel__footer">
+              <div className="kaya-panel__stat">
+                <span style={{ fontSize: '1.4rem', fontWeight: 800, color: aud.color }}>{aud.stat.val}</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{aud.stat.lbl}</span>
+              </div>
+              <Link to={aud.cta.to} className="lp-cta lp-cta--primary" style={{ background: aud.color, fontSize: '0.82rem', padding: '0.5rem 1rem' }}>
+                {aud.cta.label} →
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
