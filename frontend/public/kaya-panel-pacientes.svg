@@ -99,7 +99,6 @@
   <!-- Bars -->
   <g>
     <!-- Mon -->
-    <rect x="60" y="306" width="32" height="-22" rx="4" fill="#0d9488" opacity="0.3"/>
     <rect x="60" y="284" width="32" height="22" rx="4" fill="#0d9488" opacity="0.3"/>
     <text x="76" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">Seg</text>
     <!-- Tue -->
