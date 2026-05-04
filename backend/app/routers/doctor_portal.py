@@ -25,6 +25,7 @@ from app.health_models import (
     Doctor, Patient, Consultation, ConsultationNotes,
     PrescriptionRequest, DeviceReading, PatientMedication,
 )
+from app.rbac import log_health_audit, assert_doctor_can_access_patient
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["doctor-portal"])
@@ -368,21 +369,25 @@ def doctor_patient_clinical_summary(
     """
     doctor = _require_doctor(user, db)
 
-    # Confirm relationship
-    consultation_check = (
-        db.query(Consultation)
-        .filter(
-            Consultation.doctor_id == doctor.id,
-            Consultation.patient_id == patient_id,
-        )
-        .first()
-    )
-    if not consultation_check:
-        raise HTTPException(status_code=404, detail="Paciente não encontrado ou sem histórico com este médico.")
+    # Confirm relationship — allow access via consultation OR prescription request
+    assert_doctor_can_access_patient(doctor, patient_id, db)
 
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Paciente não encontrado.")
+
+    # Audit log: doctor viewed clinical summary
+    try:
+        log_health_audit(
+            db,
+            action="clinical_summary_viewed",
+            actor_user_id=user.id,
+            resource_type="patient",
+            resource_id=patient_id,
+            metadata={"doctor_id": doctor.id},
+        )
+    except Exception:
+        pass
 
     # Identity
     name = _get_patient_name(patient, db)

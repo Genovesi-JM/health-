@@ -21,13 +21,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User, UserProfile
-from app.health_models import Patient, Doctor, PrescriptionRequest
+from app.health_models import Patient, Doctor, PrescriptionRequest, StandalonePrescription
 from app.health_schemas import (
     PrescriptionRequestCreate,
     PrescriptionRequestDecide,
     PrescriptionRequestOut,
 )
 from app.routers.notifications import create_notification
+from app.rbac import log_health_audit
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["prescription-requests"])
@@ -95,6 +96,103 @@ def _enrich(req: PrescriptionRequest, db: Session) -> dict:
     return d
 
 
+# ── Risk scoring ─────────────────────────────────────────────────────────────
+
+# Medications that require extra caution
+_HIGH_RISK_MEDS = {
+    "warfarina", "warfarin", "digoxina", "digoxin", "lítio", "lithium",
+    "metotrexato", "methotrexate", "amiodarona", "amiodarone",
+    "insulina", "insulin", "morfina", "morphine", "fentanil", "fentanyl",
+    "clozapina", "clozapine", "talidomida", "thalidomide",
+}
+
+
+def _calculate_risk(
+    patient,
+    medication_name: str,
+    dose: str | None,
+    db,
+) -> tuple[str, str | None]:
+    """Return (risk_level, risk_alert) for a new prescription request.
+
+    Levels: low | medium | high
+    """
+    alerts: list[str] = []
+    level = "low"
+
+    med_lower = medication_name.lower()
+
+    # 1. High-risk medication list
+    for hm in _HIGH_RISK_MEDS:
+        if hm in med_lower:
+            alerts.append(f"Medicamento de alto risco: {medication_name}.")
+            level = "high"
+            break
+
+    # 2. Allergy match
+    try:
+        allergies: list[str] = json.loads(patient.allergies_json or "[]")
+        for allergy in allergies:
+            if allergy.lower() in med_lower or med_lower in allergy.lower():
+                alerts.append(f"ATENÇÃO: Possível alergia a '{allergy}' — revisar antes de aprovar.")
+                level = "high"
+    except Exception:
+        pass
+
+    # 3. Duplicate active medication check
+    try:
+        from app.health_models import PatientMedication
+        active_meds = (
+            db.query(PatientMedication.medication_name)
+            .filter_by(patient_id=patient.id, is_current=True)
+            .all()
+        )
+        for (active_name,) in active_meds:
+            if active_name and active_name.lower() in med_lower:
+                alerts.append(f"Duplicado potencial: paciente já toma '{active_name}'.")
+                if level == "low":
+                    level = "medium"
+    except Exception:
+        pass
+
+    # 4. Chronic conditions risk flags
+    try:
+        conditions: list[str] = json.loads(patient.chronic_conditions_json or "[]")
+        cond_str = " ".join(conditions).lower()
+        if "insuficiência renal" in cond_str or "renal" in cond_str:
+            alerts.append("Atenção: insuficiência renal — ajustar dose conforme função renal.")
+            if level == "low":
+                level = "medium"
+        if "insuficiência cardíaca" in cond_str or "cardíaca" in cond_str:
+            alerts.append("Atenção: insuficiência cardíaca — monitorizar interações cardíacas.")
+            if level == "low":
+                level = "medium"
+        if "gravidez" in cond_str or "grávida" in cond_str or "pregnancy" in cond_str:
+            alerts.append("ATENÇÃO: Paciente grávida — verificar segurança na gravidez.")
+            level = "high"
+        if "diabetes" in cond_str and "insulina" in med_lower:
+            alerts.append("Paciente diabético recebendo insulina — monitorizar glicemia.")
+            if level == "low":
+                level = "medium"
+    except Exception:
+        pass
+
+    # 5. Age-related risk (>75 years)
+    try:
+        if patient.date_of_birth:
+            dob = datetime.strptime(patient.date_of_birth, "%Y-%m-%d")
+            age = (datetime.utcnow() - dob).days // 365
+            if age >= 75:
+                alerts.append(f"Paciente idoso ({age} anos) — revisar dose e interações.")
+                if level == "low":
+                    level = "medium"
+    except Exception:
+        pass
+
+    alert_text = " | ".join(alerts) if alerts else None
+    return level, alert_text
+
+
 # ── Patient creates a request ──────────────────────────────────────────────
 
 @router.post("/api/v1/prescription-requests", response_model=PrescriptionRequestOut, status_code=201)
@@ -112,6 +210,9 @@ def create_prescription_request(
     if not doctor:
         raise HTTPException(status_code=404, detail="Médico não encontrado.")
 
+    # ── Risk scoring ──────────────────────────────────────────────────────────
+    risk_level, risk_alert = _calculate_risk(patient, body.medication_name, body.dose, db)
+
     req = PrescriptionRequest(
         patient_id=patient.id,
         doctor_id=doctor.id,
@@ -120,6 +221,8 @@ def create_prescription_request(
         frequency=body.frequency,
         reason=body.reason,
         status="pending",
+        risk_level=risk_level,
+        risk_alert=risk_alert,
     )
     db.add(req)
     db.commit()
@@ -162,9 +265,10 @@ def list_doctor_prescription_requests(
         raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")
 
     q = db.query(PrescriptionRequest).filter(PrescriptionRequest.doctor_id == doctor.id)
-    if status:
+    if status and status != "all":
         q = q.filter(PrescriptionRequest.status == status)
-    else:
+    elif not status:
+        # Default: show pending requests only when no filter is explicitly provided
         q = q.filter(PrescriptionRequest.status == "pending")
 
     reqs = q.order_by(PrescriptionRequest.created_at.asc()).all()
@@ -218,6 +322,54 @@ def decide_prescription_request(
 
     db.commit()
     db.refresh(req)
+
+    # ── Create a formal prescription record when approved or adjusted ─────────
+    final_status = req.status
+    if final_status in ("approved", "adjusted"):
+        try:
+            from datetime import timedelta
+            sp = StandalonePrescription(
+                prescription_request_id=req.id,
+                patient_id=req.patient_id,
+                doctor_id=req.doctor_id,
+                medication_name=req.medication_name,
+                dosage=body.adjusted_dose if final_status == "adjusted" else req.dose,
+                frequency=body.adjusted_frequency if final_status == "adjusted" else req.frequency,
+                instructions=body.doctor_note,
+                issue_date=datetime.utcnow(),
+                valid_until=datetime.utcnow() + timedelta(days=30),
+                pharmacy_status="pending_pharmacy",
+            )
+            db.add(sp)
+            db.commit()
+        except Exception as exc:
+            logger.error("Failed to create standalone prescription for request %s: %s", req.id, exc)
+            db.rollback()
+
+    # ── Audit log ─────────────────────────────────────────────────────────────
+    action_label = {
+        "approved":          "prescription_request_approved",
+        "adjusted":          "prescription_request_adjusted",
+        "consult_requested": "prescription_request_consult_requested",
+        "exams_requested":   "prescription_request_exams_requested",
+        "rejected":          "prescription_request_rejected",
+    }.get(final_status, "prescription_request_decided")
+    try:
+        log_health_audit(
+            db,
+            action=action_label,
+            actor_user_id=user.id,
+            resource_type="prescription_request",
+            resource_id=req.id,
+            metadata={
+                "doctor_id": doctor.id,
+                "patient_id": req.patient_id,
+                "medication": req.medication_name,
+                "status": final_status,
+            },
+        )
+    except Exception:
+        pass
 
     # ── Notify patient ────────────────────────────────────────────────────────
     _status_labels = {

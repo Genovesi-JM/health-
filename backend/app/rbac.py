@@ -185,3 +185,59 @@ def log_health_audit(
         db.commit()
     except Exception:
         db.rollback()
+
+
+# ═══════════════════════════════════════════════════════════════
+# Doctor → Patient access guard
+# ═══════════════════════════════════════════════════════════════
+
+def assert_doctor_can_access_patient(
+    doctor: Doctor,
+    patient_id: str,
+    db: Session,
+) -> None:
+    """Raise HTTP 403 if the doctor has no legitimate connection to the patient.
+
+    A doctor is allowed to access a patient's data when at least one of the
+    following is true:
+    - The patient has a consultation (any status) assigned to this doctor.
+    - The patient has an open prescription request directed at this doctor.
+    - The patient is in the doctor's queue (consultation.doctor_id is None but
+      specialty matches — handled via consultation with no doctor yet).
+
+    Admin / support access is handled separately and must be audited with a
+    reason; that check is NOT done here.
+    """
+    from app.health_models import Consultation, PrescriptionRequest
+
+    # Check for any consultation connecting doctor ↔ patient
+    consultation_exists = (
+        db.query(Consultation.id)
+        .filter(
+            Consultation.doctor_id == doctor.id,
+            Consultation.patient_id == patient_id,
+        )
+        .first()
+    )
+    if consultation_exists:
+        return
+
+    # Check for any prescription request from this patient to this doctor
+    request_exists = (
+        db.query(PrescriptionRequest.id)
+        .filter(
+            PrescriptionRequest.doctor_id == doctor.id,
+            PrescriptionRequest.patient_id == patient_id,
+        )
+        .first()
+    )
+    if request_exists:
+        return
+
+    raise HTTPException(
+        status_code=403,
+        detail=(
+            "Acesso negado. Este médico não tem uma ligação clínica activa com este paciente. "
+            "O acesso a dados de saúde requer uma consulta ou pedido de prescrição associado."
+        ),
+    )

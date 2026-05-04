@@ -8,7 +8,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = 'add_device_readings_v1'
-down_revision = 'add_prescription_requests_v1'
+down_revision = 'add_standalone_prescriptions_v1'
 branch_labels = None
 depends_on = None
 

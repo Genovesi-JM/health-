@@ -58,7 +58,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Only add security headers on production or when explicitly enabled
-        is_prod = settings.env == "prod"
+        is_prod = settings.env in ("prod", "production")
 
         # Always add these headers (safe for dev too)
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -111,11 +111,16 @@ _limiter = RateLimiter()
 
 # Rate limit configs: path_prefix → (max_requests, window_seconds)
 RATE_LIMIT_RULES: Dict[str, Tuple[int, int]] = {
-    "/auth/login": (10, 60),           # 10 attempts per minute
-    "/auth/register": (5, 60),         # 5 registrations per minute
-    "/auth/forgot-password": (3, 300), # 3 resets per 5 minutes
-    "/auth/reset-password": (5, 300),  # 5 attempts per 5 minutes
-    "/payments/webhook": (60, 60),     # 60 webhook calls per minute
+    "/auth/login": (10, 60),                               # 10 attempts per minute
+    "/auth/register": (5, 60),                             # 5 registrations per minute
+    "/auth/forgot-password": (3, 300),                     # 3 resets per 5 minutes
+    "/auth/reset-password": (5, 300),                      # 5 attempts per 5 minutes
+    "/payments/webhook": (60, 60),                         # 60 webhook calls per minute
+    "/api/v1/prescription-requests": (10, 60),             # 10 requests per minute per IP
+    "/api/v1/doctor/prescription-requests": (30, 60),      # 30 decisions per minute
+    "/api/v1/triage": (20, 60),                            # 20 triage submissions per minute
+    "/api/v1/chatbot/chat": (30, 60),                      # 30 chat messages per minute
+    "/api/v1/billing/webhook": (60, 60),                   # 60 billing webhooks per minute
 }
 
 
@@ -126,8 +131,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         path = request.url.path.rstrip("/")
         method = request.method.upper()
 
-        # Only rate limit POST requests on sensitive paths
-        if method != "POST":
+        # Only rate limit POST and certain write methods on sensitive paths
+        if method not in ("POST", "PUT", "PATCH"):
             return await call_next(request)
 
         rule = None
@@ -226,7 +231,7 @@ class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        if settings.env != "prod":
+        if settings.env not in ("prod", "production"):
             return await call_next(request)
 
         # Check X-Forwarded-Proto (set by Render/Heroku/AWS ALB)

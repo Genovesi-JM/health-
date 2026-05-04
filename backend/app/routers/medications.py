@@ -18,14 +18,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
-from app.health_models import PatientMedication, Patient
+from app.health_models import PatientMedication, Patient, Doctor
 from app.health_schemas import (
     PatientMedicationCreate,
     PatientMedicationUpdate,
     PatientMedicationOut,
     RoleEnum,
 )
-from app.rbac import get_patient_for_user, require_roles
+from app.rbac import get_patient_for_user, require_roles, assert_doctor_can_access_patient
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +143,14 @@ def list_patient_medications(
     patient = db.query(Patient).filter_by(id=patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Doctors must have a clinical connection to this patient.
+    # Admins / support have unrestricted access (audited separately).
+    if current_user.role == RoleEnum.DOCTOR:
+        doctor = db.query(Doctor).filter_by(user_id=current_user.id).first()
+        if not doctor:
+            raise HTTPException(status_code=403, detail="Perfil de médico não encontrado.")
+        assert_doctor_can_access_patient(doctor, patient_id, db)
 
     return (
         db.query(PatientMedication)

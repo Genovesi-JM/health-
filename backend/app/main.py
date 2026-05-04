@@ -112,11 +112,17 @@ def create_application() -> FastAPI:
         print(f"[HealthPlatform] Schema drift check failed (non-fatal): {exc}")
 
     # Seed test data (admin, patients, doctors)
-    try:
-        result = seed_all()
-        print(f"[HealthPlatform] Seed complete: {result}")
-    except Exception as exc:
-        print(f"[HealthPlatform] Seed data failed (non-fatal): {exc}")
+    # In production, seed is disabled by default to prevent demo users being created.
+    # Set SEED_DEMO_DATA=true to override.
+    _is_prod = settings.env in ("prod", "production")
+    if not _is_prod or settings.seed_demo_data:
+        try:
+            result = seed_all()
+            print(f"[HealthPlatform] Seed complete: {result}")
+        except Exception as exc:
+            print(f"[HealthPlatform] Seed data failed (non-fatal): {exc}")
+    else:
+        print("[HealthPlatform] Demo seed skipped in production (set SEED_DEMO_DATA=true to enable).")
 
     # ── Core routers (auth, admin, user profile) ──
     application.include_router(auth.router)       # /auth/*

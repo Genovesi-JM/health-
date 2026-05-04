@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   FileText, AlertTriangle, CheckCircle2, X, ChevronDown, ChevronUp,
   Activity, Calendar, Stethoscope, AlertCircle, RefreshCw,
-  Search, Loader2, SidebarOpen,
+  Search, Loader2, SidebarOpen, Pill, Heart,
 } from 'lucide-react';
 import api from '../api';
 
@@ -27,6 +27,17 @@ interface RxRequest {
   patient_gender?: string;
   chronic_conditions?: string[];
   allergies?: string[];
+}
+
+interface ClinicalSummary {
+  identity: { id: string; name: string; age: number | null; gender: string | null; blood_type: string | null; date_of_birth: string | null; city: string | null };
+  chronic_conditions: string[];
+  allergies: string[];
+  current_medications: { id: string; name: string; dosage: string | null; frequency: string | null }[];
+  last_consultations: { id: string; specialty: string; status: string; scheduled_at: string | null }[];
+  last_vitals: { reading_type: string; value: number | null; unit: string | null; measured_at: string }[];
+  previous_prescriptions: { id: string; medication_name: string; status: string; created_at: string }[];
+  risk_flags: string[];
 }
 
 const riskConfig = {
@@ -58,11 +69,13 @@ export default function DoctorPrescriptionsPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'pending' | 'all'>('pending');
   const [quickView, setQuickView] = useState<RxRequest | null>(null);
+  const [clinicalSummary, setClinicalSummary] = useState<ClinicalSummary | null>(null);
+  const [clinicalLoading, setClinicalLoading] = useState(false);
 
   const load = async () => {
     setLoading(true); setError('');
     try {
-      const params = filter === 'all' ? {} : { status: 'pending' };
+      const params = filter === 'all' ? { status: 'all' } : { status: 'pending' };
       const { data } = await api.get<RxRequest[]>('/api/v1/doctor/prescription-requests', { params });
       setRequests(data);
       if (data.length > 0) setExpanded(data[0].id);
@@ -72,6 +85,21 @@ export default function DoctorPrescriptionsPage() {
   };
 
   useEffect(() => { load(); }, [filter]);
+
+  const openQuickView = async (rx: RxRequest) => {
+    if (quickView?.id === rx.id) { setQuickView(null); setClinicalSummary(null); return; }
+    setQuickView(rx);
+    setClinicalSummary(null);
+    setClinicalLoading(true);
+    try {
+      const { data } = await api.get<ClinicalSummary>(`/api/v1/doctor/patients/${rx.patient_id}/clinical-summary`);
+      setClinicalSummary(data);
+    } catch {
+      // summary may not be available if no consultation yet — fall back to basic data
+    } finally {
+      setClinicalLoading(false);
+    }
+  };
 
   const decide = async (id: string, action: Action, note?: string, adjDose?: string, adjFreq?: string) => {
     setSubmitting(id);
@@ -157,7 +185,7 @@ export default function DoctorPrescriptionsPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem', flexShrink: 0 }}>
                     {rx.risk_level && <span style={{ fontSize: '0.73rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 999, background: risk.bg, color: risk.color }}>{risk.label}</span>}
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(rx.created_at).toLocaleDateString('pt-PT')}</span>
-                    <button onClick={e => { e.stopPropagation(); setQuickView(quickView?.id === rx.id ? null : rx); }} style={{ fontSize: '0.72rem', background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                    <button onClick={e => { e.stopPropagation(); openQuickView(rx); }} style={{ fontSize: '0.72rem', background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                       <SidebarOpen size={13} /> Perfil
                     </button>
                     {isOpen ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />}
@@ -237,37 +265,107 @@ export default function DoctorPrescriptionsPage() {
       </div>
 
       {quickView && (
-        <div style={{ width: 260, flexShrink: 0 }}>
-          <div className="card" style={{ padding: '1.25rem', position: 'sticky', top: '1rem' }}>
+        <div style={{ width: 290, flexShrink: 0 }}>
+          <div className="card" style={{ padding: '1.25rem', position: 'sticky', top: '1rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontWeight: 800, fontSize: '0.88rem' }}>Perfil do Paciente</span>
-              <button onClick={() => setQuickView(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
+              <span style={{ fontWeight: 800, fontSize: '0.88rem' }}>Perfil Clínico</span>
+              <button onClick={() => { setQuickView(null); setClinicalSummary(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
             </div>
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--brand-light)', color: 'var(--brand-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem', fontSize: '0.9rem' }}>
-                {(quickView.patient_name ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{quickView.patient_name ?? 'Paciente'}</div>
-              {quickView.patient_age && <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{quickView.patient_age} anos · {quickView.patient_gender ?? '—'}</div>}
-            </div>
-            {(quickView.chronic_conditions ?? []).length > 0 && (
-              <div style={{ marginBottom: '0.85rem' }}>
-                <SectionLabel>Condições crónicas</SectionLabel>
-                {(quickView.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
+
+            {clinicalLoading && (
+              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'var(--text-muted)' }}>
+                <Loader2 size={20} style={{ display: 'block', margin: '0 auto 0.4rem' }} />
+                <span style={{ fontSize: '0.8rem' }}>A carregar histórico…</span>
               </div>
             )}
-            {(quickView.allergies ?? []).length > 0 && (
-              <div style={{ marginBottom: '0.85rem' }}>
-                <SectionLabel>Alergias</SectionLabel>
-                {(quickView.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
-              </div>
+
+            {!clinicalLoading && (
+              <>
+                {/* Identity */}
+                <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--brand-light)', color: 'var(--brand-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem', fontSize: '0.9rem' }}>
+                    {((clinicalSummary?.identity.name ?? quickView.patient_name) ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{clinicalSummary?.identity.name ?? quickView.patient_name ?? 'Paciente'}</div>
+                  <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>
+                    {clinicalSummary?.identity.age ?? quickView.patient_age ?? '—'} anos
+                    {(clinicalSummary?.identity.gender ?? quickView.patient_gender) ? ` · ${clinicalSummary?.identity.gender ?? quickView.patient_gender}` : ''}
+                    {clinicalSummary?.identity.blood_type ? ` · ${clinicalSummary.identity.blood_type}` : ''}
+                  </div>
+                </div>
+
+                {/* Risk flags */}
+                {(clinicalSummary?.risk_flags ?? []).length > 0 && (
+                  <div style={{ marginBottom: '0.85rem', padding: '0.6rem 0.75rem', borderRadius: '8px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <SectionLabel>⚠️ Alertas de risco</SectionLabel>
+                    {clinicalSummary!.risk_flags.map((f, i) => <div key={i} style={{ fontSize: '0.76rem', color: '#dc2626', marginBottom: '0.2rem' }}>• {f}</div>)}
+                  </div>
+                )}
+
+                {/* Chronic conditions */}
+                {((clinicalSummary?.chronic_conditions ?? quickView.chronic_conditions) ?? []).length > 0 && (
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <SectionLabel>🩺 Condições crónicas</SectionLabel>
+                    {(clinicalSummary?.chronic_conditions ?? quickView.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
+                  </div>
+                )}
+
+                {/* Allergies */}
+                {((clinicalSummary?.allergies ?? quickView.allergies) ?? []).length > 0 && (
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <SectionLabel>⚠️ Alergias</SectionLabel>
+                    {(clinicalSummary?.allergies ?? quickView.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
+                  </div>
+                )}
+
+                {/* Current medications */}
+                {clinicalSummary && clinicalSummary.current_medications.length > 0 && (
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <SectionLabel><Pill size={11} style={{ display: 'inline', marginRight: 3 }} />Medicações actuais</SectionLabel>
+                    {clinicalSummary.current_medications.map(m => (
+                      <div key={m.id} style={{ fontSize: '0.77rem', padding: '0.25rem 0', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontWeight: 600 }}>{m.name}</span>
+                        {m.dosage && <span style={{ color: 'var(--text-muted)' }}> · {m.dosage}</span>}
+                        {m.frequency && <span style={{ color: 'var(--text-muted)' }}> · {m.frequency}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Latest vitals */}
+                {clinicalSummary && clinicalSummary.last_vitals.length > 0 && (
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <SectionLabel><Heart size={11} style={{ display: 'inline', marginRight: 3 }} />Últimas medições</SectionLabel>
+                    {clinicalSummary.last_vitals.slice(0, 5).map((v, i) => (
+                      <div key={i} style={{ fontSize: '0.77rem', display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ textTransform: 'capitalize' }}>{v.reading_type.replace(/_/g, ' ')}</span>
+                        <span style={{ fontWeight: 600 }}>{v.value ?? '—'}{v.unit ? ` ${v.unit}` : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Last consultations */}
+                {clinicalSummary && clinicalSummary.last_consultations.length > 0 && (
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <SectionLabel>📋 Consultas anteriores</SectionLabel>
+                    {clinicalSummary.last_consultations.slice(0, 3).map(c => (
+                      <div key={c.id} style={{ fontSize: '0.77rem', padding: '0.2rem 0', borderBottom: '1px solid var(--border)' }}>
+                        {c.specialty.replace(/_/g, ' ')} · <span style={{ color: 'var(--text-muted)' }}>{c.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Current request */}
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                  <SectionLabel>💊 Pedido actual</SectionLabel>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{quickView.medication_name}</div>
+                  {quickView.dose && <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{quickView.dose} · {quickView.frequency}</div>}
+                  {quickView.reason && <div style={{ fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>"{quickView.reason}"</div>}
+                </div>
+              </>
             )}
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-              <SectionLabel>Pedido actual</SectionLabel>
-              <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{quickView.medication_name}</div>
-              {quickView.dose && <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{quickView.dose} · {quickView.frequency}</div>}
-              {quickView.reason && <div style={{ fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>"{quickView.reason}"</div>}
-            </div>
           </div>
         </div>
       )}
@@ -276,7 +374,7 @@ export default function DoctorPrescriptionsPage() {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.35rem' }}>{children}</div>;
+  return <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>{children}</div>;
 }
 function DetailBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (

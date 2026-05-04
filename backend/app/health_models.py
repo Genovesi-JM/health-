@@ -431,6 +431,41 @@ class PrescriptionRequest(Base):
     doctor = relationship("Doctor", backref="prescription_requests")
 
 
+# ── Standalone Prescription (issued from a prescription request, no consultation) ──
+
+class StandalonePrescription(Base):
+    """Formal prescription document created when a doctor approves/adjusts a prescription request.
+
+    Unlike ``Prescription``, which is always tied to a consultation, this record
+    is created from a ``PrescriptionRequest`` so patients have a real pharmacy-ready
+    document even when no live consultation took place.
+    """
+    __tablename__ = "standalone_prescriptions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    prescription_request_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("prescription_requests.id", ondelete="CASCADE"),
+        nullable=False, unique=True, index=True,
+    )
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    medication_name: Mapped[str] = mapped_column(String(300), nullable=False)
+    dosage: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    duration: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    instructions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    issue_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    valid_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    # pending_pharmacy | available | dispensed
+    pharmacy_status: Mapped[str] = mapped_column(String(30), nullable=False, default="pending_pharmacy")
+    file_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    prescription_request = relationship("PrescriptionRequest", backref="standalone_prescription", uselist=False)
+    patient = relationship("Patient", backref="standalone_prescriptions")
+    doctor = relationship("Doctor", backref="standalone_prescriptions")
+
+
 # ── Device Reading (patient home monitoring) ──────────────────────────────────
 
 READING_TYPES = (

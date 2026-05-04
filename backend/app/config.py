@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     # Admin seed password (set via ADMIN_PASSWORD env var or .env)
     admin_password: Optional[str] = None
 
+    # Demo seed data — set SEED_DEMO_DATA=true to force seed in production.
+    # Defaults to False so production starts clean.
+    seed_demo_data: bool = False
+
     # Redis (optional — for caching/rate limiting at scale)
     redis_url: Optional[str] = None
 

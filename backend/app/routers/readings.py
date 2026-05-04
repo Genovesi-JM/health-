@@ -18,14 +18,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
-from app.health_models import DeviceReading, Patient
+from app.health_models import DeviceReading, Patient, Doctor
 from app.health_schemas import (
     DeviceReadingCreate,
     DeviceReadingOut,
     DeviceReadingListOut,
     RoleEnum,
 )
-from app.rbac import get_patient_for_user, require_roles
+from app.rbac import get_patient_for_user, require_roles, assert_doctor_can_access_patient
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,14 @@ def list_patient_readings(
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Paciente não encontrado.")
+
+    # Doctors must have a clinical connection to the patient (consultation or prescription request).
+    # Admins and support have unrestricted read access (audited separately).
+    if user.role == RoleEnum.DOCTOR:
+        doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+        if not doctor:
+            raise HTTPException(status_code=403, detail="Perfil de médico não encontrado.")
+        assert_doctor_can_access_patient(doctor, patient_id, db)
     q = db.query(DeviceReading).filter(DeviceReading.patient_id == patient_id)
     if reading_type:
         q = q.filter(DeviceReading.reading_type == reading_type)

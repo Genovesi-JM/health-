@@ -19,6 +19,8 @@ export type AppStackParamList = {
   PrescriptionRequest: undefined;
   Family: undefined;
   ConsentGate: undefined;
+  Readings: undefined;
+  Notifications: undefined;
 };
 
 export type TabParamList = {
@@ -53,11 +55,11 @@ function HomeTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Profile" component={PatientProfileScreen} />
-      <Tab.Screen name="Readings" component={ReadingsScreen} />
-      <Tab.Screen name="Notifications" component={NotificationsScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Início' }} />
+      <Tab.Screen name="Profile" component={PatientProfileScreen} options={{ title: 'Perfil' }} />
+      <Tab.Screen name="Readings" component={ReadingsScreen} options={{ title: 'Medições' }} />
+      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Avisos' }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Definições' }} />
     </Tab.Navigator>
   );
 }
@@ -67,13 +69,13 @@ export default function AppStack() {
     <Stack.Navigator>
       <Stack.Screen name="HomeTabs" component={HomeTabs} options={{ headerShown: false }} />
       <Stack.Screen name="BookConsultation" component={BookConsultationScreen}
-        options={{ title: 'Book Consultation', headerTintColor: TEAL }} />
+        options={{ title: 'Marcar Consulta', headerTintColor: TEAL }} />
       <Stack.Screen name="PrescriptionRequest" component={PrescriptionRequestScreen}
-        options={{ title: 'Request Prescription', headerTintColor: TEAL }} />
+        options={{ title: 'Pedir Receita', headerTintColor: TEAL }} />
       <Stack.Screen name="Family" component={FamilyScreen}
-        options={{ title: 'Family Members', headerTintColor: TEAL }} />
+        options={{ title: 'Família', headerTintColor: TEAL }} />
       <Stack.Screen name="ConsentGate" component={ConsentGateScreen}
-        options={{ title: 'Required Consents', headerTintColor: TEAL }} />
+        options={{ title: 'Consentimentos', headerTintColor: TEAL }} />
     </Stack.Navigator>
   );
 }

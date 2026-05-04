@@ -223,7 +223,6 @@ def accept_consultation(
 
     consultation.doctor_id = doctor.id
     consultation.status = "scheduled"
-    consultation.started_at = datetime.utcnow()
     db.add(consultation)
     db.commit()
     db.refresh(consultation)
@@ -235,6 +234,42 @@ def accept_consultation(
         resource_type="consultation",
         resource_id=consultation.id,
         metadata={"doctor_id": doctor.id},
+    )
+
+    return consultation
+
+
+@router.post("/api/v1/doctor/queue/{consultation_id}/start", response_model=ConsultationOut)
+def start_consultation(
+    consultation_id: str,
+    user: User = Depends(require_verified_doctor),
+    db: Session = Depends(get_db),
+):
+    """Start a scheduled consultation (doctor only) — moves status to in_progress."""
+    doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")
+
+    consultation = db.query(Consultation).filter(
+        Consultation.id == consultation_id,
+        Consultation.doctor_id == doctor.id,
+        Consultation.status == "scheduled",
+    ).first()
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consulta não encontrada ou não está no estado agendado.")
+
+    consultation.status = "in_progress"
+    consultation.started_at = datetime.utcnow()
+    db.add(consultation)
+    db.commit()
+    db.refresh(consultation)
+
+    log_health_audit(
+        db,
+        action="consultation_started",
+        actor_user_id=user.id,
+        resource_type="consultation",
+        resource_id=consultation.id,
     )
 
     return consultation
