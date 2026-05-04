@@ -1,8 +1,118 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 340">
-  <rect width="540" height="340" fill="#fff7ed"/>
-  <rect x="20" y="20" width="500" height="300" rx="16" fill="#ea580c" opacity="0.08"/>
-  <text x="270" y="120" font-family="system-ui,sans-serif" font-size="64" text-anchor="middle">📱</text>
-  <text x="270" y="185" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#c2410c" text-anchor="middle">Dispositivos</text>
-  <text x="270" y="218" font-family="system-ui,sans-serif" font-size="14" fill="#ea580c" text-anchor="middle">Tensão · Glicose · SpO₂ · ECG</text>
-  <text x="270" y="248" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">Imagem em breve</text>
+  <defs>
+    <linearGradient id="dv-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="100%" stop-color="#ffedd5"/>
+    </linearGradient>
+    <linearGradient id="dv-device" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+    <linearGradient id="dv-bp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <linearGradient id="dv-gluc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0891b2"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="dv-spo2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#6d28d9"/>
+    </linearGradient>
+    <filter id="dv-shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.09"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="540" height="340" rx="20" fill="url(#dv-bg)"/>
+  <circle cx="500" cy="42" r="70" fill="#f97316" opacity="0.07"/>
+  <circle cx="55" cy="308" r="52" fill="#ea580c" opacity="0.07"/>
+
+  <!-- ── Header ── -->
+  <rect x="20" y="18" width="500" height="50" rx="12" fill="white" filter="url(#dv-shadow)"/>
+  <rect x="28" y="26" width="34" height="34" rx="8" fill="url(#dv-device)"/>
+  <text x="45" y="47" text-anchor="middle" font-family="system-ui,sans-serif" font-size="18">📱</text>
+  <text x="72" y="38" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#0f172a">Smart Health Devices</text>
+  <text x="72" y="54" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">Tensão · Glicose · SpO₂ · ECG · Temperatura</text>
+  <rect x="406" y="26" width="106" height="26" rx="13" fill="#fff7ed"/>
+  <text x="459" y="43" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#ea580c">● Sync ativo</text>
+
+  <!-- ── Blood Pressure Device ── -->
+  <rect x="20" y="82" width="236" height="118" rx="14" fill="white" filter="url(#dv-shadow)"/>
+  <!-- Device illustration — BP monitor -->
+  <rect x="32" y="96" width="60" height="88" rx="10" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+  <rect x="36" y="100" width="52" height="30" rx="6" fill="url(#dv-bp)"/>
+  <text x="62" y="119" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="white" font-weight="600">120/80</text>
+  <rect x="38" y="136" width="48" height="12" rx="4" fill="#fee2e2"/>
+  <rect x="38" y="136" width="36" height="12" rx="4" fill="#ef4444" opacity="0.7"/>
+  <circle cx="62" cy="158" r="10" fill="#ef4444"/>
+  <text x="62" y="162" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="white">▶</text>
+
+  <text x="104" y="100" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#0f172a">Tensão Arterial</text>
+  <rect x="104" y="104" width="56" height="16" rx="8" fill="#dcfce7"/>
+  <text x="132" y="115" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#166534" font-weight="600">Normal</text>
+  <text x="104" y="136" font-family="system-ui,sans-serif" font-size="30" font-weight="900" fill="#dc2626">120</text>
+  <text x="104" y="154" font-family="system-ui,sans-serif" font-size="14" fill="#dc2626">/80 mmHg</text>
+  <text x="104" y="170" font-family="system-ui,sans-serif" font-size="9" fill="#64748b">Última leitura: 14:27</text>
+  <!-- Mini trend -->
+  <polyline points="104,188 115,184 127,183 139,181 151,179 163,180 175,177 187,176 199,174"
+            stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- ── Glucose Device ── -->
+  <rect x="268" y="82" width="252" height="118" rx="14" fill="white" filter="url(#dv-shadow)"/>
+  <rect x="280" y="96" width="60" height="88" rx="10" fill="#ecfeff" stroke="#67e8f9" stroke-width="1"/>
+  <rect x="284" y="100" width="52" height="30" rx="6" fill="url(#dv-gluc)"/>
+  <text x="310" y="119" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="white" font-weight="600">5.6 mmol</text>
+  <rect x="286" y="136" width="48" height="12" rx="4" fill="#cffafe"/>
+  <rect x="286" y="136" width="30" height="12" rx="4" fill="#0891b2" opacity="0.7"/>
+  <circle cx="310" cy="158" r="10" fill="#0891b2"/>
+  <text x="310" y="162" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="white">G</text>
+
+  <text x="352" y="100" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#0f172a">Glicemia</text>
+  <rect x="352" y="104" width="56" height="16" rx="8" fill="#dcfce7"/>
+  <text x="380" y="115" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#166534" font-weight="600">Normal</text>
+  <text x="352" y="136" font-family="system-ui,sans-serif" font-size="30" font-weight="900" fill="#0891b2">5.6</text>
+  <text x="352" y="154" font-family="system-ui,sans-serif" font-size="14" fill="#0891b2">mmol/L</text>
+  <text x="352" y="170" font-family="system-ui,sans-serif" font-size="9" fill="#64748b">Última leitura: 14:10</text>
+  <polyline points="352,188 363,186 375,182 387,180 399,183 411,181 423,178 435,175 447,174 459,172 471,170 483,169 495,167"
+            stroke="#0891b2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- ── SpO2 + Temp ── -->
+  <rect x="20" y="212" width="236" height="112" rx="14" fill="white" filter="url(#dv-shadow)"/>
+  <text x="36" y="230" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#0f172a">SpO₂ &amp; Pulso</text>
+  <!-- Ring gauge big -->
+  <circle cx="76" cy="278" r="34" fill="none" stroke="#e9d5ff" stroke-width="9"/>
+  <circle cx="76" cy="278" r="34" fill="none" stroke="url(#dv-spo2)" stroke-width="9"
+          stroke-dasharray="195" stroke-dashoffset="10" stroke-linecap="round"
+          transform="rotate(-90 76 278)"/>
+  <text x="76" y="274" text-anchor="middle" font-family="system-ui,sans-serif" font-size="18" font-weight="900" fill="#6d28d9">98</text>
+  <text x="76" y="288" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#7c3aed">%</text>
+  <!-- Pulse small ring -->
+  <text x="140" y="240" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">Pulso</text>
+  <text x="140" y="263" font-family="system-ui,sans-serif" font-size="26" font-weight="900" fill="#6d28d9">72</text>
+  <text x="178" y="263" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">bpm</text>
+  <text x="140" y="280" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">Temperatura</text>
+  <text x="140" y="300" font-family="system-ui,sans-serif" font-size="22" font-weight="800" fill="#ea580c">36.7°</text>
+  <text x="186" y="300" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">C</text>
+
+  <!-- ── ECG strip ── -->
+  <rect x="268" y="212" width="252" height="112" rx="14" fill="white" filter="url(#dv-shadow)"/>
+  <text x="284" y="230" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#0f172a">ECG — Ritmo Sinusal Normal</text>
+  <rect x="282" y="238" width="50" height="16" rx="8" fill="#dcfce7"/>
+  <text x="307" y="249" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#166534" font-weight="600">Normal</text>
+  <!-- ECG waveform -->
+  <polyline
+    points="284,284 294,284 300,284 303,264 306,300 309,252 312,308 315,284 325,284 328,284 331,268 334,296 337,260 340,306 343,284 353,284 356,284 359,270 362,296 365,258 368,308 371,284 381,284 384,284 387,268 390,296 393,258 396,308 399,284 409,284 412,284 415,270 418,294 421,258 424,306 427,284 437,284 440,284 443,272 446,296 449,262 452,306 455,284 465,284 468,284 471,272 474,294 477,260 480,308 483,284 495,284 498,284 504,284 510,284"
+    stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Grid lines -->
+  <g stroke="#fca5a5" stroke-width="0.5" opacity="0.3">
+    <line x1="284" y1="258" x2="514" y2="258"/>
+    <line x1="284" y1="271" x2="514" y2="271"/>
+    <line x1="284" y1="284" x2="514" y2="284"/>
+    <line x1="284" y1="297" x2="514" y2="297"/>
+    <line x1="284" y1="310" x2="514" y2="310"/>
+  </g>
+  <text x="284" y="316" font-family="system-ui,sans-serif" font-size="8" fill="#94a3b8">FR: 72 bpm · Intervalo QT normal · Eixo normal</text>
 </svg>

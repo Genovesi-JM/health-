@@ -1,29 +1,67 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" fill="none">
   <defs>
-    <linearGradient id="g1" x1="30" y1="20" x2="180" y2="140" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#7de8d8"/>
-      <stop offset="100%" stop-color="#0d9488"/>
+    <!-- Main teal gradient for K -->
+    <linearGradient id="kaya-g1" x1="30" y1="20" x2="180" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5eead4"/>
+      <stop offset="55%" stop-color="#0d9488"/>
+      <stop offset="100%" stop-color="#0f766e"/>
     </linearGradient>
-    <linearGradient id="g2" x1="60" y1="120" x2="220" y2="240" gradientUnits="userSpaceOnUse">
+    <!-- Deeper teal for lower arm -->
+    <linearGradient id="kaya-g2" x1="60" y1="120" x2="230" y2="260" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#14b8a6"/>
       <stop offset="100%" stop-color="#0a5c56"/>
     </linearGradient>
+    <!-- Cross gradient -->
+    <linearGradient id="kaya-cross" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ccfbf1" stop-opacity="0.9"/>
+    </linearGradient>
+    <!-- Subtle glow filter -->
+    <filter id="kaya-glow" x="-8%" y="-8%" width="116%" height="116%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Drop shadow -->
+    <filter id="kaya-shadow" x="-5%" y="-5%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f766e" flood-opacity="0.25"/>
+    </filter>
   </defs>
 
-  <!-- K vertical bar -->
-  <rect x="32" y="28" width="38" height="204" rx="19" fill="url(#g1)"/>
+  <!-- ── Rounded background square (optional pill bg) ── -->
+  <rect x="10" y="10" width="240" height="240" rx="52" fill="url(#kaya-g1)" opacity="0.08"/>
 
-  <!-- K upper arm (diagonal top-right, rounded ends) -->
-  <path d="M70 132 L70 58 Q70 36 94 30 L194 30 Q218 30 220 50 Q222 70 200 78 L92 132 Z" fill="url(#g1)"/>
+  <!-- ── K vertical bar — thicker, pill-shaped ── -->
+  <rect x="36" y="30" width="40" height="200" rx="20" fill="url(#kaya-g1)" filter="url(#kaya-shadow)"/>
 
-  <!-- K lower arm + hand (diagonal bottom-right) -->
-  <!-- Main body of lower arm -->
-  <path d="M92 128 L70 128 L70 200 Q70 226 94 230 Q114 234 126 216 L216 148 Q232 136 222 116 Q212 96 194 106 Z" fill="url(#g2)"/>
+  <!-- ── K upper arm ── clean diagonal toward top-right ── -->
+  <path d="M76 130 L76 52 Q76 32 100 28 L200 28 Q226 28 226 50 Q226 72 204 80 L88 130 Z"
+        fill="url(#kaya-g1)" filter="url(#kaya-shadow)"/>
 
-  <!-- Hand palm highlight (lighter inner curve suggestion) -->
-  <path d="M155 148 Q185 138 200 155 Q216 172 194 182 L155 207 Q140 215 132 202 Q124 188 138 178 Z" fill="#5eead4" opacity="0.28"/>
+  <!-- Upper arm inner shine -->
+  <path d="M88 118 L88 56 Q88 42 106 38 L185 38 Q206 38 206 56 Q206 70 188 76 L98 118 Z"
+        fill="white" opacity="0.10"/>
 
-  <!-- Medical cross (white) -->
-  <rect x="146" y="126" width="13" height="38" rx="6.5" fill="white" opacity="0.95"/>
-  <rect x="132" y="140" width="40" height="13" rx="6.5" fill="white" opacity="0.95"/>
+  <!-- ── K lower arm — main body ── -->
+  <path d="M88 130 L76 130 L76 202 Q76 228 100 232 Q122 236 134 218 L222 150
+           Q240 136 228 114 Q216 92 196 104 Z"
+        fill="url(#kaya-g2)" filter="url(#kaya-shadow)"/>
+
+  <!-- Lower arm inner highlight -->
+  <path d="M156 150 Q184 140 198 158 Q214 178 192 188 L155 212 Q140 220 130 205
+           Q120 190 136 180 Z"
+        fill="#5eead4" opacity="0.22"/>
+
+  <!-- ── Medical cross — crisp white with soft glow ── -->
+  <g filter="url(#kaya-glow)">
+    <rect x="150" y="124" width="14" height="40" rx="7" fill="url(#kaya-cross)"/>
+    <rect x="136" y="138" width="42" height="14" rx="7" fill="url(#kaya-cross)"/>
+  </g>
+
+  <!-- ── Heartbeat line accent (subtle, bottom of lower arm zone) ── -->
+  <polyline points="96,218 108,218 114,206 122,230 130,210 138,218 148,218"
+            stroke="#5eead4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+            fill="none" opacity="0.55"/>
 </svg>
