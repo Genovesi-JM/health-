@@ -1,4 +1,19 @@
+// antes:
+ContentView()
+
+// depois:
+KayaRootView()
 import SwiftUI
+import WebKit
+
+@main
+struct KayaApp: App {
+    var body: some Scene {
+        WindowGroup {
+            KayaRootView()
+        }
+    }
+}
 
 // MARK: - Native Login Helper
 struct KayaLoginView: View {

@@ -1,0 +1,30 @@
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+DerivedData/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+build/
+.build/
+
+# Swift Package Manager
+.swiftpm/
+.package.resolved
+
+# CocoaPods (if used)
+Pods/
+Podfile.lock
+
+# Carthage (if used)
+Carthage/Build/
+
+# macOS
+.DS_Store
+*.swp
+*.lock
+
+# Xcode coverage
+*.xccovreport
+*.xccovarchive
