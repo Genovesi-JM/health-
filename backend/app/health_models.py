@@ -600,3 +600,29 @@ class Notification(Base):
     __table_args__ = (
         Index("ix_notifications_user_created", "user_id", "created_at"),
     )
+
+
+# ── Doctor / Clinic Application (public "become a partner" form) ──────────────
+
+class DoctorApplication(Base):
+    """A prospective clinician or clinic applies to join KAYA (admin reviews,
+    then sends a doctor invite). No account is created at this stage."""
+    __tablename__ = "doctor_applications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    applicant_type: Mapped[str] = mapped_column(String(20), nullable=False, default="medico")  # medico | especialista | clinica
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    specialty: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    org_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    license_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # new | reviewing | invited | rejected
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="new")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_doctor_applications_status_created", "status", "created_at"),
+    )

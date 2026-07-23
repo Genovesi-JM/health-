@@ -770,3 +770,37 @@ class NotificationCreate(BaseModel):
     type: str = "info"  # info | success | warning | error
     related_entity_type: Optional[str] = None
     related_entity_id: Optional[str] = None
+
+
+# ── Doctor / Clinic Application (public partner form) ──
+class DoctorApplicationCreate(BaseModel):
+    type: str = Field(default="medico")            # medico | especialista | clinica
+    name: str
+    email: str
+    phone: Optional[str] = None
+    specialty: Optional[str] = None
+    org_name: Optional[str] = None
+    location: Optional[str] = None
+    license_number: Optional[str] = None
+    message: Optional[str] = None
+
+
+class DoctorApplicationOut(BaseModel):
+    id: str
+    applicant_type: str
+    name: str
+    email: str
+    phone: Optional[str] = None
+    specialty: Optional[str] = None
+    org_name: Optional[str] = None
+    location: Optional[str] = None
+    license_number: Optional[str] = None
+    message: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class DoctorApplicationStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(new|reviewing|invited|rejected)$")

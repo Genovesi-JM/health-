@@ -287,3 +287,31 @@ def verify_doctor(
             pass
 
     return doctor
+
+
+# ── Public partner application ───────────────────────────────────────────────
+from app.health_models import DoctorApplication as _DoctorApplication  # noqa: E402
+from app.health_schemas import DoctorApplicationCreate as _AppCreate  # noqa: E402
+
+
+@router.post("/apply", status_code=201)
+def apply_as_partner(body: _AppCreate, db: Session = Depends(get_db)):
+    """Public form: a clinician or clinic applies to join KAYA. Stored for admin
+    review — no account is created here."""
+    if not body.name.strip() or not body.email.strip():
+        raise HTTPException(status_code=400, detail="Nome e email são obrigatórios.")
+    application = _DoctorApplication(
+        applicant_type=body.type or "medico",
+        name=body.name.strip(),
+        email=body.email.strip().lower(),
+        phone=body.phone,
+        specialty=body.specialty,
+        org_name=body.org_name,
+        location=body.location,
+        license_number=body.license_number,
+        message=body.message,
+        status="new",
+    )
+    db.add(application)
+    db.commit()
+    return {"detail": "Candidatura recebida. A nossa equipa entrará em contacto.", "id": application.id}

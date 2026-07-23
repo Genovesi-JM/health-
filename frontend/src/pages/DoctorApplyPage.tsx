@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import api from '../api';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import {
@@ -38,7 +39,6 @@ export default function DoctorApplyPage() {
     setLoading(true);
     setError('');
     try {
-      // Send to backend — uses the contact/apply endpoint or falls back to mailto
       const body = {
         type,
         name,
@@ -50,18 +50,10 @@ export default function DoctorApplyPage() {
         license_number: license,
         message,
       };
-      // Try backend first
-      const BASE = (import.meta as any).env?.VITE_API_URL || '';
-      const res = await fetch(`${BASE}/api/doctors/apply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error('backend_error');
+      await api.post('/api/v1/doctors/apply', body);
       setDone(true);
-    } catch {
-      // Fallback — just show success anyway (email will be reviewed manually)
-      setDone(true);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Não foi possível enviar a candidatura. Tente novamente ou contacte parcerias@kaya.ao.');
     } finally {
       setLoading(false);
     }

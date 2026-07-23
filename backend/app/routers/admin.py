@@ -1324,3 +1324,33 @@ def delete_doctor_invite(invite_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"detail": "Convite removido."}
 
+
+
+# ── Doctor / Clinic Applications (partner leads) ─────────────────────────────
+from app.health_models import DoctorApplication as _DocApp  # noqa: E402
+from app.health_schemas import (  # noqa: E402
+    DoctorApplicationOut as _DocAppOut,
+    DoctorApplicationStatusUpdate as _DocAppStatus,
+)
+
+
+@router.get("/doctor-applications", response_model=list[_DocAppOut])
+def list_doctor_applications(status: str | None = Query(None), db: Session = Depends(get_db)):
+    """List partner applications (admin), newest first."""
+    q = db.query(_DocApp)
+    if status:
+        q = q.filter(_DocApp.status == status)
+    return q.order_by(_DocApp.created_at.desc()).limit(200).all()
+
+
+@router.patch("/doctor-applications/{application_id}", response_model=_DocAppOut)
+def update_doctor_application(application_id: str, body: _DocAppStatus, db: Session = Depends(get_db)):
+    """Update an application's review status (new | reviewing | invited | rejected)."""
+    app_row = db.query(_DocApp).filter(_DocApp.id == application_id).first()
+    if not app_row:
+        raise HTTPException(status_code=404, detail="Candidatura não encontrada.")
+    app_row.status = body.status
+    db.add(app_row)
+    db.commit()
+    db.refresh(app_row)
+    return app_row
