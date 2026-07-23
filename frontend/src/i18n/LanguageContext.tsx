@@ -18,7 +18,7 @@ const STORAGE_KEY = 'health_lang';
 function getInitialLang(): Lang {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'pt' || saved === 'en' || saved === 'fr' || saved === 'es') return saved;
+    if (saved === 'pt' || saved === 'en' || saved === 'fr' || saved === 'es' || saved === 'zh') return saved;
   } catch { /* SSR / no localStorage */ }
   return 'pt';
 }
@@ -35,7 +35,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     (key: string): string => {
       const entry = translations[key];
       if (!entry) return key; // fallback: show key itself
-      return entry[lang] ?? entry.pt ?? key;
+      // Chinese (and any missing translation) falls back to English, then Portuguese.
+      return entry[lang] ?? entry.en ?? entry.pt ?? key;
     },
     [lang],
   );

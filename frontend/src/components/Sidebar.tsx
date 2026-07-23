@@ -7,7 +7,7 @@ import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import { useState, useEffect } from 'react';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
-  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse,
+  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase,
   Cpu, CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
   DollarSign, Star, Globe, HelpCircle, Lock,
 } from 'lucide-react';
@@ -116,6 +116,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/admin"          icon={LayoutDashboard} label={t('sidebar.dashboard')}      onClick={onClose} />
               <SidebarLink to="/admin/patients" icon={Users}           label={t('sidebar.patients')}       onClick={onClose} />
               <SidebarLink to="/admin/doctors"  icon={UserCog}         label={t('sidebar.verify_doctors')} onClick={onClose} />
+              <SidebarLink to="/admin/applications" icon={Briefcase}   label="Candidaturas"                onClick={onClose} />
             </SidebarSection>
           )}
           {role === 'admin' && (

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useT, LANG_FLAGS, LANG_LABELS, type Lang } from '../i18n/LanguageContext';
 import { Globe } from 'lucide-react';
 
-const LANGS: Lang[] = ['pt', 'en', 'fr'];
+const LANGS: Lang[] = ['pt', 'en', 'fr', 'es', 'zh'];
 
 /**
  * Compact language selector — shows flag + Globe icon.

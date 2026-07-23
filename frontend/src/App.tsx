@@ -62,6 +62,7 @@ import DoctorSuportePage from './pages/DoctorSuportePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminDoctorsPage from './pages/AdminDoctorsPage';
 import AdminPatientsPage from './pages/AdminPatientsPage';
+import AdminApplicationsPage from './pages/AdminApplicationsPage';
 import SettingsPage from './pages/SettingsPage';
 import SelfCarePage from './pages/SelfCarePage';
 import FamilyPage from './pages/FamilyPage';
@@ -148,6 +149,7 @@ export default function App() {
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/admin/doctors" element={<AdminDoctorsPage />} />
               <Route path="/admin/patients" element={<AdminPatientsPage />} />
+              <Route path="/admin/applications" element={<AdminApplicationsPage />} />
             </Route>
           </Route>
 

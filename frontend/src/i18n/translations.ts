@@ -5,19 +5,22 @@
  * Use t('section.key') to retrieve the translation for the active language.
  */
 
-export type Lang = 'pt' | 'en' | 'fr' | 'es';
+export type Lang = 'pt' | 'en' | 'fr' | 'es' | 'zh';
 
-export const LANG_LABELS: Record<Lang, string> = { pt: 'Português', en: 'English', fr: 'Français', es: 'Español' };
-export const LANG_FLAGS: Record<Lang, string> = { pt: '🇵🇹', en: '🇬🇧', fr: '🇫🇷', es: '🇪🇸' };
+// pt/en/fr/es are always present; zh is optional and falls back to English.
+export type TranslationEntry = { pt: string; en: string; fr: string; es: string; zh?: string };
 
-const translations: Record<string, Record<Lang, string>> = {
+export const LANG_LABELS: Record<Lang, string> = { pt: 'Português', en: 'English', fr: 'Français', es: 'Español', zh: '中文' };
+export const LANG_FLAGS: Record<Lang, string> = { pt: '🇵🇹', en: '🇬🇧', fr: '🇫🇷', es: '🇪🇸', zh: '🇨🇳' };
+
+const translations: Record<string, TranslationEntry> = {
   /* ═══════════════════════════════════════════════════════════
      NAVBAR & FOOTER (public)
      ═══════════════════════════════════════════════════════════ */
-  'nav.home': { pt: 'Início', en: 'Home', fr: 'Accueil', es: 'Inicio' },
-  'nav.about': { pt: 'Sobre', en: 'About', fr: 'À propos', es: 'Sobre nosotros' },
-  'nav.services': { pt: 'Serviços', en: 'Services', fr: 'Services', es: 'Servicios' },
-  'nav.portal': { pt: 'Portal', en: 'Portal', fr: 'Portail', es: 'Portal' },
+  'nav.home': { pt: 'Início', en: 'Home', fr: 'Accueil', es: 'Inicio', zh: '首页 (Home)' },
+  'nav.about': { pt: 'Sobre', en: 'About', fr: 'À propos', es: 'Sobre nosotros', zh: '关于 (About)' },
+  'nav.services': { pt: 'Serviços', en: 'Services', fr: 'Services', es: 'Servicios', zh: '服务 (Services)' },
+  'nav.portal': { pt: 'Portal', en: 'Portal', fr: 'Portail', es: 'Portal', zh: '门户 (Portal)' },
 
   'footer.brand_desc': {
     pt: 'Plataforma digital de triagem inteligente e teleconsulta médica. Conectamos pacientes a profissionais de saúde de forma segura e eficiente.',
