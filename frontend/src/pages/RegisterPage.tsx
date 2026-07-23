@@ -49,7 +49,7 @@ export default function RegisterPage() {
     setError('');
     if (password !== confirmPw) { setError(t('register.pw_mismatch')); return; }
     if (password.length < 6) { setError(t('register.pw_short')); return; }
-    if (!allConsentsChecked) { setError('Please accept all required consents to register.'); return; }
+    if (!allConsentsChecked) { setError('Aceite todos os consentimentos obrigatórios para se registar.'); return; }
 
     setLoading(true);
     try {
@@ -152,7 +152,7 @@ export default function RegisterPage() {
             display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600,
               color: 'var(--text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Required consents
+              Consentimentos obrigatórios
             </p>
 
             <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
@@ -160,9 +160,9 @@ export default function RegisterPage() {
                 onChange={() => setConsents(p => ({ ...p, terms_of_service: !p.terms_of_service }))}
                 style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
               <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                I accept the{' '}
+                Aceito os{' '}
                 <Link to="/terms" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Terms of Service</Link>
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Termos de Serviço</Link>
               </span>
             </label>
 
@@ -171,10 +171,10 @@ export default function RegisterPage() {
                 onChange={() => setConsents(p => ({ ...p, medical_disclaimer: !p.medical_disclaimer }))}
                 style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
               <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                I acknowledge the{' '}
+                Reconheço o{' '}
                 <Link to="/medical-disclaimer" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Medical Disclaimer</Link>
-                {' '}— this platform is not an emergency service and does not replace in-person care
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Aviso Médico</Link>
+                {' '}— esta plataforma não é um serviço de emergência e não substitui o atendimento presencial
               </span>
             </label>
 
@@ -183,9 +183,9 @@ export default function RegisterPage() {
                 onChange={() => setConsents(p => ({ ...p, health_data_processing: !p.health_data_processing }))}
                 style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
               <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                I consent to processing of my health-related data as described in the{' '}
+                Consinto o tratamento dos meus dados de saúde conforme descrito na{' '}
                 <Link to="/privacy" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Privacy Policy</Link>
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Política de Privacidade</Link>
               </span>
             </label>
 
@@ -194,9 +194,9 @@ export default function RegisterPage() {
                 onChange={() => setConsents(p => ({ ...p, privacy_policy: !p.privacy_policy }))}
                 style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
               <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                I have read and accept the{' '}
+                Li e aceito a{' '}
                 <Link to="/privacy" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Privacy Policy</Link>
+                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Política de Privacidade</Link>
               </span>
             </label>
 
@@ -205,7 +205,7 @@ export default function RegisterPage() {
                 onChange={() => setConsents(p => ({ ...p, telemedicine_consent: !p.telemedicine_consent }))}
                 style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
               <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                I consent to receiving telemedicine services through this platform
+                Consinto receber serviços de telemedicina através desta plataforma
               </span>
             </label>
           </div>

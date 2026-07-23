@@ -65,7 +65,7 @@ export default function ConsentGatePage() {
   const handleSubmit = async () => {
     const allChecked = REQUIRED_CONSENTS.every(c => checked[c as keyof typeof checked]);
     if (!allChecked) {
-      setError('Please accept all five items to continue.');
+      setError('Aceite todos os cinco itens para continuar.');
       return;
     }
     setSubmitting(true);
@@ -105,13 +105,13 @@ export default function ConsentGatePage() {
           padding: '2.5rem', maxWidth: '480px', width: '100%', textAlign: 'center' }}>
           <CheckCircle2 size={48} style={{ color: '#10b981', marginBottom: '1rem' }} />
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-            Consents already accepted
+            Consentimentos já aceites
           </h2>
           <p style={{ color: 'var(--text-muted, #64748b)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            You have previously accepted all required consents.
+            Já aceitou anteriormente todos os consentimentos obrigatórios.
           </p>
           <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>
-            Go to Dashboard
+            Ir para o Painel
           </button>
         </div>
       </div>
@@ -133,19 +133,19 @@ export default function ConsentGatePage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
           <Shield size={26} style={{ color: 'var(--accent-teal, #0d9488)' }} />
-          <h1 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0 }}>Before you continue</h1>
+          <h1 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0 }}>Antes de continuar</h1>
         </div>
         <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '0.875rem', marginBottom: '1.75rem', lineHeight: 1.6 }}>
-          KAYA handles sensitive health data and provides care coordination services.
-          Please read and accept the following before accessing your account.
+          A KAYA trata dados de saúde sensíveis e presta serviços de coordenação de cuidados.
+          Leia e aceite os seguintes termos antes de aceder à sua conta.
         </p>
 
         {/* Emergency warning */}
         <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px',
           padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '0.83rem',
           color: '#7f1d1d', lineHeight: 1.5 }}>
-          <strong>🚨 Not an emergency service.</strong> If you are in a medical emergency,
-          call <strong>112</strong> (EU) or your local emergency number immediately.
+          <strong>🚨 Não é um serviço de emergência.</strong> Em caso de emergência médica,
+          ligue imediatamente para o <strong>número de emergência local</strong>.
         </div>
 
         {/* Consent checkboxes */}
@@ -157,13 +157,13 @@ export default function ConsentGatePage() {
             onChange={() => toggle('terms_of_service')}
             label={
               <>
-                I have read and accept the{' '}
+                Li e aceito os{' '}
                 <Link to="/terms" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Terms of Service
+                  Termos de Serviço
                 </Link>
               </>
             }
-            description="Governs your use of the platform, account responsibilities, and service scope."
+            description="Regula a utilização da plataforma, as responsabilidades da conta e o âmbito do serviço."
           />
 
           <ConsentItem
@@ -172,13 +172,13 @@ export default function ConsentGatePage() {
             onChange={() => toggle('medical_disclaimer')}
             label={
               <>
-                I acknowledge the{' '}
+                Reconheço o{' '}
                 <Link to="/medical-disclaimer" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Medical Disclaimer
+                  Aviso Médico
                 </Link>
               </>
             }
-            description="This platform is not an emergency service and does not replace in-person medical care. Device readings may contain errors and must be reviewed by a professional."
+            description="Esta plataforma não é um serviço de emergência e não substitui os cuidados médicos presenciais. As medições de dispositivos podem conter erros e devem ser revistas por um profissional."
           />
 
           <ConsentItem
@@ -187,13 +187,13 @@ export default function ConsentGatePage() {
             onChange={() => toggle('health_data_processing')}
             label={
               <>
-                I consent to the processing of my health-related data as described in the{' '}
+                Consinto o tratamento dos meus dados de saúde conforme descrito na{' '}
                 <Link to="/privacy" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Privacy Policy
+                  Política de Privacidade
                 </Link>
               </>
             }
-            description="Health data is processed to provide care coordination services. You can request deletion or export at any time from Settings."
+            description="Os dados de saúde são tratados para prestar serviços de coordenação de cuidados. Pode solicitar a eliminação ou exportação a qualquer momento nas Definições."
           />
 
           <ConsentItem
@@ -202,21 +202,21 @@ export default function ConsentGatePage() {
             onChange={() => toggle('privacy_policy')}
             label={
               <>
-                I have read and accept the{' '}
+                Li e aceito a{' '}
                 <Link to="/privacy" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Privacy Policy
+                  Política de Privacidade
                 </Link>
               </>
             }
-            description="Describes how we collect, use, store, and protect your personal data in compliance with GDPR."
+            description="Descreve como recolhemos, usamos, armazenamos e protegemos os seus dados pessoais, em conformidade com a legislação de proteção de dados aplicável."
           />
 
           <ConsentItem
             checked={checked.telemedicine_consent}
             already={existing.includes('telemedicine_consent')}
             onChange={() => toggle('telemedicine_consent')}
-            label="I consent to receiving telemedicine services through this platform"
-            description="Telemedicine consultations are provided by licensed professionals. You acknowledge the limitations of remote care and your right to in-person alternatives."
+            label="Consinto receber serviços de telemedicina através desta plataforma"
+            description="As teleconsultas são prestadas por profissionais licenciados. Reconhece as limitações do atendimento remoto e o seu direito a alternativas presenciais."
           />
         </div>
 
@@ -236,16 +236,15 @@ export default function ConsentGatePage() {
           disabled={submitting || !REQUIRED_CONSENTS.every(c => checked[c as keyof typeof checked])}
         >
           {submitting
-            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</>
-            : 'Accept and Continue'}
+            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> A guardar…</>
+            : 'Aceitar e Continuar'}
         </button>
 
         <p style={{ marginTop: '1rem', fontSize: '0.78rem', color: 'var(--text-muted, #94a3b8)',
           lineHeight: 1.5, textAlign: 'center' }}>
-          These consents are recorded with your IP address and timestamp as required for audit
-          purposes. You can review accepted consents at any time in the{' '}
-          <Link to="/consents" style={{ color: 'var(--accent-teal, #0d9488)' }}>Consents</Link>{' '}
-          section.
+          Estes consentimentos são registados com o seu endereço IP e data/hora, conforme exigido
+          para fins de auditoria. Pode rever os consentimentos aceites a qualquer momento na secção{' '}
+          <Link to="/consents" style={{ color: 'var(--accent-teal, #0d9488)' }}>Consentimentos</Link>.
         </p>
       </div>
     </div>
@@ -294,7 +293,7 @@ function ConsentItem({
           marginBottom: '0.2rem', lineHeight: 1.4 }}>
           {label}
           {already && <span style={{ marginLeft: '0.4rem', fontSize: '0.75rem',
-            color: '#10b981', fontWeight: 400 }}>(already accepted)</span>}
+            color: '#10b981', fontWeight: 400 }}>(já aceite)</span>}
         </div>
         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)', lineHeight: 1.5 }}>
           {description}
