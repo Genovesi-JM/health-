@@ -501,6 +501,14 @@ const translations: Record<string, TranslationEntry> = {
   'pay.transfer_note': { pt: 'Inclua a referência na descrição da transferência. O pagamento é confirmado em 1–2 dias úteis após a receção.', en: 'Include the reference in the transfer description. Payment is confirmed within 1–2 business days after receipt.', fr: 'Incluez la référence dans la description du virement. Le paiement est confirmé sous 1 à 2 jours ouvrables après réception.', es: 'Incluya la referencia en la descripción de la transferencia. El pago se confirma en 1–2 días hábiles tras la recepción.' },
   'common.close': { pt: 'Fechar', en: 'Close', fr: 'Fermer', es: 'Cerrar' },
   'msg.messages': { pt: 'Mensagens', en: 'Messages', fr: 'Messages', es: 'Mensajes', zh: '消息 (Messages)' },
+  // ── Doctor availability ──
+  'avail.title': { pt: 'Disponibilidade', en: 'Availability', fr: 'Disponibilité', es: 'Disponibilidad', zh: '排班 (Availability)' },
+  'avail.desc': { pt: 'Defina os seus horários semanais. Os pacientes só poderão agendar dentro destes períodos.', en: 'Set your weekly hours. Patients can only schedule within these periods.', fr: 'Définissez vos horaires hebdomadaires. Les patients ne peuvent réserver que dans ces créneaux.', es: 'Defina sus horarios semanales. Los pacientes solo podrán agendar dentro de estos períodos.' },
+  'avail.add': { pt: 'Adicionar horário', en: 'Add slot', fr: 'Ajouter un créneau', es: 'Añadir horario' },
+  'avail.day': { pt: 'Dia', en: 'Day', fr: 'Jour', es: 'Día' },
+  'avail.from': { pt: 'Início', en: 'From', fr: 'Début', es: 'Desde' },
+  'avail.to': { pt: 'Fim', en: 'To', fr: 'Fin', es: 'Hasta' },
+  'avail.empty': { pt: 'Ainda não definiu horários.', en: 'No slots set yet.', fr: 'Aucun créneau défini.', es: 'Aún no ha definido horarios.' },
   // ── Corporate / Employer portal ──
   'corp.title': { pt: 'Portal Empresa', en: 'Employer Portal', fr: 'Portail Employeur', es: 'Portal de Empresa', zh: '企业门户 (Employer Portal)' },
   'corp.create_title': { pt: 'Criar conta de empresa', en: 'Create employer account', fr: 'Créer un compte employeur', es: 'Crear cuenta de empresa' },

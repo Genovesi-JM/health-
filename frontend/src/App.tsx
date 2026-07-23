@@ -51,6 +51,7 @@ import DoctorDashboardPage from './pages/DoctorDashboardPage';
 import DoctorProfileEditPage from './pages/DoctorProfileEditPage';
 import DoctorQueuePage from './pages/DoctorQueuePage';
 import DoctorAgendaPage from './pages/DoctorAgendaPage';
+import DoctorAvailabilityPage from './pages/DoctorAvailabilityPage';
 import DoctorPatientsPage from './pages/DoctorPatientsPage';
 import DoctorLivePage from './pages/DoctorLivePage';
 import DoctorPrescriptionsPage from './pages/DoctorPrescriptionsPage';
@@ -141,6 +142,7 @@ export default function App() {
               <Route path="/doctor/profile" element={<DoctorProfileEditPage />} />
               <Route path="/doctor/queue" element={<DoctorQueuePage />} />
               <Route path="/doctor/agenda" element={<DoctorAgendaPage />} />
+              <Route path="/doctor/disponibilidade" element={<DoctorAvailabilityPage />} />
               <Route path="/doctor/pacientes" element={<DoctorPatientsPage />} />
               <Route path="/doctor/consultas" element={<DoctorLivePage />} />
               <Route path="/doctor/prescricoes" element={<DoctorPrescriptionsPage />} />

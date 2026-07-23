@@ -92,6 +92,7 @@ export function Sidebar({ open, onClose }: Props) {
             <SidebarSection title="MÉDICO">
               <SidebarLink to="/doctor/dashboard"    icon={LayoutDashboard} label="Dashboard"              onClick={onClose} />
               <SidebarLink to="/doctor/agenda"       icon={Calendar}        label="Agenda"                 onClick={onClose} />
+              <SidebarLink to="/doctor/disponibilidade" icon={Clock}        label={t('avail.title')}       onClick={onClose} />
               <SidebarLink to="/doctor/pacientes"    icon={Users}           label="Pacientes"              onClick={onClose} />
               <SidebarLink to="/doctor/consultas"    icon={Video}           label="Consultas Ao Vivo"      onClick={onClose} />
               <SidebarLink to="/doctor/queue"        icon={ClipboardList}   label="Fila de Espera"         onClick={onClose} />

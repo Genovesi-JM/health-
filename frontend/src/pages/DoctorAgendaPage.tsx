@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api';
 import { openVideoRoom } from '../utils/video';
 import { Calendar, Clock, User, Video, MapPin, ChevronLeft, ChevronRight, Check, X, RefreshCw, Plus } from 'lucide-react';
@@ -87,9 +88,9 @@ export default function DoctorAgendaPage() {
             {MONTHS[selected.getMonth()]} {selected.getFullYear()}
           </p>
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1rem', borderRadius: '10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.83rem', cursor: 'pointer' }}>
-          <Plus size={15} /> Nova consulta
-        </button>
+        <Link to="/doctor/disponibilidade" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1rem', borderRadius: '10px', background: 'var(--brand-primary)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: '0.83rem', cursor: 'pointer' }}>
+          <Plus size={15} /> Disponibilidade
+        </Link>
       </div>
 
       {/* Week selector */}
