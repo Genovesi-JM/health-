@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import type { Consultation, PatientState } from '../types';
 import { X, Calendar, AlertTriangle } from 'lucide-react';
-import { SPECIALTY_CODES } from '../constants/specialties';
+import { SPECIALTY_CODES, normalizeSpecialty } from '../constants/specialties';
 
 const SPECIALTIES = SPECIALTY_CODES;
+
+interface DoctorLite { id: string; display_name?: string | null; title?: string | null; specialization: string; }
 
 interface Props {
   open: boolean;
@@ -17,11 +19,33 @@ interface Props {
 export default function BookConsultationModal({ open, onClose, patientState, onBooked }: Props) {
   const { t } = useT();
   const [specialty, setSpecialty] = useState('');
+  const [mode, setMode] = useState<'next' | 'schedule'>('next');
+  const [doctors, setDoctors] = useState<DoctorLite[]>([]);
+  const [doctorId, setDoctorId] = useState('');
+  const [scheduledAt, setScheduledAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  // Load verified doctors for the chosen specialty when scheduling.
+  useEffect(() => {
+    if (!open || mode !== 'schedule' || !specialty) { setDoctors([]); return; }
+    let cancelled = false;
+    api.get('/api/v1/doctors')
+      .then(r => {
+        if (cancelled) return;
+        const list: DoctorLite[] = (r.data || []).filter(
+          (d: DoctorLite) => normalizeSpecialty(d.specialization) === specialty,
+        );
+        setDoctors(list);
+      })
+      .catch(() => setDoctors([]));
+    return () => { cancelled = true; };
+  }, [open, mode, specialty]);
+
   if (!open) return null;
+
+  const reset = () => { setSpecialty(''); setMode('next'); setDoctorId(''); setScheduledAt(''); setError(''); setSuccess(false); };
 
   const riskColor = (risk?: string) => {
     switch (risk?.toUpperCase()) {
@@ -32,34 +56,37 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
     }
   };
 
+  const scheduleReady = mode === 'next' || (!!doctorId && !!scheduledAt);
+
   const handleSubmit = async () => {
-    if (!specialty) return;
+    if (!specialty || !scheduleReady) return;
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post('/api/v1/consultations/book', {
+      const payload: Record<string, unknown> = {
         specialty,
         triage_session_id: patientState?.last_triage_session_id || undefined,
-      });
+      };
+      if (mode === 'schedule') {
+        payload.doctor_id = doctorId;
+        payload.scheduled_at = new Date(scheduledAt).toISOString();
+      } else {
+        payload.next_available = true;
+      }
+      const res = await api.post('/api/v1/consultations/book', payload);
       setSuccess(true);
       setTimeout(() => {
         onBooked(res.data);
-        setSuccess(false);
-        setSpecialty('');
+        reset();
       }, 1200);
-    } catch {
-      setError(t('booking.error'));
+    } catch (err: any) {
+      setError(err.response?.data?.detail || t('booking.error'));
     }
     setSubmitting(false);
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-      setSpecialty('');
-      setError('');
-      setSuccess(false);
-    }
+    if (e.target === e.currentTarget) { onClose(); reset(); }
   };
 
   return (
@@ -95,7 +122,7 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
               {t('booking.title')}
             </h3>
           </div>
-          <button onClick={() => { onClose(); setSpecialty(''); setError(''); setSuccess(false); }} style={{
+          <button onClick={() => { onClose(); reset(); }} style={{
             background: 'none', border: 'none', cursor: 'pointer',
             color: 'var(--text-muted)', padding: '0.25rem',
           }}>
@@ -150,6 +177,32 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
             ))}
           </select>
 
+          {/* Mode: next available vs schedule a specific doctor/time */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: mode === 'schedule' ? '1rem' : '1.25rem' }}>
+            {([['next', 'Próxima disponível'], ['schedule', 'Escolher médico e hora']] as const).map(([m, label]) => (
+              <button key={m} type="button" onClick={() => setMode(m)}
+                className={`btn btn-sm ${mode === m ? 'btn-primary' : 'btn-outline'}`}
+                style={{ flex: 1, justifyContent: 'center' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Schedule: doctor + datetime */}
+          {mode === 'schedule' && (
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Médico</label>
+              <select value={doctorId} onChange={e => setDoctorId(e.target.value)} className="form-input" style={{ width: '100%', marginBottom: '0.75rem' }} disabled={!specialty}>
+                <option value="">{doctors.length ? 'Selecionar médico…' : (specialty ? 'Sem médicos disponíveis' : 'Escolha a especialidade primeiro')}</option>
+                {doctors.map(d => (
+                  <option key={d.id} value={d.id}>{d.title || 'Dr.'} {d.display_name || 'Médico'}</option>
+                ))}
+              </select>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Data e hora</label>
+              <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className="form-input" style={{ width: '100%' }} min={new Date().toISOString().slice(0, 16)} />
+            </div>
+          )}
+
           {/* Error */}
           {error && (
             <div style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '0.82rem', marginBottom: '1rem' }}>
@@ -170,14 +223,14 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
           display: 'flex', justifyContent: 'flex-end', gap: '0.75rem',
           padding: '1rem 1.5rem', borderTop: '1px solid var(--border)',
         }}>
-          <button onClick={() => { onClose(); setSpecialty(''); setError(''); setSuccess(false); }} className="btn btn-secondary">
+          <button onClick={() => { onClose(); reset(); }} className="btn btn-secondary">
             {t('booking.cancel')}
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!specialty || submitting}
+            disabled={!specialty || !scheduleReady || submitting}
             className="btn btn-primary"
-            style={{ opacity: !specialty || submitting ? 0.5 : 1 }}
+            style={{ opacity: !specialty || !scheduleReady || submitting ? 0.5 : 1 }}
           >
             {submitting ? t('booking.confirming') : t('booking.confirm')}
           </button>

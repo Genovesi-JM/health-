@@ -90,11 +90,25 @@ def book_consultation(
         if not triage:
             raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
 
+    # If the patient chose a specific doctor + time, assign directly (scheduled);
+    # otherwise it goes into the shared queue as a request.
+    assigned_doctor_id = None
+    status = "requested"
+    if body.doctor_id and body.scheduled_at:
+        doc = db.query(Doctor).filter(Doctor.id == body.doctor_id).first()
+        if not doc:
+            raise HTTPException(status_code=404, detail="Médico não encontrado.")
+        if doc.verification_status != "verified":
+            raise HTTPException(status_code=400, detail="Este médico ainda não está verificado.")
+        assigned_doctor_id = doc.id
+        status = "scheduled"
+
     consultation = Consultation(
         patient_id=patient.id,
         triage_session_id=body.triage_session_id,
         specialty=normalize_specialty(body.specialty),
-        status="requested",
+        doctor_id=assigned_doctor_id,
+        status=status,
         scheduled_at=body.scheduled_at,
     )
     db.add(consultation)

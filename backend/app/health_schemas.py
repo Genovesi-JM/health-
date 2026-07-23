@@ -265,6 +265,7 @@ class ConsultationBookRequest(BaseModel):
     specialty: str = Field(default="clinica_geral")
     scheduled_at: Optional[datetime] = None
     next_available: bool = False
+    doctor_id: Optional[str] = None   # if set with scheduled_at, assign directly (scheduled)
 
 
 class ConsultationOut(BaseModel):

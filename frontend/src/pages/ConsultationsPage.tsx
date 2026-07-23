@@ -9,7 +9,8 @@ import PaymentModal from '../components/PaymentModal';
 import ChatModal from '../components/ChatModal';
 import ReviewModal from '../components/ReviewModal';
 import { specialtyLabel } from '../constants/specialties';
-import { MessageSquare, Star } from 'lucide-react';
+import { openVideoRoom } from '../utils/video';
+import { MessageSquare, Star, Video } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -159,6 +160,14 @@ export default function ConsultationsPage() {
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, background: 'none', border: 'none', color: 'var(--accent-teal)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
                         >
                           <MessageSquare size={13} /> {t('msg.messages')}
+                        </button>
+                      )}
+                      {['scheduled', 'in_progress'].includes(c.status) && (
+                        <button
+                          onClick={() => openVideoRoom(c.id)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, marginLeft: 10, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
+                        >
+                          <Video size={13} /> Vídeo
                         </button>
                       )}
                       {c.status === 'completed' && (

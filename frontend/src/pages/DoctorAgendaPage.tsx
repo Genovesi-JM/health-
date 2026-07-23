@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
+import { openVideoRoom } from '../utils/video';
 import { Calendar, Clock, User, Video, MapPin, ChevronLeft, ChevronRight, Check, X, RefreshCw, Plus } from 'lucide-react';
 
 interface Appointment {
@@ -169,8 +170,8 @@ export default function DoctorAgendaPage() {
                     <button onClick={() => updateStatus(a.id, 'cancelled')} title="Cancelar" style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', cursor: 'pointer' }}><X size={15} /></button>
                   </div>
                 )}
-                {a.status === 'confirmed' && a.type === 'teleconsulta' && (
-                  <button style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1.5px solid rgba(59,130,246,0.3)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                {(a.status === 'confirmed' || a.status === 'in_progress') && (
+                  <button onClick={() => openVideoRoom(a.id)} style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1.5px solid rgba(59,130,246,0.3)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <Video size={13} /> Entrar
                   </button>
                 )}
