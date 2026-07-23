@@ -7,7 +7,7 @@ import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import { useState, useEffect } from 'react';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
-  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2,
+  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2, Clock,
   Cpu, CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
   DollarSign, Star, Globe, HelpCircle, Lock,
 } from 'lucide-react';
