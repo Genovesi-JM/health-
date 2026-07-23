@@ -663,18 +663,19 @@ const translations: Record<string, Record<Lang, string>> = {
   /* ═══════════════════════════════════════════════════════════
      DOCTOR SPECIALIZATIONS (used in DoctorProfilePage select)
      ═══════════════════════════════════════════════════════════ */
-  'spec.general': { pt: 'Clínica Geral', en: 'General Practice', fr: 'Médecine Générale', es: 'Medicina General' },
-  'spec.cardiology': { pt: 'Cardiologia', en: 'Cardiology', fr: 'Cardiologie', es: 'Cardiología' },
-  'spec.dermatology': { pt: 'Dermatologia', en: 'Dermatology', fr: 'Dermatologie', es: 'Dermatología' },
-  'spec.pediatrics': { pt: 'Pediatria', en: 'Pediatrics', fr: 'Pédiatrie', es: 'Pediatría' },
-  'spec.orthopedics': { pt: 'Ortopedia', en: 'Orthopedics', fr: 'Orthopédie', es: 'Ortopedia' },
-  'spec.neurology': { pt: 'Neurologia', en: 'Neurology', fr: 'Neurologie', es: 'Neurología' },
-  'spec.gynecology': { pt: 'Ginecologia', en: 'Gynecology', fr: 'Gynécologie', es: 'Ginecología' },
-  'spec.ophthalmology': { pt: 'Oftalmologia', en: 'Ophthalmology', fr: 'Ophtalmologie', es: 'Oftalmología' },
-  'spec.psychiatry': { pt: 'Psiquiatria', en: 'Psychiatry', fr: 'Psychiatrie', es: 'Psiquiatría' },
-  'spec.internal': { pt: 'Medicina Interna', en: 'Internal Medicine', fr: 'Médecine Interne', es: 'Medicina Interna' },
-  'spec.surgery': { pt: 'Cirurgia Geral', en: 'General Surgery', fr: 'Chirurgie Générale', es: 'Cirugía General' },
-  'spec.other': { pt: 'Outra', en: 'Other', fr: 'Autre', es: 'Otra' },
+  // Canonical specialty codes (match backend doctor.specialization + queue matching)
+  'spec.clinica_geral': { pt: 'Clínica Geral', en: 'General Practice', fr: 'Médecine Générale', es: 'Medicina General' },
+  'spec.cardiologia': { pt: 'Cardiologia', en: 'Cardiology', fr: 'Cardiologie', es: 'Cardiología' },
+  'spec.dermatologia': { pt: 'Dermatologia', en: 'Dermatology', fr: 'Dermatologie', es: 'Dermatología' },
+  'spec.pediatria': { pt: 'Pediatria', en: 'Pediatrics', fr: 'Pédiatrie', es: 'Pediatría' },
+  'spec.ortopedia': { pt: 'Ortopedia', en: 'Orthopedics', fr: 'Orthopédie', es: 'Ortopedia' },
+  'spec.neurologia': { pt: 'Neurologia', en: 'Neurology', fr: 'Neurologie', es: 'Neurología' },
+  'spec.ginecologia': { pt: 'Ginecologia', en: 'Gynecology', fr: 'Gynécologie', es: 'Ginecología' },
+  'spec.oftalmologia': { pt: 'Oftalmologia', en: 'Ophthalmology', fr: 'Ophtalmologie', es: 'Oftalmología' },
+  'spec.psiquiatria': { pt: 'Psiquiatria', en: 'Psychiatry', fr: 'Psychiatrie', es: 'Psiquiatría' },
+  'spec.medicina_interna': { pt: 'Medicina Interna', en: 'Internal Medicine', fr: 'Médecine Interne', es: 'Medicina Interna' },
+  'spec.cirurgia': { pt: 'Cirurgia Geral', en: 'General Surgery', fr: 'Chirurgie Générale', es: 'Cirugía General' },
+  'spec.outra': { pt: 'Outra', en: 'Other', fr: 'Autre', es: 'Otra' },
 
   /* ═══════════════════════════════════════════════════════════
      DASHBOARD TABS

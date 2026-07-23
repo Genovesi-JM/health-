@@ -8,11 +8,19 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
 import api from '../services/api';
 
-// Portuguese specialties (value stored directly as consultation.specialty)
-const SPECIALTIES = [
-  'Clínica Geral', 'Cardiologia', 'Dermatologia', 'Pediatria',
-  'Ginecologia', 'Psiquiatria', 'Ortopedia', 'Oftalmologia',
-  'Neurologia', 'Otorrinolaringologia',
+// Canonical specialty codes (must match the web + backend doctor.specialization
+// so bookings reach the right doctor's queue) with Portuguese labels.
+const SPECIALTIES: { code: string; label: string }[] = [
+  { code: 'clinica_geral', label: 'Clínica Geral' },
+  { code: 'cardiologia', label: 'Cardiologia' },
+  { code: 'dermatologia', label: 'Dermatologia' },
+  { code: 'pediatria', label: 'Pediatria' },
+  { code: 'ginecologia', label: 'Ginecologia' },
+  { code: 'psiquiatria', label: 'Psiquiatria' },
+  { code: 'ortopedia', label: 'Ortopedia' },
+  { code: 'oftalmologia', label: 'Oftalmologia' },
+  { code: 'neurologia', label: 'Neurologia' },
+  { code: 'medicina_interna', label: 'Medicina Interna' },
 ];
 
 export default function BookConsultationScreen() {
@@ -50,12 +58,12 @@ export default function BookConsultationScreen() {
       <View style={styles.chips}>
         {SPECIALTIES.map(s => (
           <TouchableOpacity
-            key={s}
-            style={[styles.chip, specialty === s && styles.chipSelected]}
-            onPress={() => setSpecialty(s)}
+            key={s.code}
+            style={[styles.chip, specialty === s.code && styles.chipSelected]}
+            onPress={() => setSpecialty(s.code)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.chipText, specialty === s && styles.chipTextSelected]}>{s}</Text>
+            <Text style={[styles.chipText, specialty === s.code && styles.chipTextSelected]}>{s.label}</Text>
           </TouchableOpacity>
         ))}
       </View>

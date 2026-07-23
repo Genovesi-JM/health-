@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
+import { specialtyLabel } from '../constants/specialties';
 import type { PatientState, TriageHistoryItem, Consultation } from '../types';
 import BookConsultationModal from '../components/BookConsultationModal';
 import {
@@ -377,7 +378,7 @@ export default function DashboardPage() {
                     <tbody>
                       {consultations.slice(0, 3).map(c => (
                         <tr key={c.id}>
-                          <td style={{ color: 'var(--text-primary)' }}>{c.specialty}</td>
+                          <td style={{ color: 'var(--text-primary)' }}>{specialtyLabel(c.specialty, t)}</td>
                           <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
                           <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : new Date(c.created_at).toLocaleDateString(locale)}</td>
                         </tr>
@@ -473,7 +474,7 @@ export default function DashboardPage() {
                   <tbody>
                     {consultations.map(c => (
                       <tr key={c.id}>
-                        <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{c.specialty}</td>
+                        <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{specialtyLabel(c.specialty, t)}</td>
                         <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
                         <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : '—'}</td>
                         <td><span className={`badge ${c.payment_status === 'paid' ? 'badge-success' : 'badge-neutral'}`}>{c.payment_status}</span></td>

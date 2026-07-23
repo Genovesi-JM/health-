@@ -38,6 +38,30 @@ from app.rbac import (
     require_consents, require_verified_doctor,
     log_health_audit,
 )
+
+# Canonical specialty codes (match Doctor.specialization). Legacy English UI
+# codes and free-text labels are normalised to these so bookings always reach
+# the right doctor's queue.
+_SPECIALTY_ALIASES = {
+    "general": "clinica_geral", "clinica geral": "clinica_geral",
+    "cardiology": "cardiologia", "dermatology": "dermatologia",
+    "pediatrics": "pediatria", "orthopedics": "ortopedia",
+    "neurology": "neurologia", "gynecology": "ginecologia",
+    "ophthalmology": "oftalmologia", "psychiatry": "psiquiatria",
+    "internal": "medicina_interna", "internal medicine": "medicina_interna",
+    "surgery": "cirurgia", "other": "outra",
+}
+
+
+def normalize_specialty(value: Optional[str]) -> str:
+    """Map any specialty input to a canonical snake_case code."""
+    if not value:
+        return "clinica_geral"
+    v = value.strip().lower()
+    if v in _SPECIALTY_ALIASES:
+        return _SPECIALTY_ALIASES[v]
+    snake = v.replace(" ", "_")
+    return _SPECIALTY_ALIASES.get(snake, snake)
 from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)
@@ -69,7 +93,7 @@ def book_consultation(
     consultation = Consultation(
         patient_id=patient.id,
         triage_session_id=body.triage_session_id,
-        specialty=body.specialty,
+        specialty=normalize_specialty(body.specialty),
         status="requested",
         scheduled_at=body.scheduled_at,
     )

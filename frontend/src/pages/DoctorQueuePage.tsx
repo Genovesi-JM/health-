@@ -4,14 +4,9 @@ import type { ConsultationQueueItem } from '../types';
 import { ClipboardList, CheckCircle2, Play, X, User, Stethoscope, AlertTriangle } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
+import { specialtyLabel } from '../constants/specialties';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
-
-const SPECIALTY_LABELS: Record<string, string> = {
-  clinica_geral: 'Clínica Geral', pediatria: 'Pediatria', cardiologia: 'Cardiologia',
-  ginecologia: 'Ginecologia', dermatologia: 'Dermatologia', ortopedia: 'Ortopedia',
-  neurologia: 'Neurologia', psiquiatria: 'Psiquiatria', urgencia: 'Urgência',
-};
 
 const RISK_MAP: Record<string, { label: string; color: string; bg: string }> = {
   LOW:    { label: 'Baixo',    color: '#059669', bg: 'rgba(16,185,129,0.1)' },
@@ -120,7 +115,7 @@ export default function DoctorQueuePage() {
                           {q.patient_name || 'Paciente'}
                         </div>
                       </td>
-                      <td>{SPECIALTY_LABELS[q.specialty] ?? q.specialty}</td>
+                      <td>{specialtyLabel(q.specialty, t)}</td>
                       <td style={{ color: 'var(--text-muted)', maxWidth: 160 }}>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
                           {q.chief_complaint || '—'}
@@ -172,7 +167,7 @@ export default function DoctorQueuePage() {
                   Detalhes da Consulta
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                  <InfoRow icon={<Stethoscope size={13} />} label="Especialidade" value={SPECIALTY_LABELS[selected.specialty] ?? selected.specialty} />
+                  <InfoRow icon={<Stethoscope size={13} />} label="Especialidade" value={specialtyLabel(selected.specialty, t)} />
                   <InfoRow icon={<span>📋</span>} label="Motivo" value={selected.chief_complaint || 'Não indicado'} />
                   {riskMeta && (
                     <InfoRow

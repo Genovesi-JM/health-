@@ -3,12 +3,9 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import type { Consultation, PatientState } from '../types';
 import { X, Calendar, AlertTriangle } from 'lucide-react';
+import { SPECIALTY_CODES } from '../constants/specialties';
 
-const SPECIALTIES = [
-  'general', 'cardiology', 'dermatology', 'pediatrics',
-  'orthopedics', 'neurology', 'gynecology', 'ophthalmology',
-  'psychiatry', 'internal', 'surgery', 'other',
-] as const;
+const SPECIALTIES = SPECIALTY_CODES;
 
 interface Props {
   open: boolean;

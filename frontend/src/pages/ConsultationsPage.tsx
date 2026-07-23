@@ -6,6 +6,7 @@ import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap } fr
 import { useT } from '../i18n/LanguageContext';
 import BookConsultationModal from '../components/BookConsultationModal';
 import PaymentModal from '../components/PaymentModal';
+import { specialtyLabel } from '../constants/specialties';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -145,7 +146,7 @@ export default function ConsultationsPage() {
               <tbody>
                 {filtered.map(c => (
                   <tr key={c.id}>
-                    <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{c.specialty}</td>
+                    <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{specialtyLabel(c.specialty, t)}</td>
                     <td>
                       <span className={`badge ${statusBadge(c.status)}`}>
                         {statusIcon(c.status)} {statusLabel(c.status)}
