@@ -35,7 +35,7 @@ from app.models import User
 from app.health_models import Patient, Consultation, HealthPayment
 from app.health_schemas import (
     ConsultCheckoutRequest, ConsultCheckoutResponse, PaymentStatusResponse,
-    InvoiceOut,
+    PaymentMethodsResponse, PaymentMethodOption, InvoiceOut,
 )
 from app.rbac import get_patient_for_user
 from app.services.payments import (
@@ -61,6 +61,18 @@ _ADAPTERS = {
 }
 
 _IS_PRODUCTION = settings.env in ("production", "prod")
+
+# Payment methods offered to patients for the Angola market, in display order.
+# In production a method is only offered if its provider is configured (see
+# _provider_configured); IBAN transfer needs no external credentials.
+_METHOD_CATALOG = [
+    (PaymentProvider.MULTICAIXA_EXPRESS, "Multicaixa Express",
+     "Pague pela app Multicaixa Express com a referência."),
+    (PaymentProvider.VISA_MASTERCARD, "Cartão Visa / Mastercard",
+     "Pague com o seu cartão de crédito ou débito."),
+    (PaymentProvider.IBAN_TRANSFER, "Transferência bancária",
+     "Transferência para a conta KAYA. Confirmação em 1–2 dias úteis."),
+]
 
 
 def _resolve_provider(method: str | None) -> PaymentProvider:
@@ -113,6 +125,19 @@ def _mark_consultation_paid(db: Session, payment: HealthPayment) -> None:
             db.add(consultation)
 
 
+@router.get("/payment-methods", response_model=PaymentMethodsResponse)
+def payment_methods():
+    """List the payment methods offered to patients (Angola market)."""
+    methods = []
+    for provider, label, description in _METHOD_CATALOG:
+        # In production, only offer methods whose provider is configured.
+        enabled = (not _IS_PRODUCTION) or _provider_configured(provider)
+        methods.append(PaymentMethodOption(
+            id=provider.value, label=label, description=description, enabled=enabled,
+        ))
+    return PaymentMethodsResponse(methods=methods)
+
+
 @router.post("/consultation/checkout", response_model=ConsultCheckoutResponse)
 async def checkout_consultation(
     body: ConsultCheckoutRequest,
@@ -150,13 +175,15 @@ async def checkout_consultation(
         .order_by(HealthPayment.created_at.desc())
         .first()
     )
-    if existing:
+    if existing and existing.provider == provider.value:
         meta = json.loads(existing.metadata_json or "{}")
         return ConsultCheckoutResponse(
             payment_id=existing.id, status=existing.status,
             amount=existing.amount, currency=existing.currency,
             provider=existing.provider, provider_reference=existing.provider_reference,
             qr_code=meta.get("qr_code"), redirect_url=meta.get("redirect_url"),
+            client_secret=meta.get("client_secret"),
+            transfer_details=meta.get("transfer_details"), instructions=meta.get("instructions"),
         )
 
     payment = HealthPayment(
@@ -195,12 +222,19 @@ async def checkout_consultation(
             detail=result.error_message or "Falha ao iniciar o pagamento.",
         )
 
+    raw = result.raw_response or {}
+    transfer_details = raw.get("transfer_details")
+    instructions = raw.get("instructions")
+
     payment.status = _to_health_status(result.status)
     payment.provider_reference = result.provider_reference
     payment.metadata_json = json.dumps({
         "qr_code": result.qr_code,
         "redirect_url": result.redirect_url,
-        "mock": bool((result.raw_response or {}).get("mock")),
+        "client_secret": result.client_secret,
+        "transfer_details": transfer_details,
+        "instructions": instructions,
+        "mock": bool(raw.get("mock")),
     })
     db.add(payment)
 
@@ -221,6 +255,9 @@ async def checkout_consultation(
         provider_reference=payment.provider_reference,
         qr_code=result.qr_code,
         redirect_url=result.redirect_url,
+        client_secret=result.client_secret,
+        transfer_details=transfer_details,
+        instructions=instructions,
     )
 
 

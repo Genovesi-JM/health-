@@ -269,18 +269,18 @@ class IBANTransferAdapter(PaymentAdapter):
         "iban": os.getenv("COMPANY_IBAN", "AO06004400005506300102101"),
         "bic": os.getenv("COMPANY_BIC", "BFAOAOAO"),
         "bank_name": os.getenv("COMPANY_BANK_NAME", "Banco de Fomento Angola"),
-        "beneficiary": "GeoVision Lda",
+        "beneficiary": os.getenv("COMPANY_BENEFICIARY", "KAYA"),
     }
     # International account (USD / EUR)
     BANK_INTL = {
         "iban": os.getenv("COMPANY_IBAN_INTL", "PT50003600559910003085730"),
         "bic": os.getenv("COMPANY_BIC_INTL", "MPIOPTPL"),
         "bank_name": os.getenv("COMPANY_BANK_INTL", "Banco Millennium BCP"),
-        "beneficiary": "GeoVision Lda",
+        "beneficiary": os.getenv("COMPANY_BENEFICIARY_INTL", "KAYA"),
     }
 
     async def create_payment(self, intent: PaymentIntent) -> PaymentResult:
-        reference = f"GV-{intent.order_id[-8:].upper()}"
+        reference = f"KAYA-{intent.order_id[-8:].upper()}"
         is_international = intent.currency.value in ("USD", "EUR")
         bank = self.BANK_INTL if is_international else self.BANK_AOA
         return PaymentResult(success=True, payment_id=intent.id,

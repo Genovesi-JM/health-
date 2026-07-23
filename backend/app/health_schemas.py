@@ -409,9 +409,23 @@ class ConsultCheckoutResponse(BaseModel):
     amount: int
     currency: str
     provider: Optional[str] = None           # multicaixa_express, visa_mastercard, ...
-    provider_reference: Optional[str] = None # Multicaixa transaction reference
+    provider_reference: Optional[str] = None # transaction / transfer reference
     qr_code: Optional[str] = None            # Multicaixa Express QR payload (EMV)
-    redirect_url: Optional[str] = None       # for card/redirect providers
+    redirect_url: Optional[str] = None       # for card / redirect providers
+    client_secret: Optional[str] = None      # card provider client secret
+    transfer_details: Optional[dict] = None  # IBAN transfer: bank account + reference
+    instructions: Optional[str] = None       # human-readable payment instructions
+
+
+class PaymentMethodOption(BaseModel):
+    id: str                                  # provider value sent back on checkout
+    label: str                               # Portuguese label
+    description: str
+    enabled: bool = True
+
+
+class PaymentMethodsResponse(BaseModel):
+    methods: list[PaymentMethodOption]
 
 
 class PaymentStatusResponse(BaseModel):
