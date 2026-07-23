@@ -501,6 +501,18 @@ const translations: Record<string, TranslationEntry> = {
   'pay.transfer_note': { pt: 'Inclua a referência na descrição da transferência. O pagamento é confirmado em 1–2 dias úteis após a receção.', en: 'Include the reference in the transfer description. Payment is confirmed within 1–2 business days after receipt.', fr: 'Incluez la référence dans la description du virement. Le paiement est confirmé sous 1 à 2 jours ouvrables après réception.', es: 'Incluya la referencia en la descripción de la transferencia. El pago se confirma en 1–2 días hábiles tras la recepción.' },
   'common.close': { pt: 'Fechar', en: 'Close', fr: 'Fermer', es: 'Cerrar' },
   'msg.messages': { pt: 'Mensagens', en: 'Messages', fr: 'Messages', es: 'Mensajes', zh: '消息 (Messages)' },
+  'msg.placeholder': { pt: 'Escreva uma mensagem…', en: 'Write a message…', fr: 'Écrire un message…', es: 'Escriba un mensaje…' },
+  'msg.empty': { pt: 'Ainda não há mensagens. Escreva ao seu médico para começar.', en: 'No messages yet. Write to your doctor to get started.', fr: 'Aucun message. Écrivez à votre médecin pour commencer.', es: 'Aún no hay mensajes. Escriba a su médico para empezar.' },
+  'video.label': { pt: 'Vídeo', en: 'Video', fr: 'Vidéo', es: 'Vídeo', zh: '视频 (Video)' },
+  // ── Review ──
+  'review.action': { pt: 'Avaliar', en: 'Rate', fr: 'Évaluer', es: 'Valorar', zh: '评价 (Rate)' },
+  'review.title': { pt: 'Avaliar consulta', en: 'Rate consultation', fr: 'Évaluer la consultation', es: 'Valorar la consulta' },
+  'review.thanks': { pt: 'Obrigado pela sua avaliação!', en: 'Thank you for your review!', fr: 'Merci pour votre avis !', es: '¡Gracias por su valoración!' },
+  'review.comment_ph': { pt: 'Comentário (opcional)…', en: 'Comment (optional)…', fr: 'Commentaire (facultatif)…', es: 'Comentario (opcional)…' },
+  'review.pick': { pt: 'Selecione uma classificação.', en: 'Please select a rating.', fr: 'Veuillez choisir une note.', es: 'Seleccione una valoración.' },
+  'review.sending': { pt: 'A enviar…', en: 'Sending…', fr: 'Envoi…', es: 'Enviando…' },
+  'review.submit': { pt: 'Enviar avaliação', en: 'Submit review', fr: 'Envoyer l’avis', es: 'Enviar valoración' },
+  'review.error': { pt: 'Não foi possível registar a avaliação.', en: 'Could not submit the review.', fr: 'Impossible d’enregistrer l’avis.', es: 'No se pudo registrar la valoración.' },
   // ── Doctor availability ──
   'avail.title': { pt: 'Disponibilidade', en: 'Availability', fr: 'Disponibilité', es: 'Disponibilidad', zh: '排班 (Availability)' },
   // ── Doctor sidebar ──

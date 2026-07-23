@@ -167,7 +167,7 @@ export default function ConsultationsPage() {
                           onClick={() => openVideoRoom(c.id)}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, marginLeft: 10, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
                         >
-                          <Video size={13} /> Vídeo
+                          <Video size={13} /> {t('video.label')}
                         </button>
                       )}
                       {c.status === 'completed' && (
@@ -175,7 +175,7 @@ export default function ConsultationsPage() {
                           onClick={() => setReviewFor(c)}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, marginLeft: 10, background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
                         >
-                          <Star size={13} /> Avaliar
+                          <Star size={13} /> {t('review.action')}
                         </button>
                       )}
                     </td>

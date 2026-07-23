@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 import { X, Send, MessageSquare, Loader2 } from 'lucide-react';
 
 interface Msg { id: string; sender_role: string; body: string; created_at: string; }
@@ -18,6 +19,7 @@ function fmtTime(iso: string) {
 }
 
 export default function ChatModal({ open, consultationId, title, myRole, onClose }: Props) {
+  const { t } = useT();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
@@ -69,9 +71,9 @@ export default function ChatModal({ open, consultationId, title, myRole, onClose
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
             <MessageSquare size={18} style={{ color: 'var(--accent-teal)', flexShrink: 0 }} />
-            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title || 'Mensagens'}</span>
+            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title || t('msg.messages')}</span>
           </div>
-          <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={18} /></button>
+          <button onClick={onClose} aria-label={t('common.close')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={18} /></button>
         </div>
 
         {/* Messages */}
@@ -80,7 +82,7 @@ export default function ChatModal({ open, consultationId, title, myRole, onClose
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /></p>
           ) : messages.length === 0 ? (
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '1rem' }}>
-              Ainda não há mensagens. Escreva ao seu médico para começar.
+              {t('msg.empty')}
             </p>
           ) : messages.map(m => {
             const me = m.sender_role === myRole;
@@ -98,7 +100,7 @@ export default function ChatModal({ open, consultationId, title, myRole, onClose
 
         {/* Composer */}
         <div style={{ display: 'flex', gap: '0.5rem', padding: '0.75rem 1rem', borderTop: '1px solid var(--border)' }}>
-          <input className="form-input" placeholder="Escreva uma mensagem…" value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} style={{ flex: 1 }} />
+          <input className="form-input" placeholder={t('msg.placeholder')} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} style={{ flex: 1 }} />
           <button onClick={send} style={{ padding: '0.55rem 0.9rem', borderRadius: '10px', background: 'var(--accent-teal, #0d9488)', color: '#fff', border: 'none', cursor: 'pointer' }}><Send size={16} /></button>
         </div>
       </div>

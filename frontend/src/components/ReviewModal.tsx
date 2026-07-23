@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 import { X, Star, CheckCircle2 } from 'lucide-react';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function ReviewModal({ open, consultationId, title, onClose, onDone }: Props) {
+  const { t } = useT();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
@@ -21,7 +23,7 @@ export default function ReviewModal({ open, consultationId, title, onClose, onDo
   if (!open) return null;
 
   const submit = async () => {
-    if (rating < 1) { setError('Selecione uma classificação.'); return; }
+    if (rating < 1) { setError(t('review.pick')); return; }
     setSubmitting(true);
     setError('');
     try {
@@ -29,7 +31,7 @@ export default function ReviewModal({ open, consultationId, title, onClose, onDo
       setDone(true);
       onDone?.();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Não foi possível registar a avaliação.');
+      setError(err.response?.data?.detail || t('review.error'));
     } finally {
       setSubmitting(false);
     }
@@ -47,16 +49,16 @@ export default function ReviewModal({ open, consultationId, title, onClose, onDo
         width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', animation: 'fadeIn 0.2s ease',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Avaliar consulta</h3>
-          <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={18} /></button>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t('review.title')}</h3>
+          <button onClick={onClose} aria-label={t('common.close')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={18} /></button>
         </div>
 
         <div style={{ padding: '1.5rem', textAlign: 'center' }}>
           {done ? (
             <>
               <CheckCircle2 size={44} style={{ color: '#22c55e' }} />
-              <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginTop: '0.75rem' }}>Obrigado pela sua avaliação!</p>
-              <button className="btn btn-primary" style={{ marginTop: '0.5rem' }} onClick={onClose}>Fechar</button>
+              <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginTop: '0.75rem' }}>{t('review.thanks')}</p>
+              <button className="btn btn-primary" style={{ marginTop: '0.5rem' }} onClick={onClose}>{t('common.close')}</button>
             </>
           ) : (
             <>
@@ -69,12 +71,12 @@ export default function ReviewModal({ open, consultationId, title, onClose, onDo
                   </button>
                 ))}
               </div>
-              <textarea className="form-input" placeholder="Comentário (opcional)…" value={comment}
+              <textarea className="form-input" placeholder={t('review.comment_ph')} value={comment}
                 onChange={e => setComment(e.target.value)} rows={3}
                 style={{ width: '100%', resize: 'vertical', marginBottom: '0.75rem' }} />
               {error && <p style={{ color: '#ef4444', fontSize: '0.82rem', margin: '0 0 0.5rem' }}>{error}</p>}
               <button className="btn btn-primary" style={{ width: '100%' }} disabled={submitting} onClick={submit}>
-                {submitting ? 'A enviar…' : 'Enviar avaliação'}
+                {submitting ? t('review.sending') : t('review.submit')}
               </button>
             </>
           )}
