@@ -136,6 +136,20 @@ def book_consultation(
     except Exception:
         pass
 
+    # If scheduled directly with a doctor, notify that doctor.
+    if assigned_doctor_id:
+        try:
+            doc = db.get(Doctor, assigned_doctor_id)
+            if doc:
+                create_notification(
+                    db, user_id=doc.user_id,
+                    title="Nova consulta agendada",
+                    message="Um paciente agendou uma consulta consigo.",
+                    type="info", entity_type="consultation", entity_id=consultation.id,
+                )
+        except Exception:
+            pass
+
     return consultation
 
 
@@ -274,6 +288,19 @@ def accept_consultation(
         resource_id=consultation.id,
         metadata={"doctor_id": doctor.id},
     )
+
+    # Notify the patient that a doctor accepted their consultation.
+    try:
+        pat = db.get(Patient, consultation.patient_id)
+        if pat:
+            create_notification(
+                db, user_id=pat.user_id,
+                title="Consulta aceite",
+                message="Um médico aceitou a sua consulta. Já pode conversar por mensagem ou vídeo.",
+                type="success", entity_type="consultation", entity_id=consultation.id,
+            )
+    except Exception:
+        pass
 
     return consultation
 
@@ -434,4 +461,16 @@ def submit_review(
     )
     db.add(review)
     db.commit()
+
+    try:
+        doc = db.get(Doctor, c.doctor_id)
+        if doc:
+            create_notification(
+                db, user_id=doc.user_id,
+                title="Nova avaliação",
+                message=f"Recebeu uma avaliação de {body.rating} estrela{'s' if body.rating != 1 else ''}.",
+                type="info", entity_type="consultation", entity_id=consultation_id,
+            )
+    except Exception:
+        pass
     return {"detail": "Avaliação registada. Obrigado!", "id": review.id}

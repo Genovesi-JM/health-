@@ -70,6 +70,27 @@ def send_message(
     db.add(msg)
     db.commit()
     db.refresh(msg)
+
+    # Notify the other party.
+    try:
+        from app.routers.notifications import create_notification
+        if role == "patient":
+            doc = db.get(Doctor, c.doctor_id)
+            recipient = doc.user_id if doc else None
+            who = _display_name(user.id, db) or "O paciente"
+        else:
+            pat = db.get(Patient, c.patient_id)
+            recipient = pat.user_id if pat else None
+            who = "O seu médico"
+        if recipient:
+            preview = msg.body[:60] + ("…" if len(msg.body) > 60 else "")
+            create_notification(
+                db, user_id=recipient, title="Nova mensagem",
+                message=f"{who}: {preview}", type="info",
+                entity_type="consultation", entity_id=consultation_id,
+            )
+    except Exception:
+        pass
     return msg
 
 
