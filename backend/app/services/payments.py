@@ -348,7 +348,7 @@ class PayPalAdapter(PaymentAdapter):
             "application_context": {
                 "return_url": os.getenv("PAYPAL_RETURN_URL", "https://kaya.ao/pagamento?paypal=success"),
                 "cancel_url": os.getenv("PAYPAL_CANCEL_URL", "https://kaya.ao/pagamento?paypal=cancel"),
-                "brand_name": "GeoVision",
+                "brand_name": "KAYA",
             },
         }
         async with httpx.AsyncClient() as client:
