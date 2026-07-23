@@ -405,10 +405,19 @@ class ConsultCheckoutRequest(BaseModel):
 
 class ConsultCheckoutResponse(BaseModel):
     payment_id: str
-    status: str
+    status: str                              # pending, paid, failed
     amount: int
     currency: str
-    redirect_url: Optional[str] = None
+    provider: Optional[str] = None           # multicaixa_express, visa_mastercard, ...
+    provider_reference: Optional[str] = None # Multicaixa transaction reference
+    qr_code: Optional[str] = None            # Multicaixa Express QR payload (EMV)
+    redirect_url: Optional[str] = None       # for card/redirect providers
+
+
+class PaymentStatusResponse(BaseModel):
+    payment_id: str
+    status: str          # pending, paid, failed
+    consultation_paid: bool
 
 
 class InvoiceOut(BaseModel):

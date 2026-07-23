@@ -54,8 +54,8 @@ export function Sidebar({ open, onClose }: Props) {
           <Link to={role === 'doctor' ? '/doctor/dashboard' : role === 'admin' ? '/admin' : '/dashboard'} className="sidebar-brand-link">
             <Heart className="sidebar-brand-icon" />
             <div>
-              <div className="sidebar-brand-name">HEALTH</div>
-              <div className="sidebar-brand-sub">{role === 'doctor' ? 'Portal Médico' : role === 'admin' ? 'Administração' : 'Triage & Teleconsulta'}</div>
+              <div className="sidebar-brand-name">KAYA</div>
+              <div className="sidebar-brand-sub">{role === 'doctor' ? 'Portal Médico' : role === 'admin' ? 'Administração' : 'Triagem & Teleconsulta'}</div>
             </div>
           </Link>
           <button className="sidebar-close" onClick={onClose}><X size={18} /></button>

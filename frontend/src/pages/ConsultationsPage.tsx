@@ -5,6 +5,7 @@ import type { Consultation, PatientState } from '../types';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 import BookConsultationModal from '../components/BookConsultationModal';
+import PaymentModal from '../components/PaymentModal';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -16,6 +17,7 @@ export default function ConsultationsPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');
   const [showBooking, setShowBooking] = useState(false);
+  const [payFor, setPayFor] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.allSettled([
@@ -150,7 +152,17 @@ export default function ConsultationsPage() {
                       </span>
                     </td>
                     <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleString(locale) : '—'}</td>
-                    <td><span className={`badge ${c.payment_status === 'paid' ? 'badge-success' : 'badge-neutral'}`}>{c.payment_status}</span></td>
+                    <td>
+                      {c.payment_status === 'paid' ? (
+                        <span className="badge badge-success">{t('pay.status_paid')}</span>
+                      ) : ['cancelled', 'no_show'].includes(c.status) ? (
+                        <span className="badge badge-neutral">{c.payment_status}</span>
+                      ) : (
+                        <button className="btn btn-primary btn-sm" onClick={() => setPayFor(c.id)}>
+                          {t('pay.pay_now')}
+                        </button>
+                      )}
+                    </td>
                     <td>{new Date(c.created_at).toLocaleDateString(locale)}</td>
                   </tr>
                 ))}
@@ -166,6 +178,16 @@ export default function ConsultationsPage() {
         onClose={() => setShowBooking(false)}
         patientState={patientState}
         onBooked={(c: Consultation) => { setConsultations(prev => [c, ...prev]); setShowBooking(false); }}
+      />
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={payFor !== null}
+        consultationId={payFor || ''}
+        onClose={() => setPayFor(null)}
+        onPaid={() => {
+          setConsultations(prev => prev.map(c => c.id === payFor ? { ...c, payment_status: 'paid' } : c));
+        }}
       />
     </>
   );
