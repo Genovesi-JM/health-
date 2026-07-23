@@ -16,7 +16,7 @@
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
-type Role = 'patient' | 'cliente' | 'doctor' | 'admin' | 'support';
+type Role = 'patient' | 'cliente' | 'doctor' | 'admin' | 'support' | 'corporate_admin';
 
 interface Props {
   /** Which roles are allowed to access the wrapped routes. */
@@ -26,6 +26,7 @@ interface Props {
 function fallbackPath(role: string | undefined): string {
   if (role === 'doctor') return '/doctor/dashboard';
   if (role === 'admin') return '/admin';
+  if (role === 'corporate_admin') return '/corporate';
   return '/dashboard';
 }
 

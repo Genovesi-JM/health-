@@ -7,7 +7,7 @@ import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import { useState, useEffect } from 'react';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
-  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase,
+  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2,
   Cpu, CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
   DollarSign, Star, Globe, HelpCircle, Lock,
 } from 'lucide-react';
@@ -122,6 +122,14 @@ export function Sidebar({ open, onClose }: Props) {
           {role === 'admin' && (
             <SidebarSection title={t('sidebar.account')}>
               <SidebarLink to="/settings" icon={Settings} label={t('sidebar.settings')} onClick={onClose} />
+            </SidebarSection>
+          )}
+
+          {/* ── EMPLOYER / CORPORATE ── */}
+          {role === 'corporate_admin' && (
+            <SidebarSection title={t('corp.title')}>
+              <SidebarLink to="/corporate" icon={Building2} label={t('corp.title')} onClick={onClose} />
+              <SidebarLink to="/settings"  icon={Settings}  label={t('sidebar.settings')} onClick={onClose} />
             </SidebarSection>
           )}
 
