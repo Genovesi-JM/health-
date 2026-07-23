@@ -69,7 +69,7 @@ class SingleMessage(BaseModel):
 # ═══════════════════════════════════════════════════════════════
 
 HEALTH_SYSTEM_PROMPT = """
-Es a assistente de saude AI da Health Platform, focada em Angola e paises lusofonos.
+Es a assistente de saude AI da KAYA, focada em Angola e paises lusofonos.
 
 Tens acesso a contexto adicional:
 - `page`: pagina actual onde o utilizador se encontra.
@@ -404,7 +404,7 @@ def demo_response(
         hour = datetime.now().hour
         greeting = "Bom dia" if hour < 12 else "Boa tarde" if hour < 19 else "Boa noite"
         name = user_name.split()[0] if user_name else ""
-        base = f"{greeting}{', ' + name if name else ''}! 👋\n\nSou a assistente da Health Platform."
+        base = f"{greeting}{', ' + name if name else ''}! 👋\n\nSou a assistente da KAYA."
 
         if ctx.get("triage_in_progress"):
             base += "\n\n📋 Tem uma **triagem em curso**. Quer continuar?"

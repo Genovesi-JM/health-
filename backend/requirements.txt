@@ -9,6 +9,7 @@ python-multipart==0.0.9
 pydantic==2.7.1
 pydantic-settings==2.2.1
 httpx
+requests>=2.32.0
 
 # S3-compatible storage (DigitalOcean Spaces)
 boto3>=1.34.0

@@ -247,6 +247,9 @@ def health_kpis(
     total_consultations = db.query(Consultation).filter(
         Consultation.created_at >= since,
     ).count()
+    total_triage_sessions = db.query(TriageSession).filter(
+        TriageSession.created_at >= since,
+    ).count()
 
     # Triage distribution
     triage_results = (
@@ -298,6 +301,7 @@ def health_kpis(
     ).scalar()
 
     return HealthKPIResponse(
+        total_triage_sessions=total_triage_sessions,
         total_consultations=total_consultations,
         triage_distribution=triage_dist,
         resolution_rate=round(max(resolution_rate, 0), 1),

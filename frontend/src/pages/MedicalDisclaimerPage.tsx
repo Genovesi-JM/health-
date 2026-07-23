@@ -54,7 +54,7 @@ export default function MedicalDisclaimerPage() {
 
         <LegalSection title="1. No Substitute for Professional Care">
           <p>
-            Health Platform is a digital coordination tool. It is designed to <strong>support</strong>{' '}
+            KAYA is a digital coordination tool. It is designed to <strong>support</strong>{' '}
             — not replace — in-person medical consultations, clinical examinations, laboratory tests,
             imaging, or any other professional healthcare assessment.
           </p>

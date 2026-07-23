@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Health Platform",
-    "slug": "health-mobile",
+    "name": "KAYA",
+    "slug": "kaya-health",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,13 +12,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.healthplatform.mobile"
+      "bundleIdentifier": "com.kayahealth.app"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0d9488"
       },
-      "package": "com.healthplatform.mobile"
+      "package": "com.kayahealth.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,6 +29,6 @@
     "plugins": [
       "expo-secure-store"
     ],
-    "scheme": "healthplatform"
+    "scheme": "kayahealth"
   }
 }

@@ -1,5 +1,5 @@
 /**
- * API service for Health Platform mobile app.
+ * API service for KAYA mobile app.
  * Uses axios with Bearer token from SecureStore.
  *
  * Base URL is read from EXPO_PUBLIC_API_BASE_URL env var (falls back to localhost).

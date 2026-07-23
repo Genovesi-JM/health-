@@ -110,7 +110,7 @@ export default function ConsentGateScreen() {
 
       <Text style={styles.title}>Before you continue</Text>
       <Text style={styles.subtitle}>
-        Health Platform handles sensitive health data. Please read and accept the following.
+        KAYA handles sensitive health data. Please read and accept the following.
       </Text>
 
       <View style={styles.warning}>

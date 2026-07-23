@@ -1,4 +1,4 @@
-"""Seed data helpers for the Health Platform."""
+"""Seed data helpers for the KAYA."""
 
 from __future__ import annotations
 

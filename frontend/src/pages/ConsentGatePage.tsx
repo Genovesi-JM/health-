@@ -136,7 +136,7 @@ export default function ConsentGatePage() {
           <h1 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0 }}>Before you continue</h1>
         </div>
         <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '0.875rem', marginBottom: '1.75rem', lineHeight: 1.6 }}>
-          Health Platform handles sensitive health data and provides care coordination services.
+          KAYA handles sensitive health data and provides care coordination services.
           Please read and accept the following before accessing your account.
         </p>
 

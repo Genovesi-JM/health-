@@ -443,7 +443,7 @@ export default function PatientProfilePage() {
             Quando os parceiros estiverem disponíveis na sua área, aparecerão aqui para associar ao seu perfil.
           </p>
           <a
-            href="mailto:parcerias@carefast.ao"
+            href="mailto:parcerias@kaya.ao"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
               padding: '0.5rem 1.1rem', borderRadius: '999px',

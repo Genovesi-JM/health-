@@ -38,7 +38,7 @@ export default function TermsOfServicePage() {
 
         <LegalSection title="1. Acceptance of Terms">
           <p>
-            By creating an account and using Health Platform ("the platform", "the service"), you
+            By creating an account and using KAYA ("the platform", "the service"), you
             agree to be bound by these Terms of Service. If you do not agree, you must not use the
             platform.
           </p>
@@ -50,7 +50,7 @@ export default function TermsOfServicePage() {
 
         <LegalSection title="2. Description of Service">
           <p>
-            Health Platform is a digital health coordination tool that allows users to:
+            KAYA is a digital health coordination tool that allows users to:
           </p>
           <ul>
             <li>Complete health triage questionnaires.</li>

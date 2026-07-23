@@ -1,6 +1,6 @@
-# Health Platform — Mobile App
+# KAYA — App para iOS e Android
 
-React Native + Expo + TypeScript mobile client for the Health Platform.
+React Native + Expo + TypeScript mobile client for the KAYA.
 
 ## Quick Start
 

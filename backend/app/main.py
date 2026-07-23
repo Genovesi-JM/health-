@@ -1,7 +1,7 @@
 from __future__ import annotations
 # backend/app/main.py
 """
-Health Platform Backend — Digital Triage & Teleconsultation
+KAYA Backend — Digital Triage & Teleconsultation
 Transformed from GeoVision drone SaaS into healthcare SaaS.
 """
 

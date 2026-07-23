@@ -27,7 +27,7 @@ const FEATURES = [
 
 const JOURNEY = [
   { step: '01', icon: Activity, color: '#dc2626', title: 'Registe a sua condição',        desc: 'Adicione as suas condições de saúde, medicação actual e historial. Rápido e confidencial.' },
-  { step: '02', icon: TrendingUp, color: '#0891b2', title: 'Meça e envie vitais',          desc: 'Use os seus dispositivos existentes ou adquira um kit CareFast+. Dados sincronizados automaticamente.' },
+  { step: '02', icon: TrendingUp, color: '#0891b2', title: 'Meça e envie vitais',          desc: 'Use os seus dispositivos existentes ou adquira um kit KAYA. Dados sincronizados automaticamente.' },
   { step: '03', icon: Calendar, color: '#7c3aed', title: 'Check-in com o médico',         desc: 'Reunião digital mensal. O médico vê toda a evolução e ajusta o tratamento.' },
   { step: '04', icon: RefreshCw, color: '#059669', title: 'Receita sem sair de casa',     desc: 'Renovação aprovada digitalmente e enviada à sua farmácia ou clínica parceira.' },
 ];
@@ -58,7 +58,7 @@ export default function ChronicCarePage() {
         <div className="disclaimer-box">
           <AlertTriangle size={16} style={{ color: '#d97706', flexShrink: 0 }} />
           <span>
-            O CareFast+ não substitui o seu médico. Todas as decisões clínicas são validadas por um profissional de saúde certificado.
+            O KAYA não substitui o seu médico. Todas as decisões clínicas são validadas por um profissional de saúde certificado.
             A plataforma apoia — nunca substitui — o acompanhamento médico tradicional.
           </span>
         </div>

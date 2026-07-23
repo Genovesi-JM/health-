@@ -37,7 +37,7 @@ const DOCTOR_BENEFITS = [
     icon: UserCheck,
     color: '#059669',
     title: 'Perfil verificado e visível',
-    desc: 'O seu perfil aparece na rede CareFast+. Os pacientes vêem as suas especialidades, disponibilidade e podem marcar em tempo real.',
+    desc: 'O seu perfil aparece na rede KAYA. Os pacientes vêem as suas especialidades, disponibilidade e podem marcar em tempo real.',
   },
   {
     icon: HeartPulse,
@@ -57,7 +57,7 @@ const CLINIC_BENEFITS = [
 ];
 
 const PROCESS = [
-  { step: '01', icon: Mail,       color: '#0d9488', title: 'Envie o seu interesse',     desc: 'Preencha o formulário ou escreva para parcerias@carefast.ao. Respondemos em 24 horas.' },
+  { step: '01', icon: Mail,       color: '#0d9488', title: 'Envie o seu interesse',     desc: 'Preencha o formulário ou escreva para parcerias@kaya.ao. Respondemos em 24 horas.' },
   { step: '02', icon: FileText,   color: '#0891b2', title: 'Verificação rápida',         desc: 'Validamos as credenciais e especialidades. Processo confidencial e sem custos.' },
   { step: '03', icon: Zap,        color: '#7c3aed', title: 'Activação do perfil',        desc: 'Configuramos o perfil e activamos o acesso. Para médicos individuais: menos de 48h.' },
   { step: '04', icon: TrendingUp, color: '#d97706', title: 'Comece a receber pacientes', desc: 'O seu perfil fica visível na rede. Pacientes marcam em tempo real.' },
@@ -73,11 +73,11 @@ export default function ClinicsPage() {
         <div className="lp-tag"><Stethoscope size={12} /> Para Profissionais de Saúde</div>
         <h1>Trabalhe de forma<br /><span className="lp-hero__accent">independente e digital.</span></h1>
         <p>
-          Seja médico individual, clínica ou instituição — há um lugar para si no CareFast+.
+          Seja médico individual, clínica ou instituição — há um lugar para si no KAYA.
           Receba pacientes online, gerencie a sua agenda e cresça sem burocracia.
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <a href="mailto:parcerias@carefast.ao" className="lp-cta lp-cta--primary">
+          <a href="mailto:parcerias@kaya.ao" className="lp-cta lp-cta--primary">
             <Stethoscope size={15} /> Candidatar-me como médico
           </a>
           <Link to="/contacto" className="lp-cta lp-cta--secondary">
@@ -98,7 +98,7 @@ export default function ClinicsPage() {
           <h2>A sua consulta, às suas condições.</h2>
           <p>
             Médico recém-formado, especialista em part-time, ou simplesmente quer
-            uma fonte de rendimento extra — o CareFast+ funciona para si.
+            uma fonte de rendimento extra — o KAYA funciona para si.
           </p>
         </div>
         <div className="feat-grid">
@@ -115,7 +115,7 @@ export default function ClinicsPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
-          <a href="mailto:parcerias@carefast.ao" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex' }}>
+          <a href="mailto:parcerias@kaya.ao" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex' }}>
             <Stethoscope size={15} /> Quero ser médico parceiro <ArrowRight size={14} />
           </a>
         </div>
@@ -197,8 +197,8 @@ export default function ClinicsPage() {
         <h2>Pronto para começar?</h2>
         <p>Envie-nos um email ou preencha o formulário de contacto. Sem compromissos, sem custos iniciais.</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <a href="mailto:parcerias@carefast.ao" className="lp-cta lp-cta--white">
-            <Stethoscope size={15} /> parcerias@carefast.ao
+          <a href="mailto:parcerias@kaya.ao" className="lp-cta lp-cta--white">
+            <Stethoscope size={15} /> parcerias@kaya.ao
           </a>
           <Link to="/contacto" className="lp-cta lp-cta--white-outline">
             Formulário de contacto <ArrowRight size={14} />

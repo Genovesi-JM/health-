@@ -222,7 +222,8 @@ def accept_consultation(
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou já aceite.")
 
     consultation.doctor_id = doctor.id
-    consultation.status = "scheduled"
+    consultation.status = "in_progress"
+    consultation.started_at = datetime.utcnow()
     db.add(consultation)
     db.commit()
     db.refresh(consultation)

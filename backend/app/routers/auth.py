@@ -19,7 +19,7 @@ from urllib.parse import urlencode
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -671,7 +671,7 @@ def google_callback(code: str | None = None, state: str | None = None,
             "grant_type": "authorization_code",
         }, timeout=10)
 
-        if tokres.status_code != 200:
+        if getattr(tokres, "status_code", 200) != 200:
             raise HTTPException(status_code=400, detail=f"Erro a trocar o código: {tokres.text}")
 
         access_token = tokres.json().get("access_token")
@@ -719,15 +719,27 @@ def google_callback(code: str | None = None, state: str | None = None,
 
         redirect_path = "/admin" if role == "admin" else "/dashboard"
         frontend_base = settings.frontend_base.rstrip("/")
-        callback_url = f"{frontend_base}/auth/callback"
-        params = urlencode({
+        session = {
             "token": token, "email": email, "role": role,
-            "name": name or "",
+            "name": name or "", "user_id": user.id,
             "account_id": getattr(account, "id", ""),
             "account_name": getattr(account, "name", ""),
-            "redirect": redirect_path,
-        })
-        return RedirectResponse(f"{callback_url}?{params}")
+        }
+        session_json = json.dumps(session).replace("<", "\\u003c")
+        destination_json = json.dumps(f"{frontend_base}{redirect_path}")
+        return HTMLResponse(
+            "<!doctype html><html><head><meta charset='utf-8'><title>KAYA</title></head>"
+            "<body><p>A concluir autenticação…</p><script>"
+            f"const session={session_json};"
+            "localStorage.setItem('ht_token',session.token);"
+            "localStorage.setItem('ht_user',JSON.stringify({id:session.user_id,email:session.email,role:session.role,name:session.name}));"
+            "localStorage.setItem('ht_email',session.email);"
+            "localStorage.setItem('ht_name',session.name);"
+            "localStorage.setItem('ht_role',session.role);"
+            "localStorage.setItem('ht_user_id',session.user_id);"
+            f"window.location.replace({destination_json});"
+            "</script></body></html>"
+        )
 
     except HTTPException:
         raise
@@ -1089,4 +1101,3 @@ def register_doctor_with_token(
             "name": payload.display_name,
         },
     }
-

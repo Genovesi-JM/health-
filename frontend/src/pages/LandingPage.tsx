@@ -257,7 +257,7 @@ export default function LandingPage() {
       {/* ══ ECOSYSTEM ══════════════════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Ecossistema CareFast+</div>
+          <div className="lp-tag">Ecossistema KAYA</div>
           <h2>Um sistema de saúde completo.</h2>
           <p>Do paciente à clínica, do device ao médico — tudo conectado numa só plataforma.</p>
         </div>
@@ -268,7 +268,7 @@ export default function LandingPage() {
             { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: 'Cuidado Crónico',   desc: 'Hipertensão, diabetes, asma — contínuos.' },
             { icon: Activity,  color: '#d97706', to: '/devices',     label: 'Smart Devices',     desc: 'Tensiómetros, glicómetros, oxímetros.' },
             { icon: TrendingUp,color: '#7c3aed', to: '/pricing',     label: 'Preços Simples',    desc: 'Grátis para começar, premium ao crescer.' },
-            { icon: Phone,     color: '#059669', to: '/contacto',    label: 'Contacto',          desc: 'Fale com a equipa CareFast+.' },
+            { icon: Phone,     color: '#059669', to: '/contacto',    label: 'Contacto',          desc: 'Fale com a equipa KAYA.' },
           ].map(item => (
             <Link key={item.to} to={item.to} className="ecosystem-card">
               <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}15`, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
@@ -354,7 +354,7 @@ export default function LandingPage() {
           <h2>Trabalhe connosco — seja quem for.</h2>
           <p>
             Estamos a construir a rede. Se é médico independente, tem uma clínica ou dirige uma instituição,
-            há um lugar para si no CareFast+.
+            há um lugar para si no KAYA.
           </p>
         </div>
         <div className="feat-grid" style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -366,7 +366,7 @@ export default function LandingPage() {
               <div>
                 <h3 className="feat-title">{p.title}</h3>
                 <p className="feat-desc">{p.desc}</p>
-                <a href="mailto:parcerias@carefast.ao" className="btn btn-ghost btn-sm"
+                <a href="mailto:parcerias@kaya.ao" className="btn btn-ghost btn-sm"
                   style={{ marginTop: '0.75rem', color: p.color, borderColor: `${p.color}40` }}>
                   {p.cta} →
                 </a>
@@ -375,7 +375,7 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          Contacto de parcerias: <a href="mailto:parcerias@carefast.ao" style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>parcerias@carefast.ao</a>
+          Contacto de parcerias: <a href="mailto:parcerias@kaya.ao" style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>parcerias@kaya.ao</a>
         </div>
       </section>
 
@@ -475,7 +475,7 @@ export default function LandingPage() {
 
       {/* ══ FINAL CTA ════════════════════════════════════ */}
       <section className="lp-final-cta">
-        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>CareFast+ — O seu sistema de saúde</div>
+        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>KAYA — O seu sistema de saúde</div>
         <h2>Acesso rápido à saúde começa aqui.</h2>
         <p>Junte-se a um ecossistema de saúde digital construído para Angola — e para o mundo.</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>

@@ -51,6 +51,7 @@ def start_triage(
 
     return TriageStartResponse(
         triage_id=session.id,
+        session_id=session.id,
         status=session.status,
         questions=get_triage_questions(age_group=body.age_group, category=body.category),
     )
@@ -74,7 +75,12 @@ def submit_answers(
         raise HTTPException(status_code=400, detail="Sessão já completada ou expirada.")
 
     # Store answers
-    for answer in body.answers:
+    normalized_answers = (
+        [{"question_key": key, "answer": value} for key, value in body.answers.items()]
+        if isinstance(body.answers, dict)
+        else body.answers
+    )
+    for answer in normalized_answers:
         q_key = answer.get("question_key", "")
         a_val = answer.get("answer", "")
         ta = TriageAnswer(

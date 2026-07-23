@@ -1,5 +1,5 @@
 /**
- * Translation keys for Health Platform — PT / EN / FR.
+ * Translation keys for KAYA — PT / EN / FR.
  *
  * Convention: keys are flat, dot-separated for readability.
  * Use t('section.key') to retrieve the translation for the active language.
@@ -144,7 +144,7 @@ const translations: Record<string, Record<Lang, string>> = {
 
   'about.timeline_title': { pt: 'A Nossa Visão de Progresso', en: 'Our Progress Vision', fr: 'Notre Vision de Progrès', es: 'Nuestra Visión de Progreso' },
   'about.timeline_subtitle': { pt: 'Etapas que planeamos alcançar', en: 'Milestones we plan to achieve', fr: 'Étapes que nous prévoyons d\'atteindre', es: 'Hitos que planeamos alcanzar' },
-  'about.timeline_2024_q1': { pt: 'Fundação da Health Platform. Motor de triagem v1 e primeiros protótipos da plataforma.', en: 'Health Platform founded. Triage engine v1 and first platform prototypes.', fr: 'Fondation de Health Platform. Moteur de triage v1 et premiers prototypes de la plateforme.', es: 'Fundación de Health Platform. Motor de triaje v1 y primeros prototipos de la plataforma.' },
+  'about.timeline_2024_q1': { pt: 'Fundação da KAYA. Motor de triagem v1 e primeiros protótipos da plataforma.', en: 'KAYA founded. Triage engine v1 and first platform prototypes.', fr: 'Fondation de KAYA. Moteur de triage v1 et premiers prototypes de la plateforme.', es: 'Fundación de KAYA. Motor de triaje v1 y primeros prototipos de la plataforma.' },
   'about.timeline_2024_q3': { pt: 'Lançamento da teleconsulta e integração com clínicas parceiras. Abertura a múltiplas especialidades.', en: 'Teleconsultation launch and integration with partner clinics. Opening to multiple specialties.', fr: 'Lancement de la téléconsultation et intégration avec des cliniques partenaires. Ouverture à plusieurs spécialités.', es: 'Lanzamiento de teleconsulta e integración con clínicas asociadas. Apertura a múltiples especialidades.' },
   'about.timeline_2025_q1': { pt: 'Prescrições digitais. Programas de acompanhamento de doenças crónicas. Mapa interativo de clínicas e hospitais.', en: 'Digital prescriptions. Chronic disease follow-up programs. Interactive clinic and hospital map.', fr: 'Prescriptions numériques. Programmes de suivi des maladies chroniques. Carte interactive des cliniques et hôpitaux.', es: 'Recetas digitales. Programas de seguimiento de enfermedades crónicas. Mapa interactivo de clínicas y hospitales.' },
   'about.timeline_2025_q4': { pt: 'IA de triagem v2. Agendamento online de consultas. Expansão da rede de especialistas e hospitais parceiros.', en: 'Triage AI v2. Online appointment scheduling. Expansion of specialist network and partner hospitals.', fr: 'IA de triage v2. Prise de rendez-vous en ligne. Expansion du réseau de spécialistes et hôpitaux partenaires.', es: 'IA de triaje v2. Programación online de citas. Expansión de la red de especialistas y hospitales asociados.' },
@@ -283,7 +283,7 @@ const translations: Record<string, Record<Lang, string>> = {
      REGISTER PAGE
      ═══════════════════════════════════════════════════════════ */
   'register.title': { pt: 'Criar Conta', en: 'Create Account', fr: 'Créer un Compte', es: 'Crear Cuenta' },
-  'register.subtitle': { pt: 'Registe-se na Health Platform', en: 'Register on Health Platform', fr: 'Inscrivez-vous sur Health Platform', es: 'Regístrate en Health Platform' },
+  'register.subtitle': { pt: 'Registe-se na KAYA', en: 'Register on KAYA', fr: 'Inscrivez-vous sur KAYA', es: 'Regístrate en KAYA' },
   'register.full_name': { pt: 'Nome Completo', en: 'Full Name', fr: 'Nom Complet', es: 'Nombre Completo' },
   'register.email': { pt: 'Email', en: 'Email', fr: 'Email', es: 'Email' },
   'register.password': { pt: 'Palavra-passe', en: 'Password', fr: 'Mot de passe', es: 'Contraseña' },

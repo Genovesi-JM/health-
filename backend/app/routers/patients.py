@@ -5,6 +5,7 @@ Patients Router — Patient profile management and medical info.
 import json
 import logging
 from typing import Optional, List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
@@ -44,9 +45,9 @@ def list_patients(
     return [_patient_admin_out(p) for p in patients]
 
 
-@router.get("/{patient_id}", response_model=PatientAdminOut)
+@router.get("/{patient_id:uuid}", response_model=PatientAdminOut)
 def get_patient_detail(
-    patient_id: str,
+    patient_id: UUID,
     user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -54,7 +55,7 @@ def get_patient_detail(
     patient = (
         db.query(Patient)
         .options(joinedload(Patient.user))
-        .filter(Patient.id == patient_id)
+        .filter(Patient.id == str(patient_id))
         .first()
     )
     if not patient:

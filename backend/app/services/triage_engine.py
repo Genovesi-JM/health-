@@ -1,6 +1,6 @@
 from __future__ import annotations
 """
-Triage Engine — Rule-Based MVP for Health Platform
+Triage Engine — Rule-Based MVP for KAYA
 
 Config-driven rule engine that evaluates patient symptoms and produces:
 - risk_level: LOW | MEDIUM | URGENT
@@ -291,7 +291,9 @@ def get_triage_questions(age_group: Optional[str] = None, category: Optional[str
         if not key or key in seen:
             continue
         seen.add(key)
-        out.append(q)
+        normalized = dict(q)
+        normalized.setdefault("label", normalized.get("text", ""))
+        out.append(normalized)
     return out
 
 
@@ -340,7 +342,7 @@ def evaluate_triage(answers: Dict[str, Any]) -> TriageEvaluation:
     if score >= 40:
         risk_level = "URGENT"
         recommended_action = "DOCTOR_NOW"
-    elif score >= 20:
+    elif score >= 8:
         risk_level = "MEDIUM"
         recommended_action = "DOCTOR_24H"
     else:

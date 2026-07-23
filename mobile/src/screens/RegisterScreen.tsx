@@ -55,7 +55,7 @@ export default function RegisterScreen({ navigation }: Props) {
         password,
         full_name: fullName || email.split('@')[0],
         sector_focus: 'health',
-        org_name: 'Health Platform',
+        org_name: 'KAYA',
         account_name: fullName || email.split('@')[0],
         entity_type: 'individual',
         modules_enabled: ['triage', 'teleconsulta'],

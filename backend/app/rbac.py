@@ -1,5 +1,5 @@
 from __future__ import annotations
-"""Role-Based Access Control (RBAC) dependencies for the Health Platform.
+"""Role-Based Access Control (RBAC) dependencies for the KAYA.
 
 Follows the existing deps.py patterns (get_current_user, require_admin)
 and extends them with health-specific role checks and row-level access.

@@ -1,6 +1,8 @@
-# 🏥 Digital Health Triage & Teleconsultation Platform
+# KAYA — Saúde digital, triagem e teleconsulta
 
-A full-stack digital health platform for triage and teleconsultation, built with **FastAPI** + **React**.
+Plataforma full-stack KAYA: website/PWA em React, API FastAPI e uma app Expo para iOS e Android.
+
+O plano consolidado de produto, negócio, operação e lançamento está em [`PRODUCT_AND_LAUNCH_PLAN.md`](PRODUCT_AND_LAUNCH_PLAN.md).
 
 ## Architecture
 

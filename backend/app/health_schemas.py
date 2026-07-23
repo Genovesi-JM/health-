@@ -1,5 +1,5 @@
 from __future__ import annotations
-"""Pydantic schemas for the Health Platform domain.
+"""Pydantic schemas for the KAYA domain.
 
 Covers: Patient, Doctor, Triage, Consultation, Prescription, Referral,
 Corporate, Billing, Compliance, and Dashboard KPIs.
@@ -181,7 +181,7 @@ class DoctorRegisterWithToken(BaseModel):
 
 
 class DoctorVerifyRequest(BaseModel):
-    action: str = Field(..., pattern="^(verify|reject|suspend)$")
+    action: str = Field(..., pattern="^(verify|approve|reject|suspend)$")
     reason: Optional[str] = None
 
 
@@ -221,13 +221,14 @@ class TriageStartRequest(BaseModel):
 
 class TriageStartResponse(BaseModel):
     triage_id: str
+    session_id: str
     status: str
     questions: List[dict]  # list of question objects
 
 
 class TriageAnswerSubmit(BaseModel):
-    answers: List[dict] = Field(
-        ..., description="List of {question_key: str, answer: str|int|bool}"
+    answers: List[dict] | dict = Field(
+        ..., description="Map of question keys to answers, or list of {question_key, answer} objects"
     )
 
 
@@ -485,6 +486,7 @@ class PatientStateResponse(BaseModel):
 
 
 class HealthKPIResponse(BaseModel):
+    total_triage_sessions: int = 0
     total_consultations: int
     triage_distribution: dict
     resolution_rate: float

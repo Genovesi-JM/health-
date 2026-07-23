@@ -145,10 +145,10 @@ export default function DoctorRegisterPage() {
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Convite inválido ou expirado</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6 }}>
               Este link de convite não é válido, já foi utilizado ou expirou.<br />
-              Contacte a equipa CareFast+ para receber um novo convite.
+              Contacte a equipa KAYA para receber um novo convite.
             </p>
-            <a href="mailto:parcerias@carefast.ao" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex', marginTop: '1.5rem' }}>
-              <Mail size={15} /> parcerias@carefast.ao
+            <a href="mailto:parcerias@kaya.ao" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex', marginTop: '1.5rem' }}>
+              <Mail size={15} /> parcerias@kaya.ao
             </a>
           </div>
         </div>
@@ -184,7 +184,7 @@ export default function DoctorRegisterPage() {
       <section className="lp-page-hero" style={{ paddingBottom: '1.5rem' }}>
         <div className="lp-tag"><Stethoscope size={12} /> Registo de Médico Parceiro</div>
         <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)' }}>
-          Bem-vindo ao <span className="lp-hero__accent">CareFast+</span>
+          Bem-vindo ao <span className="lp-hero__accent">KAYA</span>
         </h1>
         <p style={{ maxWidth: 520, margin: '0 auto' }}>
           Complete o registo para activar o seu perfil público e começar a receber pacientes.
@@ -324,7 +324,7 @@ export default function DoctorRegisterPage() {
           </button>
 
           <p style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Ao registar, o seu perfil ficará pendente de verificação pela equipa CareFast+.<br />
+            Ao registar, o seu perfil ficará pendente de verificação pela equipa KAYA.<br />
             Consulte os <Link to="/terms" style={{ color: 'var(--brand-primary)' }}>Termos de Uso</Link>.
           </p>
         </form>

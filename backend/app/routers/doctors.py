@@ -251,11 +251,12 @@ def verify_doctor(
 
     action_map = {
         "verify": "verified",
+        "approve": "verified",
         "reject": "rejected",
         "suspend": "suspended",
     }
     doctor.verification_status = action_map[body.action]
-    if body.action == "verify":
+    if body.action in ("verify", "approve"):
         doctor.verified_at = datetime.utcnow()
         doctor.verified_by = user.id
     db.add(doctor)
@@ -274,6 +275,7 @@ def verify_doctor(
     # Notify the doctor of the verification outcome
     _ver_labels = {
         "verify":  ("Perfil verificado",  "A sua conta foi verificada. Pode agora receber consultas.", "success"),
+        "approve": ("Perfil verificado",  "A sua conta foi verificada. Pode agora receber consultas.", "success"),
         "reject":  ("Verificação recusada", f"A sua verificação foi recusada.{' Motivo: ' + body.reason if body.reason else ''}", "error"),
         "suspend": ("Conta suspensa",     f"A sua conta foi suspensa.{' Motivo: ' + body.reason if body.reason else ''}", "warning"),
     }

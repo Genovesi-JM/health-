@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
 
         <LegalSection title="1. Who We Are">
           <p>
-            Health Platform ("we", "our", "the platform") is a digital health service designed to
+            KAYA ("we", "our", "the platform") is a digital health service designed to
             support care coordination, appointment booking, and health monitoring for patients and
             healthcare professionals. We are currently operating in private beta.
           </p>

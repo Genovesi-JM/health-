@@ -97,7 +97,7 @@ export default function InstallPrompt() {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary, #0f172a)',
           marginBottom: '0.15rem' }}>
-          Install Health Platform
+          Install KAYA
         </div>
         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)', lineHeight: 1.4 }}>
           {showIosTip

@@ -1,19 +1,5 @@
-// antes:
-ContentView()
-
-// depois:
-KayaRootView()
 import SwiftUI
 import WebKit
-
-@main
-struct KayaApp: App {
-    var body: some Scene {
-        WindowGroup {
-            KayaRootView()
-        }
-    }
-}
 
 // MARK: - Native Login Helper
 struct KayaLoginView: View {
@@ -119,7 +105,7 @@ struct KayaLoginView: View {
                         Text("Para testar login real:")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color(hex: "101828"))
-                        Text("1. Clica em "Criar conta real" e cria um paciente novo.\n2. Depois entra com essa conta.\n3. Para ver o perfil real, abre "Perfil" no portal.")
+                        Text("1. Clica em “Criar conta real” e cria um paciente novo.\n2. Depois entra com essa conta.\n3. Para ver o perfil real, abre “Perfil” no portal.")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Color(hex: "5D6B82"))
                             .lineSpacing(3)

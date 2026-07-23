@@ -171,7 +171,7 @@ export default function PatientsPage() {
             </div>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-            O CareFast+ tem um programa dedicado para doentes crónicos — monitorização contínua, renovação automática de receitas e check-ins mensais com o seu médico.
+            O KAYA tem um programa dedicado para doentes crónicos — monitorização contínua, renovação automática de receitas e check-ins mensais com o seu médico.
           </p>
           <Link to="/chronic-care" className="lp-cta lp-cta--danger"><RefreshCw size={15} /> Ver programa de cuidado crónico</Link>
         </div>

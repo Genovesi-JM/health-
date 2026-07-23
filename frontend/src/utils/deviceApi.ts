@@ -1,5 +1,5 @@
 /**
- * deviceApi.ts — CareFast+ Device Integration Layer
+ * deviceApi.ts — KAYA Device Integration Layer
  *
  * Stubs for Bluetooth (Web Bluetooth API) and WiFi device connectivity.
  * Replace each TODO section with real SDK / API calls when hardware is available.
@@ -62,8 +62,8 @@ export async function scanBluetooth(): Promise<DeviceInfo[]> {
   // Stub: simulate a 1.5s scan and return mock devices
   await new Promise(res => setTimeout(res, 1500));
   return [
-    { id: 'bt-mock-001', name: 'CareFast BP Monitor', type: 'bluetooth', status: 'disconnected' },
-    { id: 'bt-mock-002', name: 'CareFast SpO₂ Sensor', type: 'bluetooth', status: 'disconnected' },
+    { id: 'bt-mock-001', name: 'KAYA BP Monitor', type: 'bluetooth', status: 'disconnected' },
+    { id: 'bt-mock-002', name: 'KAYA SpO₂ Sensor', type: 'bluetooth', status: 'disconnected' },
   ];
 }
 
@@ -74,7 +74,7 @@ export async function scanBluetooth(): Promise<DeviceInfo[]> {
 export async function connectBluetooth(deviceId: string): Promise<DeviceInfo> {
   // TODO: const server = await device.gatt?.connect();
   await new Promise(res => setTimeout(res, 800));
-  return { id: deviceId, name: 'CareFast Device', type: 'bluetooth', status: 'connected' };
+  return { id: deviceId, name: 'KAYA Device', type: 'bluetooth', status: 'connected' };
 }
 
 /**
@@ -133,7 +133,7 @@ export async function readWifiVitals(ipAddress: string): Promise<VitalReadings> 
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Upload device vitals to CareFast+ backend for a given triage session.
+ * Upload device vitals to KAYA backend for a given triage session.
  * TODO: Wire to POST /api/v1/triage/{sessionId}/vitals once endpoint is ready.
  */
 export async function uploadVitalsToSession(

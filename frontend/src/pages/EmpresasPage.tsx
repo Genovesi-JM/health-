@@ -28,7 +28,7 @@ export default function EmpresasPage() {
         <h1>A saúde da sua equipa,<br />organizada e acessível.</h1>
         <p>Reduza absentismo. Melhore produtividade. Ofereça aos seus colaboradores um benefício de saúde real — sem burocracia.</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <a href="mailto:empresas@carefast.ao" className="lp-cta lp-cta--secondary"><Mail size={16} /> Falar com a equipa</a>
+          <a href="mailto:empresas@kaya.ao" className="lp-cta lp-cta--secondary"><Mail size={16} /> Falar com a equipa</a>
           <Link to="/contacto" className="lp-cta lp-cta--outline">Contactar <ArrowRight size={15} /></Link>
         </div>
       </section>
@@ -65,7 +65,7 @@ export default function EmpresasPage() {
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{p.employees} colaboradores</div>
               <div className="lp-price-amount">{p.price}</div>
               <ul>{p.features.map(f => (<li key={f}><CheckCircle2 size={13} style={{ color: p.featured ? '#fff' : '#7c3aed' }} /> {f}</li>))}</ul>
-              <a href="mailto:empresas@carefast.ao" className="lp-price-cta" style={p.featured ? { background: '#fff', color: '#7c3aed' } : { background: '#7c3aed', color: '#fff' }}>
+              <a href="mailto:empresas@kaya.ao" className="lp-price-cta" style={p.featured ? { background: '#fff', color: '#7c3aed' } : { background: '#7c3aed', color: '#fff' }}>
                 Pedir proposta
               </a>
             </div>
@@ -77,7 +77,7 @@ export default function EmpresasPage() {
         <div style={{ textAlign: 'center', padding: '2rem 0' }}>
           <h2>Pronto para avançar?</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Fale connosco. Preparamos uma proposta personalizada para o tamanho e necessidades da sua empresa.</p>
-          <a href="mailto:empresas@carefast.ao" className="lp-cta lp-cta--secondary" style={{ display: 'inline-flex' }}><Mail size={16} /> empresas@carefast.ao</a>
+          <a href="mailto:empresas@kaya.ao" className="lp-cta lp-cta--secondary" style={{ display: 'inline-flex' }}><Mail size={16} /> empresas@kaya.ao</a>
         </div>
       </section>
 

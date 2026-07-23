@@ -46,11 +46,11 @@ const DEVICES = [
   { icon: Wind,       color: '#0891b2', label: 'Oxímetro',       sub: 'SpO₂ e frequência respiratória. Alerta imediato abaixo de 92%.' },
   { icon: Heart,      color: '#7c3aed', label: 'Balança Smart',  sub: 'Peso, IMC e percentagem de gordura corporal. Evolução semanal.' },
   { icon: Zap,        color: '#d97706', label: 'Termómetro',     sub: 'Temperatura corporal em 3 segundos. Sem contacto.' },
-  { icon: Smartphone, color: '#0d9488', label: 'App Sync',       sub: 'Todos os devices sincronizam via Bluetooth com a app CareFast+.' },
+  { icon: Smartphone, color: '#0d9488', label: 'App Sync',       sub: 'Todos os devices sincronizam via Bluetooth com a app KAYA.' },
 ];
 
 const HOW = [
-  { step: '01', icon: Bluetooth, color: '#0d9488', title: 'Ligue o dispositivo', desc: 'Abra a app CareFast+, active o Bluetooth e o device emparelha automaticamente.' },
+  { step: '01', icon: Bluetooth, color: '#0d9488', title: 'Ligue o dispositivo', desc: 'Abra a app KAYA, active o Bluetooth e o device emparelha automaticamente.' },
   { step: '02', icon: Activity,  color: '#dc2626', title: 'Faça a medição',      desc: 'A leitura é guardada instantaneamente no seu perfil clínico.' },
   { step: '03', icon: TrendingUp,color: '#0891b2', title: 'O médico recebe',     desc: 'Na próxima consulta ou teleconsulta, o médico vê toda a evolução dos seus vitais.' },
   { step: '04', icon: Shield,    color: '#7c3aed', title: 'Alertas de risco',    desc: 'Se uma leitura estiver fora do intervalo seguro, recebe notificação e o médico é informado.' },
@@ -85,7 +85,7 @@ export default function DevicesPage() {
         <div className="disclaimer-box">
           <AlertTriangle size={16} style={{ color: '#d97706', flexShrink: 0 }} />
           <span>
-            Os dispositivos CareFast+ são auxiliares de monitorização pessoal. Não substituem exames clínicos laboratoriais.
+            Os dispositivos KAYA são auxiliares de monitorização pessoal. Não substituem exames clínicos laboratoriais.
             Todas as leituras são interpretadas por um médico certificado.
           </span>
         </div>
@@ -96,7 +96,7 @@ export default function DevicesPage() {
         <div className="lp-section__header">
           <div className="lp-tag">Dispositivos compatíveis</div>
           <h2>Tudo o que precisa para monitorizar a sua saúde.</h2>
-          <p>Dispositivos Bluetooth certificados, integrados directamente com o portal CareFast+.</p>
+          <p>Dispositivos Bluetooth certificados, integrados directamente com o portal KAYA.</p>
         </div>
         <div className="devices-grid">
           {DEVICES.map(d => (

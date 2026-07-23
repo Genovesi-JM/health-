@@ -1,7 +1,7 @@
 from __future__ import annotations
 # app/health_models.py
 """
-Health Platform Domain Models — Digital Triage & Teleconsultation
+KAYA Domain Models — Digital Triage & Teleconsultation
 
 These models extend the existing User/Account tables with health-specific
 domain entities: Patient, Doctor, TriageSession, Consultation, Prescription,
