@@ -386,3 +386,38 @@ def cancel_consultation(
     db.refresh(consultation)
 
     return consultation
+
+
+# ── Patient review of a completed consultation ───────────────────────────────
+from app.health_models import DoctorReview as _DoctorReview  # noqa: E402
+from app.health_schemas import ReviewCreate as _ReviewCreate  # noqa: E402
+
+
+@router.post("/api/v1/consultations/{consultation_id}/review", status_code=201)
+def submit_review(
+    consultation_id: str,
+    body: _ReviewCreate,
+    patient: Patient = Depends(get_patient_for_user),
+    db: Session = Depends(get_db),
+):
+    """Patient rates the doctor after a completed consultation (one per consult)."""
+    c = db.query(Consultation).filter(
+        Consultation.id == consultation_id,
+        Consultation.patient_id == patient.id,
+    ).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Consulta não encontrada.")
+    if c.status != "completed":
+        raise HTTPException(status_code=400, detail="Só pode avaliar consultas concluídas.")
+    if not c.doctor_id:
+        raise HTTPException(status_code=400, detail="Consulta sem médico atribuído.")
+    existing = db.query(_DoctorReview).filter(_DoctorReview.consultation_id == consultation_id).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Esta consulta já foi avaliada.")
+    review = _DoctorReview(
+        doctor_id=c.doctor_id, patient_id=patient.id,
+        consultation_id=consultation_id, rating=body.rating, comment=body.comment,
+    )
+    db.add(review)
+    db.commit()
+    return {"detail": "Avaliação registada. Obrigado!", "id": review.id}

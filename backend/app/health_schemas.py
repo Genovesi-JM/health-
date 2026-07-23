@@ -831,3 +831,17 @@ class MessageThreadOut(BaseModel):
     last_message: Optional[str] = None
     last_at: Optional[datetime] = None
     unread: int = 0
+
+
+# ── Doctor Reviews ──
+class ReviewCreate(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = Field(default=None, max_length=1000)
+
+
+class ReviewOut(BaseModel):
+    id: str
+    patient: str
+    rating: int
+    comment: Optional[str] = None
+    date: str

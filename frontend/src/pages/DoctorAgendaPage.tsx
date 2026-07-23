@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../api';
 import { Calendar, Clock, User, Video, MapPin, ChevronLeft, ChevronRight, Check, X, RefreshCw, Plus } from 'lucide-react';
 
 interface Appointment {
@@ -8,28 +9,20 @@ interface Appointment {
   patient: string;
   type: 'teleconsulta' | 'presencial';
   reason: string;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'done';
+  status: string;   // confirmed | pending | in_progress | completed | cancelled | no_show
 }
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-const TODAY_APPOINTMENTS: Appointment[] = [
-  { id: 'a1', time: '09:00', duration: 30, patient: 'Carlos Manuel Pinto',    type: 'teleconsulta', reason: 'Seguimento HTA',                  status: 'confirmed' },
-  { id: 'a2', time: '09:30', duration: 20, patient: 'Sofia Beatriz Costa',    type: 'presencial',   reason: 'Resultado de exames',             status: 'confirmed' },
-  { id: 'a3', time: '10:00', duration: 30, patient: 'António Nunes Ferreira', type: 'teleconsulta', reason: 'Consulta de rotina diabetes T2',  status: 'pending'   },
-  { id: 'a4', time: '10:45', duration: 45, patient: 'Isabel Marques Lima',    type: 'presencial',   reason: 'Dor abdominal crónica',           status: 'confirmed' },
-  { id: 'a5', time: '11:30', duration: 20, patient: 'Luís Eduardo Teixeira',  type: 'teleconsulta', reason: 'Renovação de prescrição',         status: 'done'      },
-  { id: 'a6', time: '14:00', duration: 30, patient: 'Ana Luísa Rodrigues',    type: 'teleconsulta', reason: 'Primeira consulta — cefaleia',    status: 'pending'   },
-  { id: 'a7', time: '14:30', duration: 30, patient: 'Manuel Francisco Sousa', type: 'presencial',   reason: 'Controlo pós-operatório',         status: 'confirmed' },
-  { id: 'a8', time: '15:30', duration: 20, patient: 'Rita Carvalho Matos',    type: 'teleconsulta', reason: 'Follow-up depressão',             status: 'confirmed' },
-];
-
-const statusConfig = {
-  confirmed: { label: 'Confirmada',  color: '#059669', bg: 'rgba(16,185,129,0.1)'  },
-  pending:   { label: 'Pendente',    color: '#d97706', bg: 'rgba(234,179,8,0.12)'  },
-  cancelled: { label: 'Cancelada',   color: '#dc2626', bg: 'rgba(239,68,68,0.1)'   },
-  done:      { label: 'Concluída',   color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
+const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+  confirmed:   { label: 'Confirmada',  color: '#059669', bg: 'rgba(16,185,129,0.1)'  },
+  pending:     { label: 'Pendente',    color: '#d97706', bg: 'rgba(234,179,8,0.12)'  },
+  in_progress: { label: 'Em curso',    color: '#0891b2', bg: 'rgba(8,145,178,0.12)'  },
+  completed:   { label: 'Concluída',   color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
+  cancelled:   { label: 'Cancelada',   color: '#dc2626', bg: 'rgba(239,68,68,0.1)'   },
+  no_show:     { label: 'Faltou',      color: '#dc2626', bg: 'rgba(239,68,68,0.1)'   },
+  done:        { label: 'Concluída',   color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
 };
 
 function buildWeek(anchor: Date): Date[] {
@@ -43,7 +36,26 @@ export default function DoctorAgendaPage() {
   const today = new Date();
   const [anchor, setAnchor] = useState(new Date(today));
   const [selected, setSelected] = useState(new Date(today));
-  const [appts, setAppts] = useState(TODAY_APPOINTMENTS);
+  const [appts, setAppts] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/api/v1/doctor/agenda/today')
+      .then(r => {
+        const mapped: Appointment[] = (r.data || []).map((a: any) => ({
+          id: a.id,
+          time: a.time,
+          duration: a.duration ?? 30,
+          patient: a.patient,
+          type: a.type,
+          reason: a.reason || '—',
+          status: a.status,
+        }));
+        setAppts(mapped);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const week = buildWeek(anchor);
 
@@ -57,9 +69,9 @@ export default function DoctorAgendaPage() {
   const updateStatus = (id: string, status: Appointment['status']) =>
     setAppts(prev => prev.map(a => a.id === id ? { ...a, status } : a));
 
-  const confirmed = shownAppts.filter(a => a.status === 'confirmed').length;
+  const confirmed = shownAppts.filter(a => a.status === 'confirmed' || a.status === 'in_progress').length;
   const pending   = shownAppts.filter(a => a.status === 'pending').length;
-  const done      = shownAppts.filter(a => a.status === 'done').length;
+  const done      = shownAppts.filter(a => a.status === 'completed' || a.status === 'done').length;
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
@@ -118,7 +130,9 @@ export default function DoctorAgendaPage() {
       )}
 
       {/* Appointment list */}
-      {shownAppts.length === 0 ? (
+      {loading && isToday(selected) ? (
+        <div className="page-loading"><div className="spinner" /></div>
+      ) : shownAppts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
           <Calendar size={36} style={{ display: 'block', margin: '0 auto 0.75rem', color: 'var(--text-muted)' }} />
           <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Sem consultas neste dia</div>
@@ -127,7 +141,7 @@ export default function DoctorAgendaPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {shownAppts.map(a => {
-            const s = statusConfig[a.status];
+            const s = statusConfig[a.status] ?? { label: a.status, color: '#64748b', bg: 'rgba(100,116,139,0.1)' };
             return (
               <div key={a.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', opacity: a.status === 'cancelled' ? 0.5 : 1 }}>
                 {/* Time */}

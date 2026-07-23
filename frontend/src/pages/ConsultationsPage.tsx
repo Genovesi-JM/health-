@@ -7,8 +7,9 @@ import { useT } from '../i18n/LanguageContext';
 import BookConsultationModal from '../components/BookConsultationModal';
 import PaymentModal from '../components/PaymentModal';
 import ChatModal from '../components/ChatModal';
+import ReviewModal from '../components/ReviewModal';
 import { specialtyLabel } from '../constants/specialties';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Star } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -22,6 +23,7 @@ export default function ConsultationsPage() {
   const [showBooking, setShowBooking] = useState(false);
   const [payFor, setPayFor] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<Consultation | null>(null);
+  const [reviewFor, setReviewFor] = useState<Consultation | null>(null);
 
   useEffect(() => {
     Promise.allSettled([
@@ -159,6 +161,14 @@ export default function ConsultationsPage() {
                           <MessageSquare size={13} /> {t('msg.messages')}
                         </button>
                       )}
+                      {c.status === 'completed' && (
+                        <button
+                          onClick={() => setReviewFor(c)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, marginLeft: 10, background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
+                        >
+                          <Star size={13} /> Avaliar
+                        </button>
+                      )}
                     </td>
                     <td>
                       <span className={`badge ${statusBadge(c.status)}`}>
@@ -211,6 +221,14 @@ export default function ConsultationsPage() {
         title={chatFor ? specialtyLabel(chatFor.specialty, t) : 'Mensagens'}
         myRole="patient"
         onClose={() => setChatFor(null)}
+      />
+
+      {/* Review modal */}
+      <ReviewModal
+        open={reviewFor !== null}
+        consultationId={reviewFor?.id || ''}
+        title={reviewFor ? specialtyLabel(reviewFor.specialty, t) : undefined}
+        onClose={() => setReviewFor(null)}
       />
     </>
   );

@@ -649,3 +649,17 @@ class ConsultationMessage(Base):
     __table_args__ = (
         Index("ix_consultation_messages_consult_created", "consultation_id", "created_at"),
     )
+
+
+# ── Doctor Review (patient rates doctor after a completed consultation) ───────
+
+class DoctorReview(Base):
+    __tablename__ = "doctor_reviews"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    consultation_id: Mapped[str] = mapped_column(String(36), ForeignKey("consultations.id", ondelete="CASCADE"), nullable=False, unique=True)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)   # 1..5
+    comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

@@ -23,7 +23,7 @@ from app.deps import get_current_user
 from app.models import User, UserProfile
 from app.health_models import (
     Doctor, Patient, Consultation, ConsultationNotes,
-    PrescriptionRequest, DeviceReading, PatientMedication,
+    PrescriptionRequest, DeviceReading, PatientMedication, HealthPayment,
 )
 from app.rbac import log_health_audit, assert_doctor_can_access_patient
 
@@ -537,3 +537,115 @@ def doctor_patient_clinical_summary(
         "risk_flags": risk_flags,
         "uploaded_files": [],  # Reserved for future file integration
     }
+
+
+# ── GET /api/v1/doctor/finance ───────────────────────────────────────────────
+
+_PLATFORM_RATE = 0.10  # KAYA commission on paid consultations
+
+
+def _fmt_kz(centavos: int) -> str:
+    """Format centavos as '50.000 Kz' (pt-AO grouping)."""
+    value = (centavos or 0) / 100
+    s = f"{value:,.0f}".replace(",", ".")
+    return f"{s} Kz"
+
+
+@router.get("/api/v1/doctor/finance")
+def doctor_finance(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Earnings summary for the doctor, computed from consultation payments."""
+    doctor = _require_doctor(user, db)
+
+    # All payments tied to this doctor's consultations.
+    rows = (
+        db.query(HealthPayment, Consultation)
+        .join(Consultation, HealthPayment.consultation_id == Consultation.id)
+        .filter(Consultation.doctor_id == doctor.id)
+        .order_by(HealthPayment.created_at.desc())
+        .all()
+    )
+
+    now = datetime.utcnow()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.combine(date.today(), datetime.min.time())
+
+    paid_total = paid_month = paid_today = pending_total = 0
+    today_count = month_count = 0
+    transactions = []
+
+    for pay, c in rows:
+        if pay.status == "paid":
+            paid_total += pay.amount
+            if pay.created_at >= month_start:
+                paid_month += pay.amount
+                month_count += 1
+            if pay.created_at >= today_start:
+                paid_today += pay.amount
+                today_count += 1
+        elif pay.status == "pending":
+            pending_total += pay.amount
+
+        if len(transactions) < 30:
+            patient = db.get(Patient, c.patient_id) if c.patient_id else None
+            transactions.append({
+                "id": pay.id,
+                "patient": _get_patient_name(patient, db) if patient else "Paciente",
+                "type": _consultation_type_label(c),
+                "amount": _fmt_kz(pay.amount),
+                "date": pay.created_at.strftime("%d/%m/%Y"),
+                "status": "Pago" if pay.status == "paid" else ("Pendente" if pay.status == "pending" else pay.status),
+            })
+
+    platform_fee = int(paid_total * _PLATFORM_RATE)
+    net_total = paid_total - platform_fee
+
+    return {
+        "kpis": {
+            "today": {"amount": _fmt_kz(paid_today), "count": today_count},
+            "month": {"amount": _fmt_kz(paid_month), "count": month_count},
+            "pending": {"amount": _fmt_kz(pending_total)},
+            "platform_fee": {"amount": _fmt_kz(platform_fee), "rate": "10% do total"},
+            "net_total": {"amount": _fmt_kz(net_total)},
+        },
+        "transactions": transactions,
+    }
+
+
+# ── GET /api/v1/doctor/reviews ───────────────────────────────────────────────
+from app.health_models import DoctorReview as _DoctorReview  # noqa: E402
+
+
+@router.get("/api/v1/doctor/reviews")
+def doctor_reviews(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """The doctor's patient reviews with average rating."""
+    doctor = _require_doctor(user, db)
+    rows = (
+        db.query(_DoctorReview)
+        .filter(_DoctorReview.doctor_id == doctor.id)
+        .order_by(_DoctorReview.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    reviews = []
+    for r in rows:
+        patient = db.get(Patient, r.patient_id)
+        full = _get_patient_name(patient, db) if patient else "Paciente"
+        # Show first name + last initial for privacy: "Maria F."
+        parts = full.split()
+        short = parts[0] + (f" {parts[-1][0]}." if len(parts) > 1 else "")
+        reviews.append({
+            "id": r.id,
+            "patient": short,
+            "rating": r.rating,
+            "comment": r.comment,
+            "date": r.created_at.strftime("%d/%m/%Y"),
+        })
+    count = len(rows)
+    average = round(sum(r.rating for r in rows) / count, 1) if count else 0.0
+    return {"average": average, "count": count, "reviews": reviews}
