@@ -20,6 +20,7 @@ const REQUIRED_CONSENTS = [
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const { t } = useT();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // null = checking, true = OK, false = needs consent
   const [consentOk, setConsentOk] = useState<boolean | null>(null);
@@ -88,7 +89,6 @@ export function ProtectedRoute() {
   }
 
   /* Map route path to a breadcrumb label */
-  const { t } = useT();
   const crumbs: Record<string, string> = {
     '/dashboard': t('topbar.overview'),
     '/patient/profile': t('topbar.my_profile'),

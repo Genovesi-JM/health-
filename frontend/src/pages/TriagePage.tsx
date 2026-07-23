@@ -642,6 +642,26 @@ export default function TriagePage() {
                     {q.options.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 )}
+                {q.type === 'number' && (
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    className="form-input"
+                    style={{ maxWidth: '160px' }}
+                    placeholder="0"
+                    value={answers[q.key] === undefined ? '' : String(answers[q.key])}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setAnswers(a => {
+                        const next = { ...a };
+                        if (v === '') delete next[q.key];
+                        else next[q.key] = Number(v);
+                        return next;
+                      });
+                    }}
+                  />
+                )}
               </div>
             ))}
 

@@ -42,7 +42,7 @@ export interface Doctor {
 export interface TriageQuestion {
   key: string;
   label: string;
-  type: 'boolean' | 'scale' | 'select';
+  type: 'boolean' | 'scale' | 'select' | 'number';
   options?: string[];
 }
 

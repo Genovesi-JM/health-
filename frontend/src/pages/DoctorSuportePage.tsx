@@ -43,8 +43,8 @@ export default function DoctorSuportePage() {
       </div>
 
       <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-        <a href="https://health.geovisionops.com/docs" target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--brand-primary)', fontWeight: 600 }}>
-          <ExternalLink size={14} /> Documentação completa
+        <a href="mailto:suporte@kaya.ao" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--brand-primary)', fontWeight: 600 }}>
+          <ExternalLink size={14} /> Falar com o suporte KAYA
         </a>
       </div>
     </div>
