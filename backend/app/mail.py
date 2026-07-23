@@ -1,5 +1,5 @@
 from __future__ import annotations
-"""Mail service for GeoVision — Microsoft 365 SMTP (Office 365).
+"""Mail service for KAYA — Microsoft 365 SMTP (Office 365).
 
 Supports:
 - Password reset emails
@@ -25,7 +25,7 @@ from .config import settings
 # ═══════════════════════════════════════════════════════════════
 
 def _base_html(title: str, content: str) -> str:
-    """Professional HTML email wrapper matching GeoVision brand."""
+    """Professional HTML email wrapper matching KAYA brand."""
     return f"""<!DOCTYPE html>
 <html lang="pt">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,7 +35,7 @@ def _base_html(title: str, content: str) -> str:
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 <tr><td style="background:linear-gradient(135deg,#1a5276,#2e86c1);padding:30px 40px;text-align:center;">
-<h1 style="margin:0;color:#fff;font-size:24px;font-weight:600;">GeoVision</h1>
+<h1 style="margin:0;color:#fff;font-size:24px;font-weight:600;">KAYA</h1>
 <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Geospatial Intelligence Platform</p>
 </td></tr>
 <tr><td style="padding:40px;">
@@ -43,7 +43,7 @@ def _base_html(title: str, content: str) -> str:
 </td></tr>
 <tr><td style="background:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #e9ecef;">
 <p style="margin:0;color:#6c757d;font-size:12px;">
-© {datetime.utcnow().year} GeoVision Ops · Angola
+© {datetime.utcnow().year} KAYA · Angola
 <br>Este email foi enviado automaticamente. Não responda directamente.
 </p>
 </td></tr>
@@ -93,9 +93,9 @@ def _payment_confirmation_html(order_number: str, amount: str, currency: str, me
 
 def _invite_user_html(inviter_name: str, company_name: str, invite_link: str) -> str:
     content = f"""
-    <h2 style="margin:0 0 20px;color:#1a5276;font-size:20px;">Convite para GeoVision</h2>
+    <h2 style="margin:0 0 20px;color:#1a5276;font-size:20px;">Convite para KAYA</h2>
     <p style="color:#333;line-height:1.6;"><strong>{inviter_name}</strong> convidou-o a juntar-se à
-    equipa <strong>{company_name}</strong> na plataforma GeoVision.</p>
+    equipa <strong>{company_name}</strong> na plataforma KAYA.</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
     <tr><td align="center">
     <a href="{invite_link}" style="display:inline-block;background:#2e86c1;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
@@ -103,7 +103,7 @@ def _invite_user_html(inviter_name: str, company_name: str, invite_link: str) ->
     </td></tr></table>
     <p style="color:#666;font-size:13px;">Este convite expira em 7 dias.</p>
     """
-    return _base_html("Convite para GeoVision", content)
+    return _base_html("Convite para KAYA", content)
 
 
 def _order_status_html(order_number: str, status: str, message: str) -> str:
@@ -176,35 +176,35 @@ def _send_email(to_email: str, subject: str, plain_text: str, html: str | None =
 
 
 def send_reset_email(to_email: str, reset_link: str) -> Tuple[bool, str]:
-    subject = "GeoVision – Redefinição de palavra-passe"
+    subject = "KAYA – Redefinição de palavra-passe"
     plain = f"Redefinir palavra-passe: {reset_link}\nExpira em 1 hora."
     html = _reset_password_html(reset_link)
     return _send_email(to_email, subject, plain, html)
 
 
 def send_payment_confirmation(to_email: str, order_number: str, amount: str, currency: str = "AOA", method: str = "Multicaixa") -> Tuple[bool, str]:
-    subject = f"GeoVision – Pagamento confirmado ({order_number})"
+    subject = f"KAYA – Pagamento confirmado ({order_number})"
     plain = f"Pagamento confirmado para pedido {order_number}: {amount} {currency} via {method}."
     html = _payment_confirmation_html(order_number, amount, currency, method)
     return _send_email(to_email, subject, plain, html)
 
 
 def send_user_invite(to_email: str, inviter_name: str, company_name: str, invite_link: str) -> Tuple[bool, str]:
-    subject = f"GeoVision – Convite de {inviter_name} para {company_name}"
-    plain = f"{inviter_name} convidou-o para {company_name} na GeoVision. Aceitar: {invite_link}"
+    subject = f"KAYA – Convite de {inviter_name} para {company_name}"
+    plain = f"{inviter_name} convidou-o para {company_name} na KAYA. Aceitar: {invite_link}"
     html = _invite_user_html(inviter_name, company_name, invite_link)
     return _send_email(to_email, subject, plain, html)
 
 
 def send_order_status(to_email: str, order_number: str, status: str, message: str) -> Tuple[bool, str]:
-    subject = f"GeoVision – Pedido {order_number}: {status}"
+    subject = f"KAYA – Pedido {order_number}: {status}"
     plain = f"Pedido {order_number} atualizado para {status}. {message}"
     html = _order_status_html(order_number, status, message)
     return _send_email(to_email, subject, plain, html)
 
 
 def send_critical_alert(to_email: str, title: str, description: str, location: str = "", severity: str = "critical") -> Tuple[bool, str]:
-    subject = f"GeoVision – ALERTA {severity.upper()}: {title}"
+    subject = f"KAYA – ALERTA {severity.upper()}: {title}"
     plain = f"ALERTA {severity.upper()}: {title}\n{description}\nLocal: {location}"
     html = _critical_alert_html(title, description, location, severity)
     return _send_email(to_email, subject, plain, html)

@@ -132,7 +132,7 @@ class MulticaixaExpressAdapter(PaymentAdapter):
             return PaymentResult(
                 success=True, payment_id=intent.id, status=PaymentStatus.PENDING,
                 provider_reference=f"MCX-{uuid.uuid4().hex[:12].upper()}",
-                qr_code=f"00020101021126330014mcx.co.ao0112{intent.id}520400005303AOA5406{intent.amount}5802AO5925GEOVISION",
+                qr_code=f"00020101021126330014mcx.co.ao0112{intent.id}520400005303AOA5406{intent.amount}5802AO5904KAYA",
                 raw_response={"mock": True})
         async with httpx.AsyncClient() as client:
             try:
@@ -346,8 +346,8 @@ class PayPalAdapter(PaymentAdapter):
                 "amount": {"currency_code": currency, "value": amount_str},
             }],
             "application_context": {
-                "return_url": os.getenv("PAYPAL_RETURN_URL", "https://geovisionops.com/loja.html?paypal=success"),
-                "cancel_url": os.getenv("PAYPAL_CANCEL_URL", "https://geovisionops.com/loja.html?paypal=cancel"),
+                "return_url": os.getenv("PAYPAL_RETURN_URL", "https://kaya.ao/pagamento?paypal=success"),
+                "cancel_url": os.getenv("PAYPAL_CANCEL_URL", "https://kaya.ao/pagamento?paypal=cancel"),
                 "brand_name": "GeoVision",
             },
         }
