@@ -5,7 +5,7 @@ import { Building2, Users, TrendingUp, Shield, RefreshCw, Clock, CheckCircle2, A
 
 const FEATURES = [
   { icon: Users,      title: 'Teleconsulta para staff',   desc: 'Médico disponível para toda a equipa, sem deslocação.' },
-  { icon: TrendingUp, title: 'Dashboard RH anónimo',      desc: 'Tendências de saúde da equipa sem violar privacidade individual.' },
+  { icon: TrendingUp, title: 'Painel RH anónimo',      desc: 'Tendências de saúde da equipa sem violar privacidade individual.' },
   { icon: RefreshCw,  title: 'Check-ups anuais',          desc: 'Agenda e relatórios de check-up para todos os colaboradores.' },
   { icon: Shield,     title: 'Gestão de crónicos',        desc: 'Acompanhamento e alertas para colaboradores com condições crónicas.' },
   { icon: Clock,      title: 'Resposta rápida',           desc: 'SLA de atendimento médico garantido para urgências da equipa.' },
@@ -14,7 +14,7 @@ const FEATURES = [
 
 const PLANS = [
   { label: 'Start',      employees: 'até 20',  price: 'Sob consulta', features: ['Teleconsulta básica', 'Perfis individuais', 'Suporte email'] },
-  { label: 'Business',   employees: 'até 100', price: 'Sob consulta', features: ['Tudo do Start', 'Dashboard RH', 'Check-up anual', 'Relatórios'], featured: true },
+  { label: 'Business',   employees: 'até 100', price: 'Sob consulta', features: ['Tudo do Start', 'Painel RH', 'Check-up anual', 'Relatórios'], featured: true },
   { label: 'Enterprise', employees: '100+',    price: 'Sob consulta', features: ['Tudo do Business', 'API dedicada', 'Onboarding presencial', 'SLA garantido', 'Gestor dedicado'] },
 ];
 

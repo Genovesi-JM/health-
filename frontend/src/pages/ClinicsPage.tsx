@@ -51,7 +51,7 @@ const CLINIC_BENEFITS = [
   { icon: Calendar,  color: '#0d9488', title: 'Marcações online 24/7',       desc: 'Os pacientes marcam directamente. Sem telefonemas, confirmação automática.' },
   { icon: Clock,     color: '#0891b2', title: 'Menos tempo de espera',        desc: 'Pré-consulta digital organiza chegadas. Menos congestionamento na recepção.' },
   { icon: Video,     color: '#7c3aed', title: 'Teleconsulta integrada',       desc: 'Ofereça consultas por vídeo sem investimento em infraestrutura adicional.' },
-  { icon: BarChart2, color: '#d97706', title: 'Dashboard de gestão',          desc: 'Ocupação, especialidades e cancelamentos — dados para decisões melhores.' },
+  { icon: BarChart2, color: '#d97706', title: 'Painel de gestão',          desc: 'Ocupação, especialidades e cancelamentos — dados para decisões melhores.' },
   { icon: Users,     color: '#059669', title: 'Fidelização de pacientes',     desc: 'Lembretes automáticos e seguimento de crónicos mantêm os pacientes activos.' },
   { icon: Shield,    color: '#0d9488', title: 'Segurança e conformidade',     desc: 'Dados clínicos encriptados. Auditoria completa de acessos.' },
 ];
@@ -155,7 +155,7 @@ export default function ClinicsPage() {
             { icon: Stethoscope, color: '#0d9488', label: 'Médico em início de carreira', desc: 'Construa carteira de pacientes sem depender de uma clínica.' },
             { icon: Activity,    color: '#2563eb', label: 'Especialista em part-time',     desc: 'Monetize horas livres. Sem contrato exclusivo.' },
             { icon: HeartPulse,  color: '#7c3aed', label: 'Clínica de 1–3 médicos',        desc: 'Gestão simples, marcações automáticas, sem investimento pesado.' },
-            { icon: BarChart2,   color: '#d97706', label: 'Centro ou policlínica',          desc: 'Dashboard multi-especialidade e analytics de ocupação.' },
+            { icon: BarChart2,   color: '#d97706', label: 'Centro ou policlínica',          desc: 'Painel multi-especialidade e análises de ocupação.' },
             { icon: UserCheck,   color: '#059669', label: 'Médico reformado em part-time',  desc: 'Consulte ao seu ritmo, no conforto de casa ou no consultório.' },
             { icon: Building2,   color: '#dc2626', label: 'Instituição de saúde',           desc: 'Integração completa, API disponível, proposta à medida.' },
           ].map(c => (

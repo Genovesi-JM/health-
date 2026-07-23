@@ -34,10 +34,10 @@ const HOW_STEPS = [
 ];
 
 const PREMIUM_PLANS = [
-  { icon: Users,     label: 'Family Plan',     color: '#0d9488', desc: 'Cobertura total para toda a família num único portal.', features: ['Perfis ilimitados', 'Consultas partilhadas', 'Alertas familiares', 'Historial integrado'], cta: 'Family Plan', featured: false },
-  { icon: Heart,     label: 'Chronic Care',    color: '#dc2626', desc: 'Acompanhamento contínuo para condições crónicas.', features: ['Monitorização de vitais', 'Renovação automática', 'Coach de aderência', 'Alertas de risco'], cta: 'Chronic Care', featured: true },
-  { icon: Building2, label: 'Corporate',       color: '#7c3aed', desc: 'Saúde ocupacional para equipas sem burocracia.', features: ['Dashboard RH anónimo', 'Teleconsulta staff', 'Check-ups anuais', 'Gestão absentismo'], cta: 'Empresas', featured: false },
-  { icon: Zap,       label: 'Priority Access', color: '#b45309', desc: 'Acesso prioritário e chegada pre-alerta em hospitais.', features: ['Fila prioritária', 'Pre-alerta hospitalar', 'Médico dedicado', 'Teleconsulta imediata'], cta: 'Priority', featured: false },
+  { icon: Users,     label: 'Plano Família',     color: '#0d9488', desc: 'Cobertura total para toda a família num único portal.', features: ['Perfis ilimitados', 'Consultas partilhadas', 'Alertas familiares', 'Historial integrado'], cta: 'Plano Família', featured: false },
+  { icon: Heart,     label: 'Cuidado Crónico',    color: '#dc2626', desc: 'Acompanhamento contínuo para condições crónicas.', features: ['Monitorização de vitais', 'Renovação automática', 'Coach de aderência', 'Alertas de risco'], cta: 'Cuidado Crónico', featured: true },
+  { icon: Building2, label: 'Empresas',       color: '#7c3aed', desc: 'Saúde ocupacional para equipas sem burocracia.', features: ['Painel RH anónimo', 'Teleconsulta staff', 'Check-ups anuais', 'Gestão absentismo'], cta: 'Empresas', featured: false },
+  { icon: Zap,       label: 'Acesso Prioritário', color: '#b45309', desc: 'Acesso prioritário e chegada pre-alerta em hospitais.', features: ['Fila prioritária', 'Pre-alerta hospitalar', 'Médico dedicado', 'Teleconsulta imediata'], cta: 'Prioritário', featured: false },
 ];
 
 const PARTNERSHIP_TYPES = [
@@ -52,7 +52,7 @@ const PARTNERSHIP_TYPES = [
     icon: Building2,
     color: '#2563eb',
     title: 'Clínica ou centro de saúde',
-    desc: 'Gestão de agenda, triagem digital pré-consulta e acesso ao histórico do paciente. Dashboard próprio para a equipa clínica.',
+    desc: 'Gestão de agenda, triagem digital pré-consulta e acesso ao histórico do paciente. Painel próprio para a equipa clínica.',
     cta: 'Candidatar a minha clínica',
   },
   {
@@ -409,7 +409,7 @@ export default function LandingPage() {
         <div className="lp-b2b-grid">
           {[
             { icon: Users,     label: 'Teleconsulta para staff',    desc: 'Acesso médico imediato, sem deslocações.' },
-            { icon: TrendingUp,label: 'Dashboard RH anónimo',       desc: 'Tendências de saúde sem violar privacidade.' },
+            { icon: TrendingUp,label: 'Painel RH anónimo',       desc: 'Tendências de saúde sem violar privacidade.' },
             { icon: RefreshCw, label: 'Check-ups anuais',           desc: 'Agenda organizada para toda a equipa.' },
             { icon: Pill,      label: 'Gestão de crónicos',         desc: 'Acompanhamento de colaboradores com condições crónicas.' },
             { icon: Shield,    label: 'Compliance saúde ocupac.',   desc: 'Relatórios e certificados para auditoria.' },
@@ -459,8 +459,8 @@ export default function LandingPage() {
         <div className="lp-pricing">
           {[
             { label: 'Basic',   price: 'Gratuito',      sub: 'Para começar',      features: ['Triagem básica', 'Historial limitado', 'Marcação de consulta', '1 perfil'],                                                                    cta: 'Começar Grátis',    featured: false },
-            { label: 'Premium', price: '3.500 Kz/mês',  sub: 'Dia-a-dia',         features: ['Tudo do Basic', 'Teleconsulta incluída', 'Refill medicação', 'Reminders', 'Vitals tracking', '3 perfis'],                                      cta: 'Experimentar',      featured: true  },
-            { label: 'Family',  price: '7.500 Kz/mês',  sub: 'Para a família',    features: ['Tudo do Premium', 'Até 6 perfis', 'Family dashboard', 'Perfis pediátricos', 'Prioridade no suporte'],                                          cta: 'Family Plan',       featured: false },
+            { label: 'Premium', price: '3.500 Kz/mês',  sub: 'Dia-a-dia',         features: ['Tudo do Basic', 'Teleconsulta incluída', 'Renovação de medicação', 'Lembretes', 'Registo de sinais vitais', '3 perfis'],                    cta: 'Experimentar',      featured: true  },
+            { label: 'Família', price: '7.500 Kz/mês',  sub: 'Para a família',    features: ['Tudo do Premium', 'Até 6 perfis', 'Painel familiar', 'Perfis pediátricos', 'Prioridade no suporte'],                                          cta: 'Plano Família',     featured: false },
           ].map(p => (
             <div key={p.label} className={`lp-price-card${p.featured ? ' lp-price-card--featured' : ''}`}>
               <div className="lp-price-label">{p.label}</div>

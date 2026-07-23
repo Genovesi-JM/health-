@@ -7,13 +7,13 @@ const FAQS = [
   { q: 'O KAYA faz diagnósticos?', a: 'Não. O KAYA nunca faz diagnósticos. A triagem orienta com base num protocolo clínico e sugere os próximos passos. Um médico real valida sempre.' },
   { q: 'A teleconsulta substitui uma consulta presencial?', a: 'Depende da situação. Para muitos casos, uma teleconsulta é suficiente. Quando não é, o médico indica a necessidade de consulta presencial ou exames.' },
   { q: 'Os meus dados médicos estão seguros?', a: 'Sim. Todos os dados são encriptados em trânsito e em repouso. Só você e o seu médico têm acesso ao seu historial clínico.' },
-  { q: 'Posso gerir a saúde de toda a família?', a: 'Sim. Com o Family Plan pode criar perfis para filhos, pais e dependentes — incluindo perfis pediátricos para menores de 16 anos.' },
-  { q: 'Como funciona o refill de medicação?', a: 'Submete o pedido pelo portal. Um médico parceiro avalia e, se adequado, emite uma nova receita digital. A decisão é sempre humana.' },
+  { q: 'Posso gerir a saúde de toda a família?', a: 'Sim. Com o Plano Família pode criar perfis para filhos, pais e dependentes — incluindo perfis pediátricos para menores de 16 anos.' },
+  { q: 'Como funciona o renovação de medicação?', a: 'Submete o pedido pelo portal. Um médico parceiro avalia e, se adequado, emite uma nova receita digital. A decisão é sempre humana.' },
   { q: 'O que é o pré-alerta de urgência?', a: 'Antes de se dirigir a um hospital parceiro em caso de urgência, pode enviar os seus dados e sintomas. O hospital recebe o alerta e prepara-se para a sua chegada.' },
-  { q: 'Posso usar no telemóvel?', a: 'Sim. O portal é totalmente responsive e funciona em qualquer dispositivo — computador, tablet ou telemóvel.' },
+  { q: 'Posso usar no telemóvel?', a: 'Sim. O portal é totalmente responsivo e funciona em qualquer dispositivo — computador, tablet ou telemóvel.' },
   { q: 'Como me torno parceiro (clínica ou médico)?', a: 'Entre em contacto connosco através de parcerias@kaya.ao. Verificamos e integramos novos parceiros após validação.' },
   { q: 'O serviço está disponível fora de Luanda?', a: 'De momento focamo-nos em Luanda. A expansão para outras províncias e países está no nosso roadmap.' },
-  { q: 'Qual é a diferença entre o plano Basic e Premium?', a: 'O Basic é gratuito e inclui triagem e marcação de consultas. O Premium inclui teleconsulta, refill de medicação, vitals tracking e até 3 perfis.' },
+  { q: 'Qual é a diferença entre o plano Basic e Premium?', a: 'O Basic é gratuito e inclui triagem e marcação de consultas. O Premium inclui teleconsulta, renovação de medicação, registo de sinais vitais e até 3 perfis.' },
 ];
 
 function FAQItem({ q, a }: { q: string; a: string }) {
