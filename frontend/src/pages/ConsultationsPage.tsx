@@ -6,7 +6,9 @@ import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap } fr
 import { useT } from '../i18n/LanguageContext';
 import BookConsultationModal from '../components/BookConsultationModal';
 import PaymentModal from '../components/PaymentModal';
+import ChatModal from '../components/ChatModal';
 import { specialtyLabel } from '../constants/specialties';
+import { MessageSquare } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -19,6 +21,7 @@ export default function ConsultationsPage() {
   const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');
   const [showBooking, setShowBooking] = useState(false);
   const [payFor, setPayFor] = useState<string | null>(null);
+  const [chatFor, setChatFor] = useState<Consultation | null>(null);
 
   useEffect(() => {
     Promise.allSettled([
@@ -146,7 +149,17 @@ export default function ConsultationsPage() {
               <tbody>
                 {filtered.map(c => (
                   <tr key={c.id}>
-                    <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{specialtyLabel(c.specialty, t)}</td>
+                    <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                      {specialtyLabel(c.specialty, t)}
+                      {['scheduled', 'in_progress', 'completed'].includes(c.status) && (
+                        <button
+                          onClick={() => setChatFor(c)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, background: 'none', border: 'none', color: 'var(--accent-teal)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
+                        >
+                          <MessageSquare size={13} /> {t('msg.messages')}
+                        </button>
+                      )}
+                    </td>
                     <td>
                       <span className={`badge ${statusBadge(c.status)}`}>
                         {statusIcon(c.status)} {statusLabel(c.status)}
@@ -189,6 +202,15 @@ export default function ConsultationsPage() {
         onPaid={() => {
           setConsultations(prev => prev.map(c => c.id === payFor ? { ...c, payment_status: 'paid' } : c));
         }}
+      />
+
+      {/* Chat / teleconsult modal */}
+      <ChatModal
+        open={chatFor !== null}
+        consultationId={chatFor?.id || ''}
+        title={chatFor ? specialtyLabel(chatFor.specialty, t) : 'Mensagens'}
+        myRole="patient"
+        onClose={() => setChatFor(null)}
       />
     </>
   );

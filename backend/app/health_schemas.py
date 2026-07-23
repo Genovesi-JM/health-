@@ -804,3 +804,30 @@ class DoctorApplicationOut(BaseModel):
 
 class DoctorApplicationStatusUpdate(BaseModel):
     status: str = Field(pattern="^(new|reviewing|invited|rejected)$")
+
+
+# ── Consultation Messaging (teleconsult chat) ──
+class MessageCreate(BaseModel):
+    body: str = Field(..., min_length=1, max_length=4000)
+
+
+class MessageOut(BaseModel):
+    id: str
+    consultation_id: str
+    sender_role: str
+    sender_user_id: str
+    body: str
+    created_at: datetime
+    read_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class MessageThreadOut(BaseModel):
+    consultation_id: str
+    specialty: str
+    status: str
+    counterparty_name: Optional[str] = None   # patient name (for doctor) or doctor name (for patient)
+    last_message: Optional[str] = None
+    last_at: Optional[datetime] = None
+    unread: int = 0

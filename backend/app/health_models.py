@@ -626,3 +626,26 @@ class DoctorApplication(Base):
     __table_args__ = (
         Index("ix_doctor_applications_status_created", "status", "created_at"),
     )
+
+
+# ── Consultation Message (patient ↔ doctor teleconsult chat) ─────────────────
+
+class ConsultationMessage(Base):
+    """A text message exchanged between a patient and the assigned doctor within
+    a consultation thread — the pilot's text-based teleconsult channel."""
+    __tablename__ = "consultation_messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    consultation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("consultations.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    sender_role: Mapped[str] = mapped_column(String(10), nullable=False)   # patient | doctor
+    sender_user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_consultation_messages_consult_created", "consultation_id", "created_at"),
+    )

@@ -497,6 +497,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'pay.beneficiary': { pt: 'Beneficiário', en: 'Beneficiary', fr: 'Bénéficiaire', es: 'Beneficiario' },
   'pay.transfer_note': { pt: 'Inclua a referência na descrição da transferência. O pagamento é confirmado em 1–2 dias úteis após a receção.', en: 'Include the reference in the transfer description. Payment is confirmed within 1–2 business days after receipt.', fr: 'Incluez la référence dans la description du virement. Le paiement est confirmé sous 1 à 2 jours ouvrables après réception.', es: 'Incluya la referencia en la descripción de la transferencia. El pago se confirma en 1–2 días hábiles tras la recepción.' },
   'common.close': { pt: 'Fechar', en: 'Close', fr: 'Fermer', es: 'Cerrar' },
+  'msg.messages': { pt: 'Mensagens', en: 'Messages', fr: 'Messages', es: 'Mensajes' },
   'consult.complete_triage': { pt: 'Completar Triagem', en: 'Complete Triage', fr: 'Compléter le Triage', es: 'Completar Triaje' },
   'consult.recommended_by': { pt: 'Recomendado: até', en: 'Recommended: by', fr: 'Recommandé : avant', es: 'Recomendado: antes del' },
   'consult.status_requested': { pt: 'Pedido', en: 'Requested', fr: 'Demandé', es: 'Solicitada' },
