@@ -55,7 +55,7 @@ export function Sidebar({ open, onClose }: Props) {
             <Heart className="sidebar-brand-icon" />
             <div>
               <div className="sidebar-brand-name">KAYA</div>
-              <div className="sidebar-brand-sub">{role === 'doctor' ? 'Portal Médico' : role === 'admin' ? 'Administração' : 'Triagem & Teleconsulta'}</div>
+              <div className="sidebar-brand-sub">{role === 'doctor' ? t('sidebar.doc_section') : role === 'admin' ? t('sidebar.role_admin') : 'Triagem & Teleconsulta'}</div>
             </div>
           </Link>
           <button className="sidebar-close" onClick={onClose}><X size={18} /></button>
@@ -89,18 +89,18 @@ export function Sidebar({ open, onClose }: Props) {
 
           {/* ── DOCTOR ── */}
           {role === 'doctor' && (
-            <SidebarSection title="MÉDICO">
-              <SidebarLink to="/doctor/dashboard"    icon={LayoutDashboard} label="Dashboard"              onClick={onClose} />
-              <SidebarLink to="/doctor/agenda"       icon={Calendar}        label="Agenda"                 onClick={onClose} />
-              <SidebarLink to="/doctor/disponibilidade" icon={Clock}        label={t('avail.title')}       onClick={onClose} />
-              <SidebarLink to="/doctor/pacientes"    icon={Users}           label="Pacientes"              onClick={onClose} />
-              <SidebarLink to="/doctor/consultas"    icon={Video}           label="Consultas Ao Vivo"      onClick={onClose} />
-              <SidebarLink to="/doctor/queue"        icon={ClipboardList}   label="Fila de Espera"         onClick={onClose} />
-              <SidebarLink to="/doctor/prescricoes"  icon={FileText}        label="Prescrições Pendentes"  onClick={onClose} badge={pendingRxCount > 0 ? pendingRxCount : undefined} badgeVariant="alert" />
-              <SidebarLink to="/doctor/mensagens"    icon={MessageSquare}   label="Mensagens"              onClick={onClose} />
-              <SidebarLink to="/doctor/financeiro"   icon={DollarSign}      label="Financeiro"             onClick={onClose} />
-              <SidebarLink to="/doctor/avaliacoes"   icon={Star}            label="Avaliações"             onClick={onClose} />
-              <SidebarLink to="/doctor/profile"      icon={Stethoscope}     label="Perfil Público"         onClick={onClose} />
+            <SidebarSection title={t('sidebar.doc_section')}>
+              <SidebarLink to="/doctor/dashboard"    icon={LayoutDashboard} label={t('sidebar.doc_dashboard')}     onClick={onClose} />
+              <SidebarLink to="/doctor/agenda"       icon={Calendar}        label={t('sidebar.doc_agenda')}        onClick={onClose} />
+              <SidebarLink to="/doctor/disponibilidade" icon={Clock}        label={t('avail.title')}               onClick={onClose} />
+              <SidebarLink to="/doctor/pacientes"    icon={Users}           label={t('sidebar.doc_patients')}      onClick={onClose} />
+              <SidebarLink to="/doctor/consultas"    icon={Video}           label={t('sidebar.doc_live')}          onClick={onClose} />
+              <SidebarLink to="/doctor/queue"        icon={ClipboardList}   label={t('sidebar.doc_queue')}         onClick={onClose} />
+              <SidebarLink to="/doctor/prescricoes"  icon={FileText}        label={t('sidebar.doc_prescriptions')} onClick={onClose} badge={pendingRxCount > 0 ? pendingRxCount : undefined} badgeVariant="alert" />
+              <SidebarLink to="/doctor/mensagens"    icon={MessageSquare}   label={t('sidebar.doc_messages')}      onClick={onClose} />
+              <SidebarLink to="/doctor/financeiro"   icon={DollarSign}      label={t('sidebar.doc_finance')}       onClick={onClose} />
+              <SidebarLink to="/doctor/avaliacoes"   icon={Star}            label={t('sidebar.doc_reviews')}       onClick={onClose} />
+              <SidebarLink to="/doctor/profile"      icon={Stethoscope}     label={t('sidebar.doc_profile')} onClick={onClose} />
             </SidebarSection>
           )}
           {role === 'doctor' && (

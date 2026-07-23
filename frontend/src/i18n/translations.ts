@@ -503,6 +503,18 @@ const translations: Record<string, TranslationEntry> = {
   'msg.messages': { pt: 'Mensagens', en: 'Messages', fr: 'Messages', es: 'Mensajes', zh: '消息 (Messages)' },
   // ── Doctor availability ──
   'avail.title': { pt: 'Disponibilidade', en: 'Availability', fr: 'Disponibilité', es: 'Disponibilidad', zh: '排班 (Availability)' },
+  // ── Doctor sidebar ──
+  'sidebar.doc_section': { pt: 'Médico', en: 'Doctor', fr: 'Médecin', es: 'Médico', zh: '医生 (Doctor)' },
+  'sidebar.doc_dashboard': { pt: 'Painel', en: 'Dashboard', fr: 'Tableau de bord', es: 'Panel', zh: '面板 (Dashboard)' },
+  'sidebar.doc_agenda': { pt: 'Agenda', en: 'Schedule', fr: 'Agenda', es: 'Agenda', zh: '日程 (Schedule)' },
+  'sidebar.doc_patients': { pt: 'Pacientes', en: 'Patients', fr: 'Patients', es: 'Pacientes', zh: '患者 (Patients)' },
+  'sidebar.doc_live': { pt: 'Consultas Ao Vivo', en: 'Live Consultations', fr: 'Consultations en direct', es: 'Consultas en vivo', zh: '在线问诊 (Live)' },
+  'sidebar.doc_queue': { pt: 'Fila de Espera', en: 'Queue', fr: 'File d’attente', es: 'Cola de espera', zh: '排队 (Queue)' },
+  'sidebar.doc_prescriptions': { pt: 'Prescrições Pendentes', en: 'Pending Prescriptions', fr: 'Ordonnances en attente', es: 'Recetas pendientes', zh: '待处理处方 (Prescriptions)' },
+  'sidebar.doc_messages': { pt: 'Mensagens', en: 'Messages', fr: 'Messages', es: 'Mensajes', zh: '消息 (Messages)' },
+  'sidebar.doc_finance': { pt: 'Financeiro', en: 'Finance', fr: 'Finances', es: 'Finanzas', zh: '财务 (Finance)' },
+  'sidebar.doc_reviews': { pt: 'Avaliações', en: 'Reviews', fr: 'Avis', es: 'Reseñas', zh: '评价 (Reviews)' },
+  'sidebar.doc_profile': { pt: 'Perfil', en: 'Profile', fr: 'Profil', es: 'Perfil', zh: '资料 (Profile)' },
   'avail.desc': { pt: 'Defina os seus horários semanais. Os pacientes só poderão agendar dentro destes períodos.', en: 'Set your weekly hours. Patients can only schedule within these periods.', fr: 'Définissez vos horaires hebdomadaires. Les patients ne peuvent réserver que dans ces créneaux.', es: 'Defina sus horarios semanales. Los pacientes solo podrán agendar dentro de estos períodos.' },
   'avail.add': { pt: 'Adicionar horário', en: 'Add slot', fr: 'Ajouter un créneau', es: 'Añadir horario' },
   'avail.day': { pt: 'Dia', en: 'Day', fr: 'Jour', es: 'Día' },
