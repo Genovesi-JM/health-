@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 import type { Doctor } from '../types';
 import { UserCog, CheckCircle2, XCircle, Clock, RefreshCw, UserPlus, Copy, CheckCheck, Trash2, Loader2 } from 'lucide-react';
 
@@ -13,6 +14,7 @@ interface DoctorInvite {
 }
 
 export default function AdminDoctorsPage() {
+  const { t } = useT();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'pending' | 'verified' | 'rejected'>('pending');

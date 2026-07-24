@@ -1,6 +1,6 @@
 // Shared types matching backend health_schemas.py
 
-export type Role = 'patient' | 'doctor' | 'corporate_admin' | 'admin' | 'support' | 'cliente';
+export type Role = 'patient' | 'doctor' | 'nurse' | 'corporate_admin' | 'admin' | 'support' | 'cliente';
 
 export interface User {
   id: string;
