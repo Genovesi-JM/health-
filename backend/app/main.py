@@ -30,6 +30,7 @@ from .routers import (
     prescription_requests,
     messages,
     nurse,
+    shop_devices,
     doctor_portal,
     corporate,
     health_billing,
@@ -140,6 +141,7 @@ def create_application() -> FastAPI:
     application.include_router(prescription_requests.router)  # /api/v1/prescription-requests, /api/v1/doctor/prescription-requests
     application.include_router(messages.router)               # /api/v1/consultations/*/messages, /api/v1/{doctor,patient}/message-threads
     application.include_router(nurse.router)                  # /api/v1/nurse/dashboard, /api/v1/nurse/queue
+    application.include_router(shop_devices.router)           # /api/v1/shop/devices, /api/v1/shop/orders
     application.include_router(doctor_portal.router)          # /api/v1/doctor/dashboard, /api/v1/doctor/agenda, /api/v1/doctor/patients
     application.include_router(corporate.router)          # /api/v1/corporate/*
     application.include_router(health_billing.router)     # /api/v1/billing/*

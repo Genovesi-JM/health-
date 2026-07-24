@@ -68,6 +68,7 @@ import AdminPatientsPage from './pages/AdminPatientsPage';
 import AdminApplicationsPage from './pages/AdminApplicationsPage';
 import CorporateDashboardPage from './pages/CorporateDashboardPage';
 import NurseDashboardPage from './pages/NurseDashboardPage';
+import StorePage from './pages/StorePage';
 import SettingsPage from './pages/SettingsPage';
 import SelfCarePage from './pages/SelfCarePage';
 import FamilyPage from './pages/FamilyPage';
@@ -131,6 +132,7 @@ export default function App() {
               <Route path="/family" element={<FamilyPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/patient/readings" element={<PatientReadingsPage />} />
+              <Route path="/loja" element={<StorePage />} />
             </Route>
 
             {/* ── EMPLOYER / CORPORATE (self-serve: any logged-in user can create one) ── */}

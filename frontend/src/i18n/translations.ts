@@ -504,6 +504,14 @@ const translations: Record<string, TranslationEntry> = {
   'msg.placeholder': { pt: 'Escreva uma mensagem…', en: 'Write a message…', fr: 'Écrire un message…', es: 'Escriba un mensaje…' },
   'msg.empty': { pt: 'Ainda não há mensagens. Escreva ao seu médico para começar.', en: 'No messages yet. Write to your doctor to get started.', fr: 'Aucun message. Écrivez à votre médecin pour commencer.', es: 'Aún no hay mensajes. Escriba a su médico para empezar.' },
   'video.label': { pt: 'Vídeo', en: 'Video', fr: 'Vidéo', es: 'Vídeo', zh: '视频 (Video)' },
+  // ── Device store ──
+  'store.title': { pt: 'Loja de Dispositivos', en: 'Device Store', fr: 'Boutique d’appareils', es: 'Tienda de dispositivos', zh: '设备商店 (Store)' },
+  'store.desc': { pt: 'Dispositivos de monitorização para acompanhar a sua saúde em casa.', en: 'Monitoring devices to track your health at home.', fr: 'Appareils de surveillance pour suivre votre santé à la maison.', es: 'Dispositivos de monitoreo para cuidar su salud en casa.' },
+  'store.buy': { pt: 'Comprar', en: 'Buy', fr: 'Acheter', es: 'Comprar', zh: '购买 (Buy)' },
+  'store.orders': { pt: 'As minhas encomendas', en: 'My orders', fr: 'Mes commandes', es: 'Mis pedidos' },
+  'store.no_orders': { pt: 'Ainda não fez encomendas.', en: 'No orders yet.', fr: 'Aucune commande.', es: 'Aún no hay pedidos.' },
+  'store.paid': { pt: 'Pago', en: 'Paid', fr: 'Payé', es: 'Pagado' },
+  'store.pending': { pt: 'Pendente', en: 'Pending', fr: 'En attente', es: 'Pendiente' },
   // ── Review ──
   'review.action': { pt: 'Avaliar', en: 'Rate', fr: 'Évaluer', es: 'Valorar', zh: '评价 (Rate)' },
   'review.title': { pt: 'Avaliar consulta', en: 'Rate consultation', fr: 'Évaluer la consultation', es: 'Valorar la consulta' },

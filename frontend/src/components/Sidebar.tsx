@@ -7,7 +7,7 @@ import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import { useState, useEffect } from 'react';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
-  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2, Clock,
+  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2, Clock, ShoppingBag,
   Cpu, CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
   DollarSign, Star, Globe, HelpCircle, Lock,
 } from 'lucide-react';
@@ -75,9 +75,9 @@ export function Sidebar({ open, onClose }: Props) {
           )}
           {(role === 'patient' || role === 'cliente') && (
             <SidebarSection title="Saúde & Dispositivos">
-              <SidebarLink to="/patient/readings" icon={Activity}  label="Medições"     onClick={onClose} />
-              <SidebarLink to="/devices"          icon={Cpu}       label="Dispositivos"  onClick={onClose} />
-              <SidebarLink to="/family"           icon={UserCheck} label="Família"       onClick={onClose} />
+              <SidebarLink to="/patient/readings" icon={Activity}    label="Medições"     onClick={onClose} />
+              <SidebarLink to="/loja"             icon={ShoppingBag} label={t('store.title')} onClick={onClose} />
+              <SidebarLink to="/family"           icon={UserCheck}   label="Família"      onClick={onClose} />
               <SidebarLink to="/notifications"    icon={Bell}      label="Alertas"       onClick={onClose} badge={unreadNotifs > 0 ? unreadNotifs : undefined} badgeVariant="alert" />
             </SidebarSection>
           )}
