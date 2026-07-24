@@ -1025,19 +1025,21 @@ def register_doctor_with_token(
     # 2. Create or find user
     email_lower = payload.email.strip().lower()
     existing = db.query(User).filter(User.email == email_lower).first()
-    if existing and existing.role == "doctor":
-        raise HTTPException(status_code=409, detail="Email já registado como médico.")
+    invite_role = getattr(invite, "role", "doctor") or "doctor"
+
+    if existing and existing.role in ("doctor", "nurse"):
+        raise HTTPException(status_code=409, detail="Email já registado como profissional.")
 
     if existing:
         user = existing
-        user.role = "doctor"
+        user.role = invite_role
     else:
         if not payload.password:
             raise HTTPException(status_code=400, detail="Palavra-passe obrigatória.")
         user = User(
             email=email_lower,
             password_hash=hash_password(payload.password),
-            role="doctor",
+            role=invite_role,
             is_active=True,
         )
         db.add(user)
@@ -1053,9 +1055,9 @@ def register_doctor_with_token(
             profile.full_name = payload.display_name
     db.flush()
 
-    # 4. Create doctor record
+    # 4. Create doctor record (doctors only — nurses have no clinical profile)
     existing_doc = db.query(Doctor).filter(Doctor.user_id == user.id).first()
-    if not existing_doc:
+    if invite_role == "doctor" and not existing_doc:
         slug = _unique_slug(db, payload.display_name)
         doctor = Doctor(
             user_id=user.id,

@@ -120,6 +120,17 @@ def ensure_legacy_schema() -> None:
             except Exception:
                 pass
 
+        # doctor_invites: role column (doctor | nurse)
+        try:
+            inv_cols = [c["name"] for c in inspector.get_columns("doctor_invites")]
+        except Exception:
+            inv_cols = []
+        if inv_cols and "role" not in inv_cols:
+            try:
+                conn.execute(text("ALTER TABLE doctor_invites ADD COLUMN role TEXT DEFAULT 'doctor'"))
+            except Exception:
+                pass
+
         # Products table: sku and is_active
         try:
             prod_cols = [c["name"] for c in inspector.get_columns("products")]

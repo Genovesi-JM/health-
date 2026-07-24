@@ -126,6 +126,14 @@ export function Sidebar({ open, onClose }: Props) {
             </SidebarSection>
           )}
 
+          {/* ── NURSE ── */}
+          {role === 'nurse' && (
+            <SidebarSection title={t('nurse.section')}>
+              <SidebarLink to="/nurse"    icon={HeartPulse} label={t('nurse.dashboard')}    onClick={onClose} />
+              <SidebarLink to="/settings" icon={Settings}   label={t('sidebar.settings')}   onClick={onClose} />
+            </SidebarSection>
+          )}
+
           {/* ── EMPLOYER / CORPORATE ── */}
           {role === 'corporate_admin' && (
             <SidebarSection title={t('corp.title')}>

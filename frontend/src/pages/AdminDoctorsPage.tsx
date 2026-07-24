@@ -23,6 +23,7 @@ export default function AdminDoctorsPage() {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteNote, setInviteNote] = useState('');
+  const [inviteRole, setInviteRole] = useState<'doctor' | 'nurse'>('doctor');
   const [inviteCreating, setInviteCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
@@ -50,10 +51,12 @@ export default function AdminDoctorsPage() {
       const res = await api.post('/admin/doctor-invites', {
         invited_email: inviteEmail.trim() || null,
         note: inviteNote.trim() || null,
+        role: inviteRole,
       });
       setInvites(prev => [res.data, ...prev]);
       setInviteEmail('');
       setInviteNote('');
+      setInviteRole('doctor');
       setShowInviteForm(false);
     } catch { /* ignore */ } finally {
       setInviteCreating(false);
@@ -112,9 +115,16 @@ export default function AdminDoctorsPage() {
 
         {showInviteForm && (
           <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <label className="form-label">Email do médico <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
-              <input className="form-input" placeholder="medico@exemplo.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
+            <div style={{ minWidth: 140 }}>
+              <label className="form-label">{t('invite.role')}</label>
+              <select className="form-input" value={inviteRole} onChange={e => setInviteRole(e.target.value as 'doctor' | 'nurse')}>
+                <option value="doctor">{t('invite.doctor')}</option>
+                <option value="nurse">{t('invite.nurse')}</option>
+              </select>
+            </div>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <label className="form-label">Email <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+              <input className="form-input" placeholder="profissional@exemplo.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
             </div>
             <div style={{ flex: 2, minWidth: 200 }}>
               <label className="form-label">Nota interna <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>

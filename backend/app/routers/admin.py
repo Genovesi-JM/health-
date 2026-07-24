@@ -1286,6 +1286,7 @@ def create_doctor_invite(
         token=token,
         invited_email=body.invited_email,
         note=body.note,
+        role=body.role,
         created_by=admin.id,
         expires_at=expires_at,
     )

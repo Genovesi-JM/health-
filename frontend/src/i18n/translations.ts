@@ -515,6 +515,19 @@ const translations: Record<string, TranslationEntry> = {
   'review.error': { pt: 'Não foi possível registar a avaliação.', en: 'Could not submit the review.', fr: 'Impossible d’enregistrer l’avis.', es: 'No se pudo registrar la valoración.' },
   // ── Doctor availability ──
   'avail.title': { pt: 'Disponibilidade', en: 'Availability', fr: 'Disponibilité', es: 'Disponibilidad', zh: '排班 (Availability)' },
+  // ── Nurse ──
+  'nurse.section': { pt: 'Enfermagem', en: 'Nursing', fr: 'Soins infirmiers', es: 'Enfermería', zh: '护理 (Nursing)' },
+  'nurse.dashboard': { pt: 'Painel de Enfermagem', en: 'Nursing Dashboard', fr: 'Tableau de bord infirmier', es: 'Panel de Enfermería', zh: '护理面板 (Nursing)' },
+  'nurse.monitor': { pt: 'Monitorização de Triagem', en: 'Triage Monitoring', fr: 'Surveillance du triage', es: 'Monitoreo de triaje' },
+  'nurse.desc': { pt: 'Acompanhe os pedidos recebidos e o risco de triagem. A prescrição e conclusão de consultas são da responsabilidade dos médicos.', en: 'Monitor incoming requests and triage risk. Prescribing and completing consultations are handled by doctors.', fr: 'Surveillez les demandes entrantes et le risque de triage. La prescription et la clôture des consultations relèvent des médecins.', es: 'Supervise las solicitudes entrantes y el riesgo de triaje. La prescripción y el cierre de consultas corresponden a los médicos.' },
+  'nurse.kpi_queue': { pt: 'Na fila', en: 'In queue', fr: 'En file', es: 'En cola' },
+  'nurse.kpi_urgent': { pt: 'Urgentes / Alto risco', en: 'Urgent / High risk', fr: 'Urgents / Risque élevé', es: 'Urgentes / Alto riesgo' },
+  'nurse.kpi_triages': { pt: 'Triagens hoje', en: 'Triages today', fr: 'Triages aujourd’hui', es: 'Triajes hoy' },
+  'nurse.recent': { pt: 'Pedidos recentes', en: 'Recent requests', fr: 'Demandes récentes', es: 'Solicitudes recientes' },
+  'nurse.empty': { pt: 'Sem pedidos na fila.', en: 'No requests in the queue.', fr: 'Aucune demande en file.', es: 'No hay solicitudes en cola.' },
+  'invite.role': { pt: 'Tipo de profissional', en: 'Professional type', fr: 'Type de professionnel', es: 'Tipo de profesional' },
+  'invite.doctor': { pt: 'Médico', en: 'Doctor', fr: 'Médecin', es: 'Médico', zh: '医生 (Doctor)' },
+  'invite.nurse': { pt: 'Enfermeiro(a)', en: 'Nurse', fr: 'Infirmier(ère)', es: 'Enfermero(a)', zh: '护士 (Nurse)' },
   // ── Doctor sidebar ──
   'sidebar.doc_section': { pt: 'Médico', en: 'Doctor', fr: 'Médecin', es: 'Médico', zh: '医生 (Doctor)' },
   'sidebar.doc_dashboard': { pt: 'Painel', en: 'Dashboard', fr: 'Tableau de bord', es: 'Panel', zh: '面板 (Dashboard)' },

@@ -33,7 +33,7 @@ export default function LoginPage() {
       login(res.data);
       const role = res.data.user?.role;
       const from = (location.state as any)?.from?.pathname;
-      const defaultDest = role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : role === 'corporate_admin' ? '/corporate' : '/dashboard';
+      const defaultDest = role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : role === 'nurse' ? '/nurse' : role === 'corporate_admin' ? '/corporate' : '/dashboard';
       navigate(from || defaultDest, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || t('login.invalid'));

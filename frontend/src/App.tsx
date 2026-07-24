@@ -10,6 +10,7 @@ function RootRedirect() {
   if (loading) return null;
   if (!user) return <LandingPage />;
   if (user.role === 'doctor') return <Navigate to="/doctor/dashboard" replace />;
+  if (user.role === 'nurse') return <Navigate to="/nurse" replace />;
   if (user.role === 'admin') return <Navigate to="/admin" replace />;
   if (user.role === 'corporate_admin') return <Navigate to="/corporate" replace />;
   return <Navigate to="/dashboard" replace />;
@@ -66,6 +67,7 @@ import AdminDoctorsPage from './pages/AdminDoctorsPage';
 import AdminPatientsPage from './pages/AdminPatientsPage';
 import AdminApplicationsPage from './pages/AdminApplicationsPage';
 import CorporateDashboardPage from './pages/CorporateDashboardPage';
+import NurseDashboardPage from './pages/NurseDashboardPage';
 import SettingsPage from './pages/SettingsPage';
 import SelfCarePage from './pages/SelfCarePage';
 import FamilyPage from './pages/FamilyPage';
@@ -134,6 +136,11 @@ export default function App() {
             {/* ── EMPLOYER / CORPORATE (self-serve: any logged-in user can create one) ── */}
             <Route element={<RoleRoute allowedRoles={['patient', 'cliente', 'corporate_admin']} />}>
               <Route path="/corporate" element={<CorporateDashboardPage />} />
+            </Route>
+
+            {/* ── NURSE only ── */}
+            <Route element={<RoleRoute allowedRoles={['nurse']} />}>
+              <Route path="/nurse" element={<NurseDashboardPage />} />
             </Route>
 
             {/* ── DOCTOR only ── */}

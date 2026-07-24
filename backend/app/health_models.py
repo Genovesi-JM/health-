@@ -66,6 +66,7 @@ class DoctorInvite(Base):
     token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     invited_email: Mapped[Optional[str]] = mapped_column(String(254), nullable=True)  # hint only
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # admin note
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="doctor")  # doctor | nurse
     created_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     used_by_user_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)

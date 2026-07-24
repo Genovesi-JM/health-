@@ -15,12 +15,13 @@ from pydantic import BaseModel, Field
 class RoleEnum:
     PATIENT = "patient"
     DOCTOR = "doctor"
+    NURSE = "nurse"
     CORPORATE_ADMIN = "corporate_admin"
     CORPORATE_ANALYST = "corporate_analyst"
     ADMIN = "admin"
     SUPPORT = "support"
 
-    ALL = [PATIENT, DOCTOR, CORPORATE_ADMIN, CORPORATE_ANALYST, ADMIN, SUPPORT]
+    ALL = [PATIENT, DOCTOR, NURSE, CORPORATE_ADMIN, CORPORATE_ANALYST, ADMIN, SUPPORT]
 
 
 # ── Patient ──
@@ -152,6 +153,7 @@ class DoctorInviteCreate(BaseModel):
     invited_email: Optional[str] = None
     note: Optional[str] = None
     expires_days: int = Field(default=7, ge=1, le=90)
+    role: str = Field(default="doctor", pattern="^(doctor|nurse)$")
 
 
 class DoctorInviteOut(BaseModel):
@@ -159,6 +161,7 @@ class DoctorInviteOut(BaseModel):
     token: str
     invited_email: Optional[str] = None
     note: Optional[str] = None
+    role: str = "doctor"
     used_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
     created_at: datetime
