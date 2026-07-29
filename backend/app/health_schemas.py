@@ -474,6 +474,12 @@ class PaymentMethodOption(BaseModel):
     label: str                               # Portuguese label
     description: str
     enabled: bool = True
+    provider: Optional[str] = None
+    countries: List[str] = Field(default_factory=list)
+    currencies: List[str] = Field(default_factory=list)
+    channels: List[str] = Field(default_factory=list)
+    integration_status: str = "ready"        # ready | sandbox | preview | adapter_required
+    test_mode: bool = False
 
 
 class PaymentMethodsResponse(BaseModel):

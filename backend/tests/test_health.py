@@ -205,6 +205,43 @@ class TestTriageFlow:
         )
         assert response.status_code == 422
 
+
+    def test_patient_imports_renpho_csv_without_duplicates(self, client: TestClient, db_session):
+        user = _make_user(db_session, "renpho_import@test.com", "patient")
+        patient = _make_patient(db_session, user)
+        headers = _token(user)
+        csv_data = (
+            "Time of Measurement,Weight(kg),BMI,Body Fat(%),Muscle Mass(kg)\n"
+            "2026-07-28 08:30:00,72.4,23.1,18.2,56.1\n"
+            "2026-07-29 08:31:00,72.1,23.0,18.0,56.0\n"
+        )
+        first = client.post(
+            "/api/v1/readings/import",
+            files={"file": ("Renpho Health.csv", csv_data, "text/csv")},
+            headers=headers,
+        )
+        assert first.status_code == 200, first.text
+        assert first.json()["imported"] == 2
+        assert first.json()["skipped"] == 0
+
+        second = client.post(
+            "/api/v1/readings/import",
+            files={"file": ("Renpho Health.csv", csv_data, "text/csv")},
+            headers=headers,
+        )
+        assert second.status_code == 200
+        assert second.json()["imported"] == 0
+        assert second.json()["skipped"] == 2
+
+        rows = db_session.query(DeviceReading).filter(
+            DeviceReading.patient_id == patient.id,
+            DeviceReading.source == "renpho_csv",
+        ).all()
+        assert len(rows) == 2
+        assert float(rows[0].value) in (72.4, 72.1)
+        assert rows[0].device_brand == "RENPHO"
+        assert "body_composition" in rows[0].notes
+
     def test_full_triage_flow(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_full@test.com", "patient")
         _make_patient(db_session, user)

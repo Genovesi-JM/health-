@@ -220,6 +220,20 @@ export default function PaymentModal({ open, consultationId, onClose, onPaid }: 
                 </>
               )}
 
+              {provider === 'paypal' && (
+                <>
+                  {checkout.redirect_url ? (
+                    <a className="btn btn-primary" href={checkout.redirect_url} target="_blank" rel="noreferrer"
+                      style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
+                      <CreditCard size={16} /> PayPal
+                    </a>
+                  ) : (
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('pay.card_processing')}</p>
+                  )}
+                  <Waiting text={t('pay.waiting')} />
+                </>
+              )}
+
               {/* Bank transfer */}
               {provider === 'iban_transfer' && checkout.transfer_details && (
                 <div style={{ textAlign: 'left' }}>

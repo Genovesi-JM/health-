@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { getSession } from '../api';
+import { useT } from '../i18n/LanguageContext';
+import KpiGrid from '../components/KpiGrid';
 
 interface DoctorProfile {
   display_name: string | null;
@@ -59,12 +61,21 @@ interface AgendaItem {
   avatar: string;
 }
 
+interface DoctorDashboardStats {
+  today: { total: number; confirmed: number; waiting: number; in_progress: number };
+  week: { completed: number };
+  pending_prescription_requests: number;
+  unique_patients: number;
+}
+
 export default function DoctorDashboardPage() {
+  const { t } = useT();
   const session = getSession();
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [pendingRx, setPendingRx] = useState<PendingRx[]>([]);
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DoctorDashboardStats | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
@@ -74,6 +85,8 @@ export default function DoctorDashboardPage() {
       .then(r => setPendingRx(r.data)).catch(() => {});
     api.get<AgendaItem[]>('/api/v1/doctor/agenda/today')
       .then(r => setAgenda(r.data)).catch(() => {});
+    api.get<DoctorDashboardStats>('/api/v1/doctor/dashboard')
+      .then(r => setDashboardStats(r.data)).catch(() => {});
   }, [lastRefresh]);
 
   const refresh = () => setLastRefresh(new Date());
@@ -139,16 +152,17 @@ export default function DoctorDashboardPage() {
       </div>
 
       {/* ── KPI GRID ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.85rem', marginBottom: '1.5rem' }}>
-        <KpiCard icon={<ClipboardList size={18} />} label="Em espera agora" value={waitingQ} color="rgba(234,179,8,0.15)" iconColor="#d97706" urgent={waitingQ > 0} />
-        <KpiCard icon={<Video size={18} />} label="Em consulta" value={activeQ} color="rgba(59,130,246,0.12)" iconColor="#3b82f6" />
-        <KpiCard icon={<Calendar size={18} />} label="Consultas hoje" value={todayConsultations} color="rgba(16,185,129,0.12)" iconColor="#10b981" />
-        <KpiCard icon={<CheckCircle2 size={18} />} label="Concluídas esta semana" value={12} color="rgba(99,102,241,0.12)" iconColor="#6366f1" />
-        <KpiCard icon={<FileText size={18} />} label="Prescrições pendentes" value={pendingRx.length} color="rgba(239,68,68,0.1)" iconColor="#ef4444" urgent={pendingRx.length > 0} />
-        <KpiCard icon={<DollarSign size={18} />} label="Receita este mês (Kz)" value="142.500" color="rgba(16,185,129,0.1)" iconColor="#059669" />
-        <KpiCard icon={<Star size={18} />} label="Rating médio" value="4.8 ★" color="rgba(251,191,36,0.12)" iconColor="#f59e0b" />
-        <KpiCard icon={<MessageSquare size={18} />} label="Mensagens por responder" value={2} color="rgba(139,92,246,0.12)" iconColor="#8b5cf6" />
-      </div>
+      <KpiGrid
+        ariaLabel={t('kpi.summary')}
+        items={[
+          { id: 'waiting', label: t('doctor.kpi_waiting'), value: dashboardStats?.today.waiting ?? waitingQ, icon: <ClipboardList size={18} />, color: '#d97706', tone: waitingQ > 0 ? 'attention' : 'default' },
+          { id: 'active', label: t('doctor.kpi_active'), value: dashboardStats?.today.in_progress ?? activeQ, icon: <Video size={18} />, color: '#3b82f6' },
+          { id: 'today', label: t('doctor.kpi_today'), value: dashboardStats?.today.total ?? todayConsultations, icon: <Calendar size={18} />, color: '#10b981' },
+          { id: 'week', label: t('doctor.kpi_week'), value: dashboardStats?.week.completed ?? 0, icon: <CheckCircle2 size={18} />, color: '#6366f1', tone: 'positive' },
+          { id: 'prescriptions', label: t('doctor.kpi_prescriptions'), value: dashboardStats?.pending_prescription_requests ?? pendingRx.length, icon: <FileText size={18} />, color: '#ef4444', tone: pendingRx.length > 0 ? 'attention' : 'default' },
+          { id: 'patients', label: t('doctor.kpi_patients'), value: dashboardStats?.unique_patients ?? 0, icon: <Users size={18} />, color: '#0d9488' },
+        ]}
+      />
 
       {/* ── MAIN GRID ── */}
       <div className="responsive-split" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.25rem' }}>
@@ -303,18 +317,6 @@ function HeroBtn({ to, icon, label, primary, badge }: { to: string; icon: React.
   );
 }
 
-function KpiCard({ icon, label, value, color, iconColor, urgent }: { icon: React.ReactNode; label: string; value: string | number; color: string; iconColor: string; urgent?: boolean }) {
-  return (
-    <div className="card" style={{ padding: '1rem 1.1rem', border: urgent ? `1.5px solid ${iconColor}30` : undefined }}>
-      <div style={{ width: 36, height: 36, borderRadius: '10px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: iconColor, marginBottom: '0.6rem' }}>
-        {icon}
-      </div>
-      <div style={{ fontSize: '1.4rem', fontWeight: 800, lineHeight: 1, color: urgent ? iconColor : 'var(--text-primary)' }}>{value}</div>
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.3 }}>{label}</div>
-    </div>
-  );
-}
-
 function SectionHeader({ title, icon, count, to, urgent }: { title: string; icon: React.ReactNode; count?: number; to: string; urgent?: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', background: urgent ? 'rgba(239,68,68,0.03)' : undefined }}>
@@ -331,4 +333,3 @@ function SectionHeader({ title, icon, count, to, urgent }: { title: string; icon
     </div>
   );
 }
-

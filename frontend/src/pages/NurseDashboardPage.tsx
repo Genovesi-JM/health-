@@ -3,6 +3,7 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { specialtyLabel } from '../constants/specialties';
 import { Activity, AlertTriangle, ClipboardList, HeartPulse } from 'lucide-react';
+import KpiGrid from '../components/KpiGrid';
 
 interface QueueItem { id: string; patient: string; specialty: string; risk_level?: string | null; chief_complaint?: string | null; created_at: string; }
 interface Dash { queue_count: number; urgent_count: number; triages_today: number; recent: QueueItem[]; }
@@ -33,9 +34,9 @@ export default function NurseDashboardPage() {
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
 
   const kpis = dash ? [
-    { label: t('nurse.kpi_queue'), value: dash.queue_count, icon: <ClipboardList size={18} />, color: '#0d9488' },
-    { label: t('nurse.kpi_urgent'), value: dash.urgent_count, icon: <AlertTriangle size={18} />, color: '#dc2626' },
-    { label: t('nurse.kpi_triages'), value: dash.triages_today, icon: <Activity size={18} />, color: '#3b82f6' },
+    { id: 'queue', label: t('nurse.kpi_queue'), value: dash.queue_count, icon: <ClipboardList size={18} />, color: '#0d9488', tone: dash.queue_count > 0 ? 'attention' as const : 'default' as const },
+    { id: 'urgent', label: t('nurse.kpi_urgent'), value: dash.urgent_count, icon: <AlertTriangle size={18} />, color: '#dc2626', tone: dash.urgent_count > 0 ? 'attention' as const : 'default' as const },
+    { id: 'triages', label: t('nurse.kpi_triages'), value: dash.triages_today, icon: <Activity size={18} />, color: '#3b82f6' },
   ] : [];
 
   return (
@@ -45,17 +46,7 @@ export default function NurseDashboardPage() {
       </h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 1.25rem' }}>{t('nurse.desc')}</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
-        {kpis.map(k => (
-          <div key={k.label} className="card" style={{ padding: '1.1rem 1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{k.label}</span>
-              <span style={{ color: k.color }}>{k.icon}</span>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: k.color }}>{k.value}</div>
-          </div>
-        ))}
-      </div>
+      <KpiGrid items={kpis} ariaLabel={t('kpi.summary')} />
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: '0.9rem' }}>{t('nurse.recent')}</div>

@@ -8,6 +8,7 @@ import api from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface DashboardData {
   pending_requests?: number;
@@ -21,16 +22,8 @@ const TEAL_DARK = '#0a7a6e';
 const SLATE = '#0f172a';
 const MUTED = '#64748b';
 
-// Patient quick actions
-const ACTIONS = [
-  { icon: '✦',  label: 'Orientação de saúde', screen: 'Triage'              as const },
-  { icon: '📅', label: 'Marcar consulta',   screen: 'BookConsultation'    as const },
-  { icon: '💊', label: 'Pedir receita',      screen: 'PrescriptionRequest' as const },
-  { icon: '❤️', label: 'As minhas medições', screen: 'Readings'            as const },
-  { icon: '👨‍👩‍👧', label: 'Família',           screen: 'Family'              as const },
-];
-
 export default function HomeScreen() {
+  const { t } = useLanguage();
   const { user, logout } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [data, setData] = useState<DashboardData>({});
@@ -62,6 +55,13 @@ export default function HomeScreen() {
   };
 
   const firstName = user?.full_name?.split(' ')[0] ?? 'Olá';
+  const actions = [
+    { icon: '✦', label: t('home.triage'), screen: 'Triage' as const },
+    { icon: '📅', label: t('home.book'), screen: 'BookConsultation' as const },
+    { icon: '💊', label: t('home.prescription'), screen: 'PrescriptionRequest' as const },
+    { icon: '❤️', label: t('home.measurements'), screen: 'Readings' as const },
+    { icon: '👨‍👩‍👧', label: t('home.family'), screen: 'Family' as const },
+  ];
 
   if (loading) {
     return (
@@ -82,11 +82,11 @@ export default function HomeScreen() {
         {/* ── Header ── */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Olá, {firstName} 👋</Text>
-            <Text style={styles.subGreeting}>O que queres fazer hoje?</Text>
+            <Text style={styles.greeting}>{t('home.hello')}, {firstName} 👋</Text>
+            <Text style={styles.subGreeting}>{t('home.question')}</Text>
           </View>
           <TouchableOpacity onPress={logout} style={styles.logoutBtn} activeOpacity={0.75}>
-            <Text style={styles.logoutText}>Sair</Text>
+            <Text style={styles.logoutText}>{t('common.sign_out')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -115,9 +115,9 @@ export default function HomeScreen() {
         )}
 
         {/* ── Quick actions ── */}
-        <Text style={styles.sectionTitle}>Acções rápidas</Text>
+        <Text style={styles.sectionTitle}>{t('home.quick')}</Text>
         <View style={styles.actionsGrid}>
-          {ACTIONS.map(a => (
+          {actions.map(a => (
             <ActionCard
               key={a.label}
               icon={a.icon}
@@ -129,16 +129,16 @@ export default function HomeScreen() {
 
         {/* ── Portal access ── */}
         <View style={styles.portalCard}>
-          <Text style={styles.portalTitle}>Portal completo</Text>
+          <Text style={styles.portalTitle}>{t('home.portal')}</Text>
           <Text style={styles.portalDesc}>
-            Acede ao histórico clínico completo, documentos e consultas passadas.
+            {t('home.portal_desc')}
           </Text>
           <TouchableOpacity
             style={styles.portalBtn}
             onPress={() => navigation.navigate('Profile' as any)}
             activeOpacity={0.85}
           >
-            <Text style={styles.portalBtnText}>Ver o meu perfil →</Text>
+            <Text style={styles.portalBtnText}>{t('home.profile_cta')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

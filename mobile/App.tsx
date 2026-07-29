@@ -3,14 +3,17 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
 import RootNavigation from './src/navigation';
+import { LanguageProvider } from './src/i18n/LanguageContext';
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <AuthProvider>
-        <RootNavigation />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <RootNavigation />
+        </AuthProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

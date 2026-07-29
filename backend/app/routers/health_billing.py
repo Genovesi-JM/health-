@@ -23,9 +23,10 @@ Endpoints:
 """
 import json
 import logging
+import os
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, Request, Header, Query
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -62,17 +63,90 @@ _ADAPTERS = {
 
 _IS_PRODUCTION = settings.env in ("production", "prod")
 
-# Payment methods offered to patients for the Angola market, in display order.
-# In production a method is only offered if its provider is configured (see
-# _provider_configured); IBAN transfer needs no external credentials.
-_METHOD_CATALOG = [
-    (PaymentProvider.MULTICAIXA_EXPRESS, "Multicaixa Express",
-     "Pague pela app Multicaixa Express com a referência."),
-    (PaymentProvider.VISA_MASTERCARD, "Cartão Visa / Mastercard",
-     "Pague com o seu cartão de crédito ou débito."),
-    (PaymentProvider.IBAN_TRANSFER, "Transferência bancária",
-     "Transferência para a conta KAYA. Confirmação em 1–2 dias úteis."),
+# Regional discovery catalog. Only entries with a checkout_id are executable
+# today; the remaining entries make the integration contract and credential
+# requirements visible without pretending that a payment can be completed.
+_REGIONAL_METHODS = [
+    {
+        "id": "multicaixa_express", "provider": "emis_multicaixa",
+        "label": "Multicaixa Express", "description": "Pagamento móvel e por referência em Angola.",
+        "countries": ["AO"], "currencies": ["AOA"], "channels": ["mobile", "reference", "qr"],
+        "checkout_id": PaymentProvider.MULTICAIXA_EXPRESS,
+    },
+    {
+        "id": "visa_mastercard", "provider": "stripe",
+        "label": "Cartão internacional", "description": "Visa e Mastercard com autenticação 3-D Secure.",
+        "countries": ["*"], "currencies": ["AOA", "EUR", "USD", "GBP", "ZAR"],
+        "channels": ["card", "wallet"], "checkout_id": PaymentProvider.VISA_MASTERCARD,
+    },
+    {
+        "id": "multibanco", "provider": "stripe",
+        "label": "Multibanco", "description": "Referência Multibanco para clientes em Portugal.",
+        "countries": ["PT"], "currencies": ["EUR"], "channels": ["reference"],
+        "checkout_id": None,
+    },
+    {
+        "id": "bizum", "provider": "stripe",
+        "label": "Bizum", "description": "Pagamento bancário em tempo real para clientes em Espanha.",
+        "countries": ["ES"], "currencies": ["EUR"], "channels": ["real_time_bank"],
+        "checkout_id": None, "preview": True,
+    },
+    {
+        "id": "iban_transfer", "provider": "bank_transfer",
+        "label": "Transferência bancária / IBAN", "description": "Angola, SEPA e transferências internacionais.",
+        "countries": ["*"], "currencies": ["AOA", "EUR", "USD", "GBP", "ZAR"],
+        "channels": ["bank_transfer"], "checkout_id": PaymentProvider.IBAN_TRANSFER,
+    },
+    {
+        "id": "paypal", "provider": "paypal",
+        "label": "PayPal", "description": "Checkout PayPal internacional.",
+        "countries": ["*"], "currencies": ["EUR", "USD", "GBP"],
+        "channels": ["wallet"], "checkout_id": PaymentProvider.PAYPAL,
+    },
+    {
+        "id": "paystack", "provider": "paystack",
+        "label": "Paystack", "description": "Cartões, EFT e mobile money nos mercados Paystack.",
+        "countries": ["NG", "GH", "KE", "ZA"], "currencies": ["NGN", "GHS", "KES", "ZAR", "USD"],
+        "channels": ["card", "eft", "mobile_money", "bank_transfer"], "checkout_id": None,
+    },
+    {
+        "id": "flutterwave_mobile_money", "provider": "flutterwave",
+        "label": "Mobile Money África", "description": "M-Pesa, MTN, Airtel, Orange Money e redes elegíveis.",
+        "countries": ["CM", "CI", "ET", "GH", "KE", "RW", "SN", "TZ", "UG", "ZM"],
+        "currencies": ["XAF", "XOF", "ETB", "GHS", "KES", "RWF", "TZS", "UGX", "ZMW"],
+        "channels": ["mobile_money"], "checkout_id": None,
+    },
+    {
+        "id": "dpo_sadc", "provider": "dpo",
+        "label": "DPO Pay SADC", "description": "Adaptador preparado para adquirência regional SADC.",
+        "countries": ["ZA", "BW", "MZ", "NA", "ZM", "ZW", "MW", "LS", "SZ", "TZ"],
+        "currencies": ["ZAR", "BWP", "MZN", "NAD", "ZMW", "ZWL", "MWK", "LSL", "SZL", "TZS"],
+        "channels": ["card", "bank_transfer", "mobile_money"], "checkout_id": None,
+    },
 ]
+
+_PROVIDER_ENV = {
+    "stripe": "STRIPE_SECRET_KEY",
+    "emis_multicaixa": "MULTICAIXA_API_KEY",
+    "paypal": "PAYPAL_CLIENT_ID",
+    "paystack": "PAYSTACK_SECRET_KEY",
+    "flutterwave": "FLUTTERWAVE_SECRET_KEY",
+    "dpo": "DPO_COMPANY_TOKEN",
+}
+
+_DEFAULT_CURRENCY_BY_COUNTRY = {
+    "AO": "AOA", "PT": "EUR", "ES": "EUR", "ZA": "ZAR", "NG": "NGN",
+    "GH": "GHS", "KE": "KES", "ZM": "ZMW", "MZ": "MZN", "BW": "BWP",
+    "NA": "NAD", "ZW": "ZWL", "MW": "MWK", "LS": "LSL", "SZ": "SZL",
+    "TZ": "TZS", "UG": "UGX", "RW": "RWF", "CM": "XAF", "CI": "XOF",
+    "SN": "XOF", "ET": "ETB",
+}
+
+
+def _env_configured(name: str) -> bool:
+    value = os.getenv(name, "")
+    upper = value.upper()
+    return bool(value) and "REPLACE_WITH" not in upper and "EXAMPLE" not in upper
 
 
 def _resolve_provider(method: str | None) -> PaymentProvider:
@@ -92,13 +166,13 @@ def _provider_configured(provider: PaymentProvider) -> bool:
     """Whether the provider has real credentials (vs. dev mock)."""
     adapter = _ADAPTERS[provider]
     if isinstance(adapter, MulticaixaExpressAdapter):
-        return bool(adapter.merchant_id and adapter.api_key)
+        return _env_configured("MULTICAIXA_MERCHANT_ID") and _env_configured("MULTICAIXA_API_KEY")
     if isinstance(adapter, VisaMastercardAdapter):
-        return bool(adapter.api_key)
+        return _env_configured("STRIPE_SECRET_KEY")
     if isinstance(adapter, IBANTransferAdapter):
         return True  # manual transfer needs no external credentials
     if isinstance(adapter, PayPalAdapter):
-        return bool(getattr(adapter, "client_id", "") and getattr(adapter, "secret", ""))
+        return _env_configured("PAYPAL_CLIENT_ID") and _env_configured("PAYPAL_SECRET")
     return False
 
 
@@ -126,14 +200,45 @@ def _mark_consultation_paid(db: Session, payment: HealthPayment) -> None:
 
 
 @router.get("/payment-methods", response_model=PaymentMethodsResponse)
-def payment_methods():
-    """List the payment methods offered to patients (Angola market)."""
+def payment_methods(
+    country: str = Query(default="AO", min_length=2, max_length=2),
+    currency: str | None = Query(default=None, min_length=3, max_length=3),
+    include_planned: bool = Query(default=False),
+):
+    """Discover executable and planned payment methods for a market."""
+    country = country.upper()
+    currency = currency.upper() if currency else _DEFAULT_CURRENCY_BY_COUNTRY.get(country)
     methods = []
-    for provider, label, description in _METHOD_CATALOG:
-        # In production, only offer methods whose provider is configured.
-        enabled = (not _IS_PRODUCTION) or _provider_configured(provider)
+    for item in _REGIONAL_METHODS:
+        if "*" not in item["countries"] and country not in item["countries"]:
+            continue
+        if currency and currency not in item["currencies"]:
+            continue
+        checkout_id = item.get("checkout_id")
+        configured = _env_configured(_PROVIDER_ENV.get(item["provider"], "")) if item["provider"] != "bank_transfer" else True
+        executable = checkout_id is not None
+        enabled = executable and ((not _IS_PRODUCTION) or _provider_configured(checkout_id))
+        if not include_planned and not enabled:
+            continue
+        if item.get("preview"):
+            integration_status = "preview"
+        elif not executable:
+            integration_status = "adapter_required"
+        elif configured:
+            integration_status = "ready"
+        else:
+            integration_status = "sandbox"
         methods.append(PaymentMethodOption(
-            id=provider.value, label=label, description=description, enabled=enabled,
+            id=item["id"],
+            label=item["label"],
+            description=item["description"],
+            enabled=enabled,
+            provider=item["provider"],
+            countries=item["countries"],
+            currencies=item["currencies"],
+            channels=item["channels"],
+            integration_status=integration_status,
+            test_mode=not configured,
         ))
     return PaymentMethodsResponse(methods=methods)
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import {
   Activity, Plus, Trash2, X, Loader2, ThermometerSun,
-  Droplets, Wind, Weight, Heart, HeartPulse,
+  Droplets, Wind, Weight, Heart, HeartPulse, Upload, Scale,
 } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
@@ -107,6 +107,7 @@ export default function PatientReadingsPage() {
   const [error, setError]           = useState('');
   const [success, setSuccess]       = useState('');
   const [filterType, setFilterType] = useState<ReadingType | ''>('');
+  const [importing, setImporting]   = useState(false);
 
   // Load readings
   const load = (type?: ReadingType | '') => {
@@ -195,6 +196,26 @@ export default function PatientReadingsPage() {
 
   const isBP = form.reading_type === 'blood_pressure';
 
+  const importRenphoCsv = async (file?: File) => {
+    if (!file) return;
+    setError('');
+    setSuccess('');
+    setImporting(true);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const response = await api.post('/api/v1/readings/import', body);
+      setSuccess(t('read.import_success')
+        .replace('{imported}', String(response.data.imported ?? 0))
+        .replace('{skipped}', String(response.data.skipped ?? 0)));
+      load(filterType);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || t('read.import_error'));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <>
       {/* Header */}
@@ -211,6 +232,27 @@ export default function PatientReadingsPage() {
       {/* Alerts */}
       {error   && <div className="alert alert-error"   style={{ marginBottom: '1rem' }}>{error}   <button onClick={() => setError('')}   style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button></div>}
       {success && <div className="alert alert-success" style={{ marginBottom: '1rem' }}>{success} <button onClick={() => setSuccess('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button></div>}
+
+      <div className="reading-import-card">
+        <div className="reading-import-card__icon"><Scale size={22} /></div>
+        <div className="reading-import-card__copy">
+          <strong>{t('read.import_title')}</strong>
+          <span>{t('read.import_desc')}</span>
+        </div>
+        <label className={`btn btn-outline reading-import-card__button${importing ? ' disabled' : ''}`}>
+          {importing ? <Loader2 size={15} className="spin" /> : <Upload size={15} />}
+          {importing ? t('read.importing') : t('read.import_button')}
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            disabled={importing}
+            onChange={event => {
+              void importRenphoCsv(event.target.files?.[0]);
+              event.currentTarget.value = '';
+            }}
+          />
+        </label>
+      </div>
 
       {/* ── Add form ── */}
       {showForm && (

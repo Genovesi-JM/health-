@@ -9,10 +9,13 @@ Endpoints:
 - DELETE /api/v1/readings/{reading_id}             → patient or admin delete
 """
 import logging
+import csv
+import io
+import json
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -30,6 +33,42 @@ from app.rbac import get_patient_for_user, require_roles, assert_doctor_can_acce
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/readings", tags=["readings"])
+
+MAX_IMPORT_BYTES = 2 * 1024 * 1024
+
+
+def _normalise_header(value: str) -> str:
+    return "".join(ch for ch in value.lower().strip() if ch.isalnum())
+
+
+def _first_value(row: dict[str, str], aliases: tuple[str, ...]) -> Optional[str]:
+    normalised = {_normalise_header(key): value for key, value in row.items() if key}
+    for alias in aliases:
+        value = normalised.get(_normalise_header(alias))
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return None
+
+
+def _parse_import_datetime(value: Optional[str]) -> datetime:
+    if not value:
+        return datetime.utcnow()
+    cleaned = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(cleaned)
+        return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+    except ValueError:
+        pass
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S",
+        "%d/%m/%Y %H:%M", "%m/%d/%Y %H:%M",
+        "%Y-%m-%d", "%d/%m/%Y",
+    ):
+        try:
+            return datetime.strptime(cleaned, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Unsupported measurement date: {value}")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -106,6 +145,117 @@ def create_reading(
     db.refresh(reading)
     logger.info("DeviceReading created id=%s type=%s patient=%s", reading.id, reading.reading_type, patient.id)
     return reading
+
+
+@router.post("/import")
+async def import_readings_csv(
+    file: UploadFile = File(...),
+    patient: Patient = Depends(get_patient_for_user),
+    db: Session = Depends(get_db),
+):
+    """Import RENPHO Health (or compatible) CSV weight history.
+
+    RENPHO does not expose a public partner cloud API. Its official app can
+    export measurement history, so this endpoint is the consent-preserving,
+    semi-automatic bridge until HealthKit/Health Connect mobile sync is enabled.
+    """
+    filename = (file.filename or "").lower()
+    if not filename.endswith(".csv"):
+        raise HTTPException(status_code=415, detail="Envie um ficheiro CSV exportado pela aplicação.")
+    content = await file.read(MAX_IMPORT_BYTES + 1)
+    if len(content) > MAX_IMPORT_BYTES:
+        raise HTTPException(status_code=413, detail="O CSV excede o limite de 2 MB.")
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        try:
+            text = content.decode("utf-16")
+        except UnicodeDecodeError as exc:
+            raise HTTPException(status_code=400, detail="Não foi possível ler a codificação do CSV.") from exc
+
+    try:
+        dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t")
+    except csv.Error:
+        dialect = csv.excel
+    rows = list(csv.DictReader(io.StringIO(text), dialect=dialect))
+    if not rows:
+        raise HTTPException(status_code=422, detail="O CSV não contém medições.")
+
+    imported = 0
+    skipped = 0
+    errors: list[str] = []
+    for index, row in enumerate(rows[:2000], start=2):
+        weight_value = _first_value(row, (
+            "Weight(kg)", "Weight (kg)", "Weight/kg", "Weight",
+            "Peso(kg)", "Peso (kg)", "Peso",
+        ))
+        weight_lb = _first_value(row, ("Weight(lb)", "Weight (lb)", "Weight/lb", "Peso(lb)"))
+        if not weight_value and weight_lb:
+            weight_value = str(float(weight_lb.replace(",", ".")) * 0.45359237)
+        if not weight_value:
+            skipped += 1
+            continue
+        try:
+            weight = round(float(weight_value.replace(",", ".")), 3)
+            if not 2 <= weight <= 500:
+                raise ValueError("weight outside supported range")
+            measured_at = _parse_import_datetime(_first_value(row, (
+                "Time of Measurement", "Measurement Time", "Date", "Time",
+                "Data da medição", "Data", "Hora",
+            )))
+        except (TypeError, ValueError) as exc:
+            errors.append(f"Linha {index}: {exc}")
+            continue
+
+        duplicate = db.query(DeviceReading.id).filter(
+            DeviceReading.patient_id == patient.id,
+            DeviceReading.reading_type == "weight",
+            DeviceReading.measured_at == measured_at,
+            DeviceReading.source == "renpho_csv",
+        ).first()
+        if duplicate:
+            skipped += 1
+            continue
+
+        composition_aliases = {
+            "bmi": ("BMI", "IMC"),
+            "body_fat_percent": ("Body Fat(%)", "Body Fat (%)", "Gordura corporal(%)"),
+            "body_water_percent": ("Body Water(%)", "Body Water (%)", "Água corporal(%)"),
+            "muscle_mass_kg": ("Muscle Mass(kg)", "Muscle Mass (kg)", "Massa muscular(kg)"),
+            "bone_mass_kg": ("Bone Mass(kg)", "Bone Mass (kg)", "Massa óssea(kg)"),
+            "visceral_fat": ("Visceral Fat", "Gordura visceral"),
+            "metabolic_age": ("Metabolic Age", "Idade metabólica"),
+        }
+        composition = {}
+        for key, aliases in composition_aliases.items():
+            value = _first_value(row, aliases)
+            if value:
+                try:
+                    composition[key] = float(value.replace(",", "."))
+                except ValueError:
+                    pass
+
+        db.add(DeviceReading(
+            patient_id=patient.id,
+            reading_type="weight",
+            value=weight,
+            unit="kg",
+            measured_at=measured_at,
+            source="renpho_csv",
+            device_brand="RENPHO",
+            device_model="RENPHO Health CSV",
+            notes=json.dumps({"body_composition": composition}, ensure_ascii=False),
+        ))
+        imported += 1
+
+    db.commit()
+    logger.info("CSV readings import patient=%s imported=%s skipped=%s", patient.id, imported, skipped)
+    return {
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors[:20],
+        "source": "renpho_csv",
+    }
 
 
 @router.get("/patient/{patient_id}", response_model=DeviceReadingListOut)

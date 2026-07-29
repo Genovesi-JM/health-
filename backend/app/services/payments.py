@@ -33,6 +33,13 @@ logger = logging.getLogger(__name__)
 def _utcnow():
     return datetime.now(timezone.utc)
 
+def _credential_ready(value: Optional[str]) -> bool:
+    """Reject documentation placeholders as well as missing credentials."""
+    if not value:
+        return False
+    upper = value.upper()
+    return "REPLACE_WITH" not in upper and "EXAMPLE" not in upper
+
 
 # ============ ENUMS ============
 
@@ -127,7 +134,7 @@ class MulticaixaExpressAdapter(PaymentAdapter):
         self.webhook_secret = os.getenv("MULTICAIXA_WEBHOOK_SECRET")
 
     async def create_payment(self, intent: PaymentIntent) -> PaymentResult:
-        if not self.merchant_id or not self.api_key:
+        if not _credential_ready(self.merchant_id) or not _credential_ready(self.api_key):
             logger.warning("Multicaixa not configured - returning mock response")
             return PaymentResult(
                 success=True, payment_id=intent.id, status=PaymentStatus.PENDING,
@@ -155,8 +162,10 @@ class MulticaixaExpressAdapter(PaymentAdapter):
                 return PaymentResult(success=False, payment_id=intent.id, status=PaymentStatus.FAILED, error_message=str(e))
 
     async def check_status(self, provider_reference: str) -> PaymentStatus:
-        if not self.api_key:
-            return PaymentStatus.COMPLETED
+        if not _credential_ready(self.api_key):
+            # A sandbox placeholder must never turn into a successful payment
+            # merely because no provider credentials are configured.
+            return PaymentStatus.PENDING
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{self.api_url}/payments/{provider_reference}",
                                         headers={"Authorization": f"Bearer {self.api_key}"}, timeout=10.0)
@@ -168,8 +177,14 @@ class MulticaixaExpressAdapter(PaymentAdapter):
         return PaymentStatus.PENDING
 
     async def refund(self, provider_reference: str, amount: Optional[int] = None) -> RefundResult:
-        if not self.api_key:
-            return RefundResult(success=True, refund_id=f"REF-{uuid.uuid4().hex[:8]}", amount=amount or 0, status="completed")
+        if not _credential_ready(self.api_key):
+            return RefundResult(
+                success=False,
+                refund_id="",
+                amount=amount or 0,
+                status="not_configured",
+                error_message="Multicaixa credentials are not configured",
+            )
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{self.api_url}/payments/{provider_reference}/refund",
                                          headers={"Authorization": f"Bearer {self.api_key}"},
@@ -180,8 +195,8 @@ class MulticaixaExpressAdapter(PaymentAdapter):
             return RefundResult(success=False, refund_id="", amount=0, status="failed", error_message=response.text)
 
     def verify_webhook(self, payload: bytes, signature: str) -> bool:
-        if not self.webhook_secret:
-            return True
+        if not _credential_ready(self.webhook_secret):
+            return False
         expected = hmac.new(self.webhook_secret.encode(), payload, hashlib.sha256).hexdigest()
         return hmac.compare_digest(expected, signature)
 
@@ -193,7 +208,7 @@ class VisaMastercardAdapter(PaymentAdapter):
         self.api_url = "https://api.stripe.com/v1"
 
     async def create_payment(self, intent: PaymentIntent) -> PaymentResult:
-        if not self.api_key:
+        if not _credential_ready(self.api_key):
             logger.warning("Stripe not configured - returning mock response")
             return PaymentResult(success=True, payment_id=intent.id, status=PaymentStatus.PENDING,
                                 provider_reference=f"pi_{uuid.uuid4().hex[:24]}", raw_response={"mock": True})
@@ -220,8 +235,8 @@ class VisaMastercardAdapter(PaymentAdapter):
                 return PaymentResult(success=False, payment_id=intent.id, status=PaymentStatus.FAILED, error_message=str(e))
 
     async def check_status(self, provider_reference: str) -> PaymentStatus:
-        if not self.api_key:
-            return PaymentStatus.COMPLETED
+        if not _credential_ready(self.api_key):
+            return PaymentStatus.PENDING
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{self.api_url}/payment_intents/{provider_reference}",
                                         auth=(self.api_key, ""), timeout=10.0)
@@ -234,7 +249,7 @@ class VisaMastercardAdapter(PaymentAdapter):
         return PaymentStatus.PENDING
 
     async def refund(self, provider_reference: str, amount: Optional[int] = None) -> RefundResult:
-        if not self.api_key:
+        if not _credential_ready(self.api_key):
             return RefundResult(success=True, refund_id=f"re_{uuid.uuid4().hex[:24]}", amount=amount or 0, status="succeeded")
         async with httpx.AsyncClient() as client:
             data = {"payment_intent": provider_reference}
@@ -247,8 +262,8 @@ class VisaMastercardAdapter(PaymentAdapter):
             return RefundResult(success=False, refund_id="", amount=0, status="failed", error_message=response.text)
 
     def verify_webhook(self, payload: bytes, signature: str) -> bool:
-        if not self.webhook_secret:
-            return True
+        if not _credential_ready(self.webhook_secret):
+            return False
         try:
             parts = dict(p.split("=", 1) for p in signature.split(","))
             timestamp = parts.get("t"); sig = parts.get("v1")
@@ -315,7 +330,7 @@ class PayPalAdapter(PaymentAdapter):
         self.api_url = "https://api-m.paypal.com" if mode == "live" else "https://api-m.sandbox.paypal.com"
 
     async def _get_token(self) -> Optional[str]:
-        if not self.client_id or not self.secret:
+        if not _credential_ready(self.client_id) or not _credential_ready(self.secret):
             return None
         async with httpx.AsyncClient() as client:
             r = await client.post(f"{self.api_url}/v1/oauth2/token",
@@ -373,7 +388,7 @@ class PayPalAdapter(PaymentAdapter):
     async def check_status(self, provider_reference: str) -> PaymentStatus:
         token = await self._get_token()
         if not token:
-            return PaymentStatus.COMPLETED
+            return PaymentStatus.PENDING
         async with httpx.AsyncClient() as client:
             r = await client.get(f"{self.api_url}/v2/checkout/orders/{provider_reference}",
                 headers={"Authorization": f"Bearer {token}"}, timeout=10.0)
@@ -390,7 +405,7 @@ class PayPalAdapter(PaymentAdapter):
 
     def verify_webhook(self, payload: bytes, signature: str) -> bool:
         # PayPal webhook verification requires Webhook ID — implement when webhooks are set up
-        return True
+        return False
 
 
 # ============ PAYMENT ORCHESTRATOR — DB-backed ============

@@ -616,6 +616,12 @@ const translations: Record<string, TranslationEntry> = {
   'read.t_oxygen': { pt: 'Saturação de Oxigénio', en: 'Oxygen Saturation', fr: 'Saturation en oxygène', es: 'Saturación de oxígeno' },
   'read.t_weight': { pt: 'Peso', en: 'Weight', fr: 'Poids', es: 'Peso' },
   'read.t_heart_rate': { pt: 'Frequência Cardíaca', en: 'Heart Rate', fr: 'Fréquence cardiaque', es: 'Frecuencia cardíaca' },
+  'read.import_title': { pt: 'Importar da RENPHO Health', en: 'Import from RENPHO Health', fr: 'Importer depuis RENPHO Health', es: 'Importar desde RENPHO Health' },
+  'read.import_desc': { pt: 'Exporte o histórico CSV na app RENPHO Health e importe-o aqui. Duplicados são ignorados.', en: 'Export your CSV history in the RENPHO Health app and import it here. Duplicates are ignored.', fr: 'Exportez l’historique CSV dans RENPHO Health et importez-le ici. Les doublons sont ignorés.', es: 'Exporta el historial CSV en RENPHO Health e impórtalo aquí. Los duplicados se ignoran.' },
+  'read.import_button': { pt: 'Selecionar CSV', en: 'Choose CSV', fr: 'Choisir le CSV', es: 'Elegir CSV' },
+  'read.importing': { pt: 'A importar…', en: 'Importing…', fr: 'Importation…', es: 'Importando…' },
+  'read.import_success': { pt: '{imported} medições importadas; {skipped} duplicados ignorados.', en: '{imported} measurements imported; {skipped} duplicates skipped.', fr: '{imported} mesures importées ; {skipped} doublons ignorés.', es: '{imported} mediciones importadas; {skipped} duplicados ignorados.' },
+  'read.import_error': { pt: 'Não foi possível importar este CSV.', en: 'Could not import this CSV.', fr: 'Impossible d’importer ce CSV.', es: 'No se pudo importar este CSV.' },
   'sidebar.family': { pt: 'Família', en: 'Family', fr: 'Famille', es: 'Familia', zh: '家庭 (Family)' },
   // ── Family members ──
   'fam.rel_filho': { pt: 'Filho', en: 'Son', fr: 'Fils', es: 'Hijo' },
@@ -1019,6 +1025,13 @@ const translations: Record<string, TranslationEntry> = {
   'vitals.gateway_unavailable': { pt: 'A importação por WiFi ainda não está configurada neste ambiente. Use a inserção manual ou Bluetooth.', en: 'Wi-Fi import is not configured in this environment. Use manual entry or Bluetooth.', fr: 'L’importation Wi-Fi n’est pas configurée dans cet environnement. Utilisez la saisie manuelle ou Bluetooth.', es: 'La importación por WiFi no está configurada en este entorno. Usa la entrada manual o Bluetooth.' },
   'vitals.no_measurement': { pt: 'Dispositivo ligado, mas ainda não disponibilizou uma medição de saúde compatível.', en: 'The device connected but has not provided a compatible health measurement yet.', fr: 'L’appareil est connecté mais n’a pas encore fourni de mesure de santé compatible.', es: 'El dispositivo se conectó, pero aún no proporcionó una medición de salud compatible.' },
   'vitals.connection_failed': { pt: 'Não foi possível ligar ao dispositivo.', en: 'Could not connect to the device.', fr: 'Impossible de se connecter à l’appareil.', es: 'No se pudo conectar al dispositivo.' },
+  'kpi.summary': { pt: 'Indicadores principais', en: 'Key indicators', fr: 'Indicateurs clés', es: 'Indicadores principales' },
+  'doctor.kpi_waiting': { pt: 'Em espera agora', en: 'Waiting now', fr: 'En attente', es: 'En espera ahora' },
+  'doctor.kpi_active': { pt: 'Em consulta', en: 'In consultation', fr: 'En consultation', es: 'En consulta' },
+  'doctor.kpi_today': { pt: 'Consultas hoje', en: 'Consultations today', fr: 'Consultations aujourd’hui', es: 'Consultas hoy' },
+  'doctor.kpi_week': { pt: 'Concluídas esta semana', en: 'Completed this week', fr: 'Terminées cette semaine', es: 'Completadas esta semana' },
+  'doctor.kpi_prescriptions': { pt: 'Prescrições pendentes', en: 'Pending prescriptions', fr: 'Ordonnances en attente', es: 'Recetas pendientes' },
+  'doctor.kpi_patients': { pt: 'Pacientes acompanhados', en: 'Patients followed', fr: 'Patients suivis', es: 'Pacientes atendidos' },
 
   /* TRIAGE — dependent selector */
   'triage.for_whom': { pt: 'Para quem é a triagem?', en: 'Who is this triage for?', fr: 'Pour qui est ce triage ?', es: '¿Para quién es este triaje?' },

@@ -6,6 +6,7 @@ import { useT } from '../i18n/LanguageContext';
 import { specialtyLabel } from '../constants/specialties';
 import type { PatientState, TriageHistoryItem, Consultation } from '../types';
 import BookConsultationModal from '../components/BookConsultationModal';
+import KpiGrid from '../components/KpiGrid';
 import {
   Activity, Calendar, ArrowRight, ChevronRight,
   HeartPulse, AlertTriangle, CheckCircle2,
@@ -190,37 +191,14 @@ export default function DashboardPage() {
       </div>
 
       {/* ── KPI Summary Cards ── */}
-      <div className="dash-kpi-row">
-        <div className="dash-kpi">
-          <div className="dash-kpi-icon" style={{ background: state?.last_triage_risk ? risk.bg : 'rgba(20,184,166,0.1)', color: state?.last_triage_risk ? risk.color : 'var(--accent-teal)' }}>
-            <Shield size={18} />
-          </div>
-          <div>
-            <span className="dash-kpi-value" style={{ color: state?.last_triage_risk ? risk.color : 'var(--text-primary)' }}>
-              {state?.last_triage_risk ? risk.label : '—'}
-            </span>
-            <span className="dash-kpi-label">{t('dash.last_risk')}</span>
-          </div>
-        </div>
-        <div className="dash-kpi">
-          <div className="dash-kpi-icon" style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
-            <TrendingUp size={18} />
-          </div>
-          <div>
-            <span className="dash-kpi-value">{state?.triage_count ?? 0}</span>
-            <span className="dash-kpi-label">{t('dash.tab_triages')}</span>
-          </div>
-        </div>
-        <div className="dash-kpi">
-          <div className="dash-kpi-icon" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563eb' }}>
-            <Calendar size={18} />
-          </div>
-          <div>
-            <span className="dash-kpi-value">{state?.completed_consultations ?? 0}</span>
-            <span className="dash-kpi-label">{t('dash.consultations_done')}</span>
-          </div>
-        </div>
-      </div>
+      <KpiGrid
+        ariaLabel={t('kpi.summary')}
+        items={[
+          { id: 'risk', label: t('dash.last_risk'), value: state?.last_triage_risk ? risk.label : '—', icon: <Shield size={18} />, color: state?.last_triage_risk ? risk.color : '#0d9488', tone: state?.last_triage_risk === 'URGENT' ? 'attention' : 'default' },
+          { id: 'triages', label: t('dash.tab_triages'), value: state?.triage_count ?? 0, icon: <TrendingUp size={18} />, color: '#8b5cf6' },
+          { id: 'consultations', label: t('dash.consultations_done'), value: state?.completed_consultations ?? 0, icon: <Calendar size={18} />, color: '#2563eb', tone: 'positive' },
+        ]}
+      />
 
       {/* ── Chronic Diseases Section ── */}
       <div className="dash-section-header" style={{ marginTop: '1.5rem' }}>

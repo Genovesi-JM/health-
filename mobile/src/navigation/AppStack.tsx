@@ -13,6 +13,7 @@ import PrescriptionRequestScreen from '../screens/PrescriptionRequestScreen';
 import FamilyScreen from '../screens/FamilyScreen';
 import ConsentGateScreen from '../screens/ConsentGateScreen';
 import TriageScreen from '../screens/TriageScreen';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export type AppStackParamList = {
   HomeTabs: undefined;
@@ -39,6 +40,7 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 const TEAL = '#0d9488';
 
 function HomeTabs() {
+  const { t } = useLanguage();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -57,11 +59,11 @@ function HomeTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Início' }} />
-      <Tab.Screen name="Profile" component={PatientProfileScreen} options={{ title: 'Perfil' }} />
-      <Tab.Screen name="Readings" component={ReadingsScreen} options={{ title: 'Medições' }} />
-      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Avisos' }} />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Definições' }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: t('nav.home') }} />
+      <Tab.Screen name="Profile" component={PatientProfileScreen} options={{ title: t('nav.profile') }} />
+      <Tab.Screen name="Readings" component={ReadingsScreen} options={{ title: t('nav.readings') }} />
+      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: t('nav.notifications') }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('nav.settings') }} />
     </Tab.Navigator>
   );
 }
