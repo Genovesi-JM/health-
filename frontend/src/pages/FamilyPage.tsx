@@ -43,17 +43,18 @@ const BLANK_FORM: FormState = {
 };
 
 const REL_OPTIONS = [
-  { value: 'filho',    label: 'Filho' },
-  { value: 'filha',    label: 'Filha' },
-  { value: 'pai',      label: 'Pai' },
-  { value: 'mãe',      label: 'Mãe' },
-  { value: 'cônjuge',  label: 'Cônjuge / Parceiro(a)' },
-  { value: 'irmão',    label: 'Irmão' },
-  { value: 'irmã',     label: 'Irmã' },
-  { value: 'avô',      label: 'Avô' },
-  { value: 'avó',      label: 'Avó' },
-  { value: 'outro',    label: 'Outro' },
+  { value: 'filho',    key: 'fam.rel_filho' },
+  { value: 'filha',    key: 'fam.rel_filha' },
+  { value: 'pai',      key: 'fam.rel_pai' },
+  { value: 'mãe',      key: 'fam.rel_mae' },
+  { value: 'cônjuge',  key: 'fam.rel_conjuge' },
+  { value: 'irmão',    key: 'fam.rel_irmao' },
+  { value: 'irmã',     key: 'fam.rel_irma' },
+  { value: 'avô',      key: 'fam.rel_avo_m' },
+  { value: 'avó',      key: 'fam.rel_avo_f' },
+  { value: 'outro',    key: 'fam.rel_outro' },
 ];
+const REL_KEY = Object.fromEntries(REL_OPTIONS.map(o => [o.value, o.key]));
 
 function calcAge(dob: string): number {
   return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
@@ -81,7 +82,7 @@ export default function FamilyPage() {
   useEffect(() => {
     api.get<FamilyMember[]>('/api/v1/family/me')
       .then(r => setMembers(r.data))
-      .catch(() => setError('Não foi possível carregar os membros da família.'))
+      .catch(() => setError(t('fam.err_load')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -146,7 +147,7 @@ export default function FamilyPage() {
       await api.delete(`/api/v1/family/${id}`);
       setMembers(prev => prev.filter(m => m.id !== id));
     } catch {
-      setError('Erro ao remover membro. Tente novamente.');
+      setError(t('fam.err_remove'));
     }
     setDeleting(false); setDeleteId(null);
   };
@@ -209,7 +210,7 @@ export default function FamilyPage() {
 
           {members.map(m => {
             const age = m.date_of_birth ? calcAge(m.date_of_birth) : null;
-            const relLabel = REL_OPTIONS.find(r => r.value === m.relationship)?.label ?? m.relationship;
+            const relLabel = REL_KEY[m.relationship] ? t(REL_KEY[m.relationship]) : m.relationship;
             return (
               <div key={m.id} className="profile-dependent-card" style={{ marginBottom: '0.75rem' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -285,7 +286,7 @@ export default function FamilyPage() {
             <div className="profile-med-form" style={{ marginTop: members.length > 0 ? '1rem' : 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
                 <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                  {editId ? 'Editar membro' : 'Adicionar membro da família'}
+                  {editId ? t('fam.edit_member') : t('fam.add_member')}
                 </span>
                 <button className="btn btn-sm btn-outline" onClick={closeForm}><X size={13} /></button>
               </div>
@@ -298,43 +299,43 @@ export default function FamilyPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Nome completo *</label>
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('fam.full_name')} *</label>
                   <input className="form-input" style={{ fontSize: '0.85rem' }} type="text"
-                    placeholder="Ex: Ana Silva" value={form.full_name}
+                    placeholder={t('fam.name_ph')} value={form.full_name}
                     onChange={e => f('full_name', e.target.value)} />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Parentesco *</label>
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('fam.relationship')} *</label>
                   <select className="form-select" style={{ fontSize: '0.85rem' }} value={form.relationship}
                     onChange={e => f('relationship', e.target.value)}>
-                    {REL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {REL_OPTIONS.map(o => <option key={o.value} value={o.value}>{t(o.key)}</option>)}
                   </select>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Data de nascimento</label>
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('fam.dob')}</label>
                   <input className="form-input" style={{ fontSize: '0.85rem' }} type="date"
                     value={form.date_of_birth} onChange={e => handleDobChange(e.target.value)} />
                   {form.date_of_birth && (
                     <span style={{ fontSize: '0.72rem', color: form.is_minor ? '#eab308' : 'var(--text-muted)' }}>
-                      {calcAge(form.date_of_birth)} anos{form.is_minor ? ' — Perfil pediátrico' : ''}
+                      {calcAge(form.date_of_birth)} {t('fam.years')}{form.is_minor ? ` — ${t('fam.pediatric')}` : ''}
                     </span>
                   )}
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Género</label>
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('fam.gender')}</label>
                   <select className="form-select" style={{ fontSize: '0.85rem' }} value={form.gender}
                     onChange={e => f('gender', e.target.value)}>
-                    <option value="">Não especificar</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Feminino">Feminino</option>
-                    <option value="Outro">Outro</option>
+                    <option value="">{t('fam.gender_none')}</option>
+                    <option value="Masculino">{t('fam.gender_m')}</option>
+                    <option value="Feminino">{t('fam.gender_f')}</option>
+                    <option value="Outro">{t('fam.rel_outro')}</option>
                   </select>
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Telefone</label>
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('fam.phone')}</label>
                   <input className="form-input" style={{ fontSize: '0.85rem' }} type="tel"
                     placeholder="+244 ..." value={form.phone} onChange={e => f('phone', e.target.value)} />
                 </div>
@@ -347,9 +348,9 @@ export default function FamilyPage() {
                     placeholder="opcional" value={form.email} onChange={e => f('email', e.target.value)} />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Notas</label>
+                  <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('fam.notes')}</label>
                   <input className="form-input" style={{ fontSize: '0.85rem' }} type="text"
-                    placeholder="Informação adicional" value={form.notes} onChange={e => f('notes', e.target.value)} />
+                    placeholder={t('fam.notes_ph')} value={form.notes} onChange={e => f('notes', e.target.value)} />
                 </div>
               </div>
 
@@ -362,13 +363,13 @@ export default function FamilyPage() {
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={form.is_minor}
                     onChange={e => f('is_minor', e.target.checked)} />
-                  Menor / Perfil pediátrico
+                  {t('fam.minor_pediatric')}
                 </label>
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
-                  <Save size={13} /> {saving ? 'A guardar…' : (editId ? 'Actualizar' : t('family.save'))}
+                  <Save size={13} /> {saving ? t('common.saving') : (editId ? t('fam.update') : t('family.save'))}
                 </button>
                 <button className="btn btn-outline btn-sm" onClick={closeForm}>{t('family.cancel_add')}</button>
               </div>
