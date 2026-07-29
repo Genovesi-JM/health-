@@ -61,6 +61,7 @@ Verify clinicians → manage users and public contact channels → monitor safet
 - public landing, service, pricing, doctor, clinic, employer, device, FAQ and contact pages;
 - patient registration, login, OAuth callback, consent gating and role-based navigation;
 - patient dashboard, profile, triage, self-care, consultations, prescription requests, family, readings and notifications;
+- photo-assisted skin/injury triage with private guided capture, structured visual questions, fixed red-flag escalation and linked-clinician review (no image diagnosis);
 - clinician registration, verification state, dashboard, profile, queue, agenda, patients, live consultations, prescriptions, messages, finance, reviews, security and support;
 - admin dashboard, clinician verification and patient administration;
 - installable PWA with API responses excluded from offline caching.

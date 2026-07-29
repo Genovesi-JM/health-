@@ -261,6 +261,18 @@ class TriageHistoryItem(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TriagePhotoOut(BaseModel):
+    id: str
+    triage_session_id: str
+    view_type: str
+    original_filename: str
+    content_type: str
+    size_bytes: int
+    technical_check: dict = Field(default_factory=dict)
+    content_url: str
+    created_at: datetime
+
+
 # ── Consultation ──
 
 class ConsultationBookRequest(BaseModel):
@@ -300,10 +312,11 @@ class ConsultationCancelRequest(BaseModel):
 
 
 class ConsultationQueueItem(BaseModel):
-    """Item in the doctor's unassigned queue (minimal patient info)."""
+    """Unassigned request or active consultation in the doctor's work queue."""
     id: str
     patient_id: Optional[str] = None
     patient_name: Optional[str] = None
+    triage_session_id: Optional[str] = None
     specialty: str
     status: str
     risk_level: Optional[str] = None

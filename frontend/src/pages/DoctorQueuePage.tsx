@@ -5,6 +5,7 @@ import { ClipboardList, CheckCircle2, Play, X, User, Stethoscope, AlertTriangle 
 import { useT } from '../i18n/LanguageContext';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
 import { specialtyLabel } from '../constants/specialties';
+import TriagePhotoReview from '../components/TriagePhotoReview';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
 
@@ -197,6 +198,13 @@ export default function DoctorQueuePage() {
                   </button>
                 )}
               </div>
+
+              {/* Triage photographs become visible only after the doctor accepts the case. */}
+              {selected.status === 'in_progress' && selected.triage_session_id && (
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+                  <TriagePhotoReview triageId={selected.triage_session_id} />
+                </div>
+              )}
 
               {/* Readings */}
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>

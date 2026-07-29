@@ -6,6 +6,7 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import kayaLogo from '/kaya-logo.svg';
 import LanguageSelector from '../components/LanguageSelector';
+import { apiErrorMessage } from '../utils/apiError';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -36,7 +37,7 @@ export default function LoginPage() {
       const defaultDest = role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : role === 'nurse' ? '/nurse' : role === 'corporate_admin' ? '/corporate' : '/dashboard';
       navigate(from || defaultDest, { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.detail || t('login.invalid'));
+      setError(apiErrorMessage(err, t('login.invalid')));
     } finally { setLoading(false); }
   };
 

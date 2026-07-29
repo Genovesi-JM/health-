@@ -21,7 +21,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 
 from app.database import get_db
 from app.deps import get_current_user
@@ -176,18 +176,30 @@ def doctor_queue(
     user: User = Depends(require_verified_doctor),
     db: Session = Depends(get_db),
 ):
-    """Get unassigned consultation requests (doctor queue)."""
+    """Get compatible unassigned requests plus this doctor's active cases."""
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     q = db.query(Consultation).filter(
-        Consultation.doctor_id.is_(None),
-        Consultation.status == "requested",
+        or_(
+            and_(
+                Consultation.doctor_id.is_(None),
+                Consultation.status == "requested",
+            ),
+            and_(
+                Consultation.doctor_id == doctor.id,
+                Consultation.status == "in_progress",
+            ),
+        )
     )
     if specialty:
-        q = q.filter(Consultation.specialty == specialty)
+        q = q.filter(or_(
+            Consultation.doctor_id == doctor.id,
+            Consultation.specialty == specialty,
+        ))
     elif doctor:
         # Default: filter by doctor's specialization
         q = q.filter(
             or_(
+                Consultation.doctor_id == doctor.id,
                 Consultation.specialty == doctor.specialization,
                 Consultation.specialty == "clinica_geral",
             )
@@ -227,6 +239,7 @@ def doctor_queue(
             id=c.id,
             patient_id=c.patient_id,
             patient_name=patient_name,
+            triage_session_id=c.triage_session_id,
             specialty=c.specialty,
             status=c.status,
             risk_level=risk_level,

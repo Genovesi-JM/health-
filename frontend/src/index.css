@@ -3871,3 +3871,105 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
     padding-bottom: max(1.5rem, calc(1rem + env(safe-area-inset-bottom)));
   }
 }
+
+/* ── Guided, non-diagnostic triage photographs ── */
+.triage-photo-guide {
+  margin: 0 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(13, 148, 136, 0.28);
+  border-radius: 14px;
+  background: rgba(13, 148, 136, 0.055);
+}
+.triage-photo-guide__heading { display: flex; align-items: flex-start; gap: 0.75rem; }
+.triage-photo-guide__heading h4 { margin: 0 0 0.25rem; color: var(--text-primary); font-size: 0.95rem; }
+.triage-photo-guide__heading p,
+.triage-photo-guide__optional { margin: 0; color: var(--text-secondary); font-size: 0.78rem; line-height: 1.5; }
+.triage-photo-guide__icon {
+  display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px;
+  border-radius: 11px; color: var(--accent-teal); background: rgba(13, 148, 136, 0.12);
+}
+.triage-photo-guide__boundary {
+  display: flex; align-items: flex-start; gap: 0.5rem; margin: 0.85rem 0;
+  padding: 0.7rem 0.8rem; border-radius: 10px; color: var(--text-secondary);
+  background: rgba(15, 23, 42, 0.34); font-size: 0.76rem; line-height: 1.45;
+}
+.triage-photo-guide__boundary svg { flex: 0 0 auto; color: var(--accent-teal); }
+.triage-photo-guide__consent {
+  display: flex; align-items: flex-start; gap: 0.55rem; color: var(--text-primary);
+  font-size: 0.78rem; line-height: 1.45; cursor: pointer;
+}
+.triage-photo-guide__consent input { margin-top: 0.15rem; }
+.triage-photo-guide__grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem; margin: 1rem 0 0.75rem;
+}
+.triage-photo-slot {
+  position: relative; display: flex; min-width: 0; flex-direction: column; align-items: stretch;
+  gap: 0.35rem; padding: 0.65rem; border: 1px solid var(--border); border-radius: 12px;
+  background: rgba(15, 23, 42, 0.32);
+}
+.triage-photo-slot__number {
+  position: absolute; z-index: 1; top: 0.45rem; left: 0.45rem; display: grid; place-items: center;
+  width: 22px; height: 22px; border-radius: 50%; color: #fff; background: var(--accent-teal);
+  font-size: 0.7rem; font-weight: 700;
+}
+.triage-photo-slot__placeholder,
+.triage-photo-slot__preview { width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; }
+.triage-photo-slot__placeholder {
+  display: grid; place-items: center; color: var(--text-muted); background: rgba(255, 255, 255, 0.04);
+}
+.triage-photo-slot__preview { object-fit: cover; }
+.triage-photo-slot strong { color: var(--text-primary); font-size: 0.78rem; }
+.triage-photo-slot > span {
+  min-height: 2.4em; color: var(--text-muted); font-size: 0.68rem; line-height: 1.25;
+}
+.triage-photo-slot__button {
+  position: relative; justify-content: center; margin-top: auto; overflow: hidden; cursor: pointer;
+}
+.triage-photo-slot__button:has(input:disabled) { cursor: not-allowed; opacity: 0.48; }
+.triage-photo-slot__button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.triage-photo-slot__warning,
+.triage-photo-guide__error {
+  display: flex; align-items: flex-start; gap: 0.3rem; color: #f59e0b; font-size: 0.66rem; line-height: 1.3;
+}
+.triage-photo-guide__error { margin-top: 0.65rem; color: #ef4444; font-size: 0.75rem; }
+
+@media (max-width: 700px) {
+  .triage-photo-guide__grid { grid-template-columns: 1fr; }
+  .triage-photo-slot {
+    display: grid; grid-template-columns: 100px 1fr; grid-template-rows: auto auto 1fr auto;
+    column-gap: 0.65rem;
+  }
+  .triage-photo-slot__placeholder,
+  .triage-photo-slot__preview { grid-row: 1 / 5; }
+  .triage-photo-slot__button { grid-column: 2; width: fit-content; }
+}
+
+.triage-photo-review__title {
+  display: flex; align-items: center; gap: 0.45rem; color: var(--text-primary); font-size: 0.8rem;
+}
+.triage-photo-review__title svg { color: var(--accent-teal); }
+.triage-photo-review__title span {
+  margin-left: auto; min-width: 20px; padding: 0.1rem 0.4rem; border-radius: 999px;
+  background: rgba(13, 148, 136, 0.12); color: var(--accent-teal); text-align: center; font-size: 0.68rem;
+}
+.triage-photo-review__boundary {
+  display: flex; align-items: flex-start; gap: 0.4rem; margin: 0.55rem 0 0.7rem;
+  padding: 0.55rem 0.65rem; border-radius: 8px; background: rgba(13, 148, 136, 0.07);
+  color: var(--text-secondary); font-size: 0.69rem; line-height: 1.4;
+}
+.triage-photo-review__boundary svg { flex: 0 0 auto; color: var(--accent-teal); }
+.triage-photo-review__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem; }
+.triage-photo-review figure { position: relative; margin: 0; min-width: 0; }
+.triage-photo-review img {
+  display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+  border-radius: 8px; border: 1px solid var(--border);
+}
+.triage-photo-review figcaption {
+  margin-top: 0.25rem; overflow: hidden; color: var(--text-muted); font-size: 0.65rem;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.triage-photo-review__warning {
+  display: flex; align-items: center; gap: 0.2rem; margin-top: 0.15rem;
+  color: #d97706; font-size: 0.62rem;
+}

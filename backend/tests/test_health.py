@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 
 from app.database import get_db, SessionLocal
 from app.models import User
-from app.health_models import Patient, Doctor, PatientConsent
+from app.health_models import Consultation, Patient, Doctor, PatientConsent
 from app.oauth2 import create_access_token
 from app.utils import hash_password
 
@@ -210,6 +210,156 @@ class TestTriageFlow:
         assert r.status_code == 200
         assert len(r.json()) >= 1
 
+    def test_skin_triage_includes_guided_visual_questions(self, client: TestClient, db_session):
+        user = _make_user(db_session, "triage_skin@test.com", "patient")
+        _make_patient(db_session, user)
+        r = client.post(
+            "/api/v1/triage/start",
+            json={
+                "chief_complaint": "Ferida com vermelhidão",
+                "age_group": "pediatric",
+                "category": "skin",
+            },
+            headers=_token(user),
+        )
+        assert r.status_code == 200
+        keys = {question["key"] for question in r.json()["questions"]}
+        assert {
+            "visual_honey_crust",
+            "visual_discharge",
+            "redness_spreading",
+            "visual_red_streaks",
+            "child_appears_unwell",
+        }.issubset(keys)
+
+    def test_visual_red_flag_cannot_be_downgraded_by_other_answers(
+        self, client: TestClient, db_session
+    ):
+        user = _make_user(db_session, "triage_visual_flag@test.com", "patient")
+        _make_patient(db_session, user)
+        headers = _token(user)
+        start = client.post(
+            "/api/v1/triage/start",
+            json={"chief_complaint": "Lesão na perna", "category": "skin"},
+            headers=headers,
+        )
+        sid = start.json()["session_id"]
+        answers = {question["key"]: False for question in start.json()["questions"]}
+        answers.update({"age": 8, "pain_level": 1, "visual_red_streaks": True})
+        assert client.post(
+            f"/api/v1/triage/{sid}/answers",
+            json={"answers": answers},
+            headers=headers,
+        ).status_code == 200
+        completed = client.post(f"/api/v1/triage/{sid}/complete", headers=headers)
+        assert completed.status_code == 200
+        assert completed.json()["risk_level"] == "URGENT"
+        assert completed.json()["recommended_action"] == "ER_NOW"
+
+    def test_patient_can_upload_private_triage_photo(self, client: TestClient, db_session):
+        user = _make_user(db_session, "triage_photo@test.com", "patient")
+        _make_patient(db_session, user)
+        headers = _token(user)
+        start = client.post(
+            "/api/v1/triage/start",
+            json={"chief_complaint": "Alteração na pele", "category": "skin"},
+            headers=headers,
+        )
+        sid = start.json()["session_id"]
+        upload = client.post(
+            f"/api/v1/triage/{sid}/photos",
+            data={
+                "view_type": "closeup",
+                "technical_check": json.dumps({
+                    "average_brightness": 120,
+                    "issues": [],
+                    "metadata_removed": True,
+                }),
+            },
+            files={"file": ("closeup.jpg", b"\xff\xd8\xff\xe0test-photo", "image/jpeg")},
+            headers=headers,
+        )
+        assert upload.status_code == 201, upload.text
+        photo = upload.json()
+        assert photo["view_type"] == "closeup"
+        assert photo["technical_check"]["metadata_removed"] is True
+        assert photo["content_url"].endswith(f"/photos/{photo['id']}/content")
+
+        replacement = client.post(
+            f"/api/v1/triage/{sid}/photos",
+            data={
+                "view_type": "closeup",
+                "technical_check": json.dumps({"average_brightness": 140, "issues": []}),
+            },
+            files={"file": ("closeup-new.jpg", b"\xff\xd8\xff\xe1replacement", "image/jpeg")},
+            headers=headers,
+        )
+        assert replacement.status_code == 201, replacement.text
+        assert replacement.json()["id"] == photo["id"]
+
+        listed = client.get(f"/api/v1/triage/{sid}/photos", headers=headers)
+        assert listed.status_code == 200
+        assert [item["id"] for item in listed.json()] == [photo["id"]]
+
+        other = _make_user(db_session, "triage_photo_other@test.com", "patient")
+        _make_patient(db_session, other)
+        forbidden = client.get(f"/api/v1/triage/{sid}/photos", headers=_token(other))
+        assert forbidden.status_code == 403
+
+    def test_only_linked_doctor_can_list_triage_photos(self, client: TestClient, db_session):
+        patient_user = _make_user(db_session, "triage_photo_link_patient@test.com", "patient")
+        patient = _make_patient(db_session, patient_user)
+        start = client.post(
+            "/api/v1/triage/start",
+            json={"chief_complaint": "Ferida", "category": "skin"},
+            headers=_token(patient_user),
+        )
+        sid = start.json()["session_id"]
+        upload = client.post(
+            f"/api/v1/triage/{sid}/photos",
+            data={"view_type": "context"},
+            files={"file": ("context.jpg", b"\xff\xd8\xff\xe0private-photo", "image/jpeg")},
+            headers=_token(patient_user),
+        )
+        assert upload.status_code == 201
+
+        linked_user = _make_user(db_session, "triage_photo_linked_doc@test.com", "doctor")
+        linked_doctor = _make_doctor(db_session, linked_user, verified=True)
+        unrelated_user = _make_user(db_session, "triage_photo_other_doc@test.com", "doctor")
+        _make_doctor(db_session, unrelated_user, verified=True)
+        db_session.add(Consultation(
+            patient_id=patient.id,
+            doctor_id=linked_doctor.id,
+            triage_session_id=sid,
+            specialty="clinica_geral",
+            status="scheduled",
+        ))
+        db_session.commit()
+
+        allowed = client.get(f"/api/v1/triage/{sid}/photos", headers=_token(linked_user))
+        assert allowed.status_code == 200
+        assert len(allowed.json()) == 1
+        denied = client.get(f"/api/v1/triage/{sid}/photos", headers=_token(unrelated_user))
+        assert denied.status_code == 403
+
+    def test_triage_photo_rejects_unsupported_content(self, client: TestClient, db_session):
+        user = _make_user(db_session, "triage_bad_photo@test.com", "patient")
+        _make_patient(db_session, user)
+        headers = _token(user)
+        start = client.post(
+            "/api/v1/triage/start",
+            json={"chief_complaint": "Alteração na pele", "category": "skin"},
+            headers=headers,
+        )
+        sid = start.json()["session_id"]
+        upload = client.post(
+            f"/api/v1/triage/{sid}/photos",
+            data={"view_type": "context"},
+            files={"file": ("notes.txt", b"not-an-image", "text/plain")},
+            headers=headers,
+        )
+        assert upload.status_code == 415
+
 
 # ═══════════════════════════════════════════════════════════════
 # Consent Management Tests
@@ -361,6 +511,10 @@ class TestDoctorFlow:
         )
         assert r.status_code == 200, r.text
         assert r.json()["status"] == "in_progress"
+        active_queue = client.get("/api/v1/doctor/queue", headers=_token(d_user))
+        assert active_queue.status_code == 200
+        active_item = next(item for item in active_queue.json() if item["id"] == consult_id)
+        assert active_item["status"] == "in_progress"
 
     def test_doctor_complete_consultation(self, client: TestClient, db_session):
         # Patient books

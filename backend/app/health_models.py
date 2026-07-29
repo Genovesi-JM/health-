@@ -166,6 +166,7 @@ class TriageSession(Base):
 
     patient = relationship("Patient", back_populates="triage_sessions")
     answers = relationship("TriageAnswer", back_populates="triage_session", cascade="all, delete-orphan")
+    photos = relationship("TriagePhoto", back_populates="triage_session", cascade="all, delete-orphan")
     result = relationship("TriageResult", back_populates="triage_session", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (
@@ -185,6 +186,30 @@ class TriageAnswer(Base):
     answer_value: Mapped[str] = mapped_column(Text, nullable=False)  # JSON-encoded
 
     triage_session = relationship("TriageSession", back_populates="answers")
+
+
+class TriagePhoto(Base):
+    """Private, clinician-review photograph attached to a triage session."""
+    __tablename__ = "triage_photos"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    triage_session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("triage_sessions.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    view_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    storage_key: Mapped[str] = mapped_column(Text, nullable=False)
+    technical_check_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    triage_session = relationship("TriageSession", back_populates="photos")
+
+    __table_args__ = (
+        Index("ix_triage_photos_session_created", "triage_session_id", "created_at"),
+    )
 
 
 class TriageResult(Base):

@@ -10,27 +10,93 @@ Endpoints:
 """
 import json
 import logging
+from pathlib import Path
 from datetime import datetime
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
-from app.health_models import Patient, TriageSession, TriageAnswer, TriageResult
+from app.health_models import (
+    Consultation, Doctor, Patient, TriageSession, TriageAnswer, TriagePhoto,
+    TriageResult,
+)
 from app.health_schemas import (
     TriageStartRequest, TriageStartResponse,
     TriageAnswerSubmit, TriageResultOut,
-    TriageHistoryItem, RoleEnum,
+    TriageHistoryItem, TriagePhotoOut, RoleEnum,
 )
 from app.rbac import get_patient_for_user, log_health_audit
+from app.services.health_storage import get_health_storage
 from app.services.triage_engine import get_triage_questions, evaluate_triage
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/triage", tags=["triage"])
+
+ALLOWED_PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_VIEW_TYPES = {"orientation", "context", "closeup"}
+MAX_PHOTO_BYTES = 8 * 1024 * 1024
+MAX_PHOTOS_PER_TRIAGE = 3
+
+
+def _has_expected_image_signature(content: bytes, content_type: str) -> bool:
+    signatures = {
+        "image/jpeg": content.startswith(b"\xff\xd8\xff"),
+        "image/png": content.startswith(b"\x89PNG\r\n\x1a\n"),
+        "image/webp": len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP",
+    }
+    return signatures.get(content_type, False)
+
+
+def _photo_out(photo: TriagePhoto) -> TriagePhotoOut:
+    try:
+        technical_check = json.loads(photo.technical_check_json or "{}")
+    except (json.JSONDecodeError, TypeError):
+        technical_check = {}
+    return TriagePhotoOut(
+        id=photo.id,
+        triage_session_id=photo.triage_session_id,
+        view_type=photo.view_type,
+        original_filename=photo.original_filename,
+        content_type=photo.content_type,
+        size_bytes=photo.size_bytes,
+        technical_check=technical_check,
+        content_url=f"/api/v1/triage/{photo.triage_session_id}/photos/{photo.id}/content",
+        created_at=photo.created_at,
+    )
+
+
+def _assert_photo_access(triage_id: str, user: User, db: Session) -> TriageSession:
+    session = db.query(TriageSession).filter(TriageSession.id == triage_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+
+    if user.role == RoleEnum.PATIENT:
+        patient = db.query(Patient).filter(Patient.user_id == user.id).first()
+        if patient and session.patient_id == patient.id:
+            return session
+    elif user.role == RoleEnum.DOCTOR:
+        doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+        if doctor:
+            linked = db.query(Consultation.id).filter(
+                Consultation.triage_session_id == triage_id,
+                Consultation.doctor_id == doctor.id,
+            ).first()
+            if linked:
+                return session
+    elif user.role == RoleEnum.NURSE:
+        linked = db.query(Consultation.id).filter(
+            Consultation.triage_session_id == triage_id,
+        ).first()
+        if linked:
+            return session
+
+    raise HTTPException(status_code=403, detail="Sem acesso às fotografias desta triagem.")
 
 
 @router.post("/start", response_model=TriageStartResponse)
@@ -54,6 +120,134 @@ def start_triage(
         session_id=session.id,
         status=session.status,
         questions=get_triage_questions(age_group=body.age_group, category=body.category),
+    )
+
+
+@router.post("/{triage_id}/photos", response_model=TriagePhotoOut, status_code=201)
+async def upload_triage_photo(
+    triage_id: str,
+    file: UploadFile = File(...),
+    view_type: str = Form(...),
+    technical_check: str = Form("{}"),
+    patient: Patient = Depends(get_patient_for_user),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Attach a private, non-diagnostic photograph for later clinician review."""
+    session = db.query(TriageSession).filter(
+        TriageSession.id == triage_id,
+        TriageSession.patient_id == patient.id,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+    if session.status != "in_progress":
+        raise HTTPException(status_code=400, detail="Só pode adicionar fotos a uma triagem em curso.")
+    if view_type not in ALLOWED_VIEW_TYPES:
+        raise HTTPException(status_code=422, detail="Tipo de vista inválido.")
+    if file.content_type not in ALLOWED_PHOTO_TYPES:
+        raise HTTPException(status_code=415, detail="Use uma imagem JPEG, PNG ou WebP.")
+
+    existing_photo = db.query(TriagePhoto).filter(
+        TriagePhoto.triage_session_id == triage_id,
+        TriagePhoto.view_type == view_type,
+    ).first()
+    current_count = db.query(TriagePhoto.id).filter(
+        TriagePhoto.triage_session_id == triage_id,
+    ).count()
+    if not existing_photo and current_count >= MAX_PHOTOS_PER_TRIAGE:
+        raise HTTPException(status_code=400, detail="Limite de 3 fotografias por triagem.")
+
+    content = await file.read(MAX_PHOTO_BYTES + 1)
+    if not content:
+        raise HTTPException(status_code=400, detail="A fotografia está vazia.")
+    if len(content) > MAX_PHOTO_BYTES:
+        raise HTTPException(status_code=413, detail="A fotografia excede o limite de 8 MB.")
+    if not _has_expected_image_signature(content, file.content_type):
+        raise HTTPException(status_code=415, detail="O conteúdo do ficheiro não corresponde a uma imagem válida.")
+    try:
+        technical_data = json.loads(technical_check)
+        if not isinstance(technical_data, dict):
+            raise ValueError
+    except (json.JSONDecodeError, ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Relatório técnico da fotografia inválido.")
+
+    filename = Path(file.filename or f"{view_type}.jpg").name[:255]
+    storage = get_health_storage()
+    storage_key, _ = storage.upload_bytes(
+        content,
+        category=f"triage/{triage_id}",
+        filename=filename,
+        content_type=file.content_type,
+    )
+    if existing_photo:
+        storage.delete(existing_photo.storage_key)
+        photo = existing_photo
+        photo.original_filename = filename
+        photo.content_type = file.content_type
+        photo.size_bytes = len(content)
+        photo.storage_key = storage_key
+        photo.technical_check_json = json.dumps(technical_data)
+        photo.created_at = datetime.utcnow()
+    else:
+        photo = TriagePhoto(
+            triage_session_id=triage_id,
+            view_type=view_type,
+            original_filename=filename,
+            content_type=file.content_type,
+            size_bytes=len(content),
+            storage_key=storage_key,
+            technical_check_json=json.dumps(technical_data),
+        )
+    db.add(photo)
+    db.commit()
+    db.refresh(photo)
+    log_health_audit(
+        db,
+        action="triage_photo_uploaded",
+        actor_user_id=user.id,
+        resource_type="triage_photo",
+        resource_id=photo.id,
+        metadata={"triage_id": triage_id, "view_type": view_type, "size_bytes": len(content)},
+    )
+    return _photo_out(photo)
+
+
+@router.get("/{triage_id}/photos", response_model=List[TriagePhotoOut])
+def list_triage_photos(
+    triage_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List photo metadata for the patient or linked clinical professional."""
+    _assert_photo_access(triage_id, user, db)
+    photos = db.query(TriagePhoto).filter(
+        TriagePhoto.triage_session_id == triage_id,
+    ).order_by(TriagePhoto.created_at.asc()).all()
+    return [_photo_out(photo) for photo in photos]
+
+
+@router.get("/{triage_id}/photos/{photo_id}/content")
+def get_triage_photo_content(
+    triage_id: str,
+    photo_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return private photo content after row-level authorisation."""
+    _assert_photo_access(triage_id, user, db)
+    photo = db.query(TriagePhoto).filter(
+        TriagePhoto.id == photo_id,
+        TriagePhoto.triage_session_id == triage_id,
+    ).first()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Fotografia não encontrada.")
+    location = get_health_storage().get_signed_url(photo.storage_key)
+    if location.startswith(("http://", "https://")):
+        return RedirectResponse(location)
+    return FileResponse(
+        location,
+        media_type=photo.content_type,
+        filename=photo.original_filename,
     )
 
 
@@ -207,6 +401,13 @@ def delete_triage(
     if not session:
         raise HTTPException(status_code=404, detail="Triagem não encontrada.")
 
+    # Delete private photo objects before removing database records.
+    storage = get_health_storage()
+    for photo in db.query(TriagePhoto).filter(
+        TriagePhoto.triage_session_id == triage_id
+    ).all():
+        storage.delete(photo.storage_key)
+
     # Delete related records first.
     # Use synchronize_session=False to avoid StaleDataError when the ORM
     # cascade also tries to delete already-gone rows.
@@ -215,6 +416,9 @@ def delete_triage(
     ).delete(synchronize_session=False)
     db.query(TriageResult).filter(
         TriageResult.triage_session_id == triage_id
+    ).delete(synchronize_session=False)
+    db.query(TriagePhoto).filter(
+        TriagePhoto.triage_session_id == triage_id
     ).delete(synchronize_session=False)
     db.delete(session)
     db.commit()

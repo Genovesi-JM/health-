@@ -6,6 +6,7 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import kayaLogo from '/kaya-logo.svg';
 import LanguageSelector from '../components/LanguageSelector';
+import { apiErrorMessage } from '../utils/apiError';
 
 const REQUIRED_CONSENTS = ['terms_of_service', 'privacy_policy', 'medical_disclaimer', 'health_data_processing', 'telemedicine_consent'] as const;
 
@@ -72,7 +73,7 @@ export default function RegisterPage() {
       sessionStorage.setItem('consents_accepted', 'true');
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || t('register.error'));
+      setError(apiErrorMessage(err, t('register.error')));
     } finally { setLoading(false); }
   };
 

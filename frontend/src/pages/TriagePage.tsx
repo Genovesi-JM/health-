@@ -13,6 +13,8 @@ import {
   connectWifi, readWifiVitals,
 } from '../utils/deviceApi';
 import type { DeviceInfo, VitalReadings } from '../utils/deviceApi';
+import TriagePhotoGuide from '../components/TriagePhotoGuide';
+import { apiErrorMessage } from '../utils/apiError';
 
 type Step = 'start' | 'questions' | 'result' | 'history';
 
@@ -185,7 +187,7 @@ export default function TriagePage() {
       await api.delete(`/api/v1/triage/${id}`);
       setHistory(prev => prev.filter(h => h.id !== id));
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao eliminar triagem.');
+      setError(apiErrorMessage(err, 'Erro ao eliminar triagem.'));
     }
     setDeleteConfirm(null);
   };
@@ -208,7 +210,7 @@ export default function TriagePage() {
       setAnswers({});
       setStep('questions');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao iniciar triagem.');
+      setError(apiErrorMessage(err, 'Erro ao iniciar triagem.'));
     }
     setLoading(false);
   };
@@ -233,7 +235,7 @@ export default function TriagePage() {
       setStep('result');
       loadHistory();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao submeter respostas.');
+      setError(apiErrorMessage(err, 'Erro ao submeter respostas.'));
     }
     setLoading(false);
   };
@@ -606,6 +608,9 @@ export default function TriagePage() {
             </p>
           </div>
           <div style={{ padding: '1.25rem' }}>
+            {(category === 'skin' || category === 'injury') && (
+              <TriagePhotoGuide sessionId={sessionId} />
+            )}
             {questions.map((q, qi) => (
               <div key={q.key} className="form-group triage-question-group">
                 <label className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>

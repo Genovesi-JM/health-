@@ -170,6 +170,16 @@ TRIAGE_MODULES: Dict[str, List[dict]] = {
     "skin": [
         _bool_question("rash_skin", "Tem erupção cutânea ou lesões na pele?", required=False),
         _bool_question("lip_tongue_swelling", "Tem inchaço de lábios/língua?", required=False),
+        _bool_question("visual_honey_crust", "Vê crosta amarela ou cor de mel?", required=False),
+        _bool_question("visual_discharge", "Existe pus, líquido ou secreção?", required=False),
+        _bool_question("visual_open_skin", "A pele está aberta ou ferida?", required=False),
+        _bool_question("visual_blisters", "Existem bolhas?", required=False),
+        _bool_question("redness_spreading", "A vermelhidão está a aumentar ou espalhar-se?", required=False),
+        _bool_question("visual_significant_swelling", "Existe inchaço significativo?", required=False),
+        _bool_question("visual_red_streaks", "Existem linhas vermelhas a afastar-se da zona?", required=False),
+        _bool_question("visual_dark_damage", "A pele está escura, roxa ou preta?", required=False),
+        _bool_question("sensitive_location", "A lesão está junto do olho, boca ou genitais?", required=False),
+        _bool_question("child_appears_unwell", "A criança parece muito prostrada ou diferente do habitual?", required=False),
     ],
     "cardiac": [
         _bool_question("chest_pain", "Tem dor no peito?", required=True),
@@ -182,6 +192,14 @@ TRIAGE_MODULES: Dict[str, List[dict]] = {
     "injury": [
         _bool_question("head_injury", "Bateu com a cabeça?", required=False),
         _bool_question("open_fracture", "Existe suspeita de fratura exposta?", required=False),
+        _bool_question("visual_open_skin", "A pele está aberta ou ferida?", required=False),
+        _bool_question("visual_discharge", "Existe pus, líquido ou secreção?", required=False),
+        _bool_question("redness_spreading", "A vermelhidão está a aumentar ou espalhar-se?", required=False),
+        _bool_question("visual_significant_swelling", "Existe inchaço significativo?", required=False),
+        _bool_question("visual_red_streaks", "Existem linhas vermelhas a afastar-se da zona?", required=False),
+        _bool_question("visual_dark_damage", "A pele está escura, roxa ou preta?", required=False),
+        _bool_question("sensitive_location", "A lesão está junto do olho, boca ou genitais?", required=False),
+        _bool_question("child_appears_unwell", "A criança parece muito prostrada ou diferente do habitual?", required=False),
     ],
     "mental": [
         _bool_question("mental_health_crisis", "Está em crise (pensamentos suicidas, autolesão)?", required=True),
@@ -213,6 +231,11 @@ RED_FLAG_KEYS = [
     "stroke_signs",
     "severe_bleeding",
     "mental_health_crisis",
+    # Visual danger signs remain fixed-rule overrides; photographs themselves
+    # are never interpreted by this engine.
+    "visual_red_streaks",
+    "visual_dark_damage",
+    "child_appears_unwell",
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -232,6 +255,13 @@ SCORING_RULES = [
     ("vomiting_diarrhea", lambda v: _bool(v), 8, "Vómitos/diarreia persistentes"),
     ("symptoms_duration_hours", lambda v: _num(v) > 72, 10, "Sintomas > 72h sem melhoria"),
     ("rash_skin", lambda v: _bool(v), 5, "Erupção cutânea"),
+    ("visual_honey_crust", lambda v: _bool(v), 8, "Crosta amarela/cor de mel"),
+    ("visual_discharge", lambda v: _bool(v), 8, "Pus, líquido ou secreção"),
+    ("visual_open_skin", lambda v: _bool(v), 5, "Pele aberta ou ferida"),
+    ("visual_blisters", lambda v: _bool(v), 8, "Bolhas reportadas"),
+    ("redness_spreading", lambda v: _bool(v), 15, "Vermelhidão em progressão"),
+    ("visual_significant_swelling", lambda v: _bool(v), 12, "Inchaço significativo"),
+    ("sensitive_location", lambda v: _bool(v), 12, "Lesão em localização sensível"),
 ]
 
 
@@ -292,7 +322,10 @@ def get_triage_questions(age_group: Optional[str] = None, category: Optional[str
             continue
         seen.add(key)
         normalized = dict(q)
+        if key == "child_appears_unwell" and ag not in ("pediatric", "child", "kids"):
+            normalized["text"] = "A pessoa parece muito prostrada, confusa ou diferente do habitual?"
         normalized.setdefault("label", normalized.get("text", ""))
+        normalized["label"] = normalized.get("text", normalized["label"])
         out.append(normalized)
     return out
 

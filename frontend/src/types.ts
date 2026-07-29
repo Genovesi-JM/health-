@@ -91,6 +91,7 @@ export interface ConsultationQueueItem {
   id: string;
   patient_id?: string;
   patient_name?: string;
+  triage_session_id?: string;
   specialty: string;
   risk_level?: string;
   status: string;
