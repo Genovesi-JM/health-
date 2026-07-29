@@ -39,13 +39,13 @@ interface ReadingListOut {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const READING_TYPES: { value: ReadingType; label: string; icon: React.ElementType; defaultUnit: string }[] = [
-  { value: 'blood_pressure',    label: 'Pressão Arterial',      icon: Heart,         defaultUnit: 'mmHg' },
-  { value: 'glucose',           label: 'Glicose',               icon: Droplets,      defaultUnit: 'mg/dL' },
-  { value: 'temperature',       label: 'Temperatura',           icon: ThermometerSun,defaultUnit: '°C' },
-  { value: 'oxygen_saturation', label: 'Saturação de Oxigênio', icon: Wind,          defaultUnit: '%' },
-  { value: 'weight',            label: 'Peso',                  icon: Weight,        defaultUnit: 'kg' },
-  { value: 'heart_rate',        label: 'Frequência Cardíaca',   icon: HeartPulse,    defaultUnit: 'bpm' },
+const READING_TYPES: { value: ReadingType; label: string; labelKey: string; icon: React.ElementType; defaultUnit: string }[] = [
+  { value: 'blood_pressure',    label: 'Pressão Arterial',      labelKey: 'read.t_blood_pressure', icon: Heart,         defaultUnit: 'mmHg' },
+  { value: 'glucose',           label: 'Glicose',               labelKey: 'read.t_glucose',        icon: Droplets,      defaultUnit: 'mg/dL' },
+  { value: 'temperature',       label: 'Temperatura',           labelKey: 'read.t_temperature',    icon: ThermometerSun,defaultUnit: '°C' },
+  { value: 'oxygen_saturation', label: 'Saturação de Oxigénio', labelKey: 'read.t_oxygen',         icon: Wind,          defaultUnit: '%' },
+  { value: 'weight',            label: 'Peso',                  labelKey: 'read.t_weight',         icon: Weight,        defaultUnit: 'kg' },
+  { value: 'heart_rate',        label: 'Frequência Cardíaca',   labelKey: 'read.t_heart_rate',     icon: HeartPulse,    defaultUnit: 'bpm' },
 ];
 
 const TYPE_META = Object.fromEntries(READING_TYPES.map(t => [t.value, t])) as Record<
@@ -114,7 +114,7 @@ export default function PatientReadingsPage() {
     const params = type ? `?reading_type=${type}` : '';
     api.get<ReadingListOut>(`/api/v1/readings/me${params}`)
       .then(r => { setReadings(r.data.readings); setTotal(r.data.total); })
-      .catch(() => setError('Erro ao carregar medições.'))
+      .catch(() => setError(t('read.err_load')))
       .finally(() => setLoading(false));
   };
 
@@ -148,7 +148,7 @@ export default function PatientReadingsPage() {
 
       if (form.reading_type === 'blood_pressure') {
         if (!form.systolic || !form.diastolic) {
-          setError('Sistólica e diastólica são obrigatórias para pressão arterial.');
+          setError(t('read.bp_required'));
           setSaving(false);
           return;
         }
@@ -157,7 +157,7 @@ export default function PatientReadingsPage() {
         if (form.pulse)  payload.pulse = Number(form.pulse);
       } else {
         if (!form.value) {
-          setError('Valor é obrigatório.');
+          setError(t('read.value_required'));
           setSaving(false);
           return;
         }
@@ -166,12 +166,12 @@ export default function PatientReadingsPage() {
       }
 
       await api.post('/api/v1/readings', payload);
-      setSuccess('Medição registada com sucesso!');
+      setSuccess(t('read.saved'));
       setShowForm(false);
       setForm(emptyForm);
       load(filterType);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Erro ao guardar medição.');
+      setError(err?.response?.data?.detail || t('read.err_save'));
     } finally {
       setSaving(false);
     }
@@ -179,15 +179,15 @@ export default function PatientReadingsPage() {
 
   // Delete a reading
   const handleDelete = async (id: string) => {
-    if (!confirm('Eliminar esta medição?')) return;
+    if (!confirm(t('read.confirm_delete'))) return;
     setDeletingId(id);
     try {
       await api.delete(`/api/v1/readings/${id}`);
       setReadings(prev => prev.filter(r => r.id !== id));
       setTotal(t => t - 1);
-      setSuccess('Medição eliminada.');
+      setSuccess(t('read.deleted'));
     } catch {
-      setError('Erro ao eliminar medição.');
+      setError(t('read.err_delete'));
     } finally {
       setDeletingId(null);
     }
@@ -200,11 +200,11 @@ export default function PatientReadingsPage() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1>Minhas Medições</h1>
-          <p>Registe as leituras dos seus dispositivos de saúde em casa.</p>
+          <h1>{t('read.title')}</h1>
+          <p>{t('read.subtitle')}</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setShowForm(s => !s); setError(''); setSuccess(''); }}>
-          {showForm ? <><X size={16} /> Cancelar</> : <><Plus size={16} /> Nova Medição</>}
+          {showForm ? <><X size={16} /> {t('common.cancel')}</> : <><Plus size={16} /> {t('read.new')}</>}
         </button>
       </div>
 
@@ -215,7 +215,7 @@ export default function PatientReadingsPage() {
       {/* ── Add form ── */}
       {showForm && (
         <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: 600 }}>Nova Medição</h3>
+          <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: 600 }}>{t('read.new')}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
 
@@ -229,7 +229,7 @@ export default function PatientReadingsPage() {
                   required
                 >
                   {READING_TYPES.map(rt => (
-                    <option key={rt.value} value={rt.value}>{rt.label}</option>
+                    <option key={rt.value} value={rt.value}>{t(rt.labelKey)}</option>
                   ))}
                 </select>
               </div>
@@ -261,7 +261,7 @@ export default function PatientReadingsPage() {
                       value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Unidade</label>
+                    <label className="form-label">{t('read.unit')}</label>
                     <input className="form-input" type="text" maxLength={20}
                       value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} />
                   </div>
@@ -277,22 +277,22 @@ export default function PatientReadingsPage() {
 
               {/* device_brand */}
               <div className="form-group">
-                <label className="form-label">Marca do Dispositivo</label>
+                <label className="form-label">{t('read.device_brand')}</label>
                 <input className="form-input" type="text" maxLength={100} placeholder="ex: Omron"
                   value={form.device_brand} onChange={e => setForm(f => ({ ...f, device_brand: e.target.value }))} />
               </div>
 
               {/* device_model */}
               <div className="form-group">
-                <label className="form-label">Modelo do Dispositivo</label>
+                <label className="form-label">{t('read.device_model')}</label>
                 <input className="form-input" type="text" maxLength={100} placeholder="ex: M3"
                   value={form.device_model} onChange={e => setForm(f => ({ ...f, device_model: e.target.value }))} />
               </div>
 
               {/* notes */}
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">Notas</label>
-                <textarea className="form-input" rows={2} maxLength={500} placeholder="Observações opcionais…"
+                <label className="form-label">{t('read.notes')}</label>
+                <textarea className="form-input" rows={2} maxLength={500} placeholder={t('read.notes_ph')}
                   value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
             </div>
@@ -311,10 +311,10 @@ export default function PatientReadingsPage() {
 
       {/* ── Filter ── */}
       <div className="tab-nav" style={{ marginBottom: '1.25rem' }}>
-        <button className={filterType === '' ? 'active' : ''} onClick={() => handleFilterChange('')}>Todos</button>
+        <button className={filterType === '' ? 'active' : ''} onClick={() => handleFilterChange('')}>{t('read.all')}</button>
         {READING_TYPES.map(rt => (
           <button key={rt.value} className={filterType === rt.value ? 'active' : ''} onClick={() => handleFilterChange(rt.value)}>
-            {rt.label}
+            {t(rt.labelKey)}
           </button>
         ))}
       </div>
@@ -328,9 +328,9 @@ export default function PatientReadingsPage() {
             <div className="empty-state-icon">
               <Activity size={32} style={{ color: 'var(--accent-teal)' }} />
             </div>
-            <div className="empty-state-title">Sem medições registadas</div>
+            <div className="empty-state-title">{t('read.empty')}</div>
             <div className="empty-state-desc">
-              Clique em <strong>Nova Medição</strong> para registar a sua primeira leitura.
+              {t('read.empty_hint')}
             </div>
           </div>
         </div>
@@ -356,7 +356,7 @@ export default function PatientReadingsPage() {
                     <td style={{ padding: '0.875rem 1rem', whiteSpace: 'nowrap' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 500 }}>
                         {typeIcon(r.reading_type)}
-                        {TYPE_META[r.reading_type]?.label ?? r.reading_type}
+                        {TYPE_META[r.reading_type] ? t(TYPE_META[r.reading_type].labelKey) : r.reading_type}
                       </span>
                     </td>
                     <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
