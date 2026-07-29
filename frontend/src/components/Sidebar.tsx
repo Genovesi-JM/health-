@@ -74,16 +74,16 @@ export function Sidebar({ open, onClose }: Props) {
             </SidebarSection>
           )}
           {(role === 'patient' || role === 'cliente') && (
-            <SidebarSection title="Saúde & Dispositivos">
-              <SidebarLink to="/patient/readings" icon={Activity}    label="Medições"     onClick={onClose} />
-              <SidebarLink to="/loja"             icon={ShoppingBag} label={t('store.title')} onClick={onClose} />
-              <SidebarLink to="/family"           icon={UserCheck}   label="Família"      onClick={onClose} />
-              <SidebarLink to="/notifications"    icon={Bell}      label="Alertas"       onClick={onClose} badge={unreadNotifs > 0 ? unreadNotifs : undefined} badgeVariant="alert" />
+            <SidebarSection title={t('sidebar.health_devices')}>
+              <SidebarLink to="/patient/readings" icon={Activity}    label={t('sidebar.readings')} onClick={onClose} />
+              <SidebarLink to="/loja"             icon={ShoppingBag} label={t('store.title')}     onClick={onClose} />
+              <SidebarLink to="/family"           icon={UserCheck}   label={t('sidebar.family')}  onClick={onClose} />
+              <SidebarLink to="/notifications"    icon={Bell}        label={t('sidebar.alerts')}  onClick={onClose} badge={unreadNotifs > 0 ? unreadNotifs : undefined} badgeVariant="alert" />
             </SidebarSection>
           )}
           {(role === 'patient' || role === 'cliente') && (
-            <SidebarSection title="Plano & Faturação">
-              <SidebarLink to="/pricing" icon={CreditCard} label="Subscrição" onClick={onClose} />
+            <SidebarSection title={t('sidebar.billing')}>
+              <SidebarLink to="/pricing" icon={CreditCard} label={t('sidebar.subscription')} onClick={onClose} />
             </SidebarSection>
           )}
 
@@ -104,10 +104,10 @@ export function Sidebar({ open, onClose }: Props) {
             </SidebarSection>
           )}
           {role === 'doctor' && (
-            <SidebarSection title="CONTA">
-              <SidebarLink to="/settings"        icon={Settings}      label="Definições"  onClick={onClose} />
-              <SidebarLink to="/doctor/security" icon={Lock}          label="Segurança"   onClick={onClose} />
-              <SidebarLink to="/doctor/suporte"  icon={HelpCircle}    label="Suporte"     onClick={onClose} />
+            <SidebarSection title={t('sidebar.account_upper')}>
+              <SidebarLink to="/settings"        icon={Settings}      label={t('sidebar.settings')} onClick={onClose} />
+              <SidebarLink to="/doctor/security" icon={Lock}          label={t('sidebar.security')} onClick={onClose} />
+              <SidebarLink to="/doctor/suporte"  icon={HelpCircle}    label={t('sidebar.support')}  onClick={onClose} />
             </SidebarSection>
           )}
 
@@ -117,7 +117,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/admin"          icon={LayoutDashboard} label={t('sidebar.dashboard')}      onClick={onClose} />
               <SidebarLink to="/admin/patients" icon={Users}           label={t('sidebar.patients')}       onClick={onClose} />
               <SidebarLink to="/admin/doctors"  icon={UserCog}         label={t('sidebar.verify_doctors')} onClick={onClose} />
-              <SidebarLink to="/admin/applications" icon={Briefcase}   label="Candidaturas"                onClick={onClose} />
+              <SidebarLink to="/admin/applications" icon={Briefcase}   label={t('sidebar.applications')}   onClick={onClose} />
             </SidebarSection>
           )}
           {role === 'admin' && (
