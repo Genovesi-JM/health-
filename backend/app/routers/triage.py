@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -249,6 +249,43 @@ def get_triage_photo_content(
         media_type=photo.content_type,
         filename=photo.original_filename,
     )
+
+
+@router.delete("/{triage_id}/photos/{photo_id}", status_code=204)
+def delete_triage_photo(
+    triage_id: str,
+    photo_id: str,
+    patient: Patient = Depends(get_patient_for_user),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Let a patient permanently remove one of their own triage photographs."""
+    session = db.query(TriageSession).filter(
+        TriageSession.id == triage_id,
+        TriageSession.patient_id == patient.id,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+    photo = db.query(TriagePhoto).filter(
+        TriagePhoto.id == photo_id,
+        TriagePhoto.triage_session_id == triage_id,
+    ).first()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Fotografia não encontrada.")
+
+    view_type = photo.view_type
+    get_health_storage().delete(photo.storage_key)
+    db.delete(photo)
+    db.commit()
+    log_health_audit(
+        db,
+        action="triage_photo_deleted_by_patient",
+        actor_user_id=user.id,
+        resource_type="triage_photo",
+        resource_id=photo_id,
+        metadata={"triage_id": triage_id, "view_type": view_type},
+    )
+    return Response(status_code=204)
 
 
 @router.post("/{triage_id}/answers")

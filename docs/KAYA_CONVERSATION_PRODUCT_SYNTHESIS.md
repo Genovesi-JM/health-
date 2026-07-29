@@ -65,11 +65,13 @@ standardised triage:
   client-side JPEG re-encoding, resizing and low-resolution warnings.
 - Native iOS/Android camera and photo-library permission copy, plus a mobile
   emergency boundary that sends immediate danger to 112 instead of triage.
+- Patient-controlled permanent removal of individual triage photographs on web
+  and mobile, with ownership checks, storage deletion and an audit event.
 
 ## Next coherent priorities
 
 1. Add resumable/offline photo drafts for low-bandwidth use.
-2. Add governed retention and patient deletion/export controls for photographs.
+2. Add governed retention and patient export controls for photographs.
 3. Add clinician annotations and “request another view” without diagnostic AI.
 4. Build a de-identified, clinician-labelled validation dataset only after
    consent, governance and retention rules are approved.

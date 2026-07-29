@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, CheckCircle2, ImagePlus, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { Camera, CheckCircle2, ImagePlus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { apiErrorMessage } from '../utils/apiError';
@@ -102,8 +102,10 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
   const { t } = useT();
   const [consented, setConsented] = useState(false);
   const [previews, setPreviews] = useState<Partial<Record<ViewType, string>>>({});
+  const [photoIds, setPhotoIds] = useState<Partial<Record<ViewType, string>>>({});
   const [warnings, setWarnings] = useState<Partial<Record<ViewType, string[]>>>({});
   const [uploading, setUploading] = useState<ViewType | null>(null);
+  const [deleting, setDeleting] = useState<ViewType | null>(null);
   const [error, setError] = useState('');
   const previewRef = useRef(previews);
 
@@ -127,9 +129,10 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
       form.append('file', prepared.blob, `${slot.viewType}.jpg`);
       form.append('view_type', slot.viewType);
       form.append('technical_check', JSON.stringify(prepared.technicalCheck));
-      await api.post(`/api/v1/triage/${sessionId}/photos`, form, {
+      const response = await api.post(`/api/v1/triage/${sessionId}/photos`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      setPhotoIds(current => ({ ...current, [slot.viewType]: response.data.id }));
       setPreviews(current => {
         const previous = current[slot.viewType];
         if (previous) URL.revokeObjectURL(previous);
@@ -140,6 +143,37 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
       setError(apiErrorMessage(uploadError, t('triage.photo_upload_error')));
     } finally {
       setUploading(null);
+    }
+  };
+
+  const remove = async (viewType: ViewType) => {
+    const photoId = photoIds[viewType];
+    if (!photoId || deleting || !window.confirm(t('triage.photo_delete_confirm'))) return;
+    setDeleting(viewType);
+    setError('');
+    try {
+      await api.delete(`/api/v1/triage/${sessionId}/photos/${photoId}`);
+      setPreviews(current => {
+        const preview = current[viewType];
+        if (preview) URL.revokeObjectURL(preview);
+        const next = { ...current };
+        delete next[viewType];
+        return next;
+      });
+      setPhotoIds(current => {
+        const next = { ...current };
+        delete next[viewType];
+        return next;
+      });
+      setWarnings(current => {
+        const next = { ...current };
+        delete next[viewType];
+        return next;
+      });
+    } catch (deleteError: any) {
+      setError(apiErrorMessage(deleteError, t('triage.photo_delete_error')));
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -178,6 +212,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
           const preview = previews[slot.viewType];
           const slotWarnings = warnings[slot.viewType] || [];
           const isUploading = uploading === slot.viewType;
+          const isDeleting = deleting === slot.viewType;
           return (
             <div className="triage-photo-slot" key={slot.viewType}>
               <div className="triage-photo-slot__number">{index + 1}</div>
@@ -188,20 +223,34 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
               )}
               <strong>{t(slot.labelKey)}</strong>
               <span>{t(slot.helpKey)}</span>
-              <label className={`btn btn-sm ${preview ? 'btn-outline' : 'btn-primary'} triage-photo-slot__button`}>
-                {preview ? <CheckCircle2 size={14} /> : <Camera size={14} />}
-                {isUploading ? t('triage.photo_uploading') : preview ? t('triage.photo_replace') : t('triage.photo_add')}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  capture="environment"
-                  disabled={!consented || Boolean(uploading)}
-                  onChange={event => {
-                    void upload(slot, event.target.files?.[0]);
-                    event.currentTarget.value = '';
-                  }}
-                />
-              </label>
+              <div className="triage-photo-slot__actions">
+                <label className={`btn btn-sm ${preview ? 'btn-outline' : 'btn-primary'} triage-photo-slot__button`}>
+                  {preview ? <CheckCircle2 size={14} /> : <Camera size={14} />}
+                  {isUploading ? t('triage.photo_uploading') : preview ? t('triage.photo_replace') : t('triage.photo_add')}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    capture="environment"
+                    disabled={!consented || Boolean(uploading) || Boolean(deleting)}
+                    onChange={event => {
+                      void upload(slot, event.target.files?.[0]);
+                      event.currentTarget.value = '';
+                    }}
+                  />
+                </label>
+                {preview && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline triage-photo-slot__delete"
+                    disabled={Boolean(uploading) || Boolean(deleting)}
+                    onClick={() => void remove(slot.viewType)}
+                    title={t('triage.photo_delete')}
+                  >
+                    <Trash2 size={14} />
+                    {isDeleting ? t('triage.photo_deleting') : t('triage.photo_delete')}
+                  </button>
+                )}
+              </div>
               {slotWarnings.length > 0 && (
                 <div className="triage-photo-slot__warning">
                   <TriangleAlert size={13} />

@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 
 from app.database import get_db, SessionLocal
 from app.models import User
-from app.health_models import Consultation, Patient, Doctor, PatientConsent
+from app.health_models import Consultation, Patient, Doctor, PatientConsent, TriagePhoto
 from app.oauth2 import create_access_token
 from app.utils import hash_password
 
@@ -305,6 +305,19 @@ class TestTriageFlow:
         _make_patient(db_session, other)
         forbidden = client.get(f"/api/v1/triage/{sid}/photos", headers=_token(other))
         assert forbidden.status_code == 403
+        forbidden_delete = client.delete(
+            f"/api/v1/triage/{sid}/photos/{photo['id']}",
+            headers=_token(other),
+        )
+        assert forbidden_delete.status_code == 404
+
+        deleted = client.delete(
+            f"/api/v1/triage/{sid}/photos/{photo['id']}",
+            headers=headers,
+        )
+        assert deleted.status_code == 204
+        assert client.get(f"/api/v1/triage/{sid}/photos", headers=headers).json() == []
+        assert db_session.query(TriagePhoto).filter(TriagePhoto.id == photo["id"]).first() is None
 
     def test_only_linked_doctor_can_list_triage_photos(self, client: TestClient, db_session):
         patient_user = _make_user(db_session, "triage_photo_link_patient@test.com", "patient")

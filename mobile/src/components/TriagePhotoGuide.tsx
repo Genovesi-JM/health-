@@ -42,6 +42,7 @@ const PHOTO_SLOTS: PhotoSlot[] = [
 ];
 
 type PreparedPhoto = {
+  id?: string;
   uri: string;
   originalWidth: number;
   originalHeight: number;
@@ -78,6 +79,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
   const [consented, setConsented] = useState(false);
   const [photos, setPhotos] = useState<Partial<Record<ViewType, PreparedPhoto>>>({});
   const [uploading, setUploading] = useState<ViewType | null>(null);
+  const [deleting, setDeleting] = useState<ViewType | null>(null);
   const [error, setError] = useState('');
 
   const selectSource = (slot: PhotoSlot) => {
@@ -131,14 +133,51 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
         name: `${slot.viewType}.jpg`,
         type: 'image/jpeg',
       } as unknown as Blob);
-      await api.post(`/api/v1/triage/${sessionId}/photos`, form, {
+      const response = await api.post(`/api/v1/triage/${sessionId}/photos`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setPhotos(current => ({ ...current, [slot.viewType]: prepared }));
+      setPhotos(current => ({
+        ...current,
+        [slot.viewType]: { ...prepared, id: response.data.id },
+      }));
     } catch (uploadError) {
       setError(apiErrorMessage(uploadError, 'Não foi possível enviar a fotografia.'));
     } finally {
       setUploading(null);
+    }
+  };
+
+  const confirmRemove = (viewType: ViewType) => {
+    const photo = photos[viewType];
+    if (!photo?.id || deleting || uploading) return;
+    Alert.alert(
+      'Eliminar fotografia?',
+      'A fotografia será removida permanentemente da triagem e deixará de estar disponível ao profissional.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => void removePhoto(viewType, photo.id!),
+        },
+      ],
+    );
+  };
+
+  const removePhoto = async (viewType: ViewType, photoId: string) => {
+    setDeleting(viewType);
+    setError('');
+    try {
+      await api.delete(`/api/v1/triage/${sessionId}/photos/${photoId}`);
+      setPhotos(current => {
+        const next = { ...current };
+        delete next[viewType];
+        return next;
+      });
+    } catch (deleteError) {
+      setError(apiErrorMessage(deleteError, 'Não foi possível eliminar a fotografia.'));
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -163,6 +202,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
       {PHOTO_SLOTS.map(slot => {
         const photo = photos[slot.viewType];
         const isUploading = uploading === slot.viewType;
+        const isDeleting = deleting === slot.viewType;
         return (
           <View style={styles.slot} key={slot.viewType}>
             {photo ? (
@@ -176,15 +216,28 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
               {photo?.issues.includes('low_resolution') && (
                 <Text style={styles.warning}>⚠ Resolução baixa. Repita se for possível.</Text>
               )}
-              <TouchableOpacity
-                style={[styles.photoButton, (!consented || Boolean(uploading)) && styles.disabled]}
-                disabled={!consented || Boolean(uploading)}
-                onPress={() => selectSource(slot)}
-              >
-                {isUploading
-                  ? <ActivityIndicator color="#fff" size="small" />
-                  : <Text style={styles.photoButtonText}>{photo ? 'Substituir' : 'Adicionar'}</Text>}
-              </TouchableOpacity>
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[styles.photoButton, (!consented || Boolean(uploading) || Boolean(deleting)) && styles.disabled]}
+                  disabled={!consented || Boolean(uploading) || Boolean(deleting)}
+                  onPress={() => selectSource(slot)}
+                >
+                  {isUploading
+                    ? <ActivityIndicator color="#fff" size="small" />
+                    : <Text style={styles.photoButtonText}>{photo ? 'Substituir' : 'Adicionar'}</Text>}
+                </TouchableOpacity>
+                {photo && (
+                  <TouchableOpacity
+                    style={[styles.deleteButton, (Boolean(uploading) || Boolean(deleting)) && styles.disabled]}
+                    disabled={Boolean(uploading) || Boolean(deleting)}
+                    onPress={() => confirmRemove(slot.viewType)}
+                  >
+                    {isDeleting
+                      ? <ActivityIndicator color="#b91c1c" size="small" />
+                      : <Text style={styles.deleteButtonText}>Eliminar</Text>}
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         );
@@ -247,7 +300,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 8,
   },
+  actionRow: { alignItems: 'center', flexDirection: 'row', gap: 7 },
   photoButtonText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  deleteButton: {
+    borderColor: '#fecaca',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 9,
+    minWidth: 70,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  deleteButtonText: { color: '#b91c1c', fontSize: 11, fontWeight: '800', textAlign: 'center' },
   disabled: { opacity: 0.4 },
   optional: { color: '#64748b', fontSize: 11, marginTop: 2 },
   error: { color: '#b91c1c', fontSize: 12, marginTop: 8 },
