@@ -151,7 +151,7 @@ export default function DoctorDashboardPage() {
       </div>
 
       {/* ── MAIN GRID ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.25rem' }}>
+      <div className="responsive-split" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.25rem' }}>
 
         {/* LEFT COL */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

@@ -67,7 +67,7 @@ export default function DoctorQueuePage() {
         <p>{t('queue.subtitle')}</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 480px' : '1fr', gap: '1.25rem', alignItems: 'start' }}>
+      <div className="responsive-split" style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 480px' : '1fr', gap: '1.25rem', alignItems: 'start' }}>
 
         {/* ── Queue list ── */}
         <div className="card">

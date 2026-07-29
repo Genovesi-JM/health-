@@ -99,7 +99,7 @@ export default function DoctorMessagesPage() {
           <div className="empty-state-desc">As mensagens com os seus pacientes aparecem aqui quando uma consulta é aceite.</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1rem', height: '65vh' }}>
+        <div className="responsive-split" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1rem', height: '65vh' }}>
           {/* Thread list */}
           <div className="card" style={{ overflow: 'auto', padding: 0 }}>
             {threads.map(t2 => (

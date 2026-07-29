@@ -358,6 +358,12 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
    Tables and wide blocks scroll inside their own container instead of the page. */
 .app-content .table-container { overflow-x: auto; }
 .app-content table { min-width: max-content; }
+/* Two-column split layouts (main + side panel / list + detail) collapse to a
+   single column on smaller screens so fixed-px side columns don't overflow. */
+@media (max-width: 900px) {
+  .responsive-split { grid-template-columns: 1fr !important; }
+  .responsive-split .responsive-split__side { height: auto !important; }
+}
 @media (max-width: 767px) {
   .app-content { padding: 1rem; }
 }
