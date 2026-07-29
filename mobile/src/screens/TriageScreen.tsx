@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 
-import TriagePhotoGuide from '../components/TriagePhotoGuide';
+import TriagePhotoGuide, { type ViewType } from '../components/TriagePhotoGuide';
 import api from '../services/api';
 import { apiErrorMessage } from '../utils/apiError';
 
@@ -35,6 +35,15 @@ type TriageResult = {
   recommended_action: string;
   score: number;
   disclaimer?: string;
+};
+
+type PhotoRequest = {
+  id: string;
+  triage_session_id: string;
+  view_type: ViewType;
+  message?: string;
+  chief_complaint?: string;
+  doctor_name?: string;
 };
 
 const TEAL = '#0d9488';
@@ -79,6 +88,13 @@ export default function TriageScreen() {
   const [result, setResult] = useState<TriageResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingPhotoRequests, setPendingPhotoRequests] = useState<PhotoRequest[]>([]);
+
+  useEffect(() => {
+    api.get<PhotoRequest[]>('/api/v1/triage/photo-requests/pending')
+      .then(response => setPendingPhotoRequests(response.data))
+      .catch(() => setPendingPhotoRequests([]));
+  }, []);
 
   const startTriage = async () => {
     if (complaint.trim().length < 3) {
@@ -175,6 +191,43 @@ export default function TriageScreen() {
             contacte o 112.
           </Text>
         </View>
+
+        {step === 'start' && pendingPhotoRequests.length > 0 && (
+          <View style={styles.requestsSection}>
+            <Text style={styles.requestsTitle}>Fotografias pedidas pelo profissional</Text>
+            {Array.from(new Set(
+              pendingPhotoRequests.map(request => request.triage_session_id),
+            )).map(triageId => {
+              const requests = pendingPhotoRequests.filter(
+                request => request.triage_session_id === triageId,
+              );
+              const first = requests[0];
+              return (
+                <View style={styles.requestCard} key={triageId}>
+                  <Text style={styles.requestComplaint}>
+                    {first.chief_complaint || 'Triagem clínica'}
+                  </Text>
+                  <Text style={styles.requestClinician}>
+                    {first.doctor_name || 'Profissional de saúde associado'}
+                  </Text>
+                  {requests.map(request => request.message ? (
+                    <Text style={styles.requestMessage} key={request.id}>{request.message}</Text>
+                  ) : null)}
+                  <TriagePhotoGuide
+                    sessionId={triageId}
+                    requestedViews={requests.map(request => request.view_type)}
+                    onPhotoUploaded={viewType => setPendingPhotoRequests(current =>
+                      current.filter(request =>
+                        request.triage_session_id !== triageId
+                        || request.view_type !== viewType,
+                      ),
+                    )}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {step === 'start' && (
           <StartStep
@@ -467,6 +520,18 @@ const styles = StyleSheet.create({
   },
   safetyTitle: { color: '#9a3412', fontSize: 13, fontWeight: '800' },
   safetyText: { color: '#9a3412', fontSize: 11, lineHeight: 17, marginTop: 3 },
+  requestsSection: { gap: 10, marginBottom: 18 },
+  requestsTitle: { color: '#92400e', fontSize: 16, fontWeight: '800' },
+  requestCard: {
+    backgroundColor: '#fffbeb',
+    borderColor: '#fde68a',
+    borderRadius: 15,
+    borderWidth: 1,
+    padding: 13,
+  },
+  requestComplaint: { color: '#0f172a', fontSize: 14, fontWeight: '800' },
+  requestClinician: { color: '#64748b', fontSize: 11, marginTop: 2 },
+  requestMessage: { color: '#92400e', fontSize: 12, lineHeight: 17, marginVertical: 8 },
   sectionTitle: {
     color: '#0f172a',
     fontSize: 15,

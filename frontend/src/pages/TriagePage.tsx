@@ -13,7 +13,7 @@ import {
   connectWifi, readWifiVitals,
 } from '../utils/deviceApi';
 import type { DeviceInfo, VitalReadings } from '../utils/deviceApi';
-import TriagePhotoGuide from '../components/TriagePhotoGuide';
+import TriagePhotoGuide, { type ViewType } from '../components/TriagePhotoGuide';
 import { apiErrorMessage } from '../utils/apiError';
 
 type Step = 'start' | 'questions' | 'result' | 'history';
@@ -32,6 +32,15 @@ type TriageCategory =
   | 'womens'
   | 'medication'
   | 'chronic';
+
+interface PhotoRequest {
+  id: string;
+  triage_session_id: string;
+  view_type: ViewType;
+  message?: string;
+  chief_complaint?: string;
+  doctor_name?: string;
+}
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -96,6 +105,7 @@ export default function TriagePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // triage id pending delete
+  const [pendingPhotoRequests, setPendingPhotoRequests] = useState<PhotoRequest[]>([]);
 
   // ── Dependent selector ─────────────────────────────────────
   const [dependents, setDependents] = useState<{ id: string; name: string; is_minor: boolean }[]>([]);
@@ -113,6 +123,7 @@ export default function TriagePage() {
 
   useEffect(() => {
     loadHistory();
+    loadPhotoRequests();
     // Load family members from backend
     api.get('/api/v1/family/me')
       .then((r: any) => setDependents(r.data.map((m: any) => ({ id: m.id, name: m.full_name, is_minor: m.is_minor }))))
@@ -180,6 +191,15 @@ export default function TriagePage() {
       const r = await api.get('/api/v1/triage/history');
       setHistory(r.data);
     } catch { /* ignore */ }
+  };
+
+  const loadPhotoRequests = async () => {
+    try {
+      const response = await api.get<PhotoRequest[]>('/api/v1/triage/photo-requests/pending');
+      setPendingPhotoRequests(response.data);
+    } catch {
+      setPendingPhotoRequests([]);
+    }
   };
 
   const deleteTriage = async (id: string) => {
@@ -286,6 +306,39 @@ export default function TriagePage() {
 
       {/* ─── History ─── */}
       {step === 'history' && (
+        <>
+        {pendingPhotoRequests.length > 0 && (
+          <div className="triage-photo-requests">
+            <div className="triage-photo-requests__heading">
+              <h3>{t('triage.photo_requests_title')}</h3>
+              <span>{pendingPhotoRequests.length}</span>
+            </div>
+            {Array.from(new Set(pendingPhotoRequests.map(request => request.triage_session_id))).map(triageId => {
+              const requests = pendingPhotoRequests.filter(request => request.triage_session_id === triageId);
+              const first = requests[0];
+              return (
+                <div className="triage-photo-request-card" key={triageId}>
+                  <div className="triage-photo-request-card__summary">
+                    <strong>{first.chief_complaint || t('triage.photo_review_title')}</strong>
+                    <span>{first.doctor_name || t('triage.photo_request_clinician')}</span>
+                    {requests.map(request => request.message && (
+                      <p key={request.id}>{request.message}</p>
+                    ))}
+                  </div>
+                  <TriagePhotoGuide
+                    sessionId={triageId}
+                    requestedViews={requests.map(request => request.view_type)}
+                    onPhotoUploaded={viewType => setPendingPhotoRequests(current =>
+                      current.filter(request =>
+                        request.triage_session_id !== triageId || request.view_type !== viewType,
+                      ),
+                    )}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.sessions')}</h3>
@@ -360,6 +413,7 @@ export default function TriagePage() {
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* ─── Start ─── */}

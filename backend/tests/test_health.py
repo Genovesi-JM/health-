@@ -20,7 +20,10 @@ from fastapi.testclient import TestClient
 
 from app.database import get_db, SessionLocal
 from app.models import User
-from app.health_models import Consultation, Patient, Doctor, PatientConsent, TriagePhoto
+from app.health_models import (
+    Consultation, Patient, Doctor, PatientConsent, TriagePhoto,
+    TriagePhotoRequest, TriageSession,
+)
 from app.oauth2 import create_access_token
 from app.utils import hash_password
 
@@ -375,6 +378,68 @@ class TestTriageFlow:
         assert len(allowed.json()) == 1
         denied = client.get(f"/api/v1/triage/{sid}/photos", headers=_token(unrelated_user))
         assert denied.status_code == 403
+
+        request_photo = client.post(
+            f"/api/v1/triage/{sid}/photo-requests",
+            json={
+                "view_type": "closeup",
+                "message": "Aproxime um pouco mais e use luz natural.",
+            },
+            headers=_token(linked_user),
+        )
+        assert request_photo.status_code == 201, request_photo.text
+        request_id = request_photo.json()["id"]
+        assert request_photo.json()["status"] == "requested"
+        duplicate = client.post(
+            f"/api/v1/triage/{sid}/photo-requests",
+            json={"view_type": "closeup"},
+            headers=_token(linked_user),
+        )
+        assert duplicate.status_code == 201
+        assert duplicate.json()["id"] == request_id
+        unrelated_request = client.post(
+            f"/api/v1/triage/{sid}/photo-requests",
+            json={"view_type": "orientation"},
+            headers=_token(unrelated_user),
+        )
+        assert unrelated_request.status_code == 403
+
+        pending = client.get(
+            "/api/v1/triage/photo-requests/pending",
+            headers=_token(patient_user),
+        )
+        assert pending.status_code == 200
+        assert [item["id"] for item in pending.json()] == [request_id]
+
+        session = db_session.query(TriageSession).filter(TriageSession.id == sid).first()
+        session.status = "completed"
+        db_session.commit()
+        fulfilled_upload = client.post(
+            f"/api/v1/triage/{sid}/photos",
+            data={"view_type": "closeup"},
+            files={"file": ("closeup.jpg", b"\xff\xd8\xff\xe0requested-photo", "image/jpeg")},
+            headers=_token(patient_user),
+        )
+        assert fulfilled_upload.status_code == 201, fulfilled_upload.text
+        closeup_id = fulfilled_upload.json()["id"]
+        db_session.expire_all()
+        fulfilled = db_session.query(TriagePhotoRequest).filter(
+            TriagePhotoRequest.id == request_id,
+        ).first()
+        assert fulfilled.status == "fulfilled"
+        assert fulfilled.fulfilled_at is not None
+
+        deleted = client.delete(
+            f"/api/v1/triage/{sid}/photos/{closeup_id}",
+            headers=_token(patient_user),
+        )
+        assert deleted.status_code == 204
+        db_session.expire_all()
+        reopened = db_session.query(TriagePhotoRequest).filter(
+            TriagePhotoRequest.id == request_id,
+        ).first()
+        assert reopened.status == "requested"
+        assert reopened.fulfilled_at is None
 
     def test_triage_photo_rejects_unsupported_content(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_bad_photo@test.com", "patient")

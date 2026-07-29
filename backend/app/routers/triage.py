@@ -26,14 +26,16 @@ from app.deps import get_current_user
 from app.models import User
 from app.health_models import (
     Consultation, Doctor, Patient, TriageSession, TriageAnswer, TriagePhoto,
-    TriageResult,
+    TriagePhotoRequest, TriageResult,
 )
 from app.health_schemas import (
     TriageStartRequest, TriageStartResponse,
     TriageAnswerSubmit, TriageResultOut,
-    TriageHistoryItem, TriagePhotoOut, RoleEnum,
+    TriageHistoryItem, TriagePhotoOut, TriagePhotoRequestCreate,
+    TriagePhotoRequestOut, RoleEnum,
 )
-from app.rbac import get_patient_for_user, log_health_audit
+from app.rbac import get_patient_for_user, log_health_audit, require_verified_doctor
+from app.routers.notifications import create_notification
 from app.services.health_storage import get_health_storage
 from app.services.triage_engine import get_triage_questions, evaluate_triage
 
@@ -71,6 +73,26 @@ def _photo_out(photo: TriagePhoto) -> TriagePhotoOut:
         technical_check=technical_check,
         content_url=f"/api/v1/triage/{photo.triage_session_id}/photos/{photo.id}/content",
         created_at=photo.created_at,
+    )
+
+
+def _photo_request_out(request: TriagePhotoRequest) -> TriagePhotoRequestOut:
+    doctor = request.doctor
+    doctor_name = None
+    if doctor:
+        display_name = doctor.display_name or "Profissional KAYA"
+        doctor_name = f"{doctor.title or 'Dr.'} {display_name}".strip()
+    return TriagePhotoRequestOut(
+        id=request.id,
+        triage_session_id=request.triage_session_id,
+        consultation_id=request.consultation_id,
+        view_type=request.view_type,
+        message=request.message,
+        status=request.status,
+        chief_complaint=request.triage_session.chief_complaint,
+        doctor_name=doctor_name,
+        created_at=request.created_at,
+        fulfilled_at=request.fulfilled_at,
     )
 
 
@@ -143,7 +165,14 @@ async def upload_triage_photo(
     ).first()
     if not session:
         raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
-    if session.status != "in_progress":
+    pending_request = db.query(TriagePhotoRequest).filter(
+        TriagePhotoRequest.triage_session_id == triage_id,
+        TriagePhotoRequest.view_type == view_type,
+        TriagePhotoRequest.status == "requested",
+    ).first()
+    if session.status != "in_progress" and not (
+        session.status == "completed" and pending_request
+    ):
         raise HTTPException(status_code=400, detail="Só pode adicionar fotos a uma triagem em curso.")
     if view_type not in ALLOWED_VIEW_TYPES:
         raise HTTPException(status_code=422, detail="Tipo de vista inválido.")
@@ -204,6 +233,17 @@ async def upload_triage_photo(
     db.add(photo)
     db.commit()
     db.refresh(photo)
+    fulfilled_requests = db.query(TriagePhotoRequest).filter(
+        TriagePhotoRequest.triage_session_id == triage_id,
+        TriagePhotoRequest.view_type == view_type,
+        TriagePhotoRequest.status == "requested",
+    ).all()
+    for photo_request in fulfilled_requests:
+        photo_request.status = "fulfilled"
+        photo_request.fulfilled_at = datetime.utcnow()
+        db.add(photo_request)
+    if fulfilled_requests:
+        db.commit()
     log_health_audit(
         db,
         action="triage_photo_uploaded",
@@ -212,6 +252,19 @@ async def upload_triage_photo(
         resource_id=photo.id,
         metadata={"triage_id": triage_id, "view_type": view_type, "size_bytes": len(content)},
     )
+    for photo_request in fulfilled_requests:
+        try:
+            create_notification(
+                db,
+                user_id=photo_request.doctor.user_id,
+                title="Nova fotografia de triagem",
+                message=f"O paciente enviou a vista pedida ({view_type}).",
+                type="success",
+                entity_type="triage",
+                entity_id=triage_id,
+            )
+        except Exception:
+            pass
     return _photo_out(photo)
 
 
@@ -227,6 +280,113 @@ def list_triage_photos(
         TriagePhoto.triage_session_id == triage_id,
     ).order_by(TriagePhoto.created_at.asc()).all()
     return [_photo_out(photo) for photo in photos]
+
+
+@router.get("/photo-requests/pending", response_model=List[TriagePhotoRequestOut])
+def list_pending_photo_requests(
+    patient: Patient = Depends(get_patient_for_user),
+    db: Session = Depends(get_db),
+):
+    """List outstanding clinician photo requests for the current patient."""
+    requests = (
+        db.query(TriagePhotoRequest)
+        .join(TriageSession, TriagePhotoRequest.triage_session_id == TriageSession.id)
+        .filter(
+            TriageSession.patient_id == patient.id,
+            TriagePhotoRequest.status == "requested",
+        )
+        .order_by(TriagePhotoRequest.created_at.desc())
+        .all()
+    )
+    return [_photo_request_out(item) for item in requests]
+
+
+@router.get("/{triage_id}/photo-requests", response_model=List[TriagePhotoRequestOut])
+def list_photo_requests(
+    triage_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List requests for the owning patient or a linked clinical professional."""
+    _assert_photo_access(triage_id, user, db)
+    requests = db.query(TriagePhotoRequest).filter(
+        TriagePhotoRequest.triage_session_id == triage_id,
+    ).order_by(TriagePhotoRequest.created_at.desc()).all()
+    return [_photo_request_out(item) for item in requests]
+
+
+@router.post(
+    "/{triage_id}/photo-requests",
+    response_model=TriagePhotoRequestOut,
+    status_code=201,
+)
+def request_triage_photo(
+    triage_id: str,
+    body: TriagePhotoRequestCreate,
+    user: User = Depends(require_verified_doctor),
+    db: Session = Depends(get_db),
+):
+    """Allow only the doctor linked to an active consultation to request a view."""
+    doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+    consultation = db.query(Consultation).filter(
+        Consultation.triage_session_id == triage_id,
+        Consultation.doctor_id == doctor.id,
+        Consultation.status.in_(("scheduled", "in_progress")),
+    ).first()
+    if not consultation:
+        raise HTTPException(
+            status_code=403,
+            detail="Só o médico associado a uma consulta ativa pode pedir fotografias.",
+        )
+
+    existing = db.query(TriagePhotoRequest).filter(
+        TriagePhotoRequest.triage_session_id == triage_id,
+        TriagePhotoRequest.doctor_id == doctor.id,
+        TriagePhotoRequest.view_type == body.view_type,
+        TriagePhotoRequest.status == "requested",
+    ).first()
+    if existing:
+        return _photo_request_out(existing)
+
+    photo_request = TriagePhotoRequest(
+        triage_session_id=triage_id,
+        consultation_id=consultation.id,
+        doctor_id=doctor.id,
+        view_type=body.view_type,
+        message=(body.message or "").strip() or None,
+    )
+    db.add(photo_request)
+    db.commit()
+    db.refresh(photo_request)
+    patient = consultation.patient
+    try:
+        create_notification(
+            db,
+            user_id=patient.user_id,
+            title="Pedido de fotografia de triagem",
+            message=(
+                f"O profissional pediu uma nova fotografia ({body.view_type}). "
+                "Abra o histórico de triagem para responder."
+            ),
+            type="warning",
+            entity_type="triage",
+            entity_id=triage_id,
+        )
+    except Exception:
+        pass
+    log_health_audit(
+        db,
+        action="triage_photo_requested_by_doctor",
+        actor_user_id=user.id,
+        resource_type="triage_photo_request",
+        resource_id=photo_request.id,
+        metadata={
+            "triage_id": triage_id,
+            "consultation_id": consultation.id,
+            "view_type": body.view_type,
+        },
+    )
+    return _photo_request_out(photo_request)
 
 
 @router.get("/{triage_id}/photos-export")
@@ -352,6 +512,15 @@ def delete_triage_photo(
     view_type = photo.view_type
     get_health_storage().delete(photo.storage_key)
     db.delete(photo)
+    fulfilled_requests = db.query(TriagePhotoRequest).filter(
+        TriagePhotoRequest.triage_session_id == triage_id,
+        TriagePhotoRequest.view_type == view_type,
+        TriagePhotoRequest.status == "fulfilled",
+    ).all()
+    for photo_request in fulfilled_requests:
+        photo_request.status = "requested"
+        photo_request.fulfilled_at = None
+        db.add(photo_request)
     db.commit()
     log_health_audit(
         db,

@@ -15,7 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { apiErrorMessage } from '../utils/apiError';
 
-type ViewType = 'orientation' | 'context' | 'closeup';
+export type ViewType = 'orientation' | 'context' | 'closeup';
 
 type PhotoSlot = {
   viewType: ViewType;
@@ -75,7 +75,15 @@ async function preparePhoto(asset: ImagePicker.ImagePickerAsset): Promise<Prepar
   };
 }
 
-export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
+export default function TriagePhotoGuide({
+  sessionId,
+  requestedViews,
+  onPhotoUploaded,
+}: {
+  sessionId: string;
+  requestedViews?: ViewType[];
+  onPhotoUploaded?: (viewType: ViewType) => void;
+}) {
   const [consented, setConsented] = useState(false);
   const [photos, setPhotos] = useState<Partial<Record<ViewType, PreparedPhoto>>>({});
   const [uploading, setUploading] = useState<ViewType | null>(null);
@@ -140,6 +148,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
         ...current,
         [slot.viewType]: { ...prepared, id: response.data.id },
       }));
+      onPhotoUploaded?.(slot.viewType);
     } catch (uploadError) {
       setError(apiErrorMessage(uploadError, 'Não foi possível enviar a fotografia.'));
     } finally {
@@ -199,7 +208,9 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
         </Text>
       </View>
 
-      {PHOTO_SLOTS.map(slot => {
+      {PHOTO_SLOTS
+        .filter(slot => !requestedViews?.length || requestedViews.includes(slot.viewType))
+        .map(slot => {
         const photo = photos[slot.viewType];
         const isUploading = uploading === slot.viewType;
         const isDeleting = deleting === slot.viewType;
@@ -241,7 +252,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
             </View>
           </View>
         );
-      })}
+        })}
       <Text style={styles.optional}>Pode continuar a triagem sem fotografias.</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>

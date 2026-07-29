@@ -167,6 +167,7 @@ class TriageSession(Base):
     patient = relationship("Patient", back_populates="triage_sessions")
     answers = relationship("TriageAnswer", back_populates="triage_session", cascade="all, delete-orphan")
     photos = relationship("TriagePhoto", back_populates="triage_session", cascade="all, delete-orphan")
+    photo_requests = relationship("TriagePhotoRequest", back_populates="triage_session", cascade="all, delete-orphan")
     result = relationship("TriageResult", back_populates="triage_session", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (
@@ -209,6 +210,38 @@ class TriagePhoto(Base):
 
     __table_args__ = (
         Index("ix_triage_photos_session_created", "triage_session_id", "created_at"),
+    )
+
+
+class TriagePhotoRequest(Base):
+    """A linked clinician asks the patient for one specific photographic view."""
+    __tablename__ = "triage_photo_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    triage_session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("triage_sessions.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    consultation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("consultations.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    doctor_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("doctors.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    view_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    message: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="requested")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    fulfilled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    triage_session = relationship("TriageSession", back_populates="photo_requests")
+    consultation = relationship("Consultation")
+    doctor = relationship("Doctor")
+
+    __table_args__ = (
+        Index("ix_triage_photo_requests_session_status", "triage_session_id", "status"),
     )
 
 

@@ -273,6 +273,24 @@ class TriagePhotoOut(BaseModel):
     created_at: datetime
 
 
+class TriagePhotoRequestCreate(BaseModel):
+    view_type: str = Field(pattern="^(orientation|context|closeup)$")
+    message: Optional[str] = Field(default=None, max_length=500)
+
+
+class TriagePhotoRequestOut(BaseModel):
+    id: str
+    triage_session_id: str
+    consultation_id: str
+    view_type: str
+    message: Optional[str] = None
+    status: str
+    chief_complaint: Optional[str] = None
+    doctor_name: Optional[str] = None
+    created_at: datetime
+    fulfilled_at: Optional[datetime] = None
+
+
 # ── Consultation ──
 
 class ConsultationBookRequest(BaseModel):

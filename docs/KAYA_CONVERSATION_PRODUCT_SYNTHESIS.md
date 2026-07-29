@@ -69,13 +69,18 @@ standardised triage:
   and mobile, with ownership checks, storage deletion and an audit event.
 - Patient-owned ZIP export containing sanitized photographs and a versioned
   manifest with integrity checksums, without exposing private storage keys.
+- Linked clinicians can request a specific additional view with guidance; the
+  owning patient receives an in-app notification and can fulfil the request on
+  web or mobile even after the original triage is completed.
+- Photo requests are idempotent, audited and automatically marked fulfilled on
+  upload; deleting the requested image reopens the request.
 
 ## Next coherent priorities
 
 1. Add resumable/offline photo drafts for low-bandwidth use.
 2. Add a governed retention schedule for photographs after clinical and legal
    approval of the required periods in each launch jurisdiction.
-3. Add clinician annotations and “request another view” without diagnostic AI.
+3. Add structured clinician annotations without diagnostic AI.
 4. Build a de-identified, clinician-labelled validation dataset only after
    consent, governance and retention rules are approved.
 5. Consider vision AI only as a separately validated feature that may escalate,

@@ -4,7 +4,7 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { apiErrorMessage } from '../utils/apiError';
 
-type ViewType = 'orientation' | 'context' | 'closeup';
+export type ViewType = 'orientation' | 'context' | 'closeup';
 
 interface PhotoSlot {
   viewType: ViewType;
@@ -98,7 +98,15 @@ async function preparePhoto(file: File): Promise<PreparedPhoto> {
   }
 }
 
-export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
+export default function TriagePhotoGuide({
+  sessionId,
+  requestedViews,
+  onPhotoUploaded,
+}: {
+  sessionId: string;
+  requestedViews?: ViewType[];
+  onPhotoUploaded?: (viewType: ViewType) => void;
+}) {
   const { t } = useT();
   const [consented, setConsented] = useState(false);
   const [previews, setPreviews] = useState<Partial<Record<ViewType, string>>>({});
@@ -140,6 +148,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
         return { ...current, [slot.viewType]: prepared.previewUrl };
       });
       setWarnings(current => ({ ...current, [slot.viewType]: prepared.technicalCheck.issues }));
+      onPhotoUploaded?.(slot.viewType);
     } catch (uploadError: any) {
       setError(apiErrorMessage(uploadError, t('triage.photo_upload_error')));
     } finally {
@@ -232,7 +241,9 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
       </label>
 
       <div className="triage-photo-guide__grid">
-        {PHOTO_SLOTS.map((slot, index) => {
+        {PHOTO_SLOTS
+          .filter(slot => !requestedViews?.length || requestedViews.includes(slot.viewType))
+          .map((slot, index) => {
           const preview = previews[slot.viewType];
           const slotWarnings = warnings[slot.viewType] || [];
           const isUploading = uploading === slot.viewType;
@@ -283,7 +294,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
               )}
             </div>
           );
-        })}
+          })}
       </div>
 
       <div className="triage-photo-guide__footer">

@@ -3970,6 +3970,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 }
 .triage-photo-review__boundary svg { flex: 0 0 auto; color: var(--accent-teal); }
 .triage-photo-review__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem; }
+.triage-photo-review__empty { margin: 0.6rem 0; color: var(--text-muted); font-size: 0.75rem; }
 .triage-photo-review figure { position: relative; margin: 0; min-width: 0; }
 .triage-photo-review img {
   display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
@@ -3982,4 +3983,44 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .triage-photo-review__warning {
   display: flex; align-items: center; gap: 0.2rem; margin-top: 0.15rem;
   color: #d97706; font-size: 0.62rem;
+}
+.triage-photo-review__request {
+  margin-top: 0.8rem; padding-top: 0.75rem; border-top: 1px solid var(--border);
+}
+.triage-photo-review__request-title {
+  display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary); font-size: 0.76rem;
+}
+.triage-photo-review__request-title svg { color: var(--accent-teal); }
+.triage-photo-review__request-pending {
+  margin-top: 0.45rem; padding: 0.45rem 0.55rem; border-radius: 7px;
+  background: rgba(245, 158, 11, 0.09); color: #d97706; font-size: 0.69rem; line-height: 1.4;
+}
+.triage-photo-review__request-form {
+  display: grid; grid-template-columns: minmax(120px, 0.55fr) 1fr auto;
+  gap: 0.45rem; margin-top: 0.55rem;
+}
+.triage-photo-review__request-form .form-select,
+.triage-photo-review__request-form .form-input { min-width: 0; font-size: 0.72rem; }
+
+.triage-photo-requests { display: grid; gap: 0.8rem; margin-bottom: 1rem; }
+.triage-photo-requests__heading { display: flex; align-items: center; gap: 0.5rem; }
+.triage-photo-requests__heading h3 { margin: 0; color: var(--text-primary); font-size: 0.95rem; }
+.triage-photo-requests__heading span {
+  min-width: 22px; padding: 0.1rem 0.45rem; border-radius: 999px;
+  background: rgba(245, 158, 11, 0.12); color: #d97706; text-align: center; font-size: 0.7rem;
+}
+.triage-photo-request-card {
+  padding: 1rem; border: 1px solid rgba(245, 158, 11, 0.28); border-radius: 14px;
+  background: rgba(245, 158, 11, 0.045);
+}
+.triage-photo-request-card__summary { margin-bottom: 0.75rem; }
+.triage-photo-request-card__summary strong { display: block; color: var(--text-primary); font-size: 0.86rem; }
+.triage-photo-request-card__summary span { color: var(--text-muted); font-size: 0.72rem; }
+.triage-photo-request-card__summary p {
+  margin: 0.45rem 0 0; color: var(--text-secondary); font-size: 0.76rem; line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .triage-photo-review__grid { grid-template-columns: 1fr 1fr; }
+  .triage-photo-review__request-form { grid-template-columns: 1fr; }
 }
