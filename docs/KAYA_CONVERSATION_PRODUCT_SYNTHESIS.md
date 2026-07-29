@@ -67,11 +67,14 @@ standardised triage:
   emergency boundary that sends immediate danger to 112 instead of triage.
 - Patient-controlled permanent removal of individual triage photographs on web
   and mobile, with ownership checks, storage deletion and an audit event.
+- Patient-owned ZIP export containing sanitized photographs and a versioned
+  manifest with integrity checksums, without exposing private storage keys.
 
 ## Next coherent priorities
 
 1. Add resumable/offline photo drafts for low-bandwidth use.
-2. Add governed retention and patient export controls for photographs.
+2. Add a governed retention schedule for photographs after clinical and legal
+   approval of the required periods in each launch jurisdiction.
 3. Add clinician annotations and “request another view” without diagnostic AI.
 4. Build a de-identified, clinician-labelled validation dataset only after
    consent, governance and retention rules are approved.

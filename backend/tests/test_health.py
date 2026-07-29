@@ -12,7 +12,9 @@ Covers:
  - Admin doctor verification
  - Dashboard endpoints
 """
+import io
 import json
+import zipfile
 import pytest
 from fastapi.testclient import TestClient
 
@@ -305,11 +307,30 @@ class TestTriageFlow:
         _make_patient(db_session, other)
         forbidden = client.get(f"/api/v1/triage/{sid}/photos", headers=_token(other))
         assert forbidden.status_code == 403
+        forbidden_export = client.get(
+            f"/api/v1/triage/{sid}/photos-export",
+            headers=_token(other),
+        )
+        assert forbidden_export.status_code == 404
         forbidden_delete = client.delete(
             f"/api/v1/triage/{sid}/photos/{photo['id']}",
             headers=_token(other),
         )
         assert forbidden_delete.status_code == 404
+
+        exported = client.get(f"/api/v1/triage/{sid}/photos-export", headers=headers)
+        assert exported.status_code == 200
+        assert exported.headers["content-type"] == "application/zip"
+        with zipfile.ZipFile(io.BytesIO(exported.content)) as bundle:
+            names = bundle.namelist()
+            assert names == ["01-closeup.jpg", "manifest.json"]
+            assert bundle.read("01-closeup.jpg").startswith(b"\xff\xd8\xff")
+            manifest = json.loads(bundle.read("manifest.json"))
+            assert manifest["format"] == "kaya-triage-photo-export-v1"
+            assert manifest["photo_count"] == 1
+            assert manifest["photos"][0]["view_type"] == "closeup"
+            assert len(manifest["photos"][0]["sha256"]) == 64
+            assert "storage_key" not in manifest["photos"][0]
 
         deleted = client.delete(
             f"/api/v1/triage/{sid}/photos/{photo['id']}",

@@ -8,14 +8,17 @@ Endpoints:
 - POST /api/v1/triage/{id}/complete — Complete and get result
 - GET  /api/v1/triage/history — Patient triage history
 """
+import hashlib
+import io
 import json
 import logging
+import zipfile
 from pathlib import Path
 from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -224,6 +227,79 @@ def list_triage_photos(
         TriagePhoto.triage_session_id == triage_id,
     ).order_by(TriagePhoto.created_at.asc()).all()
     return [_photo_out(photo) for photo in photos]
+
+
+@router.get("/{triage_id}/photos-export")
+def export_triage_photos(
+    triage_id: str,
+    patient: Patient = Depends(get_patient_for_user),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export the patient's private triage photographs with a portable manifest."""
+    session = db.query(TriageSession).filter(
+        TriageSession.id == triage_id,
+        TriageSession.patient_id == patient.id,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+
+    photos = db.query(TriagePhoto).filter(
+        TriagePhoto.triage_session_id == triage_id,
+    ).order_by(TriagePhoto.created_at.asc()).all()
+    storage = get_health_storage()
+    archive = io.BytesIO()
+    manifest_photos = []
+    extensions = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+        for index, photo in enumerate(photos, start=1):
+            content = storage.download_bytes(photo.storage_key)
+            filename = f"{index:02d}-{photo.view_type}.{extensions.get(photo.content_type, 'bin')}"
+            bundle.writestr(filename, content)
+            try:
+                technical_check = json.loads(photo.technical_check_json or "{}")
+            except (json.JSONDecodeError, TypeError):
+                technical_check = {}
+            manifest_photos.append({
+                "id": photo.id,
+                "view_type": photo.view_type,
+                "filename": filename,
+                "original_filename": photo.original_filename,
+                "content_type": photo.content_type,
+                "size_bytes": len(content),
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "technical_check": technical_check,
+                "created_at": photo.created_at.isoformat(),
+            })
+        manifest = {
+            "format": "kaya-triage-photo-export-v1",
+            "triage_session_id": triage_id,
+            "chief_complaint": session.chief_complaint,
+            "exported_at": datetime.utcnow().isoformat(),
+            "photo_count": len(manifest_photos),
+            "photos": manifest_photos,
+        }
+        bundle.writestr(
+            "manifest.json",
+            json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8"),
+        )
+    archive.seek(0)
+    log_health_audit(
+        db,
+        action="triage_photos_exported_by_patient",
+        actor_user_id=user.id,
+        resource_type="triage_session",
+        resource_id=triage_id,
+        metadata={"photo_count": len(manifest_photos)},
+    )
+    return StreamingResponse(
+        archive,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="kaya-triage-{triage_id}-photos.zip"',
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.get("/{triage_id}/photos/{photo_id}/content")

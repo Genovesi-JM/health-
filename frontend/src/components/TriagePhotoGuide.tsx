@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, CheckCircle2, ImagePlus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
+import { Camera, CheckCircle2, Download, ImagePlus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { apiErrorMessage } from '../utils/apiError';
@@ -106,6 +106,7 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
   const [warnings, setWarnings] = useState<Partial<Record<ViewType, string[]>>>({});
   const [uploading, setUploading] = useState<ViewType | null>(null);
   const [deleting, setDeleting] = useState<ViewType | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const previewRef = useRef(previews);
 
@@ -181,6 +182,29 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
     if (issue === 'too_dark') return t('triage.photo_too_dark');
     if (issue === 'too_bright') return t('triage.photo_too_bright');
     return t('triage.photo_low_resolution');
+  };
+
+  const exportPhotos = async () => {
+    if (exporting || !Object.keys(photoIds).length) return;
+    setExporting(true);
+    setError('');
+    try {
+      const response = await api.get(`/api/v1/triage/${sessionId}/photos-export`, {
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `kaya-triage-${sessionId}-photos.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (exportError: any) {
+      setError(apiErrorMessage(exportError, t('triage.photo_export_error')));
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -262,7 +286,20 @@ export default function TriagePhotoGuide({ sessionId }: { sessionId: string }) {
         })}
       </div>
 
-      <p className="triage-photo-guide__optional">{t('triage.photo_optional')}</p>
+      <div className="triage-photo-guide__footer">
+        <p className="triage-photo-guide__optional">{t('triage.photo_optional')}</p>
+        {Object.keys(photoIds).length > 0 && (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline triage-photo-guide__export"
+            disabled={exporting || Boolean(uploading) || Boolean(deleting)}
+            onClick={() => void exportPhotos()}
+          >
+            <Download size={14} />
+            {exporting ? t('triage.photo_exporting') : t('triage.photo_export')}
+          </button>
+        )}
+      </div>
       {error && <div className="triage-photo-guide__error">{error}</div>}
     </section>
   );

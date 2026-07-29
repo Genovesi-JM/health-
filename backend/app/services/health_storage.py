@@ -115,6 +115,14 @@ class HealthStorageService:
         )
         return url
 
+    def download_bytes(self, key: str) -> bytes:
+        """Read a private object without exposing its storage location."""
+        if self._use_local:
+            return (LOCAL_UPLOAD_DIR / key).read_bytes()
+
+        response = self.client.get_object(Bucket=self.spaces_bucket, Key=key)
+        return response["Body"].read()
+
     def delete(self, key: str) -> bool:
         """Delete a stored object."""
         if self._use_local:
