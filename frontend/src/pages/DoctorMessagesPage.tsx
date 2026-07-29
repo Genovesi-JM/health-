@@ -85,7 +85,7 @@ export default function DoctorMessagesPage() {
   const thread = threads.find(t => t.consultation_id === active) || null;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem 1.25rem 2rem' }}>
+    <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 2rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <MessageSquare size={20} style={{ color: 'var(--brand-primary)' }} /> {t('sidebar.doc_messages') !== 'sidebar.doc_messages' ? t('sidebar.doc_messages') : 'Mensagens'}
       </h1>

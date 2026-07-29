@@ -31,7 +31,7 @@ export default function DoctorFinancePage() {
   ] : [];
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <DollarSign size={20} style={{ color: '#059669' }} /> Financeiro
       </h1>

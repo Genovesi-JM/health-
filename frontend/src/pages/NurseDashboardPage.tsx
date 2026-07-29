@@ -39,7 +39,7 @@ export default function NurseDashboardPage() {
   ] : [];
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <HeartPulse size={20} style={{ color: 'var(--brand-primary)' }} /> {t('nurse.dashboard')}
       </h1>

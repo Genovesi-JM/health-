@@ -51,7 +51,7 @@ export default function StorePage() {
   const close = () => { setBuying(null); setCheckout(null); setStatus('idle'); };
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <ShoppingBag size={20} style={{ color: 'var(--brand-primary)' }} /> {t('store.title')}
       </h1>

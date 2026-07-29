@@ -26,7 +26,7 @@ export default function DoctorReviewsPage() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <Star size={20} style={{ color: '#f59e0b' }} /> Avaliações dos Pacientes
       </h1>

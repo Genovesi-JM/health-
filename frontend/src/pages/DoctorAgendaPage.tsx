@@ -76,7 +76,7 @@ export default function DoctorAgendaPage() {
   const done      = shownAppts.filter(a => a.status === 'completed' || a.status === 'done').length;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>

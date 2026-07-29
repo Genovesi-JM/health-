@@ -73,7 +73,7 @@ export default function CorporateDashboardPage() {
   // ── No account yet: self-serve creation ──
   if (!account) {
     return (
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+      <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
         <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Building2 size={20} style={{ color: 'var(--brand-primary)' }} /> {t('corp.create_title')}
         </h1>
@@ -103,7 +103,7 @@ export default function CorporateDashboardPage() {
   ] : [];
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <Building2 size={20} style={{ color: 'var(--brand-primary)' }} /> {account.company_name}
       </h1>
