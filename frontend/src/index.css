@@ -285,6 +285,8 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .app-main {
   flex: 1; margin-left: 260px;
   min-height: 100vh;
+  min-width: 0;
+  overflow-x: clip;
 }
 @media (max-width: 1023px) {
   .app-main { margin-left: 0; }
@@ -358,6 +360,62 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
    Tables and wide blocks scroll inside their own container instead of the page. */
 .app-content .table-container { overflow-x: auto; }
 .app-content table { min-width: max-content; }
+
+.patient-bottom-nav { display: none; }
+@media (max-width: 768px) {
+  .patient-bottom-nav {
+    position: fixed;
+    z-index: 900;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0.35rem max(0.4rem, env(safe-area-inset-right))
+      max(0.35rem, env(safe-area-inset-bottom))
+      max(0.4rem, env(safe-area-inset-left));
+    border-top: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.07);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .patient-bottom-nav a {
+    display: flex;
+    min-width: 0;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.2rem;
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+  }
+  .patient-bottom-nav a.active {
+    color: var(--brand-primary);
+    background: var(--brand-light);
+  }
+  .patient-bottom-nav span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app-content {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+  .chat-bubble {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+  .chat-window {
+    bottom: calc(4.25rem + env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 5rem - env(safe-area-inset-bottom));
+  }
+}
 /* Two-column split layouts (main + side panel / list + detail) collapse to a
    single column on smaller screens so fixed-px side columns don't overflow. */
 @media (max-width: 900px) {
@@ -1345,6 +1403,20 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   transition: all 0.2s;
 }
 .dash-status-action:hover { transform: translateY(-1px); }
+@media (max-width: 480px) {
+  .dash-status-content {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  .dash-status-action {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+}
 
 /* Section headers */
 .dash-section-header {
@@ -1360,18 +1432,15 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   overflow: hidden;
 }
 .dash-carousel-track {
-  display: flex; gap: 0.85rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
   padding: 0.25rem 0.25rem 0.75rem;
-  scrollbar-width: none;
 }
-.dash-carousel-track::-webkit-scrollbar { display: none; }
 
 .dash-action-card {
   display: flex; flex-direction: column; align-items: center;
-  min-width: 100px; width: 100px;
+  min-width: 0; width: 100%;
   padding: 0.85rem 0.5rem;
   border-radius: 16px;
   background: var(--bg-card);
@@ -1381,6 +1450,11 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   transition: all 0.25s;
   flex-shrink: 0;
   cursor: pointer;
+}
+@media (max-width: 640px) {
+  .dash-carousel-track { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+  .dash-action-card { min-height: 106px; justify-content: center; padding: 0.75rem 0.5rem; }
+  .dash-action-icon { width: 44px; height: 44px; }
 }
 .dash-action-card:hover {
   border-color: var(--border-hover);
@@ -2429,6 +2503,22 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+.vitals-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.vitals-tabs .btn {
+  min-width: 0;
+  justify-content: center;
+  padding-inline: 0.55rem;
+}
+.vitals-manual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
 
 .triage-question-group {
   background: #f8fafc;
@@ -2447,6 +2537,31 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   border: 1px solid var(--border);
   background: #f8fafc;
   margin-bottom: 0.5rem;
+}
+.device-connect-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.device-integration-error {
+  margin: 0 0 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.07);
+  color: #b91c1c;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+@media (max-width: 560px) {
+  .vitals-panel { padding: 0.85rem; }
+  .vitals-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; }
+  .vitals-tabs .btn { min-height: 40px; font-size: 0.7rem !important; padding-inline: 0.35rem; }
+  .vitals-tabs .btn:last-child { grid-column: 1 / -1; }
+  .vitals-manual-grid { grid-template-columns: 1fr; }
+  .device-connect-row { align-items: stretch; flex-direction: column; }
+  .device-connect-row .btn { min-height: 44px; justify-content: center; }
+  .device-row { align-items: flex-start; gap: 0.65rem; flex-direction: column; }
+  .device-row .btn { width: 100%; justify-content: center; }
 }
 
 /* ── Partner Cards ───────────────────────────────────────── */
@@ -3869,6 +3984,18 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .app-content {
     padding-bottom: max(1.5rem, calc(1rem + env(safe-area-inset-bottom)));
+  }
+}
+@media (max-width: 768px) {
+  .app-main:has(> .patient-bottom-nav) .app-content {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+  .app-main:has(> .patient-bottom-nav) ~ .chat-bubble {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+  .app-main:has(> .patient-bottom-nav) ~ .chat-window {
+    bottom: calc(4.25rem + env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 5rem - env(safe-area-inset-bottom));
   }
 }
 

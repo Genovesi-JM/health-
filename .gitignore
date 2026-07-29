@@ -45,6 +45,9 @@ Thumbs.db
 *.db
 *.sqlite3
 
+# Local/private health uploads
+backend/uploads/
+
 # Logs
 *.log
 npm-debug.log*

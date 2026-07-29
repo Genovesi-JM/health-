@@ -25,7 +25,7 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
 from app.health_models import (
-    Consultation, Doctor, Patient, TriageSession, TriageAnswer, TriagePhoto,
+    Consultation, DeviceReading, Doctor, Patient, TriageSession, TriageAnswer, TriagePhoto,
     TriagePhotoRequest, TriageResult,
 )
 from app.health_schemas import (
@@ -47,6 +47,48 @@ ALLOWED_PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_VIEW_TYPES = {"orientation", "context", "closeup"}
 MAX_PHOTO_BYTES = 8 * 1024 * 1024
 MAX_PHOTOS_PER_TRIAGE = 3
+
+
+def _device_readings_from_triage(patient_id: str, triage_id: str, vital_signs) -> list[DeviceReading]:
+    """Convert one multi-vital device payload into the canonical readings store."""
+    if not vital_signs:
+        return []
+
+    common = {
+        "patient_id": patient_id,
+        "measured_at": vital_signs.read_at or datetime.utcnow(),
+        "source": vital_signs.source,
+        "device_model": vital_signs.device_name,
+        "notes": f"triage_session:{triage_id}",
+    }
+    readings: list[DeviceReading] = []
+    if vital_signs.systolic is not None and vital_signs.diastolic is not None:
+        readings.append(DeviceReading(
+            **common,
+            reading_type="blood_pressure",
+            systolic=vital_signs.systolic,
+            diastolic=vital_signs.diastolic,
+            pulse=vital_signs.heart_rate,
+            unit="mmHg",
+        ))
+    scalar_readings = (
+        ("oxygen_saturation", vital_signs.spo2, "%"),
+        ("temperature", vital_signs.temperature, "°C"),
+        ("glucose", vital_signs.glucose, "mg/dL"),
+    )
+    for reading_type, value, unit in scalar_readings:
+        if value is not None:
+            readings.append(DeviceReading(**common, reading_type=reading_type, value=value, unit=unit))
+    if vital_signs.heart_rate is not None and not (
+        vital_signs.systolic is not None and vital_signs.diastolic is not None
+    ):
+        readings.append(DeviceReading(
+            **common,
+            reading_type="heart_rate",
+            value=vital_signs.heart_rate,
+            unit="bpm",
+        ))
+    return readings
 
 
 def _has_expected_image_signature(content: bytes, content_type: str) -> bool:
@@ -137,6 +179,13 @@ def start_triage(
         chief_complaint=body.chief_complaint,
     )
     db.add(session)
+    db.flush()
+    for reading in _device_readings_from_triage(
+        patient.id,
+        session.id,
+        body.vital_signs,
+    ):
+        db.add(reading)
     db.commit()
     db.refresh(session)
 

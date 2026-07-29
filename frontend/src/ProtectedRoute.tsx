@@ -1,8 +1,8 @@
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
 import ChatWidget from './components/ChatWidget';
-import { Menu } from 'lucide-react';
+import { Activity, Calendar, Home, Menu, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useT } from './i18n/LanguageContext';
 import LanguageSelector from './components/LanguageSelector';
@@ -130,6 +130,14 @@ export function ProtectedRoute() {
         <main className="app-content">
           <Outlet />
         </main>
+        {(user.role === 'patient' || user.role === 'cliente') && (
+          <nav className="patient-bottom-nav" aria-label="Navegação principal">
+            <NavLink to="/dashboard"><Home size={20} /><span>{t('sidebar.overview')}</span></NavLink>
+            <NavLink to="/triage"><Activity size={20} /><span>{t('sidebar.triage')}</span></NavLink>
+            <NavLink to="/consultations"><Calendar size={20} /><span>{t('sidebar.consultations')}</span></NavLink>
+            <NavLink to="/patient/profile"><User size={20} /><span>{t('sidebar.my_profile')}</span></NavLink>
+          </nav>
+        )}
       </div>
       <ChatWidget />
     </div>

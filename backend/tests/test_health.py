@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 from app.database import get_db, SessionLocal
 from app.models import User
 from app.health_models import (
-    Consultation, Patient, Doctor, PatientConsent, TriagePhoto,
+    Consultation, DeviceReading, Patient, Doctor, PatientConsent, TriagePhoto,
     TriagePhotoRequest, TriageSession,
 )
 from app.oauth2 import create_access_token
@@ -154,6 +154,56 @@ class TestTriageFlow:
         data = r.json()
         assert "session_id" in data
         assert len(data["questions"]) > 0
+
+    def test_start_triage_persists_validated_device_vitals(self, client: TestClient, db_session):
+        user = _make_user(db_session, "triage_vitals@test.com", "patient")
+        patient = _make_patient(db_session, user)
+        response = client.post(
+            "/api/v1/triage/start",
+            json={
+                "chief_complaint": "Tonturas",
+                "vital_signs": {
+                    "systolic": 122,
+                    "diastolic": 79,
+                    "spo2": 98,
+                    "heartRate": 68,
+                    "readAt": "2026-07-29T10:30:00Z",
+                    "source": "bluetooth",
+                    "deviceName": "Validated BLE monitor",
+                },
+            },
+            headers=_token(user),
+        )
+        assert response.status_code == 200, response.text
+        readings = (
+            db_session.query(DeviceReading)
+            .filter(DeviceReading.patient_id == patient.id)
+            .order_by(DeviceReading.reading_type)
+            .all()
+        )
+        assert [reading.reading_type for reading in readings] == [
+            "blood_pressure",
+            "oxygen_saturation",
+        ]
+        assert readings[0].systolic == 122
+        assert readings[0].diastolic == 79
+        assert readings[0].pulse == 68
+        assert readings[0].source == "bluetooth"
+        assert readings[0].device_model == "Validated BLE monitor"
+        assert response.json()["session_id"] in readings[0].notes
+
+    def test_start_triage_rejects_impossible_vitals(self, client: TestClient, db_session):
+        user = _make_user(db_session, "triage_invalid_vitals@test.com", "patient")
+        _make_patient(db_session, user)
+        response = client.post(
+            "/api/v1/triage/start",
+            json={
+                "chief_complaint": "Febre",
+                "vital_signs": {"temperature": 82, "source": "manual"},
+            },
+            headers=_token(user),
+        )
+        assert response.status_code == 422
 
     def test_full_triage_flow(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_full@test.com", "patient")

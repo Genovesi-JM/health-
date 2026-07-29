@@ -13,6 +13,8 @@ COPY . .
 # Build arg for API URL (default: relative /api → same domain via nginx proxy)
 ARG VITE_API_URL=""
 ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_DEVICE_GATEWAY_URL=""
+ENV VITE_DEVICE_GATEWAY_URL=$VITE_DEVICE_GATEWAY_URL
 
 # Production build — base path is / (served from root on own domain)
 ENV VITE_BASE_PATH=/

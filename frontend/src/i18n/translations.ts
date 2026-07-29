@@ -1016,6 +1016,9 @@ const translations: Record<string, TranslationEntry> = {
   'vitals.connected': { pt: 'Ligado', en: 'Connected', fr: 'Connecté', es: 'Conectado' },
   'vitals.read': { pt: 'Ler valores', en: 'Read values', fr: 'Lire les valeurs', es: 'Leer valores' },
   'vitals.not_supported': { pt: 'Bluetooth não disponível neste browser.', en: 'Bluetooth not available in this browser.', fr: 'Bluetooth non disponible dans ce navigateur.', es: 'Bluetooth no disponible en este navegador.' },
+  'vitals.gateway_unavailable': { pt: 'A importação por WiFi ainda não está configurada neste ambiente. Use a inserção manual ou Bluetooth.', en: 'Wi-Fi import is not configured in this environment. Use manual entry or Bluetooth.', fr: 'L’importation Wi-Fi n’est pas configurée dans cet environnement. Utilisez la saisie manuelle ou Bluetooth.', es: 'La importación por WiFi no está configurada en este entorno. Usa la entrada manual o Bluetooth.' },
+  'vitals.no_measurement': { pt: 'Dispositivo ligado, mas ainda não disponibilizou uma medição de saúde compatível.', en: 'The device connected but has not provided a compatible health measurement yet.', fr: 'L’appareil est connecté mais n’a pas encore fourni de mesure de santé compatible.', es: 'El dispositivo se conectó, pero aún no proporcionó una medición de salud compatible.' },
+  'vitals.connection_failed': { pt: 'Não foi possível ligar ao dispositivo.', en: 'Could not connect to the device.', fr: 'Impossible de se connecter à l’appareil.', es: 'No se pudo conectar al dispositivo.' },
 
   /* TRIAGE — dependent selector */
   'triage.for_whom': { pt: 'Para quem é a triagem?', en: 'Who is this triage for?', fr: 'Pour qui est ce triage ?', es: '¿Para quién es este triaje?' },

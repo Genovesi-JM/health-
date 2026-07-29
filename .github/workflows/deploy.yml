@@ -38,6 +38,7 @@ jobs:
           # For Docker-only deployment:    (leave empty — nginx proxies /api/ → backend)
           VITE_API_URL: ${{ vars.VITE_API_URL || 'https://health.geovisionops.com' }}
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/health-/' }}
+          VITE_DEVICE_GATEWAY_URL: ${{ vars.VITE_DEVICE_GATEWAY_URL || '' }}
         run: npm run build
 
       - name: Upload artifact

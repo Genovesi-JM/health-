@@ -9,6 +9,7 @@ import {
   Heart, Droplets, Zap, Users, Trash2,
 } from 'lucide-react';
 import {
+  DeviceIntegrationError,
   isBluetoothAvailable, scanBluetooth, connectBluetooth, readBluetoothVitals,
   connectWifi, readWifiVitals,
 } from '../utils/deviceApi';
@@ -121,6 +122,15 @@ export default function TriagePage() {
   const [wifiIp, setWifiIp] = useState('');
   const [btError, setBtError] = useState('');
 
+  const deviceErrorMessage = (error: unknown) => {
+    if (error instanceof DeviceIntegrationError) {
+      if (error.code === 'wifi_gateway_not_configured') return t('vitals.gateway_unavailable');
+      if (error.code === 'bluetooth_no_measurement') return t('vitals.no_measurement');
+      if (error.code.includes('not_supported')) return t('vitals.not_supported');
+    }
+    return error instanceof Error ? error.message : t('vitals.connection_failed');
+  };
+
   useEffect(() => {
     loadHistory();
     loadPhotoRequests();
@@ -157,13 +167,18 @@ export default function TriagePage() {
     try {
       const devices = await scanBluetooth();
       setBtDevices(devices);
-    } catch (e: any) { setBtError(e.message); }
+    } catch (e) { setBtError(deviceErrorMessage(e)); }
     setBtScanning(false);
   };
 
   const handleBtConnect = async (device: DeviceInfo) => {
-    const connected = await connectBluetooth(device.id);
-    setConnectedDevice(connected);
+    setBtError('');
+    try {
+      const connected = await connectBluetooth(device.id);
+      setConnectedDevice(connected);
+    } catch (e) {
+      setBtError(deviceErrorMessage(e));
+    }
   };
 
   const handleReadDevice = async () => {
@@ -176,14 +191,22 @@ export default function TriagePage() {
         readings = await readBluetoothVitals(connectedDevice!.id);
       }
       setVitals(v => ({ ...v, ...readings }));
-    } catch { /* ignore */ }
+      setBtError('');
+    } catch (e) {
+      setBtError(deviceErrorMessage(e));
+    }
     setDeviceReading(false);
   };
 
   const handleWifiConnect = async () => {
     if (!wifiIp.trim()) return;
-    const device = await connectWifi(wifiIp.trim());
-    setConnectedDevice(device);
+    setBtError('');
+    try {
+      const device = await connectWifi(wifiIp.trim());
+      setConnectedDevice(device);
+    } catch (e) {
+      setBtError(deviceErrorMessage(e));
+    }
   };
 
   const loadHistory = async () => {
@@ -217,13 +240,19 @@ export default function TriagePage() {
     if (!complaint.trim()) return;
     setLoading(true); setError('');
     try {
+      const hasVitals = ['systolic', 'diastolic', 'spo2', 'temperature', 'glucose', 'heartRate']
+        .some(key => vitals[key as keyof VitalReadings] !== undefined);
       const r = await api.post('/api/v1/triage/start', {
         chief_complaint: complaint,
         age_group: ageGroup,
         category,
         answered_by_guardian: ageGroup === 'pediatric' ? guardian : false,
         dependent_id: selectedDependent !== 'me' ? selectedDependent : undefined,
-        vital_signs: Object.keys(vitals).length > 0 ? vitals : undefined,
+        vital_signs: hasVitals ? {
+          ...vitals,
+          source: vitals.source || 'manual',
+          readAt: vitals.readAt || new Date().toISOString(),
+        } : undefined,
       });
       setSessionId(r.data.triage_id ?? r.data.session_id);
       setQuestions(r.data.questions || []);
@@ -500,12 +529,7 @@ export default function TriagePage() {
               <label className="form-label">{t('triage.chief_complaint')}</label>
               <textarea className="form-textarea" rows={3}
                 placeholder={t('triage.describe_placeholder')}
-                value={complaint} onChange={e => setComplaint(e.target.value)} required
-                style={{
-                  width: '100%', padding: '0.7rem 0.9rem',
-                  background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)',
-                  borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.88rem', resize: 'vertical',
-                }} />
+                value={complaint} onChange={e => setComplaint(e.target.value)} required />
             </div>
 
             {/* ── Vitals Panel ── */}
@@ -516,12 +540,16 @@ export default function TriagePage() {
               </div>
 
               {/* Tab switcher */}
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+              <div className="vitals-tabs">
                 {(['manual', 'bluetooth', 'wifi'] as const).map(tab => (
                   <button key={tab} type="button"
                     className={`btn btn-sm ${deviceTab === tab ? 'btn-primary' : 'btn-outline'}`}
                     style={{ fontSize: '0.75rem' }}
-                    onClick={() => setDeviceTab(tab)}>
+                    onClick={() => {
+                      setDeviceTab(tab);
+                      setConnectedDevice(null);
+                      setBtError('');
+                    }}>
                     {tab === 'manual' && <>{t('vitals.manual')}</>}
                     {tab === 'bluetooth' && <><Bluetooth size={12} /> Bluetooth</>}
                     {tab === 'wifi' && <><Wifi size={12} /> WiFi</>}
@@ -531,7 +559,7 @@ export default function TriagePage() {
 
               {/* Manual entry */}
               {deviceTab === 'manual' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                <div className="vitals-manual-grid">
                   {[
                     { key: 'systolic', label: t('vitals.bp_sys'), icon: <Heart size={12} />, unit: 'mmHg' },
                     { key: 'diastolic', label: t('vitals.bp_dia'), icon: <Heart size={12} />, unit: 'mmHg' },
@@ -550,7 +578,13 @@ export default function TriagePage() {
                           <input type="number" className="form-input" style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
                             placeholder="—"
                             value={val ?? ''}
-                            onChange={e => setVitals((v: any) => ({ ...v, [key]: e.target.value ? Number(e.target.value) : undefined }))} />
+                            onChange={e => setVitals((v: any) => ({
+                              ...v,
+                              [key]: e.target.value ? Number(e.target.value) : undefined,
+                              source: 'manual',
+                              readAt: new Date().toISOString(),
+                              deviceName: undefined,
+                            }))} />
                           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{unit}</span>
                           {val !== undefined && (
                             <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} title={color === '#22c55e' ? 'Normal' : color === '#eab308' ? 'Limite' : 'Fora do normal'} />
@@ -596,8 +630,9 @@ export default function TriagePage() {
               {/* WiFi */}
               {deviceTab === 'wifi' && (
                 <div>
+                  {btError && <p className="device-integration-error">{btError}</p>}
                   {!connectedDevice ? (
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                    <div className="device-connect-row">
                       <div style={{ flex: 1 }}>
                         <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
                           {t('vitals.wifi_label')}

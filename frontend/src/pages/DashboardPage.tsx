@@ -8,10 +8,9 @@ import type { PatientState, TriageHistoryItem, Consultation } from '../types';
 import BookConsultationModal from '../components/BookConsultationModal';
 import {
   Activity, Calendar, ArrowRight, ChevronRight,
-  ClipboardList, HeartPulse, AlertTriangle, CheckCircle2,
+  HeartPulse, AlertTriangle, CheckCircle2,
   Clock, Shield, Zap, TrendingUp, Siren, User,
-  FileText, Pill, Video, Stethoscope, FileCheck, MoreHorizontal,
-  Droplets, Apple, Moon, Thermometer, Brain, Wind,
+  Droplets, Thermometer, Brain, Wind,
 } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -63,24 +62,12 @@ export default function DashboardPage() {
 
   const risk = riskConfig(state?.last_triage_risk);
 
-  /* Quick action cards — La Meva Salut style */
+  /* Keep only distinct, high-frequency destinations above the fold. */
   const quickActions = [
     { icon: Activity, label: t('dash.qa_triage'), color: '#0d9488', bg: '#e0f7f5', to: '/triage' },
     { icon: Calendar, label: t('dash.qa_appointments'), color: '#2563eb', bg: '#dbeafe', to: '/consultations' },
-    { icon: Pill, label: t('dash.qa_medication'), color: '#7c3aed', bg: '#ede9fe', to: '/self-care' },
-    { icon: Video, label: t('dash.qa_econsulta'), color: '#059669', bg: '#d1fae5', to: '/consultations' },
-    { icon: Stethoscope, label: t('dash.qa_doctors'), color: '#dc2626', bg: '#fee2e2', to: '/consultations' },
-    { icon: FileText, label: t('dash.qa_results'), color: '#ea580c', bg: '#ffedd5', to: '/dashboard' },
-    { icon: FileCheck, label: t('dash.qa_consents'), color: '#0891b2', bg: '#cffafe', to: '/consents' },
+    { icon: HeartPulse, label: t('sidebar.readings'), color: '#7c3aed', bg: '#ede9fe', to: '/patient/readings' },
     { icon: User, label: t('dash.qa_profile'), color: '#64748b', bg: '#f1f5f9', to: '/patient/profile' },
-  ];
-
-  /* Highlights / Destaques — health tips */
-  const highlights = [
-    { icon: Droplets, title: t('dash.hl_hydration'), desc: t('dash.hl_hydration_desc'), color: '#0ea5e9' },
-    { icon: Moon, title: t('dash.hl_sleep'), desc: t('dash.hl_sleep_desc'), color: '#6366f1' },
-    { icon: Apple, title: t('dash.hl_nutrition'), desc: t('dash.hl_nutrition_desc'), color: '#22c55e' },
-    { icon: HeartPulse, title: t('dash.hl_checkup'), desc: t('dash.hl_checkup_desc'), color: '#ef4444' },
   ];
 
   /* Chronic disease config — icons + colors */
@@ -233,24 +220,6 @@ export default function DashboardPage() {
             <span className="dash-kpi-label">{t('dash.consultations_done')}</span>
           </div>
         </div>
-      </div>
-
-      {/* ── Highlights / Destaques (La Meva Salut style) ── */}
-      <div className="dash-section-header">
-        <h2>{t('dash.highlights')}</h2>
-      </div>
-      <div className="dash-highlights">
-        {highlights.map(h => (
-          <div className="dash-highlight-card" key={h.title}>
-            <div className="dash-highlight-icon" style={{ color: h.color, background: `${h.color}14` }}>
-              <h.icon size={22} />
-            </div>
-            <div>
-              <h4>{h.title}</h4>
-              <p>{h.desc}</p>
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* ── Chronic Diseases Section ── */}

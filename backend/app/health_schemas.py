@@ -209,6 +209,22 @@ class AvailabilityOut(BaseModel):
 
 # ── Triage ──
 
+class TriageVitalSigns(BaseModel):
+    """Validated measurements supplied while a triage session is started."""
+
+    systolic: Optional[int] = Field(default=None, ge=40, le=300)
+    diastolic: Optional[int] = Field(default=None, ge=25, le=200)
+    spo2: Optional[float] = Field(default=None, ge=50, le=100)
+    temperature: Optional[float] = Field(default=None, ge=25, le=45)
+    glucose: Optional[float] = Field(default=None, ge=10, le=1000)
+    heart_rate: Optional[int] = Field(default=None, alias="heartRate", ge=20, le=300)
+    read_at: Optional[datetime] = Field(default=None, alias="readAt")
+    source: str = Field(default="manual", pattern="^(manual|bluetooth|wifi)$")
+    device_name: Optional[str] = Field(default=None, alias="deviceName", max_length=100)
+
+    model_config = {"populate_by_name": True, "extra": "ignore"}
+
+
 class TriageStartRequest(BaseModel):
     chief_complaint: Optional[str] = None
 
@@ -217,6 +233,7 @@ class TriageStartRequest(BaseModel):
     age_group: Optional[str] = Field(default=None, description="adult | pediatric")
     category: Optional[str] = Field(default=None, description="Complaint category slug")
     answered_by_guardian: Optional[bool] = Field(default=None)
+    vital_signs: Optional[TriageVitalSigns] = None
 
     # Be lenient to keep backwards/forwards compatibility with clients.
     model_config = {"extra": "allow"}

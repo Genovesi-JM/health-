@@ -85,6 +85,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_DEVICE_GATEWAY_URL: ${VITE_DEVICE_GATEWAY_URL:-}
     restart: always
     ports:
       - "127.0.0.1:8080:80"
