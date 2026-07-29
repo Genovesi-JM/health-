@@ -84,6 +84,7 @@ mobile/
 │       ├── RegisterScreen.tsx     Registration + 5 consent checkboxes
 │       ├── ConsentGateScreen.tsx  Consent review/acceptance
 │       ├── HomeScreen.tsx         Patient dashboard + quick actions
+│       ├── TriageScreen.tsx       Rule-based triage + guided private photos
 │       ├── PatientProfileScreen.tsx  Demographics, allergies, emergency
 │       ├── ReadingsScreen.tsx     Device readings log + add new
 │       ├── BookConsultationScreen.tsx  Doctor list + schedule
@@ -104,8 +105,17 @@ mobile/
 ## API alignment
 
 All screens call the same endpoints as the web frontend:
+- Triage: `POST /api/v1/triage/start`, answers, completion, and private photo upload
 - `PATCH /api/v1/patients/me` (not PUT)
 - `POST /api/v1/patients/profile` (not `/api/v1/patients/`)
 - `PATCH /api/v1/doctors/me` (not PUT)
 - `POST /auth/change-password` (unified endpoint)
 - Consents: all 5 types (`terms_of_service`, `privacy_policy`, `medical_disclaimer`, `health_data_processing`, `telemedicine_consent`)
+
+## Photo-assisted triage
+
+For skin and injury complaints, the mobile flow can capture three optional
+views: orientation, surrounding context, and close-up. Every selected image is
+re-encoded as JPEG before upload so the original metadata is not sent. Images
+are never interpreted as a diagnosis by KAYA; they remain private and are
+available only to the patient and the clinician linked to the consultation.

@@ -12,6 +12,7 @@ import BookConsultationScreen from '../screens/BookConsultationScreen';
 import PrescriptionRequestScreen from '../screens/PrescriptionRequestScreen';
 import FamilyScreen from '../screens/FamilyScreen';
 import ConsentGateScreen from '../screens/ConsentGateScreen';
+import TriageScreen from '../screens/TriageScreen';
 
 export type AppStackParamList = {
   HomeTabs: undefined;
@@ -21,6 +22,7 @@ export type AppStackParamList = {
   ConsentGate: undefined;
   Readings: undefined;
   Notifications: undefined;
+  Triage: undefined;
 };
 
 export type TabParamList = {
@@ -76,6 +78,8 @@ export default function AppStack() {
         options={{ title: 'Família', headerTintColor: TEAL }} />
       <Stack.Screen name="ConsentGate" component={ConsentGateScreen}
         options={{ title: 'Consentimentos', headerTintColor: TEAL }} />
+      <Stack.Screen name="Triage" component={TriageScreen}
+        options={{ title: 'Orientação de saúde', headerTintColor: TEAL }} />
     </Stack.Navigator>
   );
 }

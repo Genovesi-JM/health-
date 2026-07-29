@@ -27,7 +27,14 @@
       "apiBaseUrl": "http://localhost:8000"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "A KAYA usa as fotografias selecionadas apenas para revisão clínica na sua triagem.",
+          "cameraPermission": "A KAYA usa a câmara para adicionar fotografias privadas à sua triagem."
+        }
+      ]
     ],
     "scheme": "kayahealth"
   }

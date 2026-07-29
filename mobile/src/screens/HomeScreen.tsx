@@ -23,6 +23,7 @@ const MUTED = '#64748b';
 
 // Patient quick actions
 const ACTIONS = [
+  { icon: '✦',  label: 'Orientação de saúde', screen: 'Triage'              as const },
   { icon: '📅', label: 'Marcar consulta',   screen: 'BookConsultation'    as const },
   { icon: '💊', label: 'Pedir receita',      screen: 'PrescriptionRequest' as const },
   { icon: '❤️', label: 'As minhas medições', screen: 'Readings'            as const },

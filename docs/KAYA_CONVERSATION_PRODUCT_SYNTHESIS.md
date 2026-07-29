@@ -59,15 +59,20 @@ standardised triage:
   cannot crash the login, registration or triage interface.
 - Integration tests for privacy, linked-doctor access, replacement uploads,
   unsupported content and visual red-flag escalation.
+- Complete Expo patient triage flow using the same backend questions and fixed
+  red-flag engine as the web application.
+- Optional three-view mobile camera/gallery capture with explicit consent,
+  client-side JPEG re-encoding, resizing and low-resolution warnings.
+- Native iOS/Android camera and photo-library permission copy, plus a mobile
+  emergency boundary that sends immediate danger to 112 instead of triage.
 
 ## Next coherent priorities
 
-1. Bring the same guided-photo flow to the Expo patient app.
-2. Add resumable/offline photo drafts for low-bandwidth use.
-3. Add governed retention and patient deletion/export controls for photographs.
-4. Add clinician annotations and “request another view” without diagnostic AI.
-5. Build a de-identified, clinician-labelled validation dataset only after
+1. Add resumable/offline photo drafts for low-bandwidth use.
+2. Add governed retention and patient deletion/export controls for photographs.
+3. Add clinician annotations and “request another view” without diagnostic AI.
+4. Build a de-identified, clinician-labelled validation dataset only after
    consent, governance and retention rules are approved.
-6. Consider vision AI only as a separately validated feature that may escalate,
+5. Consider vision AI only as a separately validated feature that may escalate,
    request another image or decline assessment; it must never override a fixed
    red flag or claim a confirmed diagnosis.
