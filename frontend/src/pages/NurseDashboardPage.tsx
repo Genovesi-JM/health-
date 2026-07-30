@@ -2,11 +2,15 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { specialtyLabel } from '../constants/specialties';
-import { Activity, AlertTriangle, ClipboardList, HeartPulse } from 'lucide-react';
+import { Activity, AlertTriangle, ClipboardList, Clock3, HeartPulse, HelpCircle } from 'lucide-react';
 import KpiGrid from '../components/KpiGrid';
 
 interface QueueItem { id: string; patient: string; specialty: string; risk_level?: string | null; chief_complaint?: string | null; created_at: string; }
-interface Dash { queue_count: number; urgent_count: number; triages_today: number; recent: QueueItem[]; }
+interface Dash {
+  queue_count: number; urgent_count: number; triages_today: number;
+  unclassified_count: number; waiting_over_30_count: number;
+  average_wait_minutes: number; longest_wait_minutes: number; recent: QueueItem[];
+}
 
 function riskBadge(level?: string | null) {
   switch ((level || '').toUpperCase()) {
@@ -37,6 +41,9 @@ export default function NurseDashboardPage() {
     { id: 'queue', label: t('nurse.kpi_queue'), value: dash.queue_count, icon: <ClipboardList size={18} />, color: '#0d9488', tone: dash.queue_count > 0 ? 'attention' as const : 'default' as const },
     { id: 'urgent', label: t('nurse.kpi_urgent'), value: dash.urgent_count, icon: <AlertTriangle size={18} />, color: '#dc2626', tone: dash.urgent_count > 0 ? 'attention' as const : 'default' as const },
     { id: 'triages', label: t('nurse.kpi_triages'), value: dash.triages_today, icon: <Activity size={18} />, color: '#3b82f6' },
+    { id: 'wait', label: t('nurse.kpi_wait'), value: `${dash.average_wait_minutes} min`, icon: <Clock3 size={18} />, color: '#8b5cf6' },
+    { id: 'late', label: t('nurse.kpi_over_30'), value: dash.waiting_over_30_count, icon: <AlertTriangle size={18} />, color: '#ea580c', tone: dash.waiting_over_30_count > 0 ? 'attention' as const : 'default' as const },
+    { id: 'unclassified', label: t('nurse.kpi_unclassified'), value: dash.unclassified_count, icon: <HelpCircle size={18} />, color: '#64748b' },
   ] : [];
 
   return (

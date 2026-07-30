@@ -23,7 +23,7 @@ const LABELS: Record<string, string> = {
   local_registration: 'Registration in country of practice',
 };
 
-export default function ProfessionalVerificationScreen() {
+export default function ProfessionalVerificationScreen({ onVerified }: { onVerified?: () => void }) {
   const { logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [data, setData] = useState<Credential | null>(null);
@@ -40,6 +40,9 @@ export default function ProfessionalVerificationScreen() {
     } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (data?.status === 'verified') onVerified?.();
+  }, [data?.status, onVerified]);
 
   const required = useMemo(() => {
     if (!data) return [];

@@ -77,6 +77,12 @@ def nurse_queue(user: User = Depends(require_nurse), db: Session = Depends(get_d
 def nurse_dashboard(user: User = Depends(require_nurse), db: Session = Depends(get_db)):
     items = _queue_items(db)
     urgent = sum(1 for i in items if (i["risk_level"] or "").upper() in ("URGENT", "HIGH"))
+    unclassified = sum(1 for i in items if not i["risk_level"])
+    now = datetime.utcnow()
+    wait_minutes = [
+        max(0, int((now - item["created_at"]).total_seconds() / 60))
+        for item in items if item.get("created_at")
+    ]
     today_start = datetime.combine(date.today(), datetime.min.time())
     triages_today = (
         db.query(TriageSession)
@@ -87,5 +93,9 @@ def nurse_dashboard(user: User = Depends(require_nurse), db: Session = Depends(g
         "queue_count": len(items),
         "urgent_count": urgent,
         "triages_today": triages_today,
+        "unclassified_count": unclassified,
+        "waiting_over_30_count": sum(1 for minutes in wait_minutes if minutes >= 30),
+        "average_wait_minutes": round(sum(wait_minutes) / len(wait_minutes)) if wait_minutes else 0,
+        "longest_wait_minutes": max(wait_minutes, default=0),
         "recent": items[:10],
     }

@@ -97,6 +97,27 @@ def test_nurse_queue_is_gated_until_review(client):
     assert blocked.json()["detail"]["code"] == "credential_verification_required"
 
 
+def test_verified_nurse_dashboard_exposes_operational_kpis(client):
+    auth = _register(client, role="nurse", diploma_country="AO")
+    assert _upload(client, auth, "professional_card").status_code == 200
+    assert _upload(client, auth, "diploma").status_code == 200
+    submitted = client.post("/api/v1/credentials/me/submit", headers=_headers(auth))
+    assert submitted.status_code == 200
+    admin = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
+    approved = client.post(
+        f"/api/v1/credentials/admin/{submitted.json()['id']}/decision",
+        headers=_headers(admin.json()),
+        json={"action": "approve"},
+    )
+    assert approved.status_code == 200
+    dashboard = client.get("/api/v1/nurse/dashboard", headers=_headers(auth))
+    assert dashboard.status_code == 200
+    assert {
+        "queue_count", "urgent_count", "triages_today", "average_wait_minutes",
+        "longest_wait_minutes", "waiting_over_30_count", "unclassified_count", "recent",
+    }.issubset(dashboard.json())
+
+
 def test_registration_rejects_incomplete_clinician_profile(client):
     response = client.post("/auth/register", json={
         "email": f"incomplete-{uuid.uuid4().hex[:8]}@example.com",
