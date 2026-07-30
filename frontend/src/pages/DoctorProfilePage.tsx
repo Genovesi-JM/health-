@@ -15,19 +15,21 @@ export default function DoctorProfilePage() {
   const [specialization, setSpecialization] = useState('');
   const [bio, setBio] = useState('');
 
+  // Canonical specialty codes — MUST match what patients book with, otherwise
+  // the queue matcher (Consultation.specialty == Doctor.specialization) misses.
   const specializations = [
-    { value: 'Clínica Geral', label: t('spec.general') },
-    { value: 'Cardiologia', label: t('spec.cardiology') },
-    { value: 'Dermatologia', label: t('spec.dermatology') },
-    { value: 'Pediatria', label: t('spec.pediatrics') },
-    { value: 'Ortopedia', label: t('spec.orthopedics') },
-    { value: 'Neurologia', label: t('spec.neurology') },
-    { value: 'Ginecologia', label: t('spec.gynecology') },
-    { value: 'Oftalmologia', label: t('spec.ophthalmology') },
-    { value: 'Psiquiatria', label: t('spec.psychiatry') },
-    { value: 'Medicina Interna', label: t('spec.internal') },
-    { value: 'Cirurgia Geral', label: t('spec.surgery') },
-    { value: 'Outra', label: t('spec.other') },
+    { value: 'clinica_geral', label: t('spec.clinica_geral') },
+    { value: 'cardiologia', label: t('spec.cardiologia') },
+    { value: 'dermatologia', label: t('spec.dermatologia') },
+    { value: 'pediatria', label: t('spec.pediatria') },
+    { value: 'ortopedia', label: t('spec.ortopedia') },
+    { value: 'neurologia', label: t('spec.neurologia') },
+    { value: 'ginecologia', label: t('spec.ginecologia') },
+    { value: 'oftalmologia', label: t('spec.oftalmologia') },
+    { value: 'psiquiatria', label: t('spec.psiquiatria') },
+    { value: 'medicina_interna', label: t('spec.medicina_interna') },
+    { value: 'cirurgia', label: t('spec.cirurgia') },
+    { value: 'outra', label: t('spec.outra') },
   ];
 
   useEffect(() => {
