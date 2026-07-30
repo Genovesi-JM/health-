@@ -729,6 +729,8 @@ const translations: Record<string, TranslationEntry> = {
   'sidebar.security': { pt: 'Segurança', en: 'Security', fr: 'Sécurité', es: 'Seguridad', zh: '安全 (Security)' },
   'sidebar.support': { pt: 'Suporte', en: 'Support', fr: 'Assistance', es: 'Soporte', zh: '支持 (Support)' },
   'sidebar.applications': { pt: 'Candidaturas', en: 'Applications', fr: 'Candidatures', es: 'Solicitudes', zh: '申请 (Applications)' },
+  'sidebar.credentials': { pt: 'Credenciais Clínicas', en: 'Clinical Credentials', fr: 'Titres cliniques', es: 'Credenciales clínicas', zh: '临床资质 (Credentials)' },
+  'sidebar.my_credentials': { pt: 'Os Meus Documentos', en: 'My Credentials', fr: 'Mes documents', es: 'Mis credenciales', zh: '我的资质 (My Credentials)' },
   'sidebar.account_upper': { pt: 'Conta', en: 'Account', fr: 'Compte', es: 'Cuenta', zh: '账户 (Account)' },
   'avail.desc': { pt: 'Defina os seus horários semanais. Os pacientes só poderão agendar dentro destes períodos.', en: 'Set your weekly hours. Patients can only schedule within these periods.', fr: 'Définissez vos horaires hebdomadaires. Les patients ne peuvent réserver que dans ces créneaux.', es: 'Defina sus horarios semanales. Los pacientes solo podrán agendar dentro de estos períodos.' },
   'avail.add': { pt: 'Adicionar horário', en: 'Add slot', fr: 'Ajouter un créneau', es: 'Añadir horario' },

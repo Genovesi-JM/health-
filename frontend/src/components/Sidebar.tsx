@@ -7,7 +7,7 @@ import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import { useState, useEffect } from 'react';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
-  Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2, Clock, ShoppingBag,
+  Shield, ShieldCheck, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2, Clock, ShoppingBag,
   Cpu, CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
   DollarSign, Star, Globe, HelpCircle, Lock, FileCheck2,
 } from 'lucide-react';
@@ -105,6 +105,7 @@ export function Sidebar({ open, onClose }: Props) {
           )}
           {role === 'doctor' && (
             <SidebarSection title={t('sidebar.account_upper')}>
+              <SidebarLink to="/professional-verification" icon={ShieldCheck} label={t('sidebar.my_credentials')} onClick={onClose} />
               <SidebarLink to="/settings"        icon={Settings}      label={t('sidebar.settings')} onClick={onClose} />
               <SidebarLink to="/doctor/security" icon={Lock}          label={t('sidebar.security')} onClick={onClose} />
               <SidebarLink to="/doctor/suporte"  icon={HelpCircle}    label={t('sidebar.support')}  onClick={onClose} />
@@ -119,6 +120,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/admin/doctors"  icon={UserCog}         label={t('sidebar.verify_doctors')} onClick={onClose} />
               <SidebarLink to="/admin/credentials" icon={FileCheck2} label="Credenciais clínicas" onClick={onClose} />
               <SidebarLink to="/admin/applications" icon={Briefcase}   label={t('sidebar.applications')}   onClick={onClose} />
+              <SidebarLink to="/admin/credentials"  icon={ShieldCheck} label={t('sidebar.credentials')}    onClick={onClose} />
             </SidebarSection>
           )}
           {role === 'admin' && (
@@ -130,8 +132,9 @@ export function Sidebar({ open, onClose }: Props) {
           {/* ── NURSE ── */}
           {role === 'nurse' && (
             <SidebarSection title={t('nurse.section')}>
-              <SidebarLink to="/nurse"    icon={HeartPulse} label={t('nurse.dashboard')}    onClick={onClose} />
-              <SidebarLink to="/settings" icon={Settings}   label={t('sidebar.settings')}   onClick={onClose} />
+              <SidebarLink to="/nurse"                     icon={HeartPulse}  label={t('nurse.dashboard')}        onClick={onClose} />
+              <SidebarLink to="/professional-verification" icon={ShieldCheck} label={t('sidebar.my_credentials')} onClick={onClose} />
+              <SidebarLink to="/settings"                  icon={Settings}    label={t('sidebar.settings')}       onClick={onClose} />
             </SidebarSection>
           )}
 
