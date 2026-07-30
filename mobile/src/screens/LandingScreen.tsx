@@ -192,12 +192,19 @@ export default function LandingScreen() {
         animationType="fade"
         onRequestClose={() => setMenuOpen(false)}
       >
-        <View style={styles.modalRoot}>
-          <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)} />
-          <View style={styles.drawer}>
+        <View style={styles.modalRoot} pointerEvents="box-none">
+          <Pressable
+            style={styles.backdrop}
+            onPress={() => setMenuOpen(false)}
+            accessibilityLabel="Close menu"
+          />
+          <View style={styles.drawer} pointerEvents="auto">
             <TouchableOpacity
               onPress={() => setMenuOpen(false)}
               style={styles.drawerClose}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close menu"
             >
               <Text style={styles.drawerCloseText}>✕</Text>
             </TouchableOpacity>
@@ -228,9 +235,9 @@ export default function LandingScreen() {
         animationType="slide"
         onRequestClose={() => setServicesOpen(false)}
       >
-        <View style={styles.modalRoot}>
+        <View style={styles.modalRoot} pointerEvents="box-none">
           <Pressable style={styles.backdrop} onPress={() => setServicesOpen(false)} />
-          <View style={styles.sheet}>
+          <View style={styles.sheet} pointerEvents="auto">
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{t('landing.services_title')}</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -262,9 +269,9 @@ export default function LandingScreen() {
         animationType="slide"
         onRequestClose={() => setContactOpen(false)}
       >
-        <View style={styles.modalRoot}>
+        <View style={styles.modalRoot} pointerEvents="box-none">
           <Pressable style={styles.backdrop} onPress={() => setContactOpen(false)} />
-          <View style={styles.compactSheet}>
+          <View style={styles.compactSheet} pointerEvents="auto">
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{t('landing.contact_title')}</Text>
             <Text style={styles.sheetDescription}>{t('landing.contact_desc')}</Text>
@@ -289,9 +296,10 @@ export default function LandingScreen() {
         <KeyboardAvoidingView
           style={styles.modalRoot}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          pointerEvents="box-none"
         >
           <Pressable style={styles.backdrop} onPress={() => setHelpOpen(false)} />
-          <View style={styles.guidanceSheet}>
+          <View style={styles.guidanceSheet} pointerEvents="auto">
             <View style={styles.sheetHandle} />
             <View style={styles.guidanceHeader}>
               <View style={{ flex: 1 }}>
@@ -354,9 +362,9 @@ export default function LandingScreen() {
         statusBarTranslucent
         onRequestClose={() => setLanguageOpen(false)}
       >
-        <View style={styles.modalRoot}>
+        <View style={styles.modalRoot} pointerEvents="box-none">
           <Pressable style={styles.backdrop} onPress={() => setLanguageOpen(false)} />
-          <View style={styles.languageSheet}>
+          <View style={styles.languageSheet} pointerEvents="auto">
             <Text style={styles.sheetTitle}>{t('landing.language')}</Text>
             {([
               ['pt', 'Português'], ['en', 'English'], ['fr', 'Français'],
@@ -442,18 +450,19 @@ const styles = StyleSheet.create({
   footer: { paddingBottom: 20, alignItems: 'center' },
   footerText: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
 
-  modalRoot: { flex: 1 },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  modalRoot: { flex: 1, position: 'relative' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 },
 
   drawer: {
     position: 'absolute', top: 0, right: 0, bottom: 0,
     width: '70%', backgroundColor: '#fff',
     paddingTop: 56, paddingHorizontal: 24,
+    zIndex: 2, elevation: 2,
   },
-  drawerClose:       { position: 'absolute', top: 16, right: 16, padding: 8 },
+  drawerClose:       { position: 'absolute', top: 16, right: 16, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 4, elevation: 4 },
   drawerCloseText:   { fontSize: 18, color: MUTED },
   drawerLogo:        { fontSize: 16, fontWeight: '800', color: SLATE, marginBottom: 28, letterSpacing: 0.5 },
-  drawerItem:        { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  drawerItem:        { minHeight: 48, justifyContent: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', zIndex: 3 },
   drawerItemText:    { fontSize: 16, color: SLATE, fontWeight: '500' },
   drawerItemPrimary: { color: TEAL, fontWeight: '700' },
 
@@ -462,6 +471,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 20, borderTopRightRadius: 20,
     padding: 24, paddingBottom: 28, maxHeight: '88%',
+    zIndex: 2, elevation: 2,
   },
   sheetHandle: {
     width: 40, height: 4, borderRadius: 2,
@@ -474,20 +484,20 @@ const styles = StyleSheet.create({
   serviceCopy: { flex: 1 },
   serviceLabel: { fontSize: 15, fontWeight: '600', color: SLATE },
   serviceDescription: { fontSize: 12, lineHeight: 17, color: MUTED, marginTop: 3 },
-  languageSheet: { position: 'absolute', top: 84, right: 18, width: 210, backgroundColor: '#fff', borderRadius: 16, padding: 14, shadowColor: '#000', shadowOpacity: .18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12 },
+  languageSheet: { position: 'absolute', top: 84, right: 18, width: 210, backgroundColor: '#fff', borderRadius: 16, padding: 14, shadowColor: '#000', shadowOpacity: .18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12, zIndex: 2 },
   languageOption: { minHeight: 44, paddingHorizontal: 12, borderRadius: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   languageOptionActive: { backgroundColor: TEAL_SOFT },
   languageOptionText: { color: SLATE, fontSize: 14, fontWeight: '600' },
   languageOptionTextActive: { color: TEAL_DARK, fontWeight: '800' },
   languageCheck: { color: TEAL, fontSize: 15, fontWeight: '900' },
-  compactSheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 36 },
+  compactSheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 36, zIndex: 2, elevation: 2 },
   sheetDescription: { color: MUTED, fontSize: 13, lineHeight: 19, marginTop: -6, marginBottom: 16 },
   contactCard: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, padding: 14, marginBottom: 14 },
   contactLabel: { color: MUTED, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   contactValue: { color: SLATE, fontSize: 15, fontWeight: '700', marginTop: 4 },
   contactButton: { backgroundColor: TEAL, borderRadius: 12, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   contactButtonText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  guidanceSheet: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '82%', backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 12 },
+  guidanceSheet: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '82%', backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 12, zIndex: 2, elevation: 2 },
   guidanceHeader: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 20, gap: 12 },
   guidanceDisclaimer: { color: MUTED, fontSize: 11, lineHeight: 16, marginTop: -8 },
   closeCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center' },
