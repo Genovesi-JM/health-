@@ -32,6 +32,14 @@ type Patient360 = {
   }>;
   medications: Array<{ id: string; name: string; dosage?: string | null; frequency?: string | null; is_current: boolean }>;
   consultations: Array<{ id: string; specialty: string; status: string; scheduled_at?: string | null; created_at?: string | null }>;
+  nursing_observations: Array<{
+    id: string; observation_type: string; assessment: string; recommendation?: string | null;
+    patient_response?: string | null; created_at?: string | null;
+  }>;
+  care_tasks: Array<{
+    id: string; assigned_role: 'doctor' | 'nurse'; task_type: string; title: string;
+    instructions?: string | null; priority: string; status: string; due_at?: string | null;
+  }>;
 };
 
 const TEAL = '#0d9488';
@@ -52,6 +60,10 @@ export default function ClinicianPatient360Screen({ route }: Props) {
   const [reason, setReason] = useState('');
   const [summary, setSummary] = useState('');
   const [sending, setSending] = useState(false);
+  const [showObservation, setShowObservation] = useState(false);
+  const [observationType, setObservationType] = useState<'assessment' | 'intervention' | 'handoff' | 'follow_up'>('assessment');
+  const [observation, setObservation] = useState('');
+  const [recommendation, setRecommendation] = useState('');
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
@@ -96,6 +108,40 @@ export default function ClinicianPatient360Screen({ route }: Props) {
       Alert.alert(t('clinician.sent_title'), t('clinician.sent_message'));
     } catch (requestError: any) {
       Alert.alert(t('common.error'), requestError?.response?.data?.detail || t('clinician.accept_error'));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const submitObservation = async () => {
+    if (!data || !observation.trim()) return;
+    setSending(true);
+    try {
+      await api.post('/api/v1/clinical-operations/nursing/observations', {
+        patient_id: data.identity.id,
+        consultation_id: data.active_episode?.id,
+        observation_type: observationType,
+        assessment: observation.trim(),
+        recommendation: recommendation.trim() || undefined,
+      });
+      setShowObservation(false);
+      setObservation('');
+      setRecommendation('');
+      await load();
+    } catch (requestError: any) {
+      Alert.alert(t('common.error'), requestError?.response?.data?.detail || t('clinician.load_error'));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const completeTask = async (taskId: string) => {
+    setSending(true);
+    try {
+      await api.post(`/api/v1/clinical-operations/care-tasks/${taskId}/complete`, {});
+      await load();
+    } catch (requestError: any) {
+      Alert.alert(t('common.error'), requestError?.response?.data?.detail || t('clinician.load_error'));
     } finally {
       setSending(false);
     }
@@ -162,6 +208,48 @@ export default function ClinicianPatient360Screen({ route }: Props) {
               <Text style={styles.listMeta}>{item.source || 'manual'}</Text>
             </View>
             <Text style={styles.listValue}>{readingValue(item)}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionTitleRow}>
+          <Ionicons name="clipboard-outline" size={18} color="#7c3aed" />
+          <Text style={styles.sectionTitle}>{t('clinician.nursing_records')}</Text>
+          <Text style={styles.count}>{data.nursing_observations.length}</Text>
+        </View>
+        {!data.nursing_observations.length ? <Text style={styles.empty}>{t('clinician.no_data')}</Text> : data.nursing_observations.slice(0, 8).map(item => (
+          <View key={item.id} style={styles.recordRow}>
+            <Text style={styles.recordType}>{item.observation_type.replace(/_/g, ' ')}</Text>
+            <Text style={styles.listTitle}>{item.assessment}</Text>
+            {!!item.recommendation && <Text style={styles.listMeta}>{item.recommendation}</Text>}
+          </View>
+        ))}
+        {data.access.role === 'nurse' && (
+          <TouchableOpacity style={styles.sectionAction} onPress={() => setShowObservation(true)} accessibilityRole="button">
+            <Ionicons name="add" size={16} color={TEAL} />
+            <Text style={styles.sectionActionText}>{t('clinician.add_record')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionTitleRow}>
+          <Ionicons name="checkmark-done-outline" size={18} color="#2563eb" />
+          <Text style={styles.sectionTitle}>{t('clinician.care_tasks')}</Text>
+          <Text style={styles.count}>{data.care_tasks.filter(item => item.status === 'open').length}</Text>
+        </View>
+        {!data.care_tasks.length ? <Text style={styles.empty}>{t('clinician.no_data')}</Text> : data.care_tasks.map(item => (
+          <View key={item.id} style={styles.taskRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.listTitle}>{item.title}</Text>
+              <Text style={styles.listMeta}>{item.assigned_role} · {item.priority} · {item.task_type.replace(/_/g, ' ')}</Text>
+            </View>
+            {item.status === 'open' && item.assigned_role === data.access.role ? (
+              <TouchableOpacity style={styles.completeButton} disabled={sending} onPress={() => void completeTask(item.id)} accessibilityRole="button">
+                <Text style={styles.completeButtonText}>{t('clinician.complete')}</Text>
+              </TouchableOpacity>
+            ) : <Ionicons name="checkmark-circle" size={18} color={item.status === 'completed' ? '#059669' : '#94a3b8'} />}
           </View>
         ))}
       </View>
@@ -279,6 +367,44 @@ export default function ClinicianPatient360Screen({ route }: Props) {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={showObservation} animationType="slide" transparent onRequestClose={() => setShowObservation(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalEyebrow}>{t('clinician.nursing_records')}</Text>
+                <Text style={styles.modalTitle}>{t('clinician.add_record')}</Text>
+              </View>
+              <TouchableOpacity style={styles.modalClose} onPress={() => setShowObservation(false)} accessibilityLabel={t('clinician.close')}>
+                <Ionicons name="close" size={20} color="#475569" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.fieldLabel}>{t('clinician.record_type')}</Text>
+            <View style={styles.priorityRow}>
+              {(['assessment', 'intervention', 'handoff', 'follow_up'] as const).map(value => (
+                <TouchableOpacity
+                  key={value}
+                  style={[styles.priorityChip, observationType === value && styles.priorityChipActive]}
+                  onPress={() => setObservationType(value)}
+                >
+                  <Text style={[styles.priorityText, observationType === value && styles.priorityTextActive]}>
+                    {t(`clinician.record_${value}` as any)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.fieldLabel}>{t('clinician.assessment')}</Text>
+            <TextInput style={[styles.input, styles.summaryInput]} value={observation} onChangeText={setObservation} multiline textAlignVertical="top" />
+            <Text style={styles.fieldLabel}>{t('clinician.recommendation')}</Text>
+            <TextInput style={styles.input} value={recommendation} onChangeText={setRecommendation} multiline />
+            <TouchableOpacity style={[styles.sendButton, (!observation.trim() || sending) && styles.disabled]} disabled={!observation.trim() || sending} onPress={() => void submitObservation()}>
+              {sending && <ActivityIndicator size="small" color="#fff" />}
+              <Text style={styles.sendButtonText}>{t('clinician.save')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -313,6 +439,13 @@ const styles = StyleSheet.create({
   listTitle: { color: '#0f172a', fontSize: 12, fontWeight: '800', textTransform: 'capitalize' },
   listMeta: { color: '#64748b', fontSize: 10, marginTop: 2 },
   listValue: { color: '#0f172a', fontSize: 12, fontWeight: '900' },
+  recordRow: { paddingHorizontal: 13, paddingVertical: 11, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  recordType: { alignSelf: 'flex-start', marginBottom: 5, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 99, backgroundColor: '#ede9fe', color: '#6d28d9', fontSize: 8, fontWeight: '900', textTransform: 'uppercase' },
+  sectionAction: { minHeight: 42, margin: 10, marginTop: 2, borderWidth: 1, borderColor: '#99f6e4', borderRadius: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#f0fdfa' },
+  sectionActionText: { color: TEAL, fontSize: 11, fontWeight: '900' },
+  taskRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 13, paddingVertical: 11, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  completeButton: { paddingHorizontal: 9, paddingVertical: 6, borderRadius: 8, backgroundColor: '#dcfce7' },
+  completeButtonText: { color: '#15803d', fontSize: 9, fontWeight: '900' },
   empty: { color: '#64748b', padding: 16, paddingTop: 0, fontSize: 11 },
   boundary: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 13, borderRadius: 12, backgroundColor: '#fffbeb' },
   boundaryText: { flex: 1, color: '#92400e', fontSize: 10.5, lineHeight: 15 },

@@ -595,6 +595,84 @@ class ClinicianRevenueEvent(Base):
     )
 
 
+class NursingObservation(Base):
+    """Audited nursing documentation attached to an active care episode."""
+    __tablename__ = "nursing_observations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    consultation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("consultations.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    author_user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True,
+    )
+    observation_type: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="assessment",
+    )  # assessment | intervention | handoff | follow_up
+    situation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    background: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    assessment: Mapped[str] = mapped_column(Text, nullable=False)
+    recommendation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    patient_response: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    amended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("ix_nursing_observations_episode_created", "consultation_id", "created_at"),
+    )
+
+
+class ClinicalCareTask(Base):
+    """Role-addressed task used to coordinate work around a patient episode."""
+    __tablename__ = "clinical_care_tasks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    consultation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("consultations.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    created_by_user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    assigned_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    assigned_user_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+    task_type: Mapped[str] = mapped_column(String(40), nullable=False, default="follow_up")
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    instructions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    priority: Mapped[str] = mapped_column(String(20), nullable=False, default="routine")
+    due_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    completed_by_user_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    completion_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_clinical_care_tasks_role_status_due", "assigned_role", "status", "due_at"),
+    )
+
+
 # ── Corporate ──
 
 class CorporateAccount(Base):

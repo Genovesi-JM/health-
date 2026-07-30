@@ -33,6 +33,9 @@ type Patient360 = {
   prescriptions: Array<Record<string, unknown>>;
   prescription_requests: Array<Record<string, unknown>>;
   referrals: Array<Record<string, unknown>>;
+  nursing_observations: NursingObservation[];
+  care_tasks: CareTask[];
+  care_escalations: CareEscalation[];
   consents: Array<{ type: string; accepted_at: string }>;
   emergency_family: Array<{ id: string; name: string; relationship: string; phone?: string | null }>;
 };
@@ -56,6 +59,20 @@ type Reading = {
 type Medication = {
   id: string; name: string; dosage?: string | null; frequency?: string | null;
   reason?: string | null; prescribed_by?: string | null; is_current: boolean;
+};
+type NursingObservation = {
+  id: string; observation_type: string; situation?: string | null; background?: string | null;
+  assessment: string; recommendation?: string | null; patient_response?: string | null;
+  status: string; created_at?: string | null;
+};
+type CareTask = {
+  id: string; assigned_role: 'doctor' | 'nurse'; task_type: string; title: string;
+  instructions?: string | null; priority: string; due_at?: string | null; status: string;
+  completion_note?: string | null; completed_at?: string | null; created_at?: string | null;
+};
+type CareEscalation = {
+  id: string; urgency: string; reason: string; clinical_summary: string; status: string;
+  created_at?: string | null; accepted_at?: string | null; resolved_at?: string | null;
 };
 
 const PREVIEW_DATA: Patient360 = {
@@ -122,6 +139,17 @@ const PREVIEW_DATA: Patient360 = {
   prescriptions: [{ id: 'p1', created_at: '2026-06-14T12:00:00Z' }],
   prescription_requests: [{ id: 'pr1', medication_name: 'Metformina', status: 'approved', created_at: '2026-05-02T10:00:00Z' }],
   referrals: [{ id: 'ref1', destination: 'Cardiologia', urgency: 'routine', created_at: '2026-06-14T12:00:00Z' }],
+  nursing_observations: [
+    { id: 'no1', observation_type: 'intervention', situation: 'Preparação para teleconsulta', assessment: 'Identidade confirmada e sinais vitais registados.', recommendation: 'Reavaliar SpO₂ em 30 minutos.', patient_response: 'Compreendeu e colaborou.', status: 'active', created_at: '2026-07-30T09:35:00Z' },
+    { id: 'no2', observation_type: 'handoff', situation: 'Febre e tosse persistente', assessment: 'Risco alto; SpO₂ 94%.', recommendation: 'Avaliação médica prioritária.', status: 'active', created_at: '2026-07-30T09:25:00Z' },
+  ],
+  care_tasks: [
+    { id: 'ct1', assigned_role: 'nurse', task_type: 'reassessment', title: 'Reavaliar saturação de oxigénio', instructions: 'Repetir medição em repouso e comunicar se ≤ 93%.', priority: 'urgent', due_at: '2026-07-30T10:15:00Z', status: 'open', created_at: '2026-07-30T09:40:00Z' },
+    { id: 'ct2', assigned_role: 'doctor', task_type: 'medication_review', title: 'Rever medicação atual', priority: 'priority', status: 'open', created_at: '2026-07-30T09:42:00Z' },
+  ],
+  care_escalations: [
+    { id: 'ce1', urgency: 'urgent', reason: 'Dispneia e febre persistente', clinical_summary: 'Risco HIGH, SpO₂ 94%, febre 38.6 °C.', status: 'accepted', created_at: '2026-07-30T09:30:00Z', accepted_at: '2026-07-30T09:38:00Z' },
+  ],
   consents: [
     { type: 'telemedicine_consent', accepted_at: '2026-01-10T10:00:00Z' },
     { type: 'health_data_processing', accepted_at: '2026-01-10T10:00:00Z' },
@@ -135,6 +163,9 @@ const copy = {
     message: 'Mensagens', handoff: 'Encaminhar ao médico', prescribe: 'Prescrever', identity: 'Identificação',
     escalationReason: 'Motivo do encaminhamento', escalationSummary: 'Passagem clínica estruturada', escalationSend: 'Enviar ao médico',
     escalationSent: 'Encaminhamento enviado para a fila médica.', escalationLegal: 'A enfermeira documenta e escala; diagnóstico e prescrição permanecem sob responsabilidade médica.',
+    nursingRecords: 'Registos de enfermagem', addRecord: 'Novo registo', careTasks: 'Tarefas clínicas',
+    newTask: 'Nova tarefa', escalationHistory: 'Histórico de encaminhamentos', complete: 'Concluir',
+    assessmentLabel: 'Avaliação / intervenção', recommendationLabel: 'Recomendação', save: 'Guardar',
     emergency: 'Contacto de emergência', safety: 'Segurança clínica', allergies: 'Alergias', conditions: 'Condições crónicas',
     overview: 'Resumo', triage: 'Triagem', readings: 'Medições e dispositivos', medications: 'Medicação',
     consultations: 'Consultas', coordination: 'Coordenação', recentVitals: 'Medições recentes',
@@ -149,6 +180,9 @@ const copy = {
     message: 'Messages', handoff: 'Escalate to doctor', prescribe: 'Prescribe', identity: 'Identity',
     escalationReason: 'Reason for escalation', escalationSummary: 'Structured clinical handoff', escalationSend: 'Send to doctor',
     escalationSent: 'Escalation sent to the doctor queue.', escalationLegal: 'The nurse documents and escalates; diagnosis and prescribing remain the doctor’s responsibility.',
+    nursingRecords: 'Nursing records', addRecord: 'New record', careTasks: 'Clinical tasks',
+    newTask: 'New task', escalationHistory: 'Escalation history', complete: 'Complete',
+    assessmentLabel: 'Assessment / intervention', recommendationLabel: 'Recommendation', save: 'Save',
     emergency: 'Emergency contact', safety: 'Clinical safety', allergies: 'Allergies', conditions: 'Chronic conditions',
     overview: 'Overview', triage: 'Triage', readings: 'Measurements & devices', medications: 'Medication',
     consultations: 'Consultations', coordination: 'Coordination', recentVitals: 'Recent measurements',
@@ -163,6 +197,9 @@ const copy = {
     message: 'Messages', handoff: 'Transmettre au médecin', prescribe: 'Prescrire', identity: 'Identité',
     escalationReason: 'Motif de la transmission', escalationSummary: 'Transmission clinique structurée', escalationSend: 'Envoyer au médecin',
     escalationSent: 'Transmission envoyée à la file médicale.', escalationLegal: 'L’infirmier documente et transmet; diagnostic et prescription relèvent du médecin.',
+    nursingRecords: 'Dossier infirmier', addRecord: 'Nouveau dossier', careTasks: 'Tâches cliniques',
+    newTask: 'Nouvelle tâche', escalationHistory: 'Historique des transmissions', complete: 'Terminer',
+    assessmentLabel: 'Évaluation / intervention', recommendationLabel: 'Recommandation', save: 'Enregistrer',
     emergency: 'Contact d’urgence', safety: 'Sécurité clinique', allergies: 'Allergies', conditions: 'Maladies chroniques',
     overview: 'Résumé', triage: 'Triage', readings: 'Mesures et appareils', medications: 'Médicaments',
     consultations: 'Consultations', coordination: 'Coordination', recentVitals: 'Mesures récentes',
@@ -177,6 +214,9 @@ const copy = {
     message: 'Mensajes', handoff: 'Derivar al médico', prescribe: 'Prescribir', identity: 'Identificación',
     escalationReason: 'Motivo de derivación', escalationSummary: 'Relevo clínico estructurado', escalationSend: 'Enviar al médico',
     escalationSent: 'Derivación enviada a la cola médica.', escalationLegal: 'Enfermería documenta y deriva; el diagnóstico y la prescripción corresponden al médico.',
+    nursingRecords: 'Registros de enfermería', addRecord: 'Nuevo registro', careTasks: 'Tareas clínicas',
+    newTask: 'Nueva tarea', escalationHistory: 'Historial de derivaciones', complete: 'Completar',
+    assessmentLabel: 'Evaluación / intervención', recommendationLabel: 'Recomendación', save: 'Guardar',
     emergency: 'Contacto de emergencia', safety: 'Seguridad clínica', allergies: 'Alergias', conditions: 'Condiciones crónicas',
     overview: 'Resumen', triage: 'Triaje', readings: 'Mediciones y dispositivos', medications: 'Medicación',
     consultations: 'Consultas', coordination: 'Coordinación', recentVitals: 'Mediciones recientes',
@@ -191,6 +231,9 @@ const copy = {
     message: '消息', handoff: '转交医生', prescribe: '开具处方', identity: '身份信息',
     escalationReason: '转诊原因', escalationSummary: '结构化临床交接', escalationSend: '发送给医生',
     escalationSent: '已发送至医生队列。', escalationLegal: '护士负责记录和上报；诊断及处方由医生负责。',
+    nursingRecords: '护理记录', addRecord: '新建记录', careTasks: '临床任务',
+    newTask: '新建任务', escalationHistory: '转诊记录', complete: '完成',
+    assessmentLabel: '评估／干预', recommendationLabel: '建议', save: '保存',
     emergency: '紧急联系人', safety: '临床安全', allergies: '过敏', conditions: '慢性病',
     overview: '概览', triage: '分诊', readings: '测量与设备', medications: '用药',
     consultations: '会诊', coordination: '协作', recentVitals: '最近测量',
@@ -218,6 +261,16 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
   const [escalationSummary, setEscalationSummary] = useState('');
   const [escalationSending, setEscalationSending] = useState(false);
   const [escalationResult, setEscalationResult] = useState('');
+  const [showObservationForm, setShowObservationForm] = useState(false);
+  const [observationType, setObservationType] = useState('assessment');
+  const [observationAssessment, setObservationAssessment] = useState('');
+  const [observationRecommendation, setObservationRecommendation] = useState('');
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskInstructions, setTaskInstructions] = useState('');
+  const [taskRole, setTaskRole] = useState<'doctor' | 'nurse'>('nurse');
+  const [taskPriority, setTaskPriority] = useState('routine');
+  const [operationSaving, setOperationSaving] = useState(false);
 
   const load = () => {
     if (preview) { setData(PREVIEW_DATA); return; }
@@ -267,6 +320,85 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
       setEscalationResult(error?.response?.data?.detail || 'Não foi possível enviar o encaminhamento.');
     } finally {
       setEscalationSending(false);
+    }
+  };
+
+  const createObservation = async () => {
+    if (!data || !observationAssessment.trim()) return;
+    setOperationSaving(true);
+    try {
+      const payload = {
+        patient_id: data.identity.id,
+        consultation_id: data.active_episode?.id,
+        observation_type: observationType,
+        assessment: observationAssessment,
+        recommendation: observationRecommendation || undefined,
+      };
+      if (preview) {
+        const item: NursingObservation = {
+          id: `preview-observation-${Date.now()}`, ...payload, status: 'active',
+          created_at: new Date().toISOString(),
+        };
+        setData(current => current ? { ...current, nursing_observations: [item, ...current.nursing_observations] } : current);
+      } else {
+        await api.post('/api/v1/clinical-operations/nursing/observations', payload);
+        load();
+      }
+      setObservationAssessment('');
+      setObservationRecommendation('');
+      setShowObservationForm(false);
+    } finally {
+      setOperationSaving(false);
+    }
+  };
+
+  const createTask = async () => {
+    if (!data || !taskTitle.trim()) return;
+    setOperationSaving(true);
+    try {
+      const payload = {
+        patient_id: data.identity.id,
+        consultation_id: data.active_episode?.id,
+        assigned_role: taskRole,
+        task_type: taskRole === 'nurse' ? 'reassessment' : 'follow_up',
+        title: taskTitle,
+        instructions: taskInstructions || undefined,
+        priority: taskPriority,
+      };
+      if (preview) {
+        const item: CareTask = {
+          id: `preview-task-${Date.now()}`, ...payload, assigned_role: taskRole,
+          status: 'open', created_at: new Date().toISOString(),
+        };
+        setData(current => current ? { ...current, care_tasks: [item, ...current.care_tasks] } : current);
+      } else {
+        await api.post('/api/v1/clinical-operations/care-tasks', payload);
+        load();
+      }
+      setTaskTitle('');
+      setTaskInstructions('');
+      setShowTaskForm(false);
+    } finally {
+      setOperationSaving(false);
+    }
+  };
+
+  const completeTask = async (task: CareTask) => {
+    if (!data) return;
+    setOperationSaving(true);
+    try {
+      if (preview) {
+        setData(current => current ? {
+          ...current,
+          care_tasks: current.care_tasks.map(item => item.id === task.id
+            ? { ...item, status: 'completed', completed_at: new Date().toISOString() } : item),
+        } : current);
+      } else {
+        await api.post(`/api/v1/clinical-operations/care-tasks/${task.id}/complete`, {});
+        load();
+      }
+    } finally {
+      setOperationSaving(false);
     }
   };
 
@@ -480,25 +612,115 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
         )}
 
         {activeTab === 'coordination' && (
-          <div className="clinician-detail-grid">
-            <section className="clinician-panel">
-              <PanelTitle icon={<Users size={17} />} title={c.capabilities} />
-              <div className="clinician-capabilities">
-                {Object.entries(data.access.capabilities).map(([key, allowed]) => (
-                  <div key={key} className={allowed ? 'allowed' : 'restricted'}>
-                    {allowed ? <CheckCircle2 size={15} /> : <X size={15} />}<span>{key.replaceAll('_', ' ')}</span>
+          <div className="clinician-coordination-stack">
+            <div className="clinician-detail-grid">
+              <section className="clinician-panel">
+                <div className="clinician-section-actions">
+                  <PanelTitle icon={<ClipboardList size={17} />} title={c.nursingRecords} meta={`${data.nursing_observations.length}`} />
+                  {data.access.role === 'nurse' && (
+                    <button type="button" onClick={() => setShowObservationForm(value => !value)}>+ {c.addRecord}</button>
+                  )}
+                </div>
+                {showObservationForm && (
+                  <div className="clinician-operation-form">
+                    <select value={observationType} onChange={event => setObservationType(event.target.value)}>
+                      <option value="assessment">Avaliação</option>
+                      <option value="intervention">Intervenção</option>
+                      <option value="handoff">Passagem de turno</option>
+                      <option value="follow_up">Follow-up</option>
+                    </select>
+                    <textarea placeholder={c.assessmentLabel} value={observationAssessment} onChange={event => setObservationAssessment(event.target.value)} />
+                    <textarea placeholder={c.recommendationLabel} value={observationRecommendation} onChange={event => setObservationRecommendation(event.target.value)} />
+                    <button type="button" disabled={operationSaving || !observationAssessment.trim()} onClick={createObservation}>{c.save}</button>
                   </div>
-                ))}
-              </div>
-            </section>
+                )}
+                <div className="clinician-record-list">
+                  {data.nursing_observations.map(item => (
+                    <article key={item.id}>
+                      <span className={`record-type ${item.observation_type}`}>{item.observation_type.replaceAll('_', ' ')}</span>
+                      <strong>{item.assessment}</strong>
+                      {item.recommendation && <p>{item.recommendation}</p>}
+                      {item.patient_response && <small>{item.patient_response}</small>}
+                      <time>{formatDate(item.created_at)}</time>
+                    </article>
+                  ))}
+                  {!data.nursing_observations.length && <Empty text={c.noData} />}
+                </div>
+              </section>
+
+              <section className="clinician-panel">
+                <div className="clinician-section-actions">
+                  <PanelTitle icon={<CheckCircle2 size={17} />} title={c.careTasks} meta={`${data.care_tasks.filter(item => item.status === 'open').length}`} />
+                  <button type="button" onClick={() => setShowTaskForm(value => !value)}>+ {c.newTask}</button>
+                </div>
+                {showTaskForm && (
+                  <div className="clinician-operation-form">
+                    <div className="clinician-form-row">
+                      <select value={taskRole} onChange={event => setTaskRole(event.target.value as 'doctor' | 'nurse')}>
+                        <option value="nurse">{c.roleNurse}</option>
+                        <option value="doctor">{c.roleDoctor}</option>
+                      </select>
+                      <select value={taskPriority} onChange={event => setTaskPriority(event.target.value)}>
+                        <option value="routine">Rotina</option>
+                        <option value="priority">Prioritário</option>
+                        <option value="urgent">Urgente</option>
+                      </select>
+                    </div>
+                    <input placeholder={c.newTask} value={taskTitle} onChange={event => setTaskTitle(event.target.value)} />
+                    <textarea placeholder={c.recommendationLabel} value={taskInstructions} onChange={event => setTaskInstructions(event.target.value)} />
+                    <button type="button" disabled={operationSaving || !taskTitle.trim()} onClick={createTask}>{c.save}</button>
+                  </div>
+                )}
+                <div className="clinician-task-list">
+                  {data.care_tasks.map(item => (
+                    <article key={item.id} className={item.status}>
+                      <span className={`task-priority ${item.priority}`}>{item.priority}</span>
+                      <div><strong>{item.title}</strong><small>{item.assigned_role} · {item.task_type.replaceAll('_', ' ')} · {formatDate(item.due_at || item.created_at)}</small></div>
+                      {item.status === 'open' && item.assigned_role === data.access.role && (
+                        <button type="button" disabled={operationSaving} onClick={() => completeTask(item)}>{c.complete}</button>
+                      )}
+                      {item.status === 'completed' && <CheckCircle2 size={17} color="#059669" />}
+                    </article>
+                  ))}
+                  {!data.care_tasks.length && <Empty text={c.noData} />}
+                </div>
+              </section>
+            </div>
+
             <section className="clinician-panel">
-              <PanelTitle icon={<FileText size={17} />} title={c.consents} meta={`${data.consents.length}`} />
-              <div className="clinician-list">
-                {data.consents.map(item => (
-                  <div key={item.type}><span className="list-icon green"><CheckCircle2 size={15} /></span><span><strong>{item.type.replaceAll('_', ' ')}</strong><small>{formatDate(item.accepted_at)}</small></span></div>
+              <PanelTitle icon={<Stethoscope size={17} />} title={c.escalationHistory} meta={`${data.care_escalations.length}`} />
+              <div className="clinician-escalation-history">
+                {data.care_escalations.map(item => (
+                  <article key={item.id}>
+                    <span className={`task-priority ${item.urgency}`}>{item.urgency}</span>
+                    <div><strong>{item.reason}</strong><p>{item.clinical_summary}</p><small>{formatDate(item.created_at)} → {item.status}</small></div>
+                    <span className={`escalation-status ${item.status}`}>{item.status}</span>
+                  </article>
                 ))}
+                {!data.care_escalations.length && <Empty text={c.noData} />}
               </div>
             </section>
+
+            <div className="clinician-detail-grid">
+              <section className="clinician-panel">
+                <PanelTitle icon={<Users size={17} />} title={c.capabilities} />
+                <div className="clinician-capabilities">
+                  {Object.entries(data.access.capabilities).map(([key, allowed]) => (
+                    <div key={key} className={allowed ? 'allowed' : 'restricted'}>
+                      {allowed ? <CheckCircle2 size={15} /> : <X size={15} />}<span>{key.replaceAll('_', ' ')}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <section className="clinician-panel">
+                <PanelTitle icon={<FileText size={17} />} title={c.consents} meta={`${data.consents.length}`} />
+                <div className="clinician-list">
+                  {data.consents.map(item => (
+                    <div key={item.type}><span className="list-icon green"><CheckCircle2 size={15} /></span><span><strong>{item.type.replaceAll('_', ' ')}</strong><small>{formatDate(item.accepted_at)}</small></span></div>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
         )}
       </main>

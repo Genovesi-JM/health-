@@ -1912,6 +1912,40 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .clinician-modal-result { margin-top: 0.65rem; padding: 0.65rem; border-radius: 9px; background: #ecfdf5; color: #047857; font-size: 0.65rem; font-weight: 700; }
 .clinician-modal-submit { position: static !important; display: flex !important; width: 100% !important; height: auto !important; margin-top: 0.75rem; padding: 0.72rem 0.9rem; align-items: center; justify-content: center; gap: 0.4rem; border: 0 !important; border-radius: 9px; background: #0f766e !important; color: #fff; font-weight: 800; cursor: pointer; }
 .clinician-modal-submit:disabled { cursor: not-allowed; opacity: 0.55; }
+.clinician-coordination-stack { display: grid; gap: 0.85rem; }
+.clinician-section-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.clinician-section-actions > button { flex: 0 0 auto; padding: 0.38rem 0.58rem; border: 1px solid #99f6e4; border-radius: 8px; background: #f0fdfa; color: #0f766e; font-size: 0.58rem; font-weight: 900; cursor: pointer; }
+.clinician-operation-form { display: grid; gap: 0.48rem; margin: 0.7rem 0; padding: 0.7rem; border: 1px solid #ccfbf1; border-radius: 10px; background: #f8fffe; }
+.clinician-operation-form input, .clinician-operation-form select, .clinician-operation-form textarea { width: 100%; padding: 0.58rem 0.65rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text-primary); font: inherit; font-size: 0.63rem; }
+.clinician-operation-form textarea { min-height: 70px; resize: vertical; }
+.clinician-operation-form > button { justify-self: end; padding: 0.48rem 0.85rem; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-size: 0.62rem; font-weight: 900; cursor: pointer; }
+.clinician-operation-form > button:disabled { opacity: 0.5; cursor: not-allowed; }
+.clinician-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+.clinician-record-list, .clinician-task-list, .clinician-escalation-history { display: grid; gap: 0.48rem; }
+.clinician-record-list article { position: relative; display: grid; gap: 0.25rem; padding: 0.7rem; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+.clinician-record-list article > strong { padding-right: 4.5rem; font-size: 0.67rem; line-height: 1.45; }
+.clinician-record-list article p { margin: 0; color: var(--text-secondary); font-size: 0.61rem; line-height: 1.45; }
+.clinician-record-list article small { color: #0f766e; font-size: 0.56rem; }
+.clinician-record-list article time { color: var(--text-muted); font-size: 0.52rem; }
+.record-type { position: absolute; top: 0.55rem; right: 0.55rem; padding: 0.2rem 0.42rem; border-radius: 999px; background: #ede9fe; color: #6d28d9; font-size: 0.48rem; font-weight: 900; text-transform: uppercase; }
+.record-type.intervention { background: #dbeafe; color: #1d4ed8; }
+.record-type.handoff { background: #fef3c7; color: #b45309; }
+.clinician-task-list article { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 0.55rem; align-items: center; padding: 0.62rem; border: 1px solid var(--border); border-radius: 10px; }
+.clinician-task-list article.completed { background: #f8fafc; opacity: 0.75; }
+.clinician-task-list article div { display: grid; gap: 0.12rem; }
+.clinician-task-list article strong { font-size: 0.65rem; }
+.clinician-task-list article small { color: var(--text-muted); font-size: 0.52rem; }
+.clinician-task-list article > button { padding: 0.35rem 0.5rem; border: 1px solid #a7f3d0; border-radius: 7px; background: #ecfdf5; color: #047857; font-size: 0.54rem; font-weight: 900; cursor: pointer; }
+.task-priority { width: fit-content; padding: 0.2rem 0.4rem; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: 0.48rem; font-weight: 900; text-transform: uppercase; }
+.task-priority.priority { background: #fef3c7; color: #b45309; }
+.task-priority.urgent, .task-priority.emergency { background: #fee2e2; color: #b91c1c; }
+.clinician-escalation-history article { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 0.65rem; align-items: start; padding: 0.65rem; border: 1px solid var(--border); border-radius: 10px; }
+.clinician-escalation-history strong { font-size: 0.65rem; }
+.clinician-escalation-history p { margin: 0.16rem 0; color: var(--text-secondary); font-size: 0.59rem; }
+.clinician-escalation-history small { color: var(--text-muted); font-size: 0.52rem; }
+.escalation-status { padding: 0.2rem 0.42rem; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: 0.48rem; font-weight: 900; text-transform: uppercase; }
+.escalation-status.accepted { background: #dbeafe; color: #1d4ed8; }
+.escalation-status.resolved { background: #dcfce7; color: #15803d; }
 
 .doctor-escalation-board { margin-bottom: 1rem; overflow: hidden; border: 1px solid #99f6e4; border-radius: 14px; background: linear-gradient(135deg,#f0fdfa 0%,#fff 72%); }
 .doctor-escalation-board > header { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem; border-bottom: 1px solid #ccfbf1; }

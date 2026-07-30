@@ -22,11 +22,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, UserProfile
 from app.health_models import (
+    CareEscalation,
+    ClinicalCareTask,
     Consultation,
     ConsultationMessage,
     DeviceReading,
     Doctor,
     FamilyMember,
+    NursingObservation,
     Patient,
     PatientConsent,
     PatientMedication,
@@ -164,6 +167,27 @@ def clinician_patient_360(
             FamilyMember.emergency_contact == True,
         )
         .limit(5)
+        .all()
+    )
+    nursing_observations = (
+        db.query(NursingObservation)
+        .filter(NursingObservation.patient_id == patient_id)
+        .order_by(NursingObservation.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    care_tasks = (
+        db.query(ClinicalCareTask)
+        .filter(ClinicalCareTask.patient_id == patient_id)
+        .order_by(ClinicalCareTask.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    escalations = (
+        db.query(CareEscalation)
+        .filter(CareEscalation.patient_id == patient_id)
+        .order_by(CareEscalation.created_at.desc())
+        .limit(30)
         .all()
     )
 
@@ -353,6 +377,55 @@ def clinician_patient_360(
             for item in prescription_requests
         ],
         "referrals": referrals,
+        "nursing_observations": [
+            {
+                "id": item.id,
+                "consultation_id": item.consultation_id,
+                "author_user_id": item.author_user_id,
+                "observation_type": item.observation_type,
+                "situation": item.situation,
+                "background": item.background,
+                "assessment": item.assessment,
+                "recommendation": item.recommendation,
+                "patient_response": item.patient_response,
+                "status": item.status,
+                "created_at": _iso(item.created_at),
+            }
+            for item in nursing_observations
+        ],
+        "care_tasks": [
+            {
+                "id": item.id,
+                "consultation_id": item.consultation_id,
+                "assigned_role": item.assigned_role,
+                "assigned_user_id": item.assigned_user_id,
+                "task_type": item.task_type,
+                "title": item.title,
+                "instructions": item.instructions,
+                "priority": item.priority,
+                "due_at": _iso(item.due_at),
+                "status": item.status,
+                "completion_note": item.completion_note,
+                "completed_at": _iso(item.completed_at),
+                "created_at": _iso(item.created_at),
+            }
+            for item in care_tasks
+        ],
+        "care_escalations": [
+            {
+                "id": item.id,
+                "consultation_id": item.consultation_id,
+                "urgency": item.urgency,
+                "reason": item.reason,
+                "clinical_summary": item.clinical_summary,
+                "status": item.status,
+                "assigned_doctor_id": item.assigned_doctor_id,
+                "created_at": _iso(item.created_at),
+                "accepted_at": _iso(item.accepted_at),
+                "resolved_at": _iso(item.resolved_at),
+            }
+            for item in escalations
+        ],
         "consents": [
             {"type": consent.consent_type, "accepted_at": _iso(consent.accepted_at)}
             for consent in consents

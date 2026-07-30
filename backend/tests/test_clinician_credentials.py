@@ -247,6 +247,75 @@ def test_pem_gateway_is_explicitly_preparation_only_without_credentials(client, 
     assert status.json()["mode"] == "preparation_only"
 
 
+def test_nursing_documentation_and_care_tasks_are_shared_in_patient_360(client, db_session):
+    nurse = _register(client, role="nurse", diploma_country="AO")
+    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    _verify_clinician(client, nurse)
+    _verify_clinician(client, doctor_auth)
+    doctor = db_session.query(Doctor).filter(Doctor.user_id == doctor_auth["user"]["id"]).first()
+
+    patient_auth = client.post("/auth/register", json={
+        "email": f"patient-care-{uuid.uuid4().hex[:8]}@example.com",
+        "password": "strong-pass",
+        "full_name": "Paciente Cuidados",
+        "sector_focus": "health",
+        "role": "patient",
+    }).json()
+    patient = db_session.query(Patient).filter(Patient.user_id == patient_auth["user"]["id"]).first()
+    consultation = Consultation(
+        patient_id=patient.id,
+        doctor_id=doctor.id,
+        specialty="clinica_geral",
+        status="in_progress",
+    )
+    db_session.add(consultation)
+    db_session.commit()
+
+    observation = client.post(
+        "/api/v1/clinical-operations/nursing/observations",
+        headers=_headers(nurse),
+        json={
+            "patient_id": patient.id,
+            "consultation_id": consultation.id,
+            "observation_type": "intervention",
+            "situation": "Paciente ansioso antes da teleconsulta.",
+            "assessment": "Sinais vitais registados e identidade confirmada.",
+            "recommendation": "Reavaliar pressão arterial em 30 minutos.",
+            "patient_response": "Compreendeu as orientações.",
+        },
+    )
+    assert observation.status_code == 201, observation.text
+
+    task = client.post(
+        "/api/v1/clinical-operations/care-tasks",
+        headers=_headers(doctor_auth),
+        json={
+            "patient_id": patient.id,
+            "consultation_id": consultation.id,
+            "assigned_role": "nurse",
+            "task_type": "reassessment",
+            "title": "Reavaliar pressão arterial",
+            "priority": "priority",
+        },
+    )
+    assert task.status_code == 201, task.text
+    completed = client.post(
+        f"/api/v1/clinical-operations/care-tasks/{task.json()['id']}/complete",
+        headers=_headers(nurse),
+        json={"completion_note": "Pressão arterial repetida e comunicada ao médico."},
+    )
+    assert completed.status_code == 200, completed.text
+    assert completed.json()["status"] == "completed"
+
+    workspace = client.get(
+        f"/api/v1/clinician/patients/{patient.id}/360",
+        headers=_headers(doctor_auth),
+    )
+    assert workspace.status_code == 200, workspace.text
+    assert workspace.json()["nursing_observations"][0]["observation_type"] == "intervention"
+    assert workspace.json()["care_tasks"][0]["status"] == "completed"
+
+
 def test_registration_rejects_incomplete_clinician_profile(client):
     response = client.post("/auth/register", json={
         "email": f"incomplete-{uuid.uuid4().hex[:8]}@example.com",
