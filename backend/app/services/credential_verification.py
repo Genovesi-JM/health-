@@ -7,6 +7,8 @@ from urllib.parse import urlparse
 
 COUNTRIES = {
     "AO": "Angola",
+    "US": "Estados Unidos",
+    "GB": "Reino Unido",
     "CU": "Cuba",
     "RU": "Rússia",
     "ES": "Espanha",
@@ -17,6 +19,20 @@ COUNTRIES = {
     "CD": "República Democrática do Congo",
     "ST": "São Tomé e Príncipe",
     "ZW": "Zimbabwe",
+    "ZA": "África do Sul", "NA": "Namíbia", "GW": "Guiné-Bissau",
+    "AT": "Áustria", "BE": "Bélgica", "BG": "Bulgária", "HR": "Croácia",
+    "CY": "Chipre", "CZ": "Chéquia", "DK": "Dinamarca", "EE": "Estónia",
+    "FI": "Finlândia", "FR": "França", "DE": "Alemanha", "GR": "Grécia",
+    "HU": "Hungria", "IE": "Irlanda", "IT": "Itália", "LV": "Letónia",
+    "LT": "Lituânia", "LU": "Luxemburgo", "MT": "Malta", "NL": "Países Baixos",
+    "PL": "Polónia", "RO": "Roménia", "SK": "Eslováquia", "SI": "Eslovénia",
+    "SE": "Suécia",
+}
+
+EU_COUNTRIES = {
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE",
+    "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT",
+    "RO", "SK", "SI", "ES", "SE",
 }
 
 # Official links are review aids, not an assertion that an API check succeeded.
@@ -81,6 +97,28 @@ REGISTRIES = {
         "url": "https://frdocabinet.obrnadzor.gov.ru/",
         "mode": "manual",
     },
+    ("GB", "doctor"): {
+        "authority": "General Medical Council",
+        "url": "https://www.gmc-uk.org/registration-and-licensing/our-registers",
+        "mode": "public_registry",
+    },
+    ("GB", "nurse"): {
+        "authority": "Nursing and Midwifery Council",
+        "url": "https://www.nmc.org.uk/registration/search-the-register/",
+        "mode": "public_registry",
+    },
+    ("US", "doctor"): {
+        "authority": "State medical board (FSMB directory)",
+        "url": "https://www.fsmb.org/contact-a-state-medical-board/",
+        "mode": "jurisdiction_registry",
+        "jurisdiction_required": True,
+    },
+    ("US", "nurse"): {
+        "authority": "State board of nursing / Nursys",
+        "url": "https://www.nursys.com/",
+        "mode": "jurisdiction_registry",
+        "jurisdiction_required": True,
+    },
 }
 
 ALLOWED_REGISTRY_DOMAINS = {
@@ -98,11 +136,20 @@ def normalise_country(value: str | None) -> str:
 
 
 def registry_for(country: str, profession: str) -> dict:
-    return REGISTRIES.get((country, profession), {
+    if (country, profession) in REGISTRIES:
+        return REGISTRIES[(country, profession)]
+    if country in EU_COUNTRIES:
+        return {
+            "authority": "Autoridade competente do país de exercício",
+            "url": "https://ec.europa.eu/growth/tools-databases/regprof/",
+            "mode": "eu_competent_authority",
+            "automatic_recognition_possible": profession in {"doctor", "nurse"},
+        }
+    return {
         "authority": "Autoridade profissional nacional competente",
         "url": None,
         "mode": "manual",
-    })
+    }
 
 
 def required_evidence(credential) -> list[str]:
@@ -125,6 +172,9 @@ def run_automated_checks(credential, evidence_kinds: set[str]) -> tuple[list[dic
         "Número de licença com formato válido")
     add("authority_present", len((credential.issuing_authority or "").strip()) >= 2,
         "Autoridade emissora informada")
+    if credential.licence_country == "US":
+        add("us_licence_jurisdiction", len((credential.licence_jurisdiction or "").strip()) >= 2,
+            "Estado ou jurisdição da licença dos EUA informado")
     add("diploma_present", len((credential.diploma_institution or "").strip()) >= 2,
         "Instituição e diploma informados")
     if credential.graduation_year:

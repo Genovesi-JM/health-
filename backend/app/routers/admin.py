@@ -1302,7 +1302,7 @@ def create_doctor_invite(
     return result
 
 
-@router.get("/doctor-invites", response_model=list[DoctorInviteOut])
+@router.get("/doctor-invites", response_model=List[DoctorInviteOut])
 def list_doctor_invites(db: Session = Depends(get_db)):
     """List all doctor invites (admin only)."""
     frontend_base = getattr(_settings, "frontend_url", "https://genovesi-jm.github.io/health-")
@@ -1335,7 +1335,7 @@ from app.health_schemas import (  # noqa: E402
 )
 
 
-@router.get("/doctor-applications", response_model=list[_DocAppOut])
+@router.get("/doctor-applications", response_model=List[_DocAppOut])
 def list_doctor_applications(status: str | None = Query(None), db: Session = Depends(get_db)):
     """List partner applications (admin), newest first."""
     q = db.query(_DocApp)

@@ -6,6 +6,11 @@ import { useAuth } from '../AuthContext';
 import { apiErrorMessage } from '../utils/apiError';
 
 type Evidence = { id: string; kind: string; original_filename: string; size_bytes: number };
+type ProviderCheck = {
+  id: string; provider: 'azure' | 'persona' | 'dataflow'; check_type: string; status: string;
+  evidence_id?: string; launch_url?: string; error_message?: string;
+  extracted_data?: Record<string, { value?: string | number; confidence?: number }>;
+};
 type Credential = {
   profession: 'doctor' | 'nurse'; legal_name: string; status: string; automated_score: number;
   practice_country: string; licence_country: string; diploma_country: string;
@@ -13,6 +18,7 @@ type Credential = {
   missing_evidence: string[]; automated_checks: { code: string; passed: boolean; label: string }[];
   registry?: { authority: string; url?: string; mode: string };
   review_notes?: string; rejection_reason?: string;
+  provider_checks: ProviderCheck[];
 };
 
 const LABELS: Record<string, string> = {
@@ -29,6 +35,8 @@ export default function ProfessionalVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [providerWorking, setProviderWorking] = useState(false);
+  const [providerConsent, setProviderConsent] = useState(false);
   const [error, setError] = useState('');
 
   const load = () => {
@@ -71,6 +79,28 @@ export default function ProfessionalVerificationPage() {
       setError(apiErrorMessage(e, 'O processo ainda precisa de informação.'));
       load();
     } finally { setSubmitting(false); }
+  };
+
+  const runProviders = async () => {
+    setProviderWorking(true); setError('');
+    try {
+      const res = await api.post('/api/v1/credentials/me/providers/start', {
+        consent: providerConsent, providers: ['azure', 'persona', 'dataflow'],
+      });
+      setCredential(res.data);
+    } catch (e) {
+      setError(apiErrorMessage(e, 'Não foi possível iniciar a verificação assistida.'));
+    } finally { setProviderWorking(false); }
+  };
+
+  const refreshProviders = async () => {
+    setProviderWorking(true); setError('');
+    try {
+      const res = await api.post('/api/v1/credentials/me/providers/refresh');
+      setCredential(res.data);
+    } catch (e) {
+      setError(apiErrorMessage(e, 'Não foi possível actualizar as verificações.'));
+    } finally { setProviderWorking(false); }
   };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
@@ -137,6 +167,66 @@ export default function ProfessionalVerificationPage() {
               );
             })}
           </div>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <h3 style={{ margin: '0 0 .25rem' }}>Verificação automatizada segura</h3>
+          <p style={{ margin: '0 0 1rem', color: 'var(--text-muted)', fontSize: '.82rem' }}>
+            Azure lê os campos dos documentos, Persona valida identidade e sinais de fraude, e DataFlow prepara a verificação na fonte emissora.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: '.7rem' }}>
+            {([
+              ['azure', 'Azure OCR', 'Leitura de diploma e licença'],
+              ['persona', 'Persona', 'Identidade e fraude documental'],
+              ['dataflow', 'DataFlow', 'Verificação primária na fonte'],
+            ] as const).map(([provider, title, description]) => {
+              const checks = credential.provider_checks?.filter(item => item.provider === provider) || [];
+              const active = checks.find(item => item.status === 'action_required') || checks[0];
+              const status = !active ? 'Não iniciado' : active.status === 'not_configured'
+                ? 'Configuração preparada' : active.status.replaceAll('_', ' ');
+              return (
+                <div key={provider} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '.85rem' }}>
+                  <strong style={{ fontSize: '.86rem' }}>{title}</strong>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '.74rem', minHeight: 34, marginTop: 3 }}>{description}</div>
+                  <span className={`badge ${active?.status === 'completed' ? 'badge-success' : active?.status === 'failed' ? 'badge-danger' : 'badge-warning'}`}>{status}</span>
+                  {active?.launch_url && (
+                    <a className="btn btn-secondary btn-sm" href={active.launch_url} target="_blank" rel="noreferrer" style={{ marginTop: '.6rem', width: '100%', justifyContent: 'center' }}>
+                      Continuar na Persona <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {credential.provider_checks?.some(item => Object.keys(item.extracted_data || {}).length) && (
+            <div style={{ marginTop: '1rem', padding: '.8rem', borderRadius: 9, background: 'var(--bg-subtle,#f8fafc)' }}>
+              <strong style={{ fontSize: '.8rem' }}>Campos lidos para confirmação</strong>
+              {credential.provider_checks.flatMap(item => Object.entries(item.extracted_data || {}).map(([field, value]) => (
+                <div key={`${item.id}-${field}`} style={{ fontSize: '.76rem', marginTop: 5 }}>
+                  {field}: <strong>{String(value.value ?? '')}</strong>
+                  {typeof value.confidence === 'number' && <span style={{ color: 'var(--text-muted)' }}> · {Math.round(value.confidence * 100)}% confiança</span>}
+                </div>
+              )))}
+            </div>
+          )}
+          {!credential.provider_checks?.length ? (
+            <>
+              <label style={{ display: 'flex', gap: '.55rem', alignItems: 'flex-start', marginTop: '1rem', fontSize: '.78rem' }}>
+                <input type="checkbox" checked={providerConsent} onChange={e => setProviderConsent(e.target.checked)} />
+                Autorizo o envio seguro dos meus dados e documentos aos verificadores indicados para esta finalidade.
+              </label>
+              <button className="btn btn-secondary" style={{ marginTop: '.75rem' }} disabled={!providerConsent || providerWorking || !credential.evidence.length} onClick={runProviders}>
+                {providerWorking ? <Loader2 size={14} className="spin" /> : <ShieldCheck size={14} />} Iniciar as 3 verificações
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-secondary btn-sm" style={{ marginTop: '1rem' }} disabled={providerWorking} onClick={refreshProviders}>
+              {providerWorking ? <Loader2 size={14} className="spin" /> : null} Actualizar resultados
+            </button>
+          )}
+          <p style={{ fontSize: '.72rem', color: 'var(--text-muted)', margin: '.8rem 0 0' }}>
+            Um resultado automático nunca aprova uma licença: a decisão final continua a exigir revisão humana.
+          </p>
         </div>
 
         <div className="card" style={{ padding: '1.25rem' }}>

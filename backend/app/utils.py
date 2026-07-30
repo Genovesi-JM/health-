@@ -33,8 +33,11 @@ def hash_password(password: str) -> str:
     # to handle multi-byte UTF-8 properly.
     if password is None:
         password = ""
-    pw_truncated = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
-    return pwd_context.hash(pw_truncated)
+    pw_bytes = password.encode("utf-8")[:72]
+    # bcrypt 5 removed behaviour Passlib 1.7 uses during backend detection.
+    # Calling bcrypt directly keeps the same standard $2b$ hash format and
+    # remains compatible with existing hashes.
+    return _bcrypt.hashpw(pw_bytes, _bcrypt.gensalt()).decode("ascii")
 
 
 def _is_legacy_sha256(s: str) -> bool:
@@ -55,7 +58,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         # bcrypt hashes produced by passlib start with $2b$ or $2a$
         if hashed_password.startswith("$2"):
-            return pwd_context.verify(plain_password, hashed_password)
+            return _bcrypt.checkpw(
+                plain_password.encode("utf-8")[:72],
+                hashed_password.encode("ascii"),
+            )
         # support legacy SHA256 hex digests
         if _is_legacy_sha256(hashed_password):
             sha = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()

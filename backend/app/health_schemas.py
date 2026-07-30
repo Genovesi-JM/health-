@@ -180,6 +180,7 @@ class DoctorRegisterWithToken(BaseModel):
     license_number: str
     practice_country: str = "AO"
     licence_country: str = "AO"
+    licence_jurisdiction: Optional[str] = None
     issuing_authority: str
     diploma_country: str = "AO"
     diploma_institution: str

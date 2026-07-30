@@ -83,6 +83,20 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4o-mini"
 
+    # Credential verification providers. Empty values keep a fully testable,
+    # non-networked "configuration required" workflow.
+    azure_document_intelligence_endpoint: Optional[str] = None
+    azure_document_intelligence_key: Optional[str] = None
+    azure_document_model_id: str = "kaya-credential-v1"
+    azure_document_api_version: str = "2024-11-30"
+    persona_api_key: Optional[str] = None
+    persona_inquiry_template_id: Optional[str] = None
+    persona_webhook_secret: Optional[str] = None
+    dataflow_submit_url: Optional[str] = None
+    dataflow_api_key: Optional[str] = None
+    dataflow_webhook_secret: Optional[str] = None
+    credential_provider_timeout_seconds: float = 20.0
+
     # Pydantic v2 settings: accept extra env vars (ignore unknown variables)
     model_config = {
         "env_file": Path(__file__).resolve().parent.parent / ".env",

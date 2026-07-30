@@ -149,6 +149,7 @@ class ClinicianCredential(Base):
     nationality_country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
     practice_country: Mapped[str] = mapped_column(String(2), nullable=False, default="AO")
     licence_country: Mapped[str] = mapped_column(String(2), nullable=False)
+    licence_jurisdiction: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     issuing_authority: Mapped[str] = mapped_column(String(200), nullable=False)
     licence_number: Mapped[str] = mapped_column(String(100), nullable=False)
     licence_expiry_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
@@ -158,6 +159,7 @@ class ClinicianCredential(Base):
     graduation_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     specialization: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     registry_profile_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    verification_consent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="draft", index=True)
     automated_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -172,6 +174,9 @@ class ClinicianCredential(Base):
 
     user = relationship("User", foreign_keys=[user_id], backref="clinician_credential")
     evidence = relationship("CredentialEvidence", back_populates="credential", cascade="all, delete-orphan")
+    provider_checks = relationship(
+        "CredentialProviderCheck", back_populates="credential", cascade="all, delete-orphan",
+    )
 
 
 class CredentialEvidence(Base):
@@ -194,6 +199,46 @@ class CredentialEvidence(Base):
 
     __table_args__ = (
         Index("ix_credential_evidence_credential_kind", "credential_id", "kind"),
+    )
+
+
+class CredentialProviderCheck(Base):
+    """Auditable status for an external credential-verification layer."""
+    __tablename__ = "credential_provider_checks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    credential_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("clinician_credentials.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    evidence_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("credential_evidence.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+    provider: Mapped[str] = mapped_column(String(30), nullable=False)
+    check_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="queued")
+    external_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    operation_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    launch_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    extracted_data_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    result_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    requested_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    credential = relationship("ClinicianCredential", back_populates="provider_checks")
+    evidence = relationship("CredentialEvidence")
+
+    __table_args__ = (
+        Index(
+            "ix_credential_provider_check_lookup",
+            "credential_id", "provider", "evidence_id", "status",
+        ),
     )
 
 

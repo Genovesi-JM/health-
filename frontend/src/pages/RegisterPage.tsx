@@ -10,9 +10,17 @@ import { apiErrorMessage } from '../utils/apiError';
 
 const REQUIRED_CONSENTS = ['terms_of_service', 'privacy_policy', 'medical_disclaimer', 'health_data_processing', 'telemedicine_consent'] as const;
 const COUNTRIES = [
-  ['AO', 'Angola'], ['PT', 'Portugal'], ['ES', 'Espanha'], ['CU', 'Cuba'],
+  ['AO', 'Angola'], ['US', 'Estados Unidos'], ['GB', 'Reino Unido'],
+  ['PT', 'Portugal'], ['ES', 'Espanha'], ['CU', 'Cuba'],
   ['RU', 'Rússia'], ['BR', 'Brasil'], ['CV', 'Cabo Verde'], ['MZ', 'Moçambique'],
   ['CD', 'República Democrática do Congo'], ['ST', 'São Tomé e Príncipe'], ['ZW', 'Zimbabwe'],
+  ['AT', 'Áustria'], ['BE', 'Bélgica'], ['BG', 'Bulgária'], ['HR', 'Croácia'],
+  ['CY', 'Chipre'], ['CZ', 'Chéquia'], ['DK', 'Dinamarca'], ['EE', 'Estónia'],
+  ['FI', 'Finlândia'], ['FR', 'França'], ['DE', 'Alemanha'], ['GR', 'Grécia'],
+  ['HU', 'Hungria'], ['IE', 'Irlanda'], ['IT', 'Itália'], ['LV', 'Letónia'],
+  ['LT', 'Lituânia'], ['LU', 'Luxemburgo'], ['MT', 'Malta'], ['NL', 'Países Baixos'],
+  ['PL', 'Polónia'], ['RO', 'Roménia'], ['SK', 'Eslováquia'], ['SI', 'Eslovénia'],
+  ['SE', 'Suécia'],
 ] as const;
 const countryName = (code: string) => COUNTRIES.find(([value]) => value === code)?.[1] || code;
 const CountryOptions = () => <>{COUNTRIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</>;
@@ -33,6 +41,7 @@ export default function RegisterPage() {
   const [diplomaCountry, setDiplomaCountry] = useState('AO');
   const [issuingAuthority, setIssuingAuthority] = useState('');
   const [licenceNumber, setLicenceNumber] = useState('');
+  const [licenceJurisdiction, setLicenceJurisdiction] = useState('');
   const [diplomaInstitution, setDiplomaInstitution] = useState('');
   const [degreeTitle, setDegreeTitle] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
@@ -90,6 +99,7 @@ export default function RegisterPage() {
           diploma_country: diplomaCountry,
           issuing_authority: issuingAuthority,
           licence_number: licenceNumber,
+          licence_jurisdiction: licenceJurisdiction || null,
           diploma_institution: diplomaInstitution,
           degree_title: degreeTitle,
           graduation_year: graduationYear ? Number(graduationYear) : null,
@@ -195,6 +205,10 @@ export default function RegisterPage() {
                 value={issuingAuthority} onChange={e => setIssuingAuthority(e.target.value)} required />
               <input className="form-input" style={{ marginTop: '.7rem' }} placeholder="Número da cédula ou licença profissional *"
                 value={licenceNumber} onChange={e => setLicenceNumber(e.target.value)} required />
+              {licenceCountry === 'US' && (
+                <input className="form-input" style={{ marginTop: '.7rem' }} placeholder="Estado / jurisdição da licença dos EUA *"
+                  value={licenceJurisdiction} onChange={e => setLicenceJurisdiction(e.target.value)} required />
+              )}
               <input className="form-input" style={{ marginTop: '.7rem' }} placeholder="Instituição do diploma *"
                 value={diplomaInstitution} onChange={e => setDiplomaInstitution(e.target.value)} required />
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '.7rem', marginTop: '.7rem' }}>

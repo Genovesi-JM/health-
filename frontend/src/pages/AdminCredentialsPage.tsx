@@ -9,6 +9,11 @@ type Dossier = {
   missing_evidence: string[]; automated_checks: { code: string; passed: boolean; label: string }[];
   evidence: { id: string; kind: string; original_filename: string; size_bytes: number }[];
   registry?: { authority: string; url?: string; mode: string };
+  licence_jurisdiction?: string;
+  provider_checks: {
+    id: string; provider: string; status: string; error_message?: string;
+    extracted_data?: Record<string, { value?: string | number; confidence?: number }>;
+  }[];
 };
 
 const statusLabel: Record<string, string> = {
@@ -103,7 +108,7 @@ export default function AdminCredentialsPage() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '.7rem', margin: '1rem 0' }}>
-                {[['Exercício', selected.practice_country], ['Licença', selected.licence_country], ['Diploma', selected.diploma_country], ['Formação', `${selected.degree_title} — ${selected.diploma_institution}`]].map(([label, value]) => (
+                {[['Exercício', selected.practice_country], ['Licença', `${selected.licence_country}${selected.licence_jurisdiction ? ` · ${selected.licence_jurisdiction}` : ''}`], ['Diploma', selected.diploma_country], ['Formação', `${selected.degree_title} — ${selected.diploma_institution}`]].map(([label, value]) => (
                   <div key={label} style={{ padding: '.7rem', background: 'var(--bg-subtle,#f8fafc)', borderRadius: 8 }}>
                     <div style={{ fontSize: '.68rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{label}</div>
                     <strong style={{ fontSize: '.8rem' }}>{value}</strong>
@@ -124,6 +129,25 @@ export default function AdminCredentialsPage() {
                   {check.passed ? <CheckCircle2 size={15} color="#059669" /> : <AlertTriangle size={15} color="#d97706" />} {check.label}
                 </div>
               ))}
+
+              <h3 style={{ fontSize: '.9rem', marginTop: '1rem' }}>Fornecedores externos</h3>
+              {selected.provider_checks?.length ? selected.provider_checks.map(check => (
+                <div key={check.id} style={{ padding: '.7rem', border: '1px solid var(--border)', borderRadius: 8, marginBottom: '.55rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                    <strong style={{ fontSize: '.8rem', textTransform: 'capitalize' }}>{check.provider}</strong>
+                    <span className={`badge ${check.status === 'completed' ? 'badge-success' : check.status === 'failed' ? 'badge-danger' : 'badge-warning'}`}>
+                      {check.status.replaceAll('_', ' ')}
+                    </span>
+                  </div>
+                  {check.error_message && <div style={{ color: '#b91c1c', fontSize: '.72rem', marginTop: 5 }}>{check.error_message}</div>}
+                  {Object.entries(check.extracted_data || {}).map(([field, value]) => (
+                    <div key={field} style={{ color: 'var(--text-muted)', fontSize: '.72rem', marginTop: 4 }}>
+                      {field}: <strong>{String(value.value ?? '')}</strong>
+                      {typeof value.confidence === 'number' ? ` · ${Math.round(value.confidence * 100)}%` : ''}
+                    </div>
+                  ))}
+                </div>
+              )) : <p style={{ color: 'var(--text-muted)', fontSize: '.78rem' }}>Ainda não iniciados.</p>}
 
               {selected.status !== 'verified' && selected.status !== 'suspended' && (
                 <div style={{ display: 'flex', gap: '.6rem', marginTop: '1.2rem', flexWrap: 'wrap' }}>

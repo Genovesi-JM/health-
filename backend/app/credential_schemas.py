@@ -12,6 +12,7 @@ class CredentialUpsert(BaseModel):
     nationality_country: Optional[str] = None
     practice_country: str = "AO"
     licence_country: str
+    licence_jurisdiction: Optional[str] = Field(default=None, max_length=120)
     issuing_authority: str = Field(min_length=2, max_length=200)
     licence_number: str = Field(min_length=2, max_length=100)
     licence_expiry_date: Optional[str] = None
@@ -26,6 +27,11 @@ class CredentialUpsert(BaseModel):
 class CredentialDecision(BaseModel):
     action: str
     notes: Optional[str] = None
+
+
+class ProviderStartRequest(BaseModel):
+    consent: bool
+    providers: list[str] = Field(default_factory=lambda: ["azure", "persona", "dataflow"])
 
 
 class EvidenceOut(BaseModel):
@@ -48,6 +54,7 @@ class CredentialOut(BaseModel):
     nationality_country: Optional[str] = None
     practice_country: str
     licence_country: str
+    licence_jurisdiction: Optional[str] = None
     issuing_authority: str
     licence_number: str
     licence_expiry_date: Optional[str] = None
@@ -64,6 +71,8 @@ class CredentialOut(BaseModel):
     rejection_reason: Optional[str] = None
     submitted_at: Optional[datetime] = None
     verified_at: Optional[datetime] = None
+    verification_consent_at: Optional[datetime] = None
+    provider_checks: list[dict] = Field(default_factory=list)
     evidence: list[EvidenceOut] = Field(default_factory=list)
     registry: Optional[dict] = None
     missing_evidence: list[str] = Field(default_factory=list)

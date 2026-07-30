@@ -1,10 +1,19 @@
 import uuid
+import hashlib
+import hmac
+import json
+import time
 from urllib.parse import parse_qs, urlparse
+
+from app.config import settings
+from app.services.credential_providers import extract_azure_fields
 
 
 def _register(client, role="doctor", diploma_country="PT"):
     email = f"{role}-{uuid.uuid4().hex[:8]}@example.com"
-    response = client.post("/auth/register", json={
+    response = client.post("/auth/register", headers={
+        "X-Forwarded-For": f"198.51.100.{int(uuid.uuid4().hex[:2], 16)}",
+    }, json={
         "email": email,
         "password": "strong-pass",
         "full_name": "Profissional Teste",
@@ -130,3 +139,111 @@ def test_nurse_invite_creates_nurse_dossier(client):
     assert dossier.status_code == 200
     assert dossier.json()["profession"] == "nurse"
     assert "recognition" in dossier.json()["missing_evidence"]
+
+
+def test_country_requirements_include_us_uk_and_all_eu_members(client):
+    response = client.get(
+        "/api/v1/credentials/requirements",
+        params={"profession": "doctor", "practice_country": "DE", "licence_country": "DE", "diploma_country": "FR"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    codes = {item["code"] for item in body["countries"]}
+    assert {"US", "GB", "DE", "FR", "PT", "ES", "SE", "MT"}.issubset(codes)
+    assert body["eu_coordinated_recognition"] is True
+    assert body["registry"]["mode"] == "eu_competent_authority"
+    assert "recognition" in body["required_evidence"]
+
+
+def test_us_licence_requires_state_jurisdiction(client):
+    auth = _register(client)
+    dossier = client.get("/api/v1/credentials/me", headers=_headers(auth)).json()
+    update = {
+        key: dossier.get(key) for key in (
+            "profession", "legal_name", "nationality_country", "practice_country",
+            "issuing_authority", "licence_number", "licence_expiry_date",
+            "diploma_country", "diploma_institution", "degree_title", "graduation_year",
+            "specialization", "registry_profile_url",
+        )
+    }
+    update["licence_country"] = "US"
+    update["licence_jurisdiction"] = None
+    rejected = client.put("/api/v1/credentials/me", headers=_headers(auth), json=update)
+    assert rejected.status_code == 422
+    update["licence_jurisdiction"] = "California"
+    accepted = client.put("/api/v1/credentials/me", headers=_headers(auth), json=update)
+    assert accepted.status_code == 200
+    assert accepted.json()["licence_jurisdiction"] == "California"
+
+
+def test_provider_start_requires_consent_and_is_idempotent_without_keys(client):
+    auth = _register(client, diploma_country="AO")
+    assert _upload(client, auth, "professional_card").status_code == 200
+    denied = client.post(
+        "/api/v1/credentials/me/providers/start",
+        headers=_headers(auth),
+        json={"consent": False, "providers": ["azure", "persona", "dataflow"]},
+    )
+    assert denied.status_code == 422
+
+    started = client.post(
+        "/api/v1/credentials/me/providers/start",
+        headers=_headers(auth),
+        json={"consent": True, "providers": ["azure", "persona", "dataflow"]},
+    )
+    assert started.status_code == 200, started.text
+    checks = started.json()["provider_checks"]
+    assert {item["provider"] for item in checks} == {"azure", "persona", "dataflow"}
+    assert all(item["status"] == "not_configured" for item in checks)
+
+    repeated = client.post(
+        "/api/v1/credentials/me/providers/start",
+        headers=_headers(auth),
+        json={"consent": True, "providers": ["azure", "persona", "dataflow"]},
+    )
+    assert repeated.status_code == 200
+    assert len(repeated.json()["provider_checks"]) == len(checks)
+
+
+def test_azure_field_parser_keeps_value_and_confidence():
+    result = extract_azure_fields({
+        "analyzeResult": {"documents": [{"fields": {
+            "LicenceNumber": {"valueString": "GMC-123", "confidence": 0.98},
+            "IssueDate": {"valueDate": "2026-01-01", "confidence": 0.91},
+        }}]},
+    })
+    assert result["LicenceNumber"] == {"value": "GMC-123", "confidence": 0.98}
+    assert result["IssueDate"]["value"] == "2026-01-01"
+
+
+def test_persona_webhook_signature_is_required(client, db_session):
+    previous = settings.persona_webhook_secret
+    settings.persona_webhook_secret = "test-webhook-secret"
+    try:
+        raw = json.dumps({"data": {"id": "evt_test", "attributes": {
+            "name": "inquiry.completed",
+            "payload": {"data": {"id": "inq_missing"}},
+        }}}).encode()
+        invalid = client.post(
+            "/api/v1/credentials/webhooks/persona",
+            content=raw,
+            headers={"Content-Type": "application/json", "Persona-Signature": "t=1,v1=bad"},
+        )
+        assert invalid.status_code == 401
+        timestamp = str(int(time.time()))
+        digest = hmac.new(
+            settings.persona_webhook_secret.encode(),
+            timestamp.encode() + b"." + raw,
+            hashlib.sha256,
+        ).hexdigest()
+        valid = client.post(
+            "/api/v1/credentials/webhooks/persona",
+            content=raw,
+            headers={
+                "Content-Type": "application/json",
+                "Persona-Signature": f"t={timestamp},v1={digest}",
+            },
+        )
+        assert valid.status_code == 200
+    finally:
+        settings.persona_webhook_secret = previous

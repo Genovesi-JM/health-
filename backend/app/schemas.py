@@ -1,7 +1,7 @@
 from __future__ import annotations
 """Pydantic schemas for request/response models."""
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -54,6 +54,7 @@ class RegisterRequest(BaseModel):
     # account creation because registration itself is JSON, not multipart.
     practice_country: Optional[str] = None
     licence_country: Optional[str] = None
+    licence_jurisdiction: Optional[str] = None
     issuing_authority: Optional[str] = None
     licence_number: Optional[str] = None
     diploma_country: Optional[str] = None
@@ -155,7 +156,7 @@ class MeResponse(BaseModel):
 class KPIItem(BaseModel):
     id: str
     label: str
-    value: float | int | str
+    value: Union[float, int, str]
     unit: Optional[str] = None
     status: Optional[str] = None  # ok, warning, critical
     trend: Optional[str] = None   # up, down, stable

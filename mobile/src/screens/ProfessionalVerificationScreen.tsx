@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,10 @@ type Credential = {
   legal_name: string; profession: string; status: string; automated_score: number;
   practice_country: string; diploma_country: string; licence_country: string;
   evidence: Evidence[]; missing_evidence: string[];
+  provider_checks: {
+    id: string; provider: string; status: string; launch_url?: string;
+    extracted_data?: Record<string, { value?: string | number; confidence?: number }>;
+  }[];
 };
 
 const LABELS: Record<string, string> = {
@@ -23,6 +27,7 @@ export default function ProfessionalVerificationScreen() {
   const [data, setData] = useState<Credential | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState('');
+  const [providerConsent, setProviderConsent] = useState(false);
 
   const load = async () => {
     try {
@@ -78,6 +83,29 @@ export default function ProfessionalVerificationScreen() {
     } finally { setWorking(''); }
   };
 
+  const startProviders = async () => {
+    setWorking('providers');
+    try {
+      const response = await api.post('/api/v1/credentials/me/providers/start', {
+        consent: providerConsent,
+        providers: ['azure', 'persona', 'dataflow'],
+      });
+      setData(response.data);
+    } catch (error: any) {
+      Alert.alert('Verification', error.response?.data?.detail ?? 'Could not start provider checks.');
+    } finally { setWorking(''); }
+  };
+
+  const refreshProviders = async () => {
+    setWorking('providers');
+    try {
+      const response = await api.post('/api/v1/credentials/me/providers/refresh');
+      setData(response.data);
+    } catch (error: any) {
+      Alert.alert('Verification', error.response?.data?.detail ?? 'Could not refresh checks.');
+    } finally { setWorking(''); }
+  };
+
   if (loading) return <View style={styles.center}><ActivityIndicator color="#0d9488" /></View>;
   if (!data) return <View style={styles.center}><Text>Credential profile unavailable.</Text><TouchableOpacity onPress={logout}><Text style={styles.link}>Sign out</Text></TouchableOpacity></View>;
   const locked = ['pending_review', 'verified', 'suspended'].includes(data.status);
@@ -113,6 +141,46 @@ export default function ProfessionalVerificationScreen() {
       })}
       <Text style={styles.privacy}>Accepted here: JPG/PNG up to 10 MB. PDF documents can also be uploaded in the KAYA web app. Evidence is private.</Text>
 
+      <Text style={styles.section}>AUTOMATED VERIFICATION</Text>
+      <View style={styles.statusCard}>
+        {[
+          ['azure', 'Azure document reading'],
+          ['persona', 'Persona identity & fraud'],
+          ['dataflow', 'DataFlow primary source'],
+        ].map(([provider, label]) => {
+          const check = data.provider_checks?.find(item => item.provider === provider);
+          return (
+            <View key={provider} style={styles.providerRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.documentTitle}>{label}</Text>
+                <Text style={styles.documentMeta}>{check ? check.status.replace(/_/g, ' ') : 'Not started'}</Text>
+              </View>
+              {check?.launch_url && (
+                <TouchableOpacity style={styles.uploadButton} onPress={() => Linking.openURL(check.launch_url!)}>
+                  <Text style={styles.uploadText}>Continue</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })}
+        {!data.provider_checks?.length ? (
+          <>
+            <View style={styles.consentRow}>
+              <Switch value={providerConsent} onValueChange={setProviderConsent} trackColor={{ true: '#5eead4' }} />
+              <Text style={styles.consentText}>I consent to securely share my documents with these verification providers for this purpose.</Text>
+            </View>
+            <TouchableOpacity style={[styles.submit, !providerConsent && styles.disabled]} onPress={startProviders} disabled={!providerConsent || !!working}>
+              {working === 'providers' ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Start all 3 checks</Text>}
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity style={styles.uploadButton} onPress={refreshProviders} disabled={!!working}>
+            {working === 'providers' ? <ActivityIndicator size="small" color="#0d9488" /> : <Text style={styles.uploadText}>Refresh results</Text>}
+          </TouchableOpacity>
+        )}
+        <Text style={styles.privacy}>Automated results support review; they never approve a professional licence.</Text>
+      </View>
+
       {!locked && <TouchableOpacity style={[styles.submit, !complete && styles.disabled]} onPress={submit} disabled={!complete || !!working}>
         {working === 'submit' ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Submit for review</Text>}
       </TouchableOpacity>}
@@ -143,6 +211,9 @@ const styles = StyleSheet.create({
   uploadButton: { paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#ecfdf5', borderRadius: 8 },
   uploadText: { color: '#0d9488', fontWeight: '700', fontSize: 12 },
   privacy: { color: '#64748b', fontSize: 11, lineHeight: 16, marginTop: 3 },
+  providerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 14 },
+  consentText: { flex: 1, color: '#475569', fontSize: 11, lineHeight: 16 },
   submit: { backgroundColor: '#0d9488', padding: 15, borderRadius: 11, alignItems: 'center', marginTop: 20 },
   disabled: { backgroundColor: '#94a3b8' },
   submitText: { color: '#fff', fontWeight: '700', fontSize: 15 },

@@ -4,13 +4,16 @@ import hashlib
 import json
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, Response, UploadFile
 from sqlalchemy.orm import Session, joinedload
 
-from app.credential_schemas import CredentialDecision, CredentialUpsert
+from app.credential_schemas import CredentialDecision, CredentialUpsert, ProviderStartRequest
+from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
-from app.health_models import ClinicianCredential, CredentialEvidence, Doctor
+from app.health_models import (
+    ClinicianCredential, CredentialEvidence, CredentialProviderCheck, Doctor,
+)
 from app.models import User
 from app.rbac import require_admin_or_support
 from app.services.credential_verification import (
@@ -21,13 +24,28 @@ from app.services.credential_verification import (
     run_automated_checks,
 )
 from app.services.health_storage import get_health_storage
+from app.services.credential_providers import (
+    ACTIVE_STATUSES,
+    dataflow_event_update,
+    persona_event_update,
+    refresh_azure,
+    safe_json,
+    serialize_check,
+    start_azure,
+    start_dataflow,
+    start_persona,
+    verify_simple_hmac,
+    verify_timestamped_hmac,
+)
 
 router = APIRouter(prefix="/api/v1/credentials", tags=["clinician-credentials"])
 
 ALLOWED_PROFESSIONS = {"doctor", "nurse"}
 ALLOWED_EVIDENCE = {
-    "professional_card", "diploma", "recognition", "local_registration", "good_standing", "other",
+    "professional_card", "diploma", "recognition", "local_registration", "good_standing",
+    "eu_professional_card", "language_certificate", "professional_liability", "other",
 }
+ALLOWED_PROVIDERS = {"azure", "persona", "dataflow"}
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MIME_SIGNATURES = {
     "application/pdf": (b"%PDF-",),
@@ -51,6 +69,8 @@ def _normalise_payload(body: CredentialUpsert) -> dict:
         raise HTTPException(422, str(exc))
     if data["registry_profile_url"] and not data["registry_profile_url"].startswith("https://"):
         raise HTTPException(422, "A ligação do registo deve usar HTTPS.")
+    if data["licence_country"] == "US" and not (data.get("licence_jurisdiction") or "").strip():
+        raise HTTPException(422, "Indique o estado ou jurisdição da licença dos EUA.")
     return data
 
 
@@ -75,6 +95,7 @@ def _serialize(credential: ClinicianCredential) -> dict:
         "nationality_country": credential.nationality_country,
         "practice_country": credential.practice_country,
         "licence_country": credential.licence_country,
+        "licence_jurisdiction": credential.licence_jurisdiction,
         "issuing_authority": credential.issuing_authority,
         "licence_number": credential.licence_number,
         "licence_expiry_date": credential.licence_expiry_date,
@@ -91,6 +112,7 @@ def _serialize(credential: ClinicianCredential) -> dict:
         "rejection_reason": credential.rejection_reason,
         "submitted_at": credential.submitted_at,
         "verified_at": credential.verified_at,
+        "verification_consent_at": credential.verification_consent_at,
         "evidence": [{
             "id": item.id, "kind": item.kind, "original_filename": item.original_filename,
             "content_type": item.content_type, "size_bytes": item.size_bytes,
@@ -98,13 +120,20 @@ def _serialize(credential: ClinicianCredential) -> dict:
         } for item in credential.evidence],
         "registry": registry_for(credential.licence_country, credential.profession),
         "missing_evidence": [kind for kind in required_evidence(credential) if kind not in present],
+        "provider_checks": [
+            serialize_check(item)
+            for item in sorted(credential.provider_checks, key=lambda value: value.created_at, reverse=True)
+        ],
     }
 
 
 def _get_credential(db: Session, user_id: str) -> ClinicianCredential:
     credential = (
         db.query(ClinicianCredential)
-        .options(joinedload(ClinicianCredential.evidence))
+        .options(
+            joinedload(ClinicianCredential.evidence),
+            joinedload(ClinicianCredential.provider_checks),
+        )
         .filter(ClinicianCredential.user_id == user_id)
         .first()
     )
@@ -119,6 +148,7 @@ def requirements(
     practice_country: str = Query("AO"),
     diploma_country: str = Query("AO"),
     licence_country: str = Query("AO"),
+    licence_jurisdiction: str | None = Query(None),
 ):
     profession = profession.lower()
     if profession not in ALLOWED_PROFESSIONS:
@@ -133,6 +163,7 @@ def requirements(
         "practice_country": practice_country,
         "diploma_country": diploma_country,
         "licence_country": licence_country,
+        "licence_jurisdiction": licence_jurisdiction,
     })()
     return {
         "countries": [{"code": code, "name": name} for code, name in COUNTRIES.items()],
@@ -140,6 +171,11 @@ def requirements(
         "registry": registry_for(licence_country, profession),
         "human_review_required": True,
         "automatic_approval": False,
+        "eu_coordinated_recognition": practice_country in {
+            "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE",
+            "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT",
+            "RO", "SK", "SI", "ES", "SE",
+        },
     }
 
 
@@ -148,6 +184,144 @@ def get_my_credential(user: User = Depends(get_current_user), db: Session = Depe
     if user.role not in ALLOWED_PROFESSIONS:
         raise HTTPException(403, "Este perfil destina-se a médicos e enfermeiros.")
     return _serialize(_get_credential(db, user.id))
+
+
+def _existing_provider_check(
+    db: Session, credential_id: str, provider: str, evidence_id: str | None = None,
+) -> CredentialProviderCheck | None:
+    query = db.query(CredentialProviderCheck).filter(
+        CredentialProviderCheck.credential_id == credential_id,
+        CredentialProviderCheck.provider == provider,
+        CredentialProviderCheck.status.in_(ACTIVE_STATUSES | {"completed"}),
+    )
+    query = query.filter(
+        CredentialProviderCheck.evidence_id == evidence_id
+        if evidence_id else CredentialProviderCheck.evidence_id.is_(None)
+    )
+    return query.order_by(CredentialProviderCheck.created_at.desc()).first()
+
+
+@router.post("/me/providers/start")
+def start_provider_checks(
+    body: ProviderStartRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not body.consent:
+        raise HTTPException(422, "É necessário consentimento explícito para enviar dados aos verificadores.")
+    providers = list(dict.fromkeys(provider.lower() for provider in body.providers))
+    invalid = set(providers) - ALLOWED_PROVIDERS
+    if invalid:
+        raise HTTPException(422, f"Fornecedor inválido: {', '.join(sorted(invalid))}.")
+    credential = _get_credential(db, user.id)
+    if not credential.evidence:
+        raise HTTPException(422, "Envie os documentos antes de iniciar a verificação.")
+    credential.verification_consent_at = datetime.utcnow()
+
+    for provider in providers:
+        targets = credential.evidence if provider == "azure" else [None]
+        for evidence in targets:
+            evidence_id = evidence.id if evidence else None
+            if _existing_provider_check(db, credential.id, provider, evidence_id):
+                continue
+            check = CredentialProviderCheck(
+                credential_id=credential.id,
+                evidence_id=evidence_id,
+                provider=provider,
+                check_type={
+                    "azure": "document_extraction",
+                    "persona": "identity_document_fraud",
+                    "dataflow": "primary_source_verification",
+                }[provider],
+            )
+            db.add(check)
+            db.flush()
+            try:
+                if provider == "azure":
+                    start_azure(check, evidence)
+                elif provider == "persona":
+                    start_persona(check, credential)
+                else:
+                    start_dataflow(check, credential, credential.evidence)
+            except Exception as exc:
+                check.status = "failed"
+                check.error_message = str(exc)[:2000]
+                check.completed_at = datetime.utcnow()
+    db.commit()
+    return _serialize(_get_credential(db, user.id))
+
+
+@router.post("/me/providers/refresh")
+def refresh_provider_checks(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    credential = _get_credential(db, user.id)
+    for check in credential.provider_checks:
+        if check.provider == "azure" and check.status == "processing":
+            try:
+                refresh_azure(check)
+            except Exception as exc:
+                check.status = "failed"
+                check.error_message = str(exc)[:2000]
+                check.completed_at = datetime.utcnow()
+    db.commit()
+    return _serialize(_get_credential(db, user.id))
+
+
+@router.post("/webhooks/persona")
+async def persona_webhook(
+    request: Request,
+    persona_signature: str = Header(default="", alias="Persona-Signature"),
+    db: Session = Depends(get_db),
+):
+    raw = await request.body()
+    if not verify_timestamped_hmac(raw, persona_signature, settings.persona_webhook_secret):
+        raise HTTPException(401, "Assinatura Persona inválida.")
+    payload = json.loads(raw)
+    external_id, status, result = persona_event_update(payload)
+    if external_id:
+        check = db.query(CredentialProviderCheck).filter(
+            CredentialProviderCheck.provider == "persona",
+            CredentialProviderCheck.external_id == external_id,
+        ).first()
+        if check:
+            previous = safe_json(check.result_json)
+            if previous.get("event_id") != result.get("event_id"):
+                check.status = status
+                check.result_json = json.dumps(result)
+                if status in {"completed", "failed"}:
+                    check.completed_at = datetime.utcnow()
+                db.commit()
+    return {"received": True}
+
+
+@router.post("/webhooks/dataflow")
+async def dataflow_webhook(
+    request: Request,
+    signature: str = Header(default="", alias="X-DataFlow-Signature"),
+    db: Session = Depends(get_db),
+):
+    raw = await request.body()
+    if not verify_simple_hmac(raw, signature, settings.dataflow_webhook_secret):
+        raise HTTPException(401, "Assinatura do parceiro inválida.")
+    payload = json.loads(raw)
+    external_id, status, result = dataflow_event_update(payload)
+    query = db.query(CredentialProviderCheck).filter(CredentialProviderCheck.provider == "dataflow")
+    if external_id:
+        query = query.filter(CredentialProviderCheck.external_id == external_id)
+    elif payload.get("reference_id"):
+        query = query.filter(CredentialProviderCheck.credential_id == payload["reference_id"])
+    else:
+        return {"received": True}
+    check = query.first()
+    if check:
+        check.status = status
+        check.result_json = json.dumps(result)
+        if status in {"completed", "failed"}:
+            check.completed_at = datetime.utcnow()
+        db.commit()
+    return {"received": True}
 
 
 @router.put("/me")
@@ -258,7 +432,10 @@ def list_credentials(
     user: User = Depends(require_admin_or_support),
     db: Session = Depends(get_db),
 ):
-    query = db.query(ClinicianCredential).options(joinedload(ClinicianCredential.evidence))
+    query = db.query(ClinicianCredential).options(
+        joinedload(ClinicianCredential.evidence),
+        joinedload(ClinicianCredential.provider_checks),
+    )
     if status_filter:
         query = query.filter(ClinicianCredential.status == status_filter)
     return [_serialize(item) for item in query.order_by(ClinicianCredential.updated_at.desc()).all()]
@@ -271,7 +448,10 @@ def get_admin_credential(
     db: Session = Depends(get_db),
 ):
     credential = (
-        db.query(ClinicianCredential).options(joinedload(ClinicianCredential.evidence))
+        db.query(ClinicianCredential).options(
+            joinedload(ClinicianCredential.evidence),
+            joinedload(ClinicianCredential.provider_checks),
+        )
         .filter(ClinicianCredential.id == credential_id).first()
     )
     if not credential:
@@ -287,7 +467,10 @@ def decide_credential(
     db: Session = Depends(get_db),
 ):
     credential = (
-        db.query(ClinicianCredential).options(joinedload(ClinicianCredential.evidence))
+        db.query(ClinicianCredential).options(
+            joinedload(ClinicianCredential.evidence),
+            joinedload(ClinicianCredential.provider_checks),
+        )
         .filter(ClinicianCredential.id == credential_id).first()
     )
     if not credential:

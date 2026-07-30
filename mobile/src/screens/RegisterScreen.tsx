@@ -12,6 +12,8 @@ type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Regist
 
 const COUNTRIES = [
   { code: 'AO', name: 'Angola' },
+  { code: 'US', name: 'United States' },
+  { code: 'GB', name: 'United Kingdom' },
   { code: 'PT', name: 'Portugal' },
   { code: 'ES', name: 'Spain' },
   { code: 'CU', name: 'Cuba' },
@@ -26,6 +28,18 @@ const COUNTRIES = [
   { code: 'NA', name: 'Namibia' },
   { code: 'GW', name: 'Guinea-Bissau' },
   { code: 'FR', name: 'France' },
+  { code: 'AT', name: 'Austria' }, { code: 'BE', name: 'Belgium' },
+  { code: 'BG', name: 'Bulgaria' }, { code: 'HR', name: 'Croatia' },
+  { code: 'CY', name: 'Cyprus' }, { code: 'CZ', name: 'Czechia' },
+  { code: 'DK', name: 'Denmark' }, { code: 'EE', name: 'Estonia' },
+  { code: 'FI', name: 'Finland' }, { code: 'DE', name: 'Germany' },
+  { code: 'GR', name: 'Greece' }, { code: 'HU', name: 'Hungary' },
+  { code: 'IE', name: 'Ireland' }, { code: 'IT', name: 'Italy' },
+  { code: 'LV', name: 'Latvia' }, { code: 'LT', name: 'Lithuania' },
+  { code: 'LU', name: 'Luxembourg' }, { code: 'MT', name: 'Malta' },
+  { code: 'NL', name: 'Netherlands' }, { code: 'PL', name: 'Poland' },
+  { code: 'RO', name: 'Romania' }, { code: 'SK', name: 'Slovakia' },
+  { code: 'SI', name: 'Slovenia' }, { code: 'SE', name: 'Sweden' },
 ] as const;
 
 type CountryField = 'practice' | 'licence' | 'diploma';
@@ -62,6 +76,7 @@ export default function RegisterScreen({ navigation }: Props) {
   const [diplomaCountry, setDiplomaCountry] = useState('AO');
   const [authority, setAuthority] = useState('');
   const [licenceNumber, setLicenceNumber] = useState('');
+  const [licenceJurisdiction, setLicenceJurisdiction] = useState('');
   const [institution, setInstitution] = useState('');
   const [degreeTitle, setDegreeTitle] = useState('');
   const [countryPicker, setCountryPicker] = useState<CountryField | null>(null);
@@ -110,6 +125,7 @@ export default function RegisterScreen({ navigation }: Props) {
           diploma_country: diplomaCountry,
           issuing_authority: authority,
           licence_number: licenceNumber,
+          licence_jurisdiction: licenceJurisdiction || null,
           diploma_institution: institution,
           degree_title: degreeTitle,
         } : {}),
@@ -180,6 +196,10 @@ export default function RegisterScreen({ navigation }: Props) {
               value={authority} onChangeText={setAuthority} />
             <TextInput style={styles.input} placeholder="Professional licence number" placeholderTextColor="#94a3b8"
               value={licenceNumber} onChangeText={setLicenceNumber} />
+            {licenceCountry === 'US' && (
+              <TextInput style={styles.input} placeholder="US state / licence jurisdiction" placeholderTextColor="#94a3b8"
+                value={licenceJurisdiction} onChangeText={setLicenceJurisdiction} />
+            )}
             <TextInput style={styles.input} placeholder="Diploma institution" placeholderTextColor="#94a3b8"
               value={institution} onChangeText={setInstitution} />
             <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Degree title" placeholderTextColor="#94a3b8"

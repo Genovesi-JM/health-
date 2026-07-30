@@ -31,6 +31,16 @@ const PROVINCES = [
   'Huíla','Namibe','Cunene','Cuando Cubango','Moxico','Uíge','Zaire',
   'Cabinda','Bengo','Cuanza Norte','Cuanza Sul',
 ];
+const CREDENTIAL_COUNTRIES = [
+  ['AO','Angola'], ['US','Estados Unidos'], ['GB','Reino Unido'], ['PT','Portugal'],
+  ['ES','Espanha'], ['CU','Cuba'], ['RU','Rússia'], ['BR','Brasil'], ['CV','Cabo Verde'],
+  ['MZ','Moçambique'], ['CD','R. D. Congo'], ['ST','São Tomé e Príncipe'], ['ZW','Zimbabwe'],
+  ['AT','Áustria'], ['BE','Bélgica'], ['BG','Bulgária'], ['HR','Croácia'], ['CY','Chipre'],
+  ['CZ','Chéquia'], ['DK','Dinamarca'], ['EE','Estónia'], ['FI','Finlândia'], ['FR','França'],
+  ['DE','Alemanha'], ['GR','Grécia'], ['HU','Hungria'], ['IE','Irlanda'], ['IT','Itália'],
+  ['LV','Letónia'], ['LT','Lituânia'], ['LU','Luxemburgo'], ['MT','Malta'], ['NL','Países Baixos'],
+  ['PL','Polónia'], ['RO','Roménia'], ['SK','Eslováquia'], ['SI','Eslovénia'], ['SE','Suécia'],
+] as const;
 
 type Step = 'validating' | 'invalid' | 'form' | 'success';
 
@@ -54,6 +64,7 @@ export default function DoctorRegisterPage() {
   const [license, setLicense] = useState('');
   const [practiceCountry, setPracticeCountry] = useState('AO');
   const [licenceCountry, setLicenceCountry] = useState('AO');
+  const [licenceJurisdiction, setLicenceJurisdiction] = useState('');
   const [diplomaCountry, setDiplomaCountry] = useState('AO');
   const [authority, setAuthority] = useState('');
   const [institution, setInstitution] = useState('');
@@ -109,6 +120,7 @@ export default function DoctorRegisterPage() {
         license_number: license.trim(),
         practice_country: practiceCountry,
         licence_country: licenceCountry,
+        licence_jurisdiction: licenceJurisdiction || null,
         diploma_country: diplomaCountry,
         issuing_authority: authority.trim(),
         diploma_institution: institution.trim(),
@@ -291,14 +303,15 @@ export default function DoctorRegisterPage() {
               <div key={label}>
                 <label className="form-label">{label}</label>
                 <select className="form-input" value={value} onChange={e => setter(e.target.value)}>
-                  <option value="AO">Angola</option><option value="PT">Portugal</option><option value="ES">Espanha</option>
-                  <option value="CU">Cuba</option><option value="RU">Rússia</option><option value="BR">Brasil</option>
-                  <option value="CV">Cabo Verde</option><option value="MZ">Moçambique</option><option value="CD">R. D. Congo</option>
-                  <option value="ST">São Tomé e Príncipe</option><option value="ZW">Zimbabwe</option>
+                  {CREDENTIAL_COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
                 </select>
               </div>
             ))}
           </div>
+          {licenceCountry === 'US' && (
+            <input className="form-input" placeholder="Estado / jurisdição da licença dos EUA *"
+              value={licenceJurisdiction} onChange={e => setLicenceJurisdiction(e.target.value)} required />
+          )}
           {practiceCountry !== diplomaCountry && (
             <div style={{ padding: '.65rem', borderRadius: 8, background: '#fffbeb', color: '#92400e', fontSize: '.78rem' }}>
               Diploma estrangeiro: será necessário enviar reconhecimento/equivalência no passo seguinte.

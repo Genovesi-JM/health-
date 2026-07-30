@@ -345,12 +345,15 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
+        if licence_country == "US" and not (payload.licence_jurisdiction or "").strip():
+            raise HTTPException(status_code=422, detail="Indique o estado ou jurisdição da licença dos EUA.")
         credential_data = {
             "profession": role,
             "legal_name": payload.full_name.strip(),
             "nationality_country": nationality_country,
             "practice_country": practice_country,
             "licence_country": licence_country,
+            "licence_jurisdiction": payload.licence_jurisdiction,
             "issuing_authority": payload.issuing_authority.strip(),
             "licence_number": payload.licence_number.strip(),
             "diploma_country": diploma_country,
@@ -1146,12 +1149,15 @@ def register_doctor_with_token(
             diploma_country = normalise_country(payload.diploma_country)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
+        if licence_country == "US" and not (payload.licence_jurisdiction or "").strip():
+            raise HTTPException(status_code=422, detail="Indique o estado ou jurisdição da licença dos EUA.")
         db.add(ClinicianCredential(
             user_id=user.id,
             profession=invite_role,
             legal_name=payload.display_name.strip(),
             practice_country=practice_country,
             licence_country=licence_country,
+            licence_jurisdiction=payload.licence_jurisdiction,
             issuing_authority=payload.issuing_authority.strip(),
             licence_number=payload.license_number.strip(),
             diploma_country=diploma_country,
