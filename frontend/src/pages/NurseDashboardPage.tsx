@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { specialtyLabel } from '../constants/specialties';
@@ -10,7 +11,7 @@ import {
 import KpiGrid from '../components/KpiGrid';
 
 interface QueueItem {
-  id: string; patient: string; specialty: string; risk_level?: string | null;
+  id: string; patient_id?: string; patient: string; specialty: string; risk_level?: string | null;
   chief_complaint?: string | null; created_at: string; wait_minutes?: number;
 }
 interface Dash {
@@ -46,6 +47,7 @@ function riskBadge(level?: string | null) {
 
 export default function NurseDashboardPage({ preview = false }: { preview?: boolean }) {
   const { t } = useT();
+  const navigate = useNavigate();
   const [dash, setDash] = useState<Dash | null>(preview ? PREVIEW_DASH : null);
   const [loading, setLoading] = useState(!preview);
   const [refreshing, setRefreshing] = useState(false);
@@ -178,7 +180,15 @@ export default function NurseDashboardPage({ preview = false }: { preview?: bool
                       <td><span className="nurse-complaint">{i.chief_complaint || '—'}</span></td>
                       <td><span className="nurse-risk-badge" style={{ background: r.bg, color: r.color }}>{r.label}</span></td>
                       <td><span className={`nurse-wait ${minutes >= 30 ? 'late' : ''}`}><Clock3 size={14} /> {minutes} min</span></td>
-                      <td><button className="nurse-open-patient" type="button" onClick={() => setSelected(i)}>{t('nurse.open')}</button></td>
+                      <td>
+                        <button
+                          className="nurse-open-patient"
+                          type="button"
+                          onClick={() => i.patient_id && !preview ? navigate(`/clinician/patients/${i.patient_id}`) : setSelected(i)}
+                        >
+                          {t('nurse.open')}
+                        </button>
+                      </td>
                     </tr>
                   );
                   })}

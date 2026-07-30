@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, X, User, RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
 import api from '../api';
 
@@ -167,6 +168,13 @@ export default function DoctorPatientsPage() {
                   </div>
                 </div>
               )}
+
+              <Link
+                to={`/clinician/patients/${selected.id}`}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, borderRadius: 10, background: 'linear-gradient(135deg, #0f766e, #14b8a6)', color: '#fff', fontSize: '0.78rem', fontWeight: 800, textDecoration: 'none' }}
+              >
+                Abrir visão clínica 360°
+              </Link>
 
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
                 <PatientReadingsPanel patientId={selected.id} patientName={selected.name} />

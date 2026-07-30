@@ -42,6 +42,7 @@ from .routers import (
     family,
     notifications,
     credentials,
+    clinician_workspace,
 )
 
 from .seed_data import seed_all
@@ -154,6 +155,7 @@ def create_application() -> FastAPI:
     application.include_router(family.router)             # /api/v1/family/*
     application.include_router(notifications.router)      # /api/v1/notifications/*
     application.include_router(credentials.router)        # /api/v1/credentials/*
+    application.include_router(clinician_workspace.router) # /api/v1/clinician/patients/*/360
 
     # ── Deprecated drone/shop routers (disabled) ──
     # The following routers are from the original GeoVision platform and

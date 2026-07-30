@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 from app.config import settings
 from app.services.credential_providers import extract_azure_fields
+from app.health_models import Consultation, Patient
 
 
 def _register(client, role="doctor", diploma_country="PT"):
@@ -42,6 +43,21 @@ def _upload(client, auth, kind):
         headers=_headers(auth),
         files={"file": (f"{kind}.pdf", b"%PDF-1.4\ncredential-test", "application/pdf")},
     )
+
+
+def _verify_clinician(client, auth):
+    assert _upload(client, auth, "professional_card").status_code == 200
+    assert _upload(client, auth, "diploma").status_code == 200
+    submitted = client.post("/api/v1/credentials/me/submit", headers=_headers(auth))
+    assert submitted.status_code == 200
+    admin = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
+    approved = client.post(
+        f"/api/v1/credentials/admin/{submitted.json()['id']}/decision",
+        headers=_headers(admin.json()),
+        json={"action": "approve"},
+    )
+    assert approved.status_code == 200
+    return approved.json()
 
 
 def test_patient_registration_cannot_create_clinician_dossier(client):
@@ -99,23 +115,59 @@ def test_nurse_queue_is_gated_until_review(client):
 
 def test_verified_nurse_dashboard_exposes_operational_kpis(client):
     auth = _register(client, role="nurse", diploma_country="AO")
-    assert _upload(client, auth, "professional_card").status_code == 200
-    assert _upload(client, auth, "diploma").status_code == 200
-    submitted = client.post("/api/v1/credentials/me/submit", headers=_headers(auth))
-    assert submitted.status_code == 200
-    admin = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
-    approved = client.post(
-        f"/api/v1/credentials/admin/{submitted.json()['id']}/decision",
-        headers=_headers(admin.json()),
-        json={"action": "approve"},
-    )
-    assert approved.status_code == 200
+    _verify_clinician(client, auth)
     dashboard = client.get("/api/v1/nurse/dashboard", headers=_headers(auth))
     assert dashboard.status_code == 200
     assert {
         "queue_count", "urgent_count", "triages_today", "average_wait_minutes",
         "longest_wait_minutes", "waiting_over_30_count", "unclassified_count", "recent",
     }.issubset(dashboard.json())
+
+
+def test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities(client, db_session):
+    nurse = _register(client, role="nurse", diploma_country="AO")
+    _verify_clinician(client, nurse)
+
+    patient_auth = client.post("/auth/register", json={
+        "email": f"patient-360-{uuid.uuid4().hex[:8]}@example.com",
+        "password": "strong-pass",
+        "full_name": "Paciente 360",
+        "sector_focus": "health",
+        "role": "patient",
+    })
+    assert patient_auth.status_code == 201
+    patient = db_session.query(Patient).filter(
+        Patient.user_id == patient_auth.json()["user"]["id"],
+    ).first()
+    assert patient is not None
+
+    denied = client.get(
+        f"/api/v1/clinician/patients/{patient.id}/360",
+        headers=_headers(nurse),
+    )
+    assert denied.status_code == 403
+
+    db_session.add(Consultation(
+        patient_id=patient.id,
+        specialty="clinica_geral",
+        status="requested",
+    ))
+    db_session.commit()
+
+    allowed = client.get(
+        f"/api/v1/clinician/patients/{patient.id}/360",
+        headers=_headers(nurse),
+    )
+    assert allowed.status_code == 200, allowed.text
+    body = allowed.json()
+    assert body["identity"]["name"] == "Paciente 360"
+    assert body["access"]["role"] == "nurse"
+    assert body["access"]["capabilities"]["record_nursing_observations"] is True
+    assert body["access"]["capabilities"]["prescribe"] is False
+    assert {
+        "safety", "active_episode", "latest_triage", "consultations", "readings",
+        "medications", "prescriptions", "referrals", "consents", "emergency_family",
+    }.issubset(body)
 
 
 def test_registration_rejects_incomplete_clinician_profile(client):

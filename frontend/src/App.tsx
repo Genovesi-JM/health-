@@ -78,6 +78,7 @@ import PatientReadingsPage from './pages/PatientReadingsPage';
 import ConsentGatePage from './pages/ConsentGatePage';
 import ProfessionalVerificationPage from './pages/ProfessionalVerificationPage';
 import NurseDashboardPreviewShell from './pages/NurseDashboardPreviewShell';
+import ClinicianPatientWorkspacePage from './pages/ClinicianPatientWorkspacePage';
 import InstallPrompt from './components/InstallPrompt';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
@@ -87,6 +88,15 @@ export default function App() {
     return (
       <I18nProvider>
         <NurseDashboardPreviewShell />
+      </I18nProvider>
+    );
+  }
+  if (import.meta.env.DEV && window.location.pathname.endsWith('/preview/clinician/patient')) {
+    return (
+      <I18nProvider>
+        <BrowserRouter basename={BASE}>
+          <ClinicianPatientWorkspacePage preview />
+        </BrowserRouter>
       </I18nProvider>
     );
   }
@@ -130,6 +140,9 @@ export default function App() {
             {/* Settings — accessible to all roles */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/professional-verification" element={<ProfessionalVerificationPage />} />
+            <Route element={<RoleRoute allowedRoles={['doctor', 'nurse']} />}>
+              <Route path="/clinician/patients/:patientId" element={<ClinicianPatientWorkspacePage />} />
+            </Route>
 
             {/* ── PATIENT only ── */}
             <Route element={<RoleRoute allowedRoles={['patient', 'cliente']} />}>

@@ -59,6 +59,7 @@ def _queue_items(db: Session, limit: int = 50):
                     risk = res.risk_level
         items.append({
             "id": c.id,
+            "patient_id": c.patient_id,
             "patient": _patient_name(c.patient_id, db),
             "specialty": c.specialty,
             "risk_level": risk,
