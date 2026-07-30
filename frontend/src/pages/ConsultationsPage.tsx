@@ -191,7 +191,9 @@ export default function ConsultationsPage() {
                     <td>
                       {c.payment_status === 'paid' ? (
                         <span className="badge badge-success">{t('pay.status_paid')}</span>
-                      ) : ['cancelled', 'no_show'].includes(c.status) ? (
+                      ) : ['cancelled', 'no_show', 'completed'].includes(c.status) ? (
+                        // Finished/cancelled consultations shouldn't offer a Pagar button —
+                        // they're historical. Show the raw status only.
                         <span className="badge badge-neutral">{c.payment_status}</span>
                       ) : (
                         <button className="btn btn-primary btn-sm" onClick={() => setPayFor(c.id)}>
