@@ -40,6 +40,8 @@ from ..models import (
     User,
     UserProfile,
 )
+from ..health_models import ClinicianCredential, Doctor, Patient
+from ..services.credential_verification import normalise_country
 from ..oauth2 import create_access_token, verify_access_token
 from ..schemas import AuthResponse, LoginRequest, RegisterRequest
 from ..utils import hash_password, verify_password
@@ -309,7 +311,56 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
-    role = "admin" if email in ADMIN_EMAILS else "cliente"
+    requested_role = (payload.role or "patient").strip().lower()
+    if requested_role == "cliente":
+        requested_role = "patient"
+    if requested_role not in {"patient", "doctor", "nurse"}:
+        raise HTTPException(status_code=400, detail="Tipo de conta inválido.")
+    role = "admin" if email in ADMIN_EMAILS else requested_role
+
+    credential_data = None
+    if role in {"doctor", "nurse"}:
+        required = {
+            "full_name": payload.full_name,
+            "practice_country": payload.practice_country,
+            "licence_country": payload.licence_country,
+            "issuing_authority": payload.issuing_authority,
+            "licence_number": payload.licence_number,
+            "diploma_country": payload.diploma_country,
+            "diploma_institution": payload.diploma_institution,
+            "degree_title": payload.degree_title,
+        }
+        missing = [key for key, value in required.items() if not str(value or "").strip()]
+        if missing:
+            raise HTTPException(
+                status_code=422,
+                detail={"message": "Complete os dados profissionais obrigatórios.", "missing_fields": missing},
+            )
+        try:
+            practice_country = normalise_country(payload.practice_country)
+            licence_country = normalise_country(payload.licence_country)
+            diploma_country = normalise_country(payload.diploma_country)
+            nationality_country = (
+                normalise_country(payload.nationality_country) if payload.nationality_country else None
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        credential_data = {
+            "profession": role,
+            "legal_name": payload.full_name.strip(),
+            "nationality_country": nationality_country,
+            "practice_country": practice_country,
+            "licence_country": licence_country,
+            "issuing_authority": payload.issuing_authority.strip(),
+            "licence_number": payload.licence_number.strip(),
+            "diploma_country": diploma_country,
+            "diploma_institution": payload.diploma_institution.strip(),
+            "degree_title": payload.degree_title.strip(),
+            "graduation_year": payload.graduation_year,
+            "specialization": payload.specialization,
+            "status": "draft",
+        }
+
     user = User(email=email, password_hash=hash_password(payload.password), role=role, is_active=True)
     db.add(user)
     db.flush()
@@ -329,6 +380,19 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
 
     membership = AccountMember(account_id=account.id, user_id=user.id, role="owner")
     db.add(membership)
+
+    if role == "patient":
+        db.add(Patient(user_id=user.id))
+    elif role in {"doctor", "nurse"}:
+        db.add(ClinicianCredential(user_id=user.id, **credential_data))
+        if role == "doctor":
+            db.add(Doctor(
+                user_id=user.id,
+                license_number=payload.licence_number,
+                specialization=payload.specialization or "clinica_geral",
+                display_name=payload.full_name,
+                verification_status="draft",
+            ))
     db.commit()
     db.refresh(user)
     db.refresh(account)
@@ -1002,6 +1066,7 @@ def validate_doctor_invite(token: str, db: Session = Depends(get_db)):
         "valid": True,
         "invited_email": invite.invited_email,
         "note": invite.note,
+        "role": getattr(invite, "role", "doctor") or "doctor",
         "expires_at": invite.expires_at,
     }
 
@@ -1073,20 +1138,43 @@ def register_doctor_with_token(
         )
         db.add(doctor)
 
-    # 5. Mark invite as used
+    # 5. Create the mandatory credential dossier for both doctors and nurses.
+    if not db.query(ClinicianCredential).filter(ClinicianCredential.user_id == user.id).first():
+        try:
+            practice_country = normalise_country(payload.practice_country)
+            licence_country = normalise_country(payload.licence_country)
+            diploma_country = normalise_country(payload.diploma_country)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        db.add(ClinicianCredential(
+            user_id=user.id,
+            profession=invite_role,
+            legal_name=payload.display_name.strip(),
+            practice_country=practice_country,
+            licence_country=licence_country,
+            issuing_authority=payload.issuing_authority.strip(),
+            licence_number=payload.license_number.strip(),
+            diploma_country=diploma_country,
+            diploma_institution=payload.diploma_institution.strip(),
+            degree_title=payload.degree_title.strip(),
+            specialization=payload.specialization,
+            status="draft",
+        ))
+
+    # 6. Mark invite as used
     invite.used_at = datetime.utcnow()
     invite.used_by_user_id = user.id
 
-    # 6. Ensure account
+    # 7. Ensure account
     _ensure_default_account(db, user)
 
     db.commit()
     db.refresh(user)
 
-    # 7. Return auth tokens
+    # 8. Return auth tokens
     access_token = create_access_token({
         "sub": user.email, "email": user.email,
-        "role": "doctor", "uid": user.id,
+        "role": invite_role, "uid": user.id,
     })
     refresh_token = _create_refresh_token(db, user.id)
 
@@ -1099,7 +1187,7 @@ def register_doctor_with_token(
         "user": {
             "id": user.id,
             "email": user.email,
-            "role": "doctor",
+            "role": invite_role,
             "name": payload.display_name,
         },
     }

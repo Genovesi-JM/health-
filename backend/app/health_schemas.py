@@ -177,7 +177,13 @@ class DoctorRegisterWithToken(BaseModel):
     display_name: str
     title: Optional[str] = "Dr."
     specialization: str = "clinica_geral"
-    license_number: Optional[str] = None
+    license_number: str
+    practice_country: str = "AO"
+    licence_country: str = "AO"
+    issuing_authority: str
+    diploma_country: str = "AO"
+    diploma_institution: str
+    degree_title: str
     phone: Optional[str] = None
     location_city: Optional[str] = None
     bio: Optional[str] = None

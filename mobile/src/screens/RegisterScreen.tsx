@@ -32,6 +32,14 @@ export default function RegisterScreen({ navigation }: Props) {
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
+  const [role, setRole] = useState<'patient' | 'doctor' | 'nurse'>('patient');
+  const [practiceCountry, setPracticeCountry] = useState('AO');
+  const [licenceCountry, setLicenceCountry] = useState('AO');
+  const [diplomaCountry, setDiplomaCountry] = useState('AO');
+  const [authority, setAuthority] = useState('');
+  const [licenceNumber, setLicenceNumber] = useState('');
+  const [institution, setInstitution] = useState('');
+  const [degreeTitle, setDegreeTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [consents, setConsents] = useState<Record<string, boolean>>(
     Object.fromEntries(REQUIRED_CONSENTS.map(c => [c, false])),
@@ -47,6 +55,10 @@ export default function RegisterScreen({ navigation }: Props) {
     if (password !== confirmPw) { Alert.alert('Error', 'Passwords do not match.'); return; }
     if (password.length < 6) { Alert.alert('Error', 'Password must be at least 6 characters.'); return; }
     if (!allChecked) { Alert.alert('Error', 'Please accept all required consents.'); return; }
+    if (role !== 'patient' && (!fullName || !authority || !licenceNumber || !institution || !degreeTitle)) {
+      Alert.alert('Professional details required', 'Complete your licence and diploma details before continuing.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -59,6 +71,16 @@ export default function RegisterScreen({ navigation }: Props) {
         account_name: fullName || email.split('@')[0],
         entity_type: 'individual',
         modules_enabled: ['triage', 'teleconsulta'],
+        role,
+        ...(role !== 'patient' ? {
+          practice_country: practiceCountry,
+          licence_country: licenceCountry,
+          diploma_country: diplomaCountry,
+          issuing_authority: authority,
+          licence_number: licenceNumber,
+          diploma_institution: institution,
+          degree_title: degreeTitle,
+        } : {}),
       };
       const res = await api.post('/auth/register', body);
       // Post consents (best-effort)
@@ -83,6 +105,16 @@ export default function RegisterScreen({ navigation }: Props) {
         <Text style={styles.title}>Create account</Text>
         <Text style={styles.subtitle}>Join the health platform</Text>
 
+        <Text style={styles.sectionLabel}>ACCOUNT TYPE</Text>
+        <View style={styles.roleRow}>
+          {([['patient', 'Patient'], ['nurse', 'Nurse'], ['doctor', 'Doctor']] as const).map(([value, label]) => (
+            <TouchableOpacity key={value} onPress={() => setRole(value)}
+              style={[styles.roleCard, role === value && styles.roleCardActive]}>
+              <Text style={[styles.roleText, role === value && styles.roleTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <TextInput style={styles.input} placeholder="Full name" placeholderTextColor="#94a3b8"
           value={fullName} onChangeText={setFullName} />
         <TextInput style={styles.input} placeholder="Email address" placeholderTextColor="#94a3b8"
@@ -91,6 +123,30 @@ export default function RegisterScreen({ navigation }: Props) {
           secureTextEntry value={password} onChangeText={setPassword} />
         <TextInput style={styles.input} placeholder="Confirm password" placeholderTextColor="#94a3b8"
           secureTextEntry value={confirmPw} onChangeText={setConfirmPw} />
+
+        {role !== 'patient' && (
+          <View style={styles.professionalBox}>
+            <Text style={styles.consentHeader}>PROFESSIONAL CREDENTIALS</Text>
+            <Text style={styles.hint}>Use ISO country codes: AO, PT, ES, CU, RU, BR, CV, MZ, CD, ST or ZW.</Text>
+            <View style={styles.countryRow}>
+              <TextInput style={[styles.input, styles.countryInput]} placeholder="Practice (AO)" placeholderTextColor="#94a3b8"
+                autoCapitalize="characters" value={practiceCountry} onChangeText={v => setPracticeCountry(v.toUpperCase().slice(0, 2))} />
+              <TextInput style={[styles.input, styles.countryInput]} placeholder="Licence" placeholderTextColor="#94a3b8"
+                autoCapitalize="characters" value={licenceCountry} onChangeText={v => setLicenceCountry(v.toUpperCase().slice(0, 2))} />
+              <TextInput style={[styles.input, styles.countryInput]} placeholder="Diploma" placeholderTextColor="#94a3b8"
+                autoCapitalize="characters" value={diplomaCountry} onChangeText={v => setDiplomaCountry(v.toUpperCase().slice(0, 2))} />
+            </View>
+            {practiceCountry !== diplomaCountry && <Text style={styles.warning}>Foreign diploma: recognition/equivalence evidence will be required.</Text>}
+            <TextInput style={styles.input} placeholder="Issuing authority / professional order" placeholderTextColor="#94a3b8"
+              value={authority} onChangeText={setAuthority} />
+            <TextInput style={styles.input} placeholder="Professional licence number" placeholderTextColor="#94a3b8"
+              value={licenceNumber} onChangeText={setLicenceNumber} />
+            <TextInput style={styles.input} placeholder="Diploma institution" placeholderTextColor="#94a3b8"
+              value={institution} onChangeText={setInstitution} />
+            <TextInput style={[styles.input, { marginBottom: 0 }]} placeholder="Degree title" placeholderTextColor="#94a3b8"
+              value={degreeTitle} onChangeText={setDegreeTitle} />
+          </View>
+        )}
 
         {/* Consent checkboxes */}
         <View style={styles.consentBox}>
@@ -126,6 +182,12 @@ const styles = StyleSheet.create({
   brandText: { fontSize: 18, fontWeight: '700', color: TEAL, letterSpacing: 1 },
   title: { fontSize: 24, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#64748b', marginBottom: 24 },
+  sectionLabel: { fontSize: 10, fontWeight: '700', color: '#64748b', letterSpacing: 1, marginBottom: 8 },
+  roleRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
+  roleCard: { flex: 1, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, backgroundColor: '#fff' },
+  roleCardActive: { borderColor: TEAL, backgroundColor: '#ecfdf5' },
+  roleText: { color: '#64748b', fontSize: 13, fontWeight: '600' },
+  roleTextActive: { color: TEAL },
   input: {
     borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10,
     padding: 14, fontSize: 15, color: '#0f172a', backgroundColor: '#fff', marginBottom: 12,
@@ -134,6 +196,11 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10,
     padding: 14, backgroundColor: '#fff', marginBottom: 16,
   },
+  professionalBox: { borderWidth: 1, borderColor: '#99f6e4', borderRadius: 10, padding: 14, backgroundColor: '#f0fdfa', marginBottom: 16 },
+  countryRow: { flexDirection: 'row', gap: 7 },
+  countryInput: { flex: 1 },
+  hint: { color: '#64748b', fontSize: 11, lineHeight: 16, marginBottom: 10 },
+  warning: { color: '#92400e', fontSize: 11, lineHeight: 16, marginBottom: 10, backgroundColor: '#fffbeb', padding: 8, borderRadius: 6 },
   consentHeader: { fontSize: 10, fontWeight: '700', color: '#94a3b8', letterSpacing: 1, marginBottom: 12 },
   consentRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   checkbox: {

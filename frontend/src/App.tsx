@@ -66,6 +66,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminDoctorsPage from './pages/AdminDoctorsPage';
 import AdminPatientsPage from './pages/AdminPatientsPage';
 import AdminApplicationsPage from './pages/AdminApplicationsPage';
+import AdminCredentialsPage from './pages/AdminCredentialsPage';
 import CorporateDashboardPage from './pages/CorporateDashboardPage';
 import NurseDashboardPage from './pages/NurseDashboardPage';
 import StorePage from './pages/StorePage';
@@ -75,6 +76,7 @@ import FamilyPage from './pages/FamilyPage';
 import NotificationsPage from './pages/NotificationsPage';
 import PatientReadingsPage from './pages/PatientReadingsPage';
 import ConsentGatePage from './pages/ConsentGatePage';
+import ProfessionalVerificationPage from './pages/ProfessionalVerificationPage';
 import InstallPrompt from './components/InstallPrompt';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
@@ -119,6 +121,7 @@ export default function App() {
             <Route path="/data-consent" element={<ConsentGatePage />} />
             {/* Settings — accessible to all roles */}
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/professional-verification" element={<ProfessionalVerificationPage />} />
 
             {/* ── PATIENT only ── */}
             <Route element={<RoleRoute allowedRoles={['patient', 'cliente']} />}>
@@ -168,6 +171,7 @@ export default function App() {
               <Route path="/admin/doctors" element={<AdminDoctorsPage />} />
               <Route path="/admin/patients" element={<AdminPatientsPage />} />
               <Route path="/admin/applications" element={<AdminApplicationsPage />} />
+              <Route path="/admin/credentials" element={<AdminCredentialsPage />} />
             </Route>
           </Route>
 

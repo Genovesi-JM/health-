@@ -129,6 +129,74 @@ class Doctor(Base):
     )
 
 
+# ── Clinician credentialing (doctor + nurse) ──
+
+class ClinicianCredential(Base):
+    """Private credential dossier used to gate all clinical access.
+
+    Registry checks are intentionally advisory: only an authorised reviewer
+    can grant ``verified`` status.
+    """
+    __tablename__ = "clinician_credentials"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, unique=True, index=True,
+    )
+    profession: Mapped[str] = mapped_column(String(20), nullable=False)  # doctor | nurse
+    legal_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    nationality_country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    practice_country: Mapped[str] = mapped_column(String(2), nullable=False, default="AO")
+    licence_country: Mapped[str] = mapped_column(String(2), nullable=False)
+    issuing_authority: Mapped[str] = mapped_column(String(200), nullable=False)
+    licence_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    licence_expiry_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    diploma_country: Mapped[str] = mapped_column(String(2), nullable=False)
+    diploma_institution: Mapped[str] = mapped_column(String(250), nullable=False)
+    degree_title: Mapped[str] = mapped_column(String(200), nullable=False)
+    graduation_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    specialization: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    registry_profile_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="draft", index=True)
+    automated_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    automated_checks_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    verified_by: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User", foreign_keys=[user_id], backref="clinician_credential")
+    evidence = relationship("CredentialEvidence", back_populates="credential", cascade="all, delete-orphan")
+
+
+class CredentialEvidence(Base):
+    __tablename__ = "credential_evidence"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    credential_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("clinician_credentials.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    storage_key: Mapped[str] = mapped_column(Text, nullable=False)
+    content_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    credential = relationship("ClinicianCredential", back_populates="evidence")
+
+    __table_args__ = (
+        Index("ix_credential_evidence_credential_kind", "credential_id", "kind"),
+    )
+
+
 # ── Doctor Availability ──
 
 class DoctorAvailability(Base):

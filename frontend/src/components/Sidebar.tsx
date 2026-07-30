@@ -9,7 +9,7 @@ import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
   Shield, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2, Clock, ShoppingBag,
   Cpu, CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
-  DollarSign, Star, Globe, HelpCircle, Lock,
+  DollarSign, Star, Globe, HelpCircle, Lock, FileCheck2,
 } from 'lucide-react';
 
 interface Props {
@@ -117,6 +117,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/admin"          icon={LayoutDashboard} label={t('sidebar.dashboard')}      onClick={onClose} />
               <SidebarLink to="/admin/patients" icon={Users}           label={t('sidebar.patients')}       onClick={onClose} />
               <SidebarLink to="/admin/doctors"  icon={UserCog}         label={t('sidebar.verify_doctors')} onClick={onClose} />
+              <SidebarLink to="/admin/credentials" icon={FileCheck2} label="Credenciais clínicas" onClick={onClose} />
               <SidebarLink to="/admin/applications" icon={Briefcase}   label={t('sidebar.applications')}   onClick={onClose} />
             </SidebarSection>
           )}
@@ -198,5 +199,3 @@ function SidebarLink({
     </NavLink>
   );
 }
-
-

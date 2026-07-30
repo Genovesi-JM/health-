@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthStack from './AuthStack';
 import AppStack from './AppStack';
 import { View, ActivityIndicator } from 'react-native';
+import ProfessionalVerificationScreen from '../screens/ProfessionalVerificationScreen';
 
 export default function RootNavigation() {
   const { user, loading } = useAuth();
@@ -18,7 +19,11 @@ export default function RootNavigation() {
 
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      {user ? (
+        user.role === 'doctor' || user.role === 'nurse'
+          ? <ProfessionalVerificationScreen />
+          : <AppStack />
+      ) : <AuthStack />}
     </NavigationContainer>
   );
 }

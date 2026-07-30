@@ -48,6 +48,20 @@ class RegisterRequest(BaseModel):
     account_name: Optional[str] = None
     sector_focus: str = Field(default="agro")
     modules_enabled: Optional[List[str]] = None
+    role: str = Field(default="patient")
+
+    # Required only for doctor/nurse registration. Evidence is uploaded after
+    # account creation because registration itself is JSON, not multipart.
+    practice_country: Optional[str] = None
+    licence_country: Optional[str] = None
+    issuing_authority: Optional[str] = None
+    licence_number: Optional[str] = None
+    diploma_country: Optional[str] = None
+    diploma_institution: Optional[str] = None
+    degree_title: Optional[str] = None
+    graduation_year: Optional[int] = None
+    nationality_country: Optional[str] = None
+    specialization: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

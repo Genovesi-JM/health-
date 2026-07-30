@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User, UserProfile
-from app.health_models import Doctor, DoctorAvailability
+from app.health_models import ClinicianCredential, Doctor, DoctorAvailability
 from app.health_schemas import (
     DoctorCreate, DoctorUpdate, DoctorOut, DoctorPublic,
     DoctorVerifyRequest, AvailabilitySlot, AvailabilityOut, RoleEnum,
@@ -255,10 +255,25 @@ def verify_doctor(
         "reject": "rejected",
         "suspend": "suspended",
     }
+    credential = db.query(ClinicianCredential).filter(
+        ClinicianCredential.user_id == doctor.user_id,
+        ClinicianCredential.profession == "doctor",
+    ).first()
+    if body.action in ("verify", "approve") and (
+        not credential or credential.status != "verified"
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Aprovação bloqueada: reveja e aprove primeiro o processo em Credenciais clínicas.",
+        )
     doctor.verification_status = action_map[body.action]
     if body.action in ("verify", "approve"):
         doctor.verified_at = datetime.utcnow()
         doctor.verified_by = user.id
+    if credential and body.action in ("reject", "suspend"):
+        credential.status = action_map[body.action]
+        credential.rejection_reason = body.reason if body.action == "reject" else None
+        credential.review_notes = body.reason
     db.add(doctor)
     db.commit()
     db.refresh(doctor)

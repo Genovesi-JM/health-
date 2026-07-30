@@ -16,15 +16,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
 from app.models import User
 from app.health_models import Patient, Consultation, TriageSession, TriageResult
+from app.rbac import require_verified_clinician
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["nurse"])
 
 
-def require_nurse(user: User = Depends(get_current_user)) -> User:
+def require_nurse(user: User = Depends(require_verified_clinician)) -> User:
     if user.role != "nurse":
         raise HTTPException(status_code=403, detail="Acesso reservado a enfermeiros.")
     return user

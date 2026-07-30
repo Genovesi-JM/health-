@@ -22,7 +22,7 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User, UserProfile
 from app.health_models import (
-    Doctor, Patient, Consultation, ConsultationNotes,
+    Doctor, ClinicianCredential, Patient, Consultation, ConsultationNotes,
     PrescriptionRequest, DeviceReading, PatientMedication, HealthPayment,
 )
 from app.rbac import log_health_audit, assert_doctor_can_access_patient
@@ -40,6 +40,19 @@ def _require_doctor(user: User, db: Session) -> Doctor:
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")
+    credential = db.query(ClinicianCredential).filter(
+        ClinicianCredential.user_id == user.id,
+        ClinicianCredential.profession == "doctor",
+    ).first()
+    if doctor.verification_status != "verified" or not credential or credential.status != "verified":
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "credential_verification_required",
+                "message": "Conclua a verificação profissional antes de aceder a funções clínicas.",
+                "status": credential.status if credential else "not_started",
+            },
+        )
     return doctor
 
 

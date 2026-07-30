@@ -12,7 +12,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
-from app.health_models import Patient, Doctor, CorporateAccount, CorporateMember, HealthAuditLog
+from app.health_models import (
+    Patient, Doctor, ClinicianCredential, CorporateAccount, CorporateMember, HealthAuditLog,
+)
 from app.health_schemas import RoleEnum
 
 import json
@@ -64,6 +66,29 @@ def require_verified_doctor(
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor or doctor.verification_status != "verified":
         raise HTTPException(status_code=403, detail="Médico não verificado.")
+    return user
+
+
+def require_verified_clinician(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    """Require a doctor or nurse whose credential dossier passed human review."""
+    if user.role not in (RoleEnum.DOCTOR, RoleEnum.NURSE):
+        raise HTTPException(status_code=403, detail="Acesso restrito a profissionais clínicos.")
+    credential = db.query(ClinicianCredential).filter(
+        ClinicianCredential.user_id == user.id,
+        ClinicianCredential.profession == user.role,
+    ).first()
+    if not credential or credential.status != "verified":
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "credential_verification_required",
+                "message": "Conclua a verificação profissional antes de aceder a funções clínicas.",
+                "status": credential.status if credential else "not_started",
+            },
+        )
     return user
 
 

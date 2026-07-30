@@ -40,7 +40,7 @@ export default function DoctorRegisterPage() {
   const token = params.get('token') || '';
 
   const [step, setStep] = useState<Step>('validating');
-  const [inviteInfo, setInviteInfo] = useState<{ invited_email?: string; note?: string } | null>(null);
+  const [inviteInfo, setInviteInfo] = useState<{ invited_email?: string; note?: string; role?: 'doctor' | 'nurse' } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,6 +52,12 @@ export default function DoctorRegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [specialty, setSpecialty] = useState('clinica_geral');
   const [license, setLicense] = useState('');
+  const [practiceCountry, setPracticeCountry] = useState('AO');
+  const [licenceCountry, setLicenceCountry] = useState('AO');
+  const [diplomaCountry, setDiplomaCountry] = useState('AO');
+  const [authority, setAuthority] = useState('');
+  const [institution, setInstitution] = useState('');
+  const [degreeTitle, setDegreeTitle] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [province, setProvince] = useState('');
@@ -65,6 +71,10 @@ export default function DoctorRegisterPage() {
       .then(r => {
         setInviteInfo(r.data);
         if (r.data.invited_email) setEmail(r.data.invited_email);
+        if (r.data.role === 'nurse') {
+          setTitle('Enf.');
+          setSpecialty('enfermagem_geral');
+        }
         setStep('form');
       })
       .catch(() => setStep('invalid'));
@@ -82,6 +92,9 @@ export default function DoctorRegisterPage() {
     if (!displayName.trim()) return setError('Nome completo obrigatório.');
     if (password !== confirmPassword) return setError('As palavras-passe não coincidem.');
     if (password.length < 8) return setError('Palavra-passe: mínimo 8 caracteres.');
+    if (!license.trim() || !authority.trim() || !institution.trim() || !degreeTitle.trim()) {
+      return setError('Licença, autoridade profissional e dados do diploma são obrigatórios.');
+    }
     if (consultTypes.length === 0) return setError('Selecione pelo menos um tipo de consulta.');
 
     setLoading(true);
@@ -93,7 +106,13 @@ export default function DoctorRegisterPage() {
         display_name: displayName.trim(),
         title,
         specialization: specialty,
-        license_number: license.trim() || null,
+        license_number: license.trim(),
+        practice_country: practiceCountry,
+        licence_country: licenceCountry,
+        diploma_country: diplomaCountry,
+        issuing_authority: authority.trim(),
+        diploma_institution: institution.trim(),
+        degree_title: degreeTitle.trim(),
         phone: phone.trim() || null,
         location_city: city.trim() || null,
         bio: bio.trim() || null,
@@ -112,7 +131,7 @@ export default function DoctorRegisterPage() {
         });
       } catch { /* non-blocking */ }
       setStep('success');
-      setTimeout(() => navigate('/doctor/profile'), 2500);
+      setTimeout(() => navigate('/professional-verification'), 1500);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Erro ao registar. Tente novamente.');
     } finally {
@@ -208,6 +227,8 @@ export default function DoctorRegisterPage() {
                 <option>Dra.</option>
                 <option>Prof.</option>
                 <option>Prof.ª</option>
+                <option>Enf.</option>
+                <option>Enf.ª</option>
               </select>
             </div>
             <div>
@@ -240,20 +261,53 @@ export default function DoctorRegisterPage() {
 
           {/* ── Credentials ── */}
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-            <Stethoscope size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Credenciais médicas
+            <Stethoscope size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
+            {inviteInfo?.role === 'nurse' ? 'Credenciais de enfermagem' : 'Credenciais médicas'}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
               <label className="form-label">Especialidade *</label>
-              <select className="form-input" value={specialty} onChange={e => setSpecialty(e.target.value)}>
-                {SPECIALTIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
+              {inviteInfo?.role === 'nurse' ? (
+                <input className="form-input" value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="ex: Enfermagem geral" />
+              ) : (
+                <select className="form-input" value={specialty} onChange={e => setSpecialty(e.target.value)}>
+                  {SPECIALTIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              )}
             </div>
             <div>
-              <label className="form-label">Nº de Licença / Cédula <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
-              <input className="form-input" placeholder="ex: OMEN-12345" value={license} onChange={e => setLicense(e.target.value)} />
+              <label className="form-label">Nº de Licença / Cédula *</label>
+              <input className="form-input" placeholder="ex: OMEN-12345" value={license} onChange={e => setLicense(e.target.value)} required />
             </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+            {[
+              ['País de exercício', practiceCountry, setPracticeCountry],
+              ['País da licença', licenceCountry, setLicenceCountry],
+              ['País do diploma', diplomaCountry, setDiplomaCountry],
+            ].map(([label, value, setter]: any) => (
+              <div key={label}>
+                <label className="form-label">{label}</label>
+                <select className="form-input" value={value} onChange={e => setter(e.target.value)}>
+                  <option value="AO">Angola</option><option value="PT">Portugal</option><option value="ES">Espanha</option>
+                  <option value="CU">Cuba</option><option value="RU">Rússia</option><option value="BR">Brasil</option>
+                  <option value="CV">Cabo Verde</option><option value="MZ">Moçambique</option><option value="CD">R. D. Congo</option>
+                  <option value="ST">São Tomé e Príncipe</option><option value="ZW">Zimbabwe</option>
+                </select>
+              </div>
+            ))}
+          </div>
+          {practiceCountry !== diplomaCountry && (
+            <div style={{ padding: '.65rem', borderRadius: 8, background: '#fffbeb', color: '#92400e', fontSize: '.78rem' }}>
+              Diploma estrangeiro: será necessário enviar reconhecimento/equivalência no passo seguinte.
+            </div>
+          )}
+          <input className="form-input" placeholder="Autoridade emissora / Ordem profissional *" value={authority} onChange={e => setAuthority(e.target.value)} required />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <input className="form-input" placeholder="Instituição do diploma *" value={institution} onChange={e => setInstitution(e.target.value)} required />
+            <input className="form-input" placeholder="Título do curso / grau *" value={degreeTitle} onChange={e => setDegreeTitle(e.target.value)} required />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
