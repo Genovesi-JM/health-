@@ -154,31 +154,33 @@ export default function ConsultationsPage() {
                 {filtered.map(c => (
                   <tr key={c.id}>
                     <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                      {specialtyLabel(c.specialty, t)}
-                      {['scheduled', 'in_progress', 'completed'].includes(c.status) && (
-                        <button
-                          onClick={() => setChatFor(c)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, background: 'none', border: 'none', color: 'var(--accent-teal)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
-                        >
-                          <MessageSquare size={13} /> {t('msg.messages')}
-                        </button>
-                      )}
-                      {['scheduled', 'in_progress'].includes(c.status) && (
-                        <button
-                          onClick={() => setVideoFor(c)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, marginLeft: 10, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
-                        >
-                          <Video size={13} /> {t('video.label')}
-                        </button>
-                      )}
-                      {c.status === 'completed' && (
-                        <button
-                          onClick={() => setReviewFor(c)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, marginLeft: 10, background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
-                        >
-                          <Star size={13} /> {t('review.action')}
-                        </button>
-                      )}
+                      <div>{specialtyLabel(c.specialty, t)}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+                        {['scheduled', 'in_progress', 'completed'].includes(c.status) && (
+                          <button
+                            onClick={() => setChatFor(c)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent-teal)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
+                          >
+                            <MessageSquare size={13} /> {t('msg.messages')}
+                          </button>
+                        )}
+                        {['scheduled', 'in_progress'].includes(c.status) && (
+                          <button
+                            onClick={() => setVideoFor(c)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
+                          >
+                            <Video size={13} /> {t('video.label')}
+                          </button>
+                        )}
+                        {c.status === 'completed' && (
+                          <button
+                            onClick={() => setReviewFor(c)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
+                          >
+                            <Star size={13} /> {t('review.action')}
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <span className={`badge ${statusBadge(c.status)}`}>
