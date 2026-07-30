@@ -27,11 +27,51 @@ path should therefore be:
 - iOS: RENPHO Health → Apple Health → KAYA through HealthKit.
 - Android: RENPHO Health/compatible source → Health Connect → KAYA.
 
-Both require explicit patient consent, platform permissions, a native mobile
-build, and incremental cursors to avoid duplicate readings. The KAYA reading
-model and import endpoint provide the server-side destination, but native
-HealthKit/Health Connect authorization is not represented as complete until a
-signed development build is tested on a physical device.
+Both require explicit patient consent and a native mobile build. KAYA now
+contains the HealthKit and Health Connect bridges:
+
+- iOS reads weight, body-fat percentage, BMI, lean body mass, height and waist
+  circumference. HealthKit anchors and source sample UUIDs make retries
+  incremental and idempotent.
+- Android reads Weight, BodyFat, LeanBodyMass, Height, BodyWaterMass, BoneMass
+  and BasalMetabolicRate records from Health Connect. It re-reads a small overlap
+  window and deduplicates records by their Health Connect identifiers.
+- The app synchronizes when it opens, whenever it returns to the foreground,
+  when HealthKit emits an observer update, every 15 minutes while running, and
+  through an OS-scheduled background task. iOS and Android ultimately control
+  when background work runs, so it is intentionally not described as instant.
+- Server synchronization uses `POST /api/v1/readings/sync`, physiological range
+  validation and a unique patient/source/external-ID index.
+
+The native authorization flow cannot run inside Expo Go.
+
+### Physical-device build and RENPHO test
+
+1. Set `EXPO_PUBLIC_API_BASE_URL` to a TLS KAYA backend reachable by the phone.
+2. Apply the backend migrations, including
+   `add_health_sync_external_ids_v1`.
+3. Create a development client:
+
+   ```bash
+   cd mobile
+   npx eas build --profile development --platform ios
+   # or
+   npx eas build --profile development --platform android
+   ```
+
+4. Install the signed build. In RENPHO Health, enable all supported sharing to
+   Apple Health. On Android, enable RENPHO's supported health-platform sharing
+   and verify the new measurement is visible in Health Connect.
+5. In KAYA, open **Measurements**, tap **Connect Apple Health** or
+   **Connect Health Connect**, grant the requested read permissions, then weigh
+   once with bare feet.
+6. Confirm the measurement appears in KAYA with its platform source. Repeating
+   synchronization must not create a duplicate.
+
+RENPHO's current Android consumer documentation explicitly guarantees Google
+Fit weight synchronization, not every body-composition field in Health Connect.
+If a specific RENPHO model does not expose a metric to Health Connect, KAYA
+keeps the CSV importer as the supported fallback for that field.
 
 ## Payment discovery API
 

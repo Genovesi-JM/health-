@@ -242,6 +242,68 @@ class TestTriageFlow:
         assert rows[0].device_brand == "RENPHO"
         assert "body_composition" in rows[0].notes
 
+    def test_patient_syncs_health_platform_records_idempotently(self, client: TestClient, db_session):
+        user = _make_user(db_session, "health_sync@test.com", "patient")
+        patient = _make_patient(db_session, user)
+        headers = _token(user)
+        record = {
+            "external_id": "renpho-weight-2026-07-30",
+            "reading_type": "weight",
+            "value": 71.8,
+            "unit": "kg",
+            "measured_at": "2026-07-29T07:30:00Z",
+            "source": "apple_health",
+            "source_app": "com.renpho.health",
+            "device_brand": "RENPHO",
+            "device_model": "Smart Scale",
+        }
+
+        first = client.post("/api/v1/readings/sync", json={"records": [record]}, headers=headers)
+        assert first.status_code == 200, first.text
+        assert first.json() == {"imported": 1, "updated": 0, "skipped": 0}
+
+        retry = client.post("/api/v1/readings/sync", json={"records": [record]}, headers=headers)
+        assert retry.status_code == 200
+        assert retry.json() == {"imported": 0, "updated": 0, "skipped": 1}
+
+        corrected = {**record, "value": 71.6}
+        update = client.post("/api/v1/readings/sync", json={"records": [corrected]}, headers=headers)
+        assert update.status_code == 200
+        assert update.json() == {"imported": 0, "updated": 1, "skipped": 0}
+
+        saved = db_session.query(DeviceReading).filter(
+            DeviceReading.patient_id == patient.id,
+            DeviceReading.external_id == record["external_id"],
+        ).one()
+        assert float(saved.value) == 71.6
+        assert saved.source == "apple_health"
+
+    def test_health_sync_rejects_wrong_source_and_skips_impossible_values(
+        self, client: TestClient, db_session
+    ):
+        user = _make_user(db_session, "health_sync_validation@test.com", "patient")
+        _make_patient(db_session, user)
+        base = {
+            "external_id": "invalid-weight",
+            "reading_type": "weight",
+            "value": 900,
+            "unit": "kg",
+            "measured_at": "2026-07-29T07:30:00Z",
+            "source": "health_connect",
+        }
+        skipped = client.post(
+            "/api/v1/readings/sync", json={"records": [base]}, headers=_token(user)
+        )
+        assert skipped.status_code == 200
+        assert skipped.json()["skipped"] == 1
+
+        invalid_source = client.post(
+            "/api/v1/readings/sync",
+            json={"records": [{**base, "source": "untrusted_cloud"}]},
+            headers=_token(user),
+        )
+        assert invalid_source.status_code == 422
+
     def test_full_triage_flow(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_full@test.com", "patient")
         _make_patient(db_session, user)

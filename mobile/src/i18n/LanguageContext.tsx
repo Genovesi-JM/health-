@@ -31,6 +31,21 @@ const translations = {
   'settings.new_password': { pt: 'Nova palavra-passe (mín. 6 caracteres)', en: 'New password (min. 6 characters)', fr: 'Nouveau mot de passe (6 caractères min.)', es: 'Nueva contraseña (mín. 6 caracteres)' },
   'settings.confirm_password': { pt: 'Confirmar nova palavra-passe', en: 'Confirm new password', fr: 'Confirmer le nouveau mot de passe', es: 'Confirmar nueva contraseña' },
   'settings.update_password': { pt: 'Atualizar palavra-passe', en: 'Update password', fr: 'Mettre à jour', es: 'Actualizar contraseña' },
+  'readings.title': { pt: 'Medições', en: 'Measurements', fr: 'Mesures', es: 'Mediciones' },
+  'readings.add': { pt: 'Adicionar', en: 'Add', fr: 'Ajouter', es: 'Añadir' },
+  'readings.cancel': { pt: 'Cancelar', en: 'Cancel', fr: 'Annuler', es: 'Cancelar' },
+  'readings.empty': { pt: 'Ainda não existem medições.', en: 'No measurements yet.', fr: 'Aucune mesure pour le moment.', es: 'Aún no hay mediciones.' },
+  'readings.save': { pt: 'Guardar medição', en: 'Save measurement', fr: 'Enregistrer la mesure', es: 'Guardar medición' },
+  'readings.health_title': { pt: 'Sincronização automática', en: 'Automatic synchronization', fr: 'Synchronisation automatique', es: 'Sincronización automática' },
+  'readings.health_desc': { pt: 'Importa peso e composição corporal autorizados pelo sistema de saúde do telefone.', en: 'Imports authorized weight and body-composition measurements from your phone’s health system.', fr: 'Importe les mesures autorisées de poids et de composition corporelle du téléphone.', es: 'Importa las mediciones autorizadas de peso y composición corporal del teléfono.' },
+  'readings.connect': { pt: 'Ligar', en: 'Connect', fr: 'Connecter', es: 'Conectar' },
+  'readings.disconnect': { pt: 'Desligar', en: 'Disconnect', fr: 'Déconnecter', es: 'Desconectar' },
+  'readings.sync': { pt: 'Sincronizar agora', en: 'Sync now', fr: 'Synchroniser', es: 'Sincronizar ahora' },
+  'readings.connected': { pt: 'Ligado', en: 'Connected', fr: 'Connecté', es: 'Conectado' },
+  'readings.unavailable': { pt: 'Não disponível neste dispositivo', en: 'Not available on this device', fr: 'Indisponible sur cet appareil', es: 'No disponible en este dispositivo' },
+  'readings.last_sync': { pt: 'Última sincronização', en: 'Last synchronization', fr: 'Dernière synchronisation', es: 'Última sincronización' },
+  'readings.permission_denied': { pt: 'Autorize as medições nas definições de saúde do telefone.', en: 'Authorize measurements in the phone’s health settings.', fr: 'Autorisez les mesures dans les réglages de santé du téléphone.', es: 'Autoriza las mediciones en los ajustes de salud del teléfono.' },
+  'readings.sync_complete': { pt: 'Medições atualizadas', en: 'Measurements updated', fr: 'Mesures mises à jour', es: 'Mediciones actualizadas' },
 } as const;
 
 type TranslationKey = keyof typeof translations;

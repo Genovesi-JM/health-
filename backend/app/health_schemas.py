@@ -652,6 +652,14 @@ READING_TYPES = (
     "oxygen_saturation",
     "weight",
     "heart_rate",
+    "body_fat",
+    "bmi",
+    "lean_body_mass",
+    "body_water_mass",
+    "bone_mass",
+    "height",
+    "waist_circumference",
+    "basal_metabolic_rate",
 )
 
 _reading_type_pattern = "^(" + "|".join(READING_TYPES) + ")$"
@@ -672,6 +680,28 @@ class DeviceReadingCreate(BaseModel):
     device_brand: Optional[str] = Field(default=None, max_length=100)
     device_model: Optional[str] = Field(default=None, max_length=100)
     notes: Optional[str] = None
+
+
+class HealthSyncReading(BaseModel):
+    external_id: str = Field(..., min_length=1, max_length=200)
+    reading_type: str = Field(..., pattern=_reading_type_pattern)
+    value: float
+    unit: str = Field(..., min_length=1, max_length=20)
+    measured_at: datetime
+    source: str = Field(..., pattern="^(apple_health|health_connect)$")
+    source_app: Optional[str] = Field(default=None, max_length=200)
+    device_brand: Optional[str] = Field(default=None, max_length=100)
+    device_model: Optional[str] = Field(default=None, max_length=100)
+
+
+class HealthSyncRequest(BaseModel):
+    records: List[HealthSyncReading] = Field(..., min_length=1, max_length=500)
+
+
+class HealthSyncResponse(BaseModel):
+    imported: int
+    updated: int
+    skipped: int
 
 
 class DeviceReadingUpdate(BaseModel):
@@ -697,6 +727,7 @@ class DeviceReadingOut(BaseModel):
     pulse: Optional[int] = None
     measured_at: datetime
     source: Optional[str] = None
+    external_id: Optional[str] = None
     device_brand: Optional[str] = None
     device_model: Optional[str] = None
     notes: Optional[str] = None

@@ -12,13 +12,28 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kayahealth.app"
+      "bundleIdentifier": "com.kayahealth.app",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "fetch"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0d9488"
       },
-      "package": "com.kayahealth.app"
+      "package": "com.kayahealth.app",
+      "permissions": [
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_BODY_FAT",
+        "android.permission.health.READ_LEAN_BODY_MASS",
+        "android.permission.health.READ_HEIGHT",
+        "android.permission.health.READ_BODY_WATER_MASS",
+        "android.permission.health.READ_BONE_MASS",
+        "android.permission.health.READ_BASAL_METABOLIC_RATE",
+        "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,7 +49,26 @@
           "photosPermission": "A KAYA usa as fotografias selecionadas apenas para revisão clínica na sua triagem.",
           "cameraPermission": "A KAYA usa a câmara para adicionar fotografias privadas à sua triagem."
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "A KAYA lê as medições autorizadas para manter o seu histórico de saúde atualizado.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": true
+        }
+      ],
+      "react-native-health-connect"
     ],
     "scheme": "kayahealth"
   }

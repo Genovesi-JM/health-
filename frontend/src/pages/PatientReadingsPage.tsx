@@ -14,7 +14,15 @@ type ReadingType =
   | 'temperature'
   | 'oxygen_saturation'
   | 'weight'
-  | 'heart_rate';
+  | 'heart_rate'
+  | 'body_fat'
+  | 'bmi'
+  | 'lean_body_mass'
+  | 'body_water_mass'
+  | 'bone_mass'
+  | 'height'
+  | 'waist_circumference'
+  | 'basal_metabolic_rate';
 
 interface DeviceReading {
   id: string;
@@ -46,6 +54,14 @@ const READING_TYPES: { value: ReadingType; label: string; labelKey: string; icon
   { value: 'oxygen_saturation', label: 'Saturação de Oxigénio', labelKey: 'read.t_oxygen',         icon: Wind,          defaultUnit: '%' },
   { value: 'weight',            label: 'Peso',                  labelKey: 'read.t_weight',         icon: Weight,        defaultUnit: 'kg' },
   { value: 'heart_rate',        label: 'Frequência Cardíaca',   labelKey: 'read.t_heart_rate',     icon: HeartPulse,    defaultUnit: 'bpm' },
+  { value: 'body_fat',          label: 'Gordura Corporal',      labelKey: 'read.t_body_fat',       icon: Activity,      defaultUnit: '%' },
+  { value: 'bmi',               label: 'IMC',                    labelKey: 'read.t_bmi',            icon: Scale,         defaultUnit: 'kg/m²' },
+  { value: 'lean_body_mass',    label: 'Massa Magra',            labelKey: 'read.t_lean_mass',      icon: Weight,        defaultUnit: 'kg' },
+  { value: 'body_water_mass',   label: 'Água Corporal',          labelKey: 'read.t_body_water',     icon: Droplets,      defaultUnit: 'kg' },
+  { value: 'bone_mass',         label: 'Massa Óssea',            labelKey: 'read.t_bone_mass',      icon: Activity,      defaultUnit: 'kg' },
+  { value: 'height',            label: 'Altura',                 labelKey: 'read.t_height',         icon: Activity,      defaultUnit: 'm' },
+  { value: 'waist_circumference', label: 'Cintura',              labelKey: 'read.t_waist',          icon: Activity,      defaultUnit: 'cm' },
+  { value: 'basal_metabolic_rate', label: 'Metabolismo Basal',   labelKey: 'read.t_bmr',            icon: Activity,      defaultUnit: 'kcal/day' },
 ];
 
 const TYPE_META = Object.fromEntries(READING_TYPES.map(t => [t.value, t])) as Record<

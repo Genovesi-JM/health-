@@ -9,6 +9,7 @@ dist/
 # Vite cache
 frontend/node_modules/.vite/
 .vite/
+.expo/
 
 # TypeScript build info
 *.tsbuildinfo
@@ -43,6 +44,7 @@ Thumbs.db
 
 # Database
 *.db
+*.db.*
 *.sqlite3
 
 # Local/private health uploads

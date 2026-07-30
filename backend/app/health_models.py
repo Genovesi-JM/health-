@@ -534,6 +534,14 @@ READING_TYPES = (
     "oxygen_saturation",
     "weight",
     "heart_rate",
+    "body_fat",
+    "bmi",
+    "lean_body_mass",
+    "body_water_mass",
+    "bone_mass",
+    "height",
+    "waist_circumference",
+    "basal_metabolic_rate",
 )
 
 
@@ -561,6 +569,7 @@ class DeviceReading(Base):
     # When and how
     measured_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     source: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="manual")
+    external_id: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     device_brand: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     device_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -574,6 +583,11 @@ class DeviceReading(Base):
 
     __table_args__ = (
         Index("ix_device_readings_patient_measured", "patient_id", "measured_at"),
+        Index(
+            "uq_device_readings_patient_source_external",
+            "patient_id", "source", "external_id",
+            unique=True,
+        ),
     )
 
 

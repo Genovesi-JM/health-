@@ -12,7 +12,7 @@ import logging
 import csv
 import io
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -26,6 +26,8 @@ from app.health_schemas import (
     DeviceReadingCreate,
     DeviceReadingOut,
     DeviceReadingListOut,
+    HealthSyncRequest,
+    HealthSyncResponse,
     RoleEnum,
 )
 from app.rbac import get_patient_for_user, require_roles, assert_doctor_can_access_patient
@@ -35,6 +37,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/readings", tags=["readings"])
 
 MAX_IMPORT_BYTES = 2 * 1024 * 1024
+
+SYNC_RANGES = {
+    "weight": (2, 500),
+    "body_fat": (0, 100),
+    "bmi": (5, 100),
+    "lean_body_mass": (0, 500),
+    "body_water_mass": (0, 500),
+    "bone_mass": (0, 100),
+    "height": (0.3, 2.7),
+    "waist_circumference": (20, 300),
+    "basal_metabolic_rate": (100, 10_000),
+    "heart_rate": (20, 260),
+    "oxygen_saturation": (40, 100),
+    "temperature": (25, 45),
+    "glucose": (10, 1000),
+}
 
 
 def _normalise_header(value: str) -> str:
@@ -145,6 +163,88 @@ def create_reading(
     db.refresh(reading)
     logger.info("DeviceReading created id=%s type=%s patient=%s", reading.id, reading.reading_type, patient.id)
     return reading
+
+
+@router.post("/sync", response_model=HealthSyncResponse)
+def sync_health_readings(
+    body: HealthSyncRequest,
+    patient: Patient = Depends(get_patient_for_user),
+    db: Session = Depends(get_db),
+):
+    """Upsert consented Apple Health and Health Connect measurements.
+
+    Platform sample identifiers make retries idempotent. A corrected sample is
+    updated in place, while malformed or physiologically impossible values are
+    ignored rather than entering the clinical measurement history.
+    """
+    imported = 0
+    updated = 0
+    skipped = 0
+    now = datetime.utcnow()
+
+    for item in body.records:
+        minimum, maximum = SYNC_RANGES.get(item.reading_type, (-1_000_000, 1_000_000))
+        if not minimum <= item.value <= maximum:
+            skipped += 1
+            continue
+        measured_at = (
+            item.measured_at.astimezone(timezone.utc).replace(tzinfo=None)
+            if item.measured_at.tzinfo
+            else item.measured_at
+        )
+        if measured_at > now:
+            skipped += 1
+            continue
+
+        metadata = json.dumps(
+            {"source_app": item.source_app, "platform_external_id": item.external_id},
+            ensure_ascii=False,
+        )
+        existing = db.query(DeviceReading).filter(
+            DeviceReading.patient_id == patient.id,
+            DeviceReading.source == item.source,
+            DeviceReading.external_id == item.external_id,
+        ).first()
+        if existing:
+            changed = (
+                float(existing.value or 0) != item.value
+                or existing.unit != item.unit
+                or existing.measured_at != measured_at
+            )
+            if changed:
+                existing.reading_type = item.reading_type
+                existing.value = item.value
+                existing.unit = item.unit
+                existing.measured_at = measured_at
+                existing.device_brand = item.device_brand
+                existing.device_model = item.device_model
+                existing.notes = metadata
+                db.add(existing)
+                updated += 1
+            else:
+                skipped += 1
+            continue
+
+        db.add(DeviceReading(
+            patient_id=patient.id,
+            reading_type=item.reading_type,
+            value=item.value,
+            unit=item.unit,
+            measured_at=measured_at,
+            source=item.source,
+            external_id=item.external_id,
+            device_brand=item.device_brand,
+            device_model=item.device_model,
+            notes=metadata,
+        ))
+        imported += 1
+
+    db.commit()
+    logger.info(
+        "Health sync patient=%s imported=%s updated=%s skipped=%s",
+        patient.id, imported, updated, skipped,
+    )
+    return HealthSyncResponse(imported=imported, updated=updated, skipped=skipped)
 
 
 @router.post("/import")
