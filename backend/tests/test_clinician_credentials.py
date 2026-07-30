@@ -7,7 +7,9 @@ from urllib.parse import parse_qs, urlparse
 
 from app.config import settings
 from app.services.credential_providers import extract_azure_fields
-from app.health_models import CareEscalation, Consultation, Doctor, Patient, Prescription
+from app.health_models import (
+    CareEscalation, Consultation, Doctor, Patient, PatientConsent, Prescription,
+)
 
 
 def _register(client, role="doctor", diploma_country="PT"):
@@ -314,6 +316,102 @@ def test_nursing_documentation_and_care_tasks_are_shared_in_patient_360(client, 
     assert workspace.status_code == 200, workspace.text
     assert workspace.json()["nursing_observations"][0]["observation_type"] == "intervention"
     assert workspace.json()["care_tasks"][0]["status"] == "completed"
+
+
+def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db_session):
+    nurse = _register(client, role="nurse", diploma_country="AO")
+    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    _verify_clinician(client, nurse)
+    _verify_clinician(client, doctor_auth)
+    doctor = db_session.query(Doctor).filter(Doctor.user_id == doctor_auth["user"]["id"]).first()
+
+    patient_auth_response = client.post("/auth/register", json={
+        "email": f"patient-video-{uuid.uuid4().hex[:8]}@example.com",
+        "password": "strong-pass",
+        "full_name": "Paciente Teleconsulta",
+        "sector_focus": "health",
+        "role": "patient",
+    })
+    patient_auth = patient_auth_response.json()
+    patient = db_session.query(Patient).filter(Patient.user_id == patient_auth["user"]["id"]).first()
+    consultation = Consultation(
+        patient_id=patient.id,
+        doctor_id=doctor.id,
+        specialty="clinica_geral",
+        status="scheduled",
+    )
+    db_session.add_all([
+        consultation,
+        PatientConsent(patient_id=patient.id, consent_type="telemedicine_consent"),
+    ])
+    db_session.commit()
+
+    prepared = client.post(
+        f"/api/v1/teleconsultations/{consultation.id}/prepare",
+        headers=_headers(nurse),
+    )
+    assert prepared.status_code == 201, prepared.text
+    assert prepared.json()["provider_mode"] == "pilot"
+    assert prepared.json()["recording_enabled"] is False
+    patient_prepare = client.post(
+        f"/api/v1/teleconsultations/{consultation.id}/prepare",
+        headers=_headers(patient_auth),
+    )
+    assert patient_prepare.status_code == 403
+
+    for auth, consent in ((patient_auth, True), (nurse, False), (doctor_auth, False)):
+        checked = client.post(
+            f"/api/v1/teleconsultations/{consultation.id}/check-in",
+            headers=_headers(auth),
+            json={
+                "camera_ready": True,
+                "microphone_ready": True,
+                "network_quality": "good",
+                "consent_confirmed": consent,
+            },
+        )
+        assert checked.status_code == 200, checked.text
+
+    early_join = client.post(
+        f"/api/v1/teleconsultations/{consultation.id}/join",
+        headers=_headers(patient_auth),
+    )
+    assert early_join.status_code == 409
+
+    blocked_start = client.post(
+        f"/api/v1/teleconsultations/{consultation.id}/start",
+        headers=_headers(doctor_auth),
+    )
+    assert blocked_start.status_code == 409
+
+    preflight = client.put(
+        f"/api/v1/teleconsultations/{consultation.id}/preflight",
+        headers=_headers(nurse),
+        json={
+            "identity_confirmed": True,
+            "consent_confirmed": True,
+            "vitals_reviewed": True,
+            "medication_reviewed": True,
+            "clinical_summary_ready": True,
+            "preflight_note": "Paciente e documentação prontos.",
+        },
+    )
+    assert preflight.status_code == 200, preflight.text
+    assert preflight.json()["preflight_complete"] is True
+
+    started = client.post(
+        f"/api/v1/teleconsultations/{consultation.id}/start",
+        headers=_headers(doctor_auth),
+    )
+    assert started.status_code == 200, started.text
+    assert started.json()["status"] == "in_progress"
+
+    joined = client.post(
+        f"/api/v1/teleconsultations/{consultation.id}/join",
+        headers=_headers(doctor_auth),
+    )
+    assert joined.status_code == 200, joined.text
+    assert joined.json()["room_url"].startswith("https://meet.jit.si/KAYA-")
 
 
 def test_registration_rejects_incomplete_clinician_profile(client):

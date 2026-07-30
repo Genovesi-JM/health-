@@ -673,6 +673,63 @@ class ClinicalCareTask(Base):
     )
 
 
+class TeleconsultationSession(Base):
+    """Operational state around a provider-hosted video consultation."""
+    __tablename__ = "teleconsultation_sessions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    consultation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("consultations.id", ondelete="CASCADE"),
+        nullable=False, unique=True, index=True,
+    )
+    room_key: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
+    provider: Mapped[str] = mapped_column(String(30), nullable=False, default="jitsi_pilot")
+    provider_mode: Mapped[str] = mapped_column(String(30), nullable=False, default="pilot")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="scheduled")
+    identity_confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    consent_confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    vitals_reviewed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    medication_reviewed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    clinical_summary_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    preflight_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+
+class TeleconsultationParticipant(Base):
+    """Per-user device readiness and attendance without recording call media."""
+    __tablename__ = "teleconsultation_participants"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("teleconsultation_sessions.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    camera_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    microphone_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    network_quality: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    consent_confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    checked_in_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    joined_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    left_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_teleconsult_participant_session_user", "session_id", "user_id", unique=True),
+    )
+
+
 # ── Corporate ──
 
 class CorporateAccount(Base):

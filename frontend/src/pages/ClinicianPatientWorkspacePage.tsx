@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
+import TeleconsultationControl from '../components/TeleconsultationControl';
 
 type Patient360 = {
   access: {
@@ -596,19 +597,24 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
         )}
 
         {activeTab === 'consultations' && (
-          <section className="clinician-panel">
-            <PanelTitle icon={<Video size={17} />} title={c.consultations} meta={`${data.consultations.length}`} />
-            <div className="clinician-consultation-list">
-              {data.consultations.map(item => (
-                <article key={item.id}>
-                  <span className={`consult-icon ${item.status}`}><Video size={18} /></span>
-                  <div><h3>{item.specialty}</h3><p>{formatDate(item.scheduled_at || item.created_at)} · {item.status}</p></div>
-                  <span><MessageSquare size={14} /> {item.messages_count}</span>
-                  {item.notes && <div className="consult-plan"><strong>Plano</strong><span>{item.notes.plan || item.notes.assessment || '—'}</span></div>}
-                </article>
-              ))}
-            </div>
-          </section>
+          <div className="clinician-coordination-stack">
+            {data.active_episode && (
+              <TeleconsultationControl consultationId={data.active_episode.id} role={data.access.role} preview={preview} />
+            )}
+            <section className="clinician-panel">
+              <PanelTitle icon={<Video size={17} />} title={c.consultations} meta={`${data.consultations.length}`} />
+              <div className="clinician-consultation-list">
+                {data.consultations.map(item => (
+                  <article key={item.id}>
+                    <span className={`consult-icon ${item.status}`}><Video size={18} /></span>
+                    <div><h3>{item.specialty}</h3><p>{formatDate(item.scheduled_at || item.created_at)} · {item.status}</p></div>
+                    <span><MessageSquare size={14} /> {item.messages_count}</span>
+                    {item.notes && <div className="consult-plan"><strong>Plano</strong><span>{item.notes.plan || item.notes.assessment || '—'}</span></div>}
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
         )}
 
         {activeTab === 'coordination' && (

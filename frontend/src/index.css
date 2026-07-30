@@ -1946,6 +1946,45 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .escalation-status { padding: 0.2rem 0.42rem; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: 0.48rem; font-weight: 900; text-transform: uppercase; }
 .escalation-status.accepted { background: #dbeafe; color: #1d4ed8; }
 .escalation-status.resolved { background: #dcfce7; color: #15803d; }
+.teleconsult-control { display: grid; gap: 0.7rem; padding: 0.9rem; border: 1px solid #bfdbfe; border-radius: 14px; background: linear-gradient(135deg,#eff6ff,#fff 72%); }
+.teleconsult-control > header { display: grid; grid-template-columns: auto 1fr auto; gap: 0.65rem; align-items: center; }
+.teleconsult-control > header > span { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 10px; background: #dbeafe; color: #1d4ed8; }
+.teleconsult-control h3 { margin: 0; font-size: 0.82rem; }
+.teleconsult-control header p { margin: 0.12rem 0 0; color: var(--text-muted); font-size: 0.58rem; }
+.teleconsult-status { padding: 0.23rem 0.5rem; border-radius: 999px; background: #fef3c7; color: #b45309; font-size: 0.5rem; text-transform: uppercase; }
+.teleconsult-status.in_progress { background: #dcfce7; color: #15803d; }
+.teleconsult-provider { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.6rem; border-radius: 9px; background: #fffbeb; color: #92400e; }
+.teleconsult-provider span { display: grid; gap: 0.12rem; }
+.teleconsult-provider strong { font-size: 0.6rem; }
+.teleconsult-provider small { font-size: 0.52rem; line-height: 1.4; }
+.teleconsult-readiness { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.teleconsult-readiness button { display: flex; min-height: 42px; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: 9px; background: #fff; color: var(--text-secondary); font-size: 0.58rem; font-weight: 800; cursor: pointer; }
+.teleconsult-readiness button.ready { border-color: #a7f3d0; background: #ecfdf5; color: #047857; }
+.teleconsult-checklist { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 0.4rem; }
+.teleconsult-checklist button { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 0.25rem; padding: 0.42rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text-muted); font-size: 0.51rem; font-weight: 800; cursor: pointer; }
+.teleconsult-checklist button.checked { border-color: #a7f3d0; background: #ecfdf5; color: #047857; }
+.teleconsult-checklist button.teleconsult-save { grid-column: 1 / -1; min-height: 36px; border: 0; background: #0f766e; color: #fff; }
+.teleconsult-participants { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.teleconsult-participants span { display: flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.48rem; border-radius: 999px; background: #f1f5f9; color: #64748b; font-size: 0.5rem; }
+.teleconsult-participants i { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; }
+.teleconsult-participants span.online i { background: #10b981; }
+.teleconsult-primary { display: flex; min-height: 42px; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.55rem 0.8rem; border: 0; border-radius: 9px; background: #2563eb; color: #fff; font-size: 0.62rem; font-weight: 900; cursor: pointer; }
+.teleconsult-primary:disabled { cursor: not-allowed; opacity: 0.5; }
+.teleconsult-error { padding: 0.55rem; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 0.56rem; }
+.teleconsult-modal { max-width: 680px; }
+.teleconsult-modal .modal-header > div { min-width: 0; }
+.teleconsult-modal .modal-header small { display: block; margin-top: 0.2rem; color: var(--text-muted); }
+.teleconsult-modal-close {
+  width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card);
+  color: var(--text-secondary); cursor: pointer;
+}
+.teleconsult-modal-close:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
+@media (max-width: 720px) {
+  .teleconsult-readiness { grid-template-columns: 1fr; }
+  .teleconsult-checklist { grid-template-columns: 1fr 1fr; }
+  .teleconsult-checklist button.teleconsult-save { grid-column: 1 / -1; }
+}
 
 .doctor-escalation-board { margin-bottom: 1rem; overflow: hidden; border: 1px solid #99f6e4; border-radius: 14px; background: linear-gradient(135deg,#f0fdfa 0%,#fff 72%); }
 .doctor-escalation-board > header { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem; border-bottom: 1px solid #ccfbf1; }

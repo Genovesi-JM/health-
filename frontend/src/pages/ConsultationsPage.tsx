@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import type { Consultation, PatientState } from '../types';
-import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap, X } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 import BookConsultationModal from '../components/BookConsultationModal';
 import PaymentModal from '../components/PaymentModal';
 import ChatModal from '../components/ChatModal';
 import ReviewModal from '../components/ReviewModal';
 import { specialtyLabel } from '../constants/specialties';
-import { openVideoRoom } from '../utils/video';
 import { MessageSquare, Star, Video } from 'lucide-react';
+import TeleconsultationControl from '../components/TeleconsultationControl';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -25,6 +25,7 @@ export default function ConsultationsPage() {
   const [payFor, setPayFor] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<Consultation | null>(null);
   const [reviewFor, setReviewFor] = useState<Consultation | null>(null);
+  const [videoFor, setVideoFor] = useState<Consultation | null>(null);
 
   useEffect(() => {
     Promise.allSettled([
@@ -164,7 +165,7 @@ export default function ConsultationsPage() {
                       )}
                       {['scheduled', 'in_progress'].includes(c.status) && (
                         <button
-                          onClick={() => openVideoRoom(c.id)}
+                          onClick={() => setVideoFor(c)}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, marginLeft: 10, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: 0 }}
                         >
                           <Video size={13} /> {t('video.label')}
@@ -231,6 +232,31 @@ export default function ConsultationsPage() {
         myRole="patient"
         onClose={() => setChatFor(null)}
       />
+
+      {videoFor && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('video.label')}
+          onClick={event => { if (event.target === event.currentTarget) setVideoFor(null); }}
+        >
+          <div className="modal teleconsult-modal">
+            <div className="modal-header">
+              <div>
+                <h3>{t('video.label')}</h3>
+                <small>{specialtyLabel(videoFor.specialty, t)}</small>
+              </div>
+              <button className="teleconsult-modal-close" type="button" aria-label={t('common.close')} onClick={() => setVideoFor(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <TeleconsultationControl consultationId={videoFor.id} role="patient" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Review modal */}
       <ReviewModal
