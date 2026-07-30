@@ -12,7 +12,7 @@ import logging
 import csv
 import io
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -28,6 +28,8 @@ from app.health_schemas import (
     DeviceReadingListOut,
     HealthSyncRequest,
     HealthSyncResponse,
+    ReadingSummaryItem,
+    ReadingSummaryOut,
     RoleEnum,
 )
 from app.rbac import get_patient_for_user, require_roles, assert_doctor_can_access_patient
@@ -147,6 +149,75 @@ def list_my_readings(
         .all()
     )
     return DeviceReadingListOut(total=total, readings=readings)
+
+
+@router.get("/me/summary", response_model=ReadingSummaryOut)
+def summarize_my_readings(
+    days: int = Query(default=30, ge=7, le=365),
+    patient: Patient = Depends(get_patient_for_user),
+    db: Session = Depends(get_db),
+):
+    """Return a compact, non-diagnostic snapshot of the patient's readings.
+
+    Change is calculated from the earliest to latest scalar sample inside the
+    requested period. It intentionally reports measurements without assigning
+    clinical normal/abnormal labels.
+    """
+    period_start = datetime.utcnow() - timedelta(days=days)
+    readings = (
+        db.query(DeviceReading)
+        .filter(
+            DeviceReading.patient_id == patient.id,
+            DeviceReading.measured_at >= period_start,
+        )
+        .order_by(DeviceReading.measured_at.desc())
+        .limit(5000)
+        .all()
+    )
+    total_readings = (
+        db.query(DeviceReading)
+        .filter(DeviceReading.patient_id == patient.id)
+        .count()
+    )
+
+    grouped: dict[str, list[DeviceReading]] = {}
+    for reading in readings:
+        grouped.setdefault(reading.reading_type, []).append(reading)
+
+    items: list[ReadingSummaryItem] = []
+    for reading_type, samples in grouped.items():
+        latest = samples[0]
+        oldest = samples[-1]
+        change = None
+        if latest.value is not None and oldest.value is not None and latest.id != oldest.id:
+            change = round(float(latest.value) - float(oldest.value), 4)
+        items.append(ReadingSummaryItem(
+            reading_type=reading_type,
+            value=float(latest.value) if latest.value is not None else None,
+            unit=latest.unit,
+            systolic=latest.systolic,
+            diastolic=latest.diastolic,
+            pulse=latest.pulse,
+            measured_at=latest.measured_at,
+            source=latest.source,
+            device_brand=latest.device_brand,
+            device_model=latest.device_model,
+            change=change,
+            sample_count=len(samples),
+        ))
+
+    items.sort(key=lambda item: item.measured_at, reverse=True)
+    sources = sorted({
+        reading.source for reading in readings
+        if reading.source and reading.source != "manual"
+    })
+    return ReadingSummaryOut(
+        period_days=days,
+        total_readings=total_readings,
+        latest_measured_at=readings[0].measured_at if readings else None,
+        connected_sources=sources,
+        items=items,
+    )
 
 
 @router.post("", response_model=DeviceReadingOut, status_code=201)

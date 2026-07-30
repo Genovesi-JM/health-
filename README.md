@@ -230,6 +230,7 @@ pytest tests/ --cov=app --cov-report=term-missing
 | GET    | `/api/v1/doctors/pending`                   | Admin    | List pending doctors           |
 | POST   | `/api/v1/doctors/{id}/verify`               | Admin    | Approve/reject doctor          |
 | GET    | `/api/v1/dashboard/health`                  | Admin    | Health KPIs                    |
+| GET    | `/api/v1/readings/me/summary`               | Patient  | Latest measurements and trends|
 | GET    | `/api/v1/dashboard/admin`                   | Admin    | Admin dashboard stats          |
 | POST   | `/api/v1/corporate/accounts`                | Admin    | Create corporate account       |
 | POST   | `/api/v1/corporate/enroll`                  | Corp     | Enroll employee                |

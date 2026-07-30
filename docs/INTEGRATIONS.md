@@ -42,6 +42,10 @@ contains the HealthKit and Health Connect bridges:
   when background work runs, so it is intentionally not described as instant.
 - Server synchronization uses `POST /api/v1/readings/sync`, physiological range
   validation and a unique patient/source/external-ID index.
+- The patient dashboard uses `GET /api/v1/readings/me/summary` to present the
+  latest value per measurement type, the neutral change across a configurable
+  7–365 day period, sample counts and source provenance. It does not classify
+  readings as clinically normal or abnormal.
 
 The native authorization flow cannot run inside Expo Go.
 

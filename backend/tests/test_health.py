@@ -15,6 +15,7 @@ Covers:
 import io
 import json
 import zipfile
+from datetime import datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
@@ -303,6 +304,73 @@ class TestTriageFlow:
             headers=_token(user),
         )
         assert invalid_source.status_code == 422
+
+    def test_patient_gets_non_diagnostic_reading_summary(self, client: TestClient, db_session):
+        user = _make_user(db_session, "reading_summary@test.com", "patient")
+        patient = _make_patient(db_session, user)
+        now = datetime.utcnow()
+        db_session.add_all([
+            DeviceReading(
+                patient_id=patient.id,
+                reading_type="weight",
+                value=72.4,
+                unit="kg",
+                measured_at=now - timedelta(days=8),
+                source="apple_health",
+            ),
+            DeviceReading(
+                patient_id=patient.id,
+                reading_type="weight",
+                value=71.6,
+                unit="kg",
+                measured_at=now - timedelta(hours=2),
+                source="apple_health",
+                device_brand="RENPHO",
+            ),
+            DeviceReading(
+                patient_id=patient.id,
+                reading_type="blood_pressure",
+                systolic=120,
+                diastolic=78,
+                pulse=68,
+                unit="mmHg",
+                measured_at=now - timedelta(hours=1),
+                source="manual",
+            ),
+            DeviceReading(
+                patient_id=patient.id,
+                reading_type="weight",
+                value=80,
+                unit="kg",
+                measured_at=now - timedelta(days=60),
+                source="manual",
+            ),
+        ])
+        db_session.commit()
+
+        response = client.get(
+            "/api/v1/readings/me/summary?days=30",
+            headers=_token(user),
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["period_days"] == 30
+        assert data["total_readings"] == 4
+        assert data["connected_sources"] == ["apple_health"]
+        assert len(data["items"]) == 2
+
+        weight = next(item for item in data["items"] if item["reading_type"] == "weight")
+        assert weight["value"] == 71.6
+        assert weight["change"] == pytest.approx(-0.8)
+        assert weight["sample_count"] == 2
+        assert weight["device_brand"] == "RENPHO"
+
+        pressure = next(
+            item for item in data["items"] if item["reading_type"] == "blood_pressure"
+        )
+        assert pressure["systolic"] == 120
+        assert pressure["diastolic"] == 78
+        assert pressure["change"] is None
 
     def test_full_triage_flow(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_full@test.com", "patient")

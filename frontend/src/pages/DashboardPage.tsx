@@ -7,6 +7,7 @@ import { specialtyLabel } from '../constants/specialties';
 import type { PatientState, TriageHistoryItem, Consultation } from '../types';
 import BookConsultationModal from '../components/BookConsultationModal';
 import KpiGrid from '../components/KpiGrid';
+import HealthSnapshot, { type ReadingSummary } from '../components/HealthSnapshot';
 import {
   Activity, Calendar, ArrowRight, ChevronRight,
   HeartPulse, AlertTriangle, CheckCircle2,
@@ -25,20 +26,23 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'summary' | 'triages' | 'consultations' | 'profile'>('summary');
   const [showBooking, setShowBooking] = useState(false);
   const [chronicConditions, setChronicConditions] = useState<string[]>([]);
+  const [readingSummary, setReadingSummary] = useState<ReadingSummary | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [sRes, tRes, cRes, pRes] = await Promise.allSettled([
+        const [sRes, tRes, cRes, pRes, rRes] = await Promise.allSettled([
           api.get('/api/v1/dashboard/patient-state'),
           api.get('/api/v1/triage/history'),
           api.get('/api/v1/consultations/me'),
           api.get('/api/v1/patients/me'),
+          api.get('/api/v1/readings/me/summary?days=30'),
         ]);
         if (sRes.status === 'fulfilled') setState(sRes.value.data);
         if (tRes.status === 'fulfilled') setTriageHistory(tRes.value.data.slice(0, 5));
         if (cRes.status === 'fulfilled') setConsultations(cRes.value.data.slice(0, 5));
         if (pRes.status === 'fulfilled') setChronicConditions(pRes.value.data?.chronic_conditions || []);
+        if (rRes.status === 'fulfilled') setReadingSummary(rRes.value.data);
       } catch { /* ignore */ }
       setLoading(false);
     };
@@ -199,6 +203,8 @@ export default function DashboardPage() {
           { id: 'consultations', label: t('dash.consultations_done'), value: state?.completed_consultations ?? 0, icon: <Calendar size={18} />, color: '#2563eb', tone: 'positive' },
         ]}
       />
+
+      <HealthSnapshot summary={readingSummary} />
 
       {/* ── Chronic Diseases Section ── */}
       <div className="dash-section-header" style={{ marginTop: '1.5rem' }}>

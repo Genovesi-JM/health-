@@ -704,6 +704,29 @@ class HealthSyncResponse(BaseModel):
     skipped: int
 
 
+class ReadingSummaryItem(BaseModel):
+    reading_type: str
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    systolic: Optional[int] = None
+    diastolic: Optional[int] = None
+    pulse: Optional[int] = None
+    measured_at: datetime
+    source: Optional[str] = None
+    device_brand: Optional[str] = None
+    device_model: Optional[str] = None
+    change: Optional[float] = None
+    sample_count: int
+
+
+class ReadingSummaryOut(BaseModel):
+    period_days: int
+    total_readings: int
+    latest_measured_at: Optional[datetime] = None
+    connected_sources: List[str] = Field(default_factory=list)
+    items: List[ReadingSummaryItem] = Field(default_factory=list)
+
+
 class DeviceReadingUpdate(BaseModel):
     value: Optional[float] = None
     unit: Optional[str] = Field(default=None, max_length=20)
