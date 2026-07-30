@@ -3,12 +3,16 @@ import {
   ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text,
   TouchableOpacity, View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import api from '../services/api';
+import type { ClinicianStackParamList } from '../navigation/ClinicianStack';
 
 type QueueItem = {
   id: string;
+  patient_id?: string;
   patient: string;
   specialty?: string;
   risk_level?: string | null;
@@ -36,6 +40,7 @@ const RISK: Record<string, { background: string; color: string }> = {
 };
 
 export default function NurseDashboardScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<ClinicianStackParamList, 'NurseDashboard'>>();
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
@@ -106,7 +111,13 @@ export default function NurseDashboardScreen() {
           const level = (item.risk_level || '').toUpperCase();
           const tone = RISK[level] || { background: '#f1f5f9', color: '#64748b' };
           return (
-            <View key={item.id} style={styles.queueRow}>
+            <TouchableOpacity
+              key={item.id}
+              style={styles.queueRow}
+              disabled={!item.patient_id}
+              onPress={() => item.patient_id && navigation.navigate('Patient360', { patientId: item.patient_id })}
+              accessibilityRole="button"
+            >
               <View style={{ flex: 1 }}>
                 <Text style={styles.patient}>{item.patient}</Text>
                 <Text style={styles.complaint} numberOfLines={2}>
@@ -116,7 +127,7 @@ export default function NurseDashboardScreen() {
               <View style={[styles.riskBadge, { backgroundColor: tone.background }]}>
                 <Text style={[styles.riskText, { color: tone.color }]}>{level || '—'}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>

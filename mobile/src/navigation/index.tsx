@@ -5,8 +5,8 @@ import AuthStack from './AuthStack';
 import AppStack from './AppStack';
 import { View, ActivityIndicator } from 'react-native';
 import ProfessionalVerificationScreen from '../screens/ProfessionalVerificationScreen';
-import NurseDashboardScreen from '../screens/NurseDashboardScreen';
 import api from '../services/api';
+import ClinicianStack from './ClinicianStack';
 
 function ClinicianRoot({ role }: { role: string }) {
   const [credentialStatus, setCredentialStatus] = useState<string | null>(null);
@@ -24,7 +24,9 @@ function ClinicianRoot({ role }: { role: string }) {
       </View>
     );
   }
-  if (role === 'nurse' && credentialStatus === 'verified') return <NurseDashboardScreen />;
+  if ((role === 'doctor' || role === 'nurse') && credentialStatus === 'verified') {
+    return <ClinicianStack role={role} />;
+  }
   return <ProfessionalVerificationScreen onVerified={() => setCredentialStatus('verified')} />;
 }
 
