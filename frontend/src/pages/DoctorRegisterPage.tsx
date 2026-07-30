@@ -284,9 +284,9 @@ export default function DoctorRegisterPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
             {[
-              ['País de exercício', practiceCountry, setPracticeCountry],
-              ['País da licença', licenceCountry, setLicenceCountry],
-              ['País do diploma', diplomaCountry, setDiplomaCountry],
+              ['País de exercício / registo', practiceCountry, setPracticeCountry],
+              ['País que emitiu a licença', licenceCountry, setLicenceCountry],
+              ['País que emitiu o diploma / certificado', diplomaCountry, setDiplomaCountry],
             ].map(([label, value, setter]: any) => (
               <div key={label}>
                 <label className="form-label">{label}</label>

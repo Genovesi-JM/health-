@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Modal,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AuthStack';
@@ -9,6 +9,30 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
 type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Register'> };
+
+const COUNTRIES = [
+  { code: 'AO', name: 'Angola' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'CU', name: 'Cuba' },
+  { code: 'RU', name: 'Russia' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'CV', name: 'Cape Verde' },
+  { code: 'MZ', name: 'Mozambique' },
+  { code: 'CD', name: 'Democratic Republic of the Congo' },
+  { code: 'ST', name: 'São Tomé and Príncipe' },
+  { code: 'ZW', name: 'Zimbabwe' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'NA', name: 'Namibia' },
+  { code: 'GW', name: 'Guinea-Bissau' },
+  { code: 'FR', name: 'France' },
+] as const;
+
+type CountryField = 'practice' | 'licence' | 'diploma';
+
+function countryName(code: string) {
+  return COUNTRIES.find(country => country.code === code)?.name || code;
+}
 
 const REQUIRED_CONSENTS = [
   'terms_of_service',
@@ -40,6 +64,7 @@ export default function RegisterScreen({ navigation }: Props) {
   const [licenceNumber, setLicenceNumber] = useState('');
   const [institution, setInstitution] = useState('');
   const [degreeTitle, setDegreeTitle] = useState('');
+  const [countryPicker, setCountryPicker] = useState<CountryField | null>(null);
   const [loading, setLoading] = useState(false);
   const [consents, setConsents] = useState<Record<string, boolean>>(
     Object.fromEntries(REQUIRED_CONSENTS.map(c => [c, false])),
@@ -49,6 +74,13 @@ export default function RegisterScreen({ navigation }: Props) {
 
   const toggleConsent = (key: string) =>
     setConsents(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const chooseCountry = (code: string) => {
+    if (countryPicker === 'practice') setPracticeCountry(code);
+    if (countryPicker === 'licence') setLicenceCountry(code);
+    if (countryPicker === 'diploma') setDiplomaCountry(code);
+    setCountryPicker(null);
+  };
 
   const handleRegister = async () => {
     if (!email || !password) { Alert.alert('Error', 'Email and password are required.'); return; }
@@ -127,15 +159,22 @@ export default function RegisterScreen({ navigation }: Props) {
         {role !== 'patient' && (
           <View style={styles.professionalBox}>
             <Text style={styles.consentHeader}>PROFESSIONAL CREDENTIALS</Text>
-            <Text style={styles.hint}>Use ISO country codes: AO, PT, ES, CU, RU, BR, CV, MZ, CD, ST or ZW.</Text>
-            <View style={styles.countryRow}>
-              <TextInput style={[styles.input, styles.countryInput]} placeholder="Practice (AO)" placeholderTextColor="#94a3b8"
-                autoCapitalize="characters" value={practiceCountry} onChangeText={v => setPracticeCountry(v.toUpperCase().slice(0, 2))} />
-              <TextInput style={[styles.input, styles.countryInput]} placeholder="Licence" placeholderTextColor="#94a3b8"
-                autoCapitalize="characters" value={licenceCountry} onChangeText={v => setLicenceCountry(v.toUpperCase().slice(0, 2))} />
-              <TextInput style={[styles.input, styles.countryInput]} placeholder="Diploma" placeholderTextColor="#94a3b8"
-                autoCapitalize="characters" value={diplomaCountry} onChangeText={v => setDiplomaCountry(v.toUpperCase().slice(0, 2))} />
-            </View>
+            <Text style={styles.hint}>Select the country connected to each professional document.</Text>
+            <Text style={styles.countryLabel}>Country of practice / professional registration</Text>
+            <TouchableOpacity style={styles.countryButton} onPress={() => setCountryPicker('practice')}>
+              <Text style={styles.countryButtonText}>{countryName(practiceCountry)}</Text>
+              <Text style={styles.countryChevron}>⌄</Text>
+            </TouchableOpacity>
+            <Text style={styles.countryLabel}>Country that issued the professional licence</Text>
+            <TouchableOpacity style={styles.countryButton} onPress={() => setCountryPicker('licence')}>
+              <Text style={styles.countryButtonText}>{countryName(licenceCountry)}</Text>
+              <Text style={styles.countryChevron}>⌄</Text>
+            </TouchableOpacity>
+            <Text style={styles.countryLabel}>Country that issued the diploma / certificate</Text>
+            <TouchableOpacity style={styles.countryButton} onPress={() => setCountryPicker('diploma')}>
+              <Text style={styles.countryButtonText}>{countryName(diplomaCountry)}</Text>
+              <Text style={styles.countryChevron}>⌄</Text>
+            </TouchableOpacity>
             {practiceCountry !== diplomaCountry && <Text style={styles.warning}>Foreign diploma: recognition/equivalence evidence will be required.</Text>}
             <TextInput style={styles.input} placeholder="Issuing authority / professional order" placeholderTextColor="#94a3b8"
               value={authority} onChangeText={setAuthority} />
@@ -147,6 +186,41 @@ export default function RegisterScreen({ navigation }: Props) {
               value={degreeTitle} onChangeText={setDegreeTitle} />
           </View>
         )}
+
+        <Modal visible={countryPicker !== null} transparent animationType="slide"
+          onRequestClose={() => setCountryPicker(null)}>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.countrySheet}>
+              <View style={styles.sheetHeader}>
+                <View>
+                  <Text style={styles.sheetTitle}>Select country</Text>
+                  <Text style={styles.sheetSubtitle}>
+                    {countryPicker === 'practice' ? 'Practice / registration' :
+                      countryPicker === 'licence' ? 'Professional licence issued in' :
+                        'Diploma or certificate issued in'}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setCountryPicker(null)} style={styles.closeButton}>
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.countryList}>
+                {COUNTRIES.map(country => {
+                  const selectedCode = countryPicker === 'practice' ? practiceCountry :
+                    countryPicker === 'licence' ? licenceCountry : diplomaCountry;
+                  const selected = selectedCode === country.code;
+                  return (
+                    <TouchableOpacity key={country.code} style={[styles.countryOption, selected && styles.countryOptionSelected]}
+                      onPress={() => chooseCountry(country.code)}>
+                      <Text style={[styles.countryOptionText, selected && styles.countryOptionTextSelected]}>{country.name}</Text>
+                      {selected && <Text style={styles.countryCheck}>✓</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
 
         {/* Consent checkboxes */}
         <View style={styles.consentBox}>
@@ -197,9 +271,34 @@ const styles = StyleSheet.create({
     padding: 14, backgroundColor: '#fff', marginBottom: 16,
   },
   professionalBox: { borderWidth: 1, borderColor: '#99f6e4', borderRadius: 10, padding: 14, backgroundColor: '#f0fdfa', marginBottom: 16 },
-  countryRow: { flexDirection: 'row', gap: 7 },
-  countryInput: { flex: 1 },
   hint: { color: '#64748b', fontSize: 11, lineHeight: 16, marginBottom: 10 },
+  countryLabel: { color: '#475569', fontSize: 11, fontWeight: '600', marginBottom: 5 },
+  countryButton: {
+    minHeight: 48, borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10,
+    paddingHorizontal: 14, marginBottom: 12, backgroundColor: '#fff',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  countryButtonText: { color: '#0f172a', fontSize: 14, fontWeight: '600', flex: 1 },
+  countryChevron: { color: '#0d9488', fontSize: 20, marginLeft: 8 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
+  countrySheet: {
+    maxHeight: '78%', backgroundColor: '#fff', borderTopLeftRadius: 22,
+    borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28,
+  },
+  sheetHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 },
+  sheetTitle: { color: '#0f172a', fontSize: 19, fontWeight: '800' },
+  sheetSubtitle: { color: '#64748b', fontSize: 12, marginTop: 3 },
+  closeButton: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center' },
+  closeButtonText: { color: '#475569', fontSize: 15, fontWeight: '700' },
+  countryList: { flexGrow: 0 },
+  countryOption: {
+    minHeight: 48, borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  countryOptionSelected: { backgroundColor: '#f0fdfa' },
+  countryOptionText: { color: '#334155', fontSize: 15 },
+  countryOptionTextSelected: { color: '#0f766e', fontWeight: '700' },
+  countryCheck: { color: '#0d9488', fontSize: 17, fontWeight: '800' },
   warning: { color: '#92400e', fontSize: 11, lineHeight: 16, marginBottom: 10, backgroundColor: '#fffbeb', padding: 8, borderRadius: 6 },
   consentHeader: { fontSize: 10, fontWeight: '700', color: '#94a3b8', letterSpacing: 1, marginBottom: 12 },
   consentRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },

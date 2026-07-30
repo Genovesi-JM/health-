@@ -168,19 +168,19 @@ export default function RegisterPage() {
               <p style={{ margin: '0 0 .8rem', fontSize: '.8rem', fontWeight: 700 }}>Dados profissionais</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '.7rem' }}>
                 <label className="form-group" style={{ margin: 0 }}>
-                  <span className="form-label">País de exercício</span>
+                  <span className="form-label">País de exercício / registo</span>
                   <select className="form-select" value={practiceCountry} onChange={e => setPracticeCountry(e.target.value)}>
                     <CountryOptions />
                   </select>
                 </label>
                 <label className="form-group" style={{ margin: 0 }}>
-                  <span className="form-label">País da licença</span>
+                  <span className="form-label">País que emitiu a licença</span>
                   <select className="form-select" value={licenceCountry} onChange={e => setLicenceCountry(e.target.value)}>
                     <CountryOptions />
                   </select>
                 </label>
                 <label className="form-group" style={{ margin: 0 }}>
-                  <span className="form-label">País do diploma</span>
+                  <span className="form-label">País que emitiu o diploma / certificado</span>
                   <select className="form-select" value={diplomaCountry} onChange={e => setDiplomaCountry(e.target.value)}>
                     <CountryOptions />
                   </select>
