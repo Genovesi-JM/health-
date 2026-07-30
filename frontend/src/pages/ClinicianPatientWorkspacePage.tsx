@@ -244,10 +244,15 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
         </div>
         <div className="clinician-360-actions">
           {data.active_episode && <span className="clinician-live-chip"><span /> {c.live}</span>}
-          {data.access.capabilities.join_teleconsultation && (
+          {data.access.capabilities.join_teleconsultation && data.access.role === 'doctor' && (
             <Link className="clinician-action clinician-action--primary" to={data.access.role === 'doctor' ? '/doctor/consultas' : '#teleconsult'}>
               <Video size={16} /> {c.teleconsult}
             </Link>
+          )}
+          {data.access.capabilities.join_teleconsultation && data.access.role === 'nurse' && (
+            <button className="clinician-action clinician-action--primary" type="button" onClick={() => setActiveTab('consultations')}>
+              <Video size={16} /> {c.teleconsult}
+            </button>
           )}
           {data.access.capabilities.message_patient && (
             <Link className="clinician-action" to="/doctor/mensagens"><MessageSquare size={16} /> {c.message}</Link>
