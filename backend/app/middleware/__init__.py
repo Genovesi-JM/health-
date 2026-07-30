@@ -120,6 +120,7 @@ RATE_LIMIT_RULES: Dict[str, Tuple[int, int]] = {
     "/api/v1/doctor/prescription-requests": (30, 60),      # 30 decisions per minute
     "/api/v1/triage": (20, 60),                            # 20 triage submissions per minute
     "/api/v1/chatbot/chat": (30, 60),                      # 30 chat messages per minute
+    "/api/v1/chatbot/public-guidance": (20, 60),           # Public landing guidance
     "/api/v1/billing/webhook": (60, 60),                   # 60 billing webhooks per minute
 }
 

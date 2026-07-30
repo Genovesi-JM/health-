@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
-export type AppLanguage = 'pt' | 'en' | 'fr' | 'es';
+export type AppLanguage = 'pt' | 'en' | 'fr' | 'es' | 'zh';
 
 const translations = {
   'nav.home': { pt: 'Início', en: 'Home', fr: 'Accueil', es: 'Inicio' },
@@ -21,27 +21,42 @@ const translations = {
   'home.portal_desc': { pt: 'Acede ao histórico clínico completo, documentos e consultas passadas.', en: 'Access your complete clinical history, documents, and past consultations.', fr: 'Accédez à votre historique clinique, vos documents et consultations passées.', es: 'Accede a tu historial clínico, documentos y consultas anteriores.' },
   'home.profile_cta': { pt: 'Ver o meu perfil →', en: 'View my profile →', fr: 'Voir mon profil →', es: 'Ver mi perfil →' },
   'common.sign_out': { pt: 'Sair', en: 'Sign out', fr: 'Déconnexion', es: 'Salir' },
-  'common.back_login': { pt: 'Voltar ao login', en: 'Back to login', fr: 'Retour à la connexion', es: 'Volver al inicio de sesión' },
-  'landing.tagline': { pt: 'A tua saúde,\nmais simples.', en: 'Your health,\nmade simpler.', fr: 'Votre santé,\nplus simple.', es: 'Tu salud,\nmás sencilla.' },
-  'landing.subtitle': { pt: 'Portal do paciente · Angola', en: 'Patient portal · Angola', fr: 'Portail patient · Angola', es: 'Portal del paciente · Angola' },
-  'landing.login': { pt: 'Entrar no portal', en: 'Sign in to the portal', fr: 'Accéder au portail', es: 'Entrar al portal' },
-  'landing.register': { pt: 'Criar conta gratuita', en: 'Create a free account', fr: 'Créer un compte gratuit', es: 'Crear una cuenta gratuita' },
-  'landing.services_link': { pt: 'Conhecer os serviços →', en: 'Explore our services →', fr: 'Découvrir les services →', es: 'Conocer los servicios →' },
-  'landing.services': { pt: 'Serviços', en: 'Services', fr: 'Services', es: 'Servicios' },
-  'landing.contacts': { pt: 'Contactos', en: 'Contact', fr: 'Contacts', es: 'Contactos' },
-  'landing.help': { pt: 'Ajuda / FAQ', en: 'Help / FAQ', fr: 'Aide / FAQ', es: 'Ayuda / FAQ' },
-  'landing.services_title': { pt: 'Os nossos serviços', en: 'Our services', fr: 'Nos services', es: 'Nuestros servicios' },
-  'landing.book': { pt: 'Marcar consulta', en: 'Book a consultation', fr: 'Prendre rendez-vous', es: 'Reservar consulta' },
-  'landing.teleconsult': { pt: 'Teleconsulta', en: 'Teleconsultation', fr: 'Téléconsultation', es: 'Teleconsulta' },
-  'landing.prescriptions': { pt: 'Receitas', en: 'Prescriptions', fr: 'Ordonnances', es: 'Recetas' },
-  'landing.medication': { pt: 'Medicação', en: 'Medication', fr: 'Médicaments', es: 'Medicación' },
-  'landing.chronic': { pt: 'Cuidado crónico', en: 'Chronic care', fr: 'Soins chroniques', es: 'Atención crónica' },
-  'landing.start': { pt: 'Criar conta e começar', en: 'Create an account and start', fr: 'Créer un compte et commencer', es: 'Crear una cuenta y comenzar' },
-  'landing.language': { pt: 'Idioma', en: 'Language', fr: 'Langue', es: 'Idioma' },
-  'verification.title': { pt: 'Verificação profissional', en: 'Professional verification', fr: 'Vérification professionnelle', es: 'Verificación profesional' },
-  'verification.subtitle': { pt: 'As funções clínicas são desbloqueadas apenas após revisão humana autorizada.', en: 'Clinical features unlock only after an authorised human review.', fr: 'Les fonctions cliniques sont accessibles uniquement après une vérification humaine autorisée.', es: 'Las funciones clínicas se habilitan únicamente después de una revisión humana autorizada.' },
-  'verification.evidence': { pt: 'DOCUMENTOS OBRIGATÓRIOS', en: 'REQUIRED EVIDENCE', fr: 'DOCUMENTS OBLIGATOIRES', es: 'DOCUMENTOS OBLIGATORIOS' },
-  'verification.automated': { pt: 'VERIFICAÇÃO AUTOMATIZADA', en: 'AUTOMATED VERIFICATION', fr: 'VÉRIFICATION AUTOMATISÉE', es: 'VERIFICACIÓN AUTOMATIZADA' },
+  'common.back_login': { pt: 'Voltar ao login', en: 'Back to login', fr: 'Retour à la connexion', es: 'Volver al inicio de sesión', zh: '返回登录' },
+  'landing.tagline': { pt: 'A tua saúde,\nmais simples.', en: 'Your health,\nmade simpler.', fr: 'Votre santé,\nplus simple.', es: 'Tu salud,\nmás sencilla.', zh: '让健康管理\n更简单。' },
+  'landing.subtitle': { pt: 'Saúde para pacientes e profissionais · Angola', en: 'Healthcare for patients and professionals · Angola', fr: 'Santé pour patients et professionnels · Angola', es: 'Salud para pacientes y profesionales · Angola', zh: '面向患者和医护人员的健康平台 · 安哥拉' },
+  'landing.login': { pt: 'Entrar no portal', en: 'Sign in to the portal', fr: 'Accéder au portail', es: 'Entrar al portal', zh: '登录平台' },
+  'landing.register': { pt: 'Criar conta gratuita', en: 'Create a free account', fr: 'Créer un compte gratuit', es: 'Crear una cuenta gratuita', zh: '免费注册' },
+  'landing.services_link': { pt: 'Conhecer os serviços →', en: 'Explore our services →', fr: 'Découvrir les services →', es: 'Conocer los servicios →', zh: '了解我们的服务 →' },
+  'landing.services': { pt: 'Serviços', en: 'Services', fr: 'Services', es: 'Servicios', zh: '服务' },
+  'landing.contacts': { pt: 'Contactos', en: 'Contact', fr: 'Contacts', es: 'Contactos', zh: '联系我们' },
+  'landing.help': { pt: 'Ajuda e orientação', en: 'Help and guidance', fr: 'Aide et orientation', es: 'Ayuda y orientación', zh: '帮助与指导' },
+  'landing.services_title': { pt: 'Serviços para pacientes e profissionais', en: 'Services for patients and professionals', fr: 'Services pour patients et professionnels', es: 'Servicios para pacientes y profesionales', zh: '患者与医护人员服务' },
+  'landing.book': { pt: 'Marcar consulta', en: 'Book a consultation', fr: 'Prendre rendez-vous', es: 'Reservar consulta', zh: '预约问诊' },
+  'landing.book_desc': { pt: 'Encontre profissionais verificados e escolha um horário.', en: 'Find verified professionals and choose a suitable time.', fr: 'Trouvez des professionnels vérifiés et choisissez un horaire.', es: 'Encuentre profesionales verificados y elija un horario.', zh: '查找已认证的医护人员并选择合适时间。' },
+  'landing.teleconsult': { pt: 'Teleconsulta', en: 'Teleconsultation', fr: 'Téléconsultation', es: 'Teleconsulta', zh: '远程问诊' },
+  'landing.teleconsult_desc': { pt: 'Consulta segura por vídeo, onde estiver.', en: 'Secure video consultation wherever you are.', fr: 'Consultation vidéo sécurisée où que vous soyez.', es: 'Consulta segura por vídeo dondequiera que esté.', zh: '随时随地进行安全的视频问诊。' },
+  'landing.prescriptions': { pt: 'Receitas e documentos', en: 'Prescriptions and documents', fr: 'Ordonnances et documents', es: 'Recetas y documentos', zh: '处方与医疗文件' },
+  'landing.prescriptions_desc': { pt: 'Pedidos, receitas digitais e acompanhamento clínico.', en: 'Requests, digital prescriptions, and clinical follow-up.', fr: 'Demandes, ordonnances numériques et suivi clinique.', es: 'Solicitudes, recetas digitales y seguimiento clínico.', zh: '申请、电子处方及临床随访。' },
+  'landing.medication': { pt: 'Medições e medicação', en: 'Measurements and medication', fr: 'Mesures et médicaments', es: 'Mediciones y medicación', zh: '健康测量与用药' },
+  'landing.medication_desc': { pt: 'Registe sinais de saúde e organize a medicação.', en: 'Record health readings and organize medication.', fr: 'Enregistrez vos mesures et organisez vos médicaments.', es: 'Registre mediciones de salud y organice la medicación.', zh: '记录健康数据并管理用药。' },
+  'landing.chronic': { pt: 'Cuidado crónico', en: 'Chronic care', fr: 'Soins chroniques', es: 'Atención crónica', zh: '慢病管理' },
+  'landing.chronic_desc': { pt: 'Acompanhamento contínuo entre paciente e equipa clínica.', en: 'Continuous follow-up between patient and clinical team.', fr: 'Suivi continu entre patient et équipe clinique.', es: 'Seguimiento continuo entre paciente y equipo clínico.', zh: '患者与临床团队之间的持续随访。' },
+  'landing.professional': { pt: 'Portal profissional', en: 'Professional portal', fr: 'Portail professionnel', es: 'Portal profesional', zh: '医护人员门户' },
+  'landing.professional_desc': { pt: 'Verificação, agenda, pacientes e indicadores para médicos e enfermeiros.', en: 'Verification, schedules, patients, and indicators for doctors and nurses.', fr: 'Vérification, agenda, patients et indicateurs pour médecins et infirmiers.', es: 'Verificación, agenda, pacientes e indicadores para médicos y enfermeros.', zh: '为医生和护士提供资质认证、日程、患者管理和指标。' },
+  'landing.start': { pt: 'Criar conta e começar', en: 'Create an account and start', fr: 'Créer un compte et commencer', es: 'Crear una cuenta y comenzar', zh: '注册并开始使用' },
+  'landing.language': { pt: 'Idioma', en: 'Language', fr: 'Langue', es: 'Idioma', zh: '语言' },
+  'landing.contact_title': { pt: 'Contactar a KAYA', en: 'Contact KAYA', fr: 'Contacter KAYA', es: 'Contactar con KAYA', zh: '联系 KAYA' },
+  'landing.contact_desc': { pt: 'A equipa de suporte pode ajudar com acesso, registo profissional e utilização da plataforma.', en: 'Support can help with access, professional registration, and using the platform.', fr: 'Le support peut vous aider pour l’accès, l’inscription professionnelle et l’utilisation de la plateforme.', es: 'Soporte puede ayudar con acceso, registro profesional y uso de la plataforma.', zh: '支持团队可协助登录、医护人员注册和平台使用。' },
+  'landing.email_support': { pt: 'Enviar email ao suporte', en: 'Email support', fr: 'Envoyer un e-mail au support', es: 'Enviar correo a soporte', zh: '发送邮件给支持团队' },
+  'landing.guidance_title': { pt: 'Assistente de orientação KAYA', en: 'KAYA guidance assistant', fr: 'Assistant d’orientation KAYA', es: 'Asistente de orientación KAYA', zh: 'KAYA 指导助手' },
+  'landing.guidance_desc': { pt: 'Pergunte como usar a plataforma ou qual serviço procurar. Não substitui um profissional de saúde.', en: 'Ask how to use the platform or which service to look for. It does not replace a healthcare professional.', fr: 'Demandez comment utiliser la plateforme ou quel service rechercher. Il ne remplace pas un professionnel de santé.', es: 'Pregunte cómo usar la plataforma o qué servicio buscar. No sustituye a un profesional sanitario.', zh: '可询问平台使用方法或应选择的服务，但不能替代专业医护人员。' },
+  'landing.guidance_placeholder': { pt: 'Escreva a sua pergunta…', en: 'Type your question…', fr: 'Écrivez votre question…', es: 'Escriba su pregunta…', zh: '请输入您的问题…' },
+  'landing.send': { pt: 'Enviar', en: 'Send', fr: 'Envoyer', es: 'Enviar', zh: '发送' },
+  'landing.help_fallback': { pt: 'Não foi possível ligar ao assistente. Posso ainda ajudar: crie uma conta para triagem, consultas ou registo profissional.', en: 'The assistant is temporarily unavailable. You can still create an account for triage, consultations, or professional registration.', fr: 'L’assistant est temporairement indisponible. Vous pouvez créer un compte pour le triage, les consultations ou l’inscription professionnelle.', es: 'El asistente no está disponible temporalmente. Puede crear una cuenta para triaje, consultas o registro profesional.', zh: '指导助手暂时无法连接。您仍可注册账户以使用分诊、问诊或医护人员认证。' },
+  'verification.title': { pt: 'Verificação profissional', en: 'Professional verification', fr: 'Vérification professionnelle', es: 'Verificación profesional', zh: '专业资质验证' },
+  'verification.subtitle': { pt: 'As funções clínicas são desbloqueadas apenas após revisão humana autorizada.', en: 'Clinical features unlock only after an authorised human review.', fr: 'Les fonctions cliniques sont accessibles uniquement après une vérification humaine autorisée.', es: 'Las funciones clínicas se habilitan únicamente después de una revisión humana autorizada.', zh: '临床功能仅在授权人工审核后开放。' },
+  'verification.evidence': { pt: 'DOCUMENTOS OBRIGATÓRIOS', en: 'REQUIRED EVIDENCE', fr: 'DOCUMENTS OBLIGATOIRES', es: 'DOCUMENTOS OBLIGATORIOS', zh: '必需文件' },
+  'verification.automated': { pt: 'VERIFICAÇÃO AUTOMATIZADA', en: 'AUTOMATED VERIFICATION', fr: 'VÉRIFICATION AUTOMATISÉE', es: 'VERIFICACIÓN AUTOMATIZADA', zh: '自动验证' },
   'settings.title': { pt: 'Definições', en: 'Settings', fr: 'Paramètres', es: 'Ajustes' },
   'settings.language': { pt: 'Idioma', en: 'Language', fr: 'Langue', es: 'Idioma' },
   'settings.account': { pt: 'Conta', en: 'Account', fr: 'Compte', es: 'Cuenta' },
@@ -80,7 +95,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     SecureStore.getItemAsync(STORAGE_KEY).then(value => {
-      if (value === 'pt' || value === 'en' || value === 'fr' || value === 'es') setLanguageState(value);
+      if (value === 'pt' || value === 'en' || value === 'fr' || value === 'es' || value === 'zh') setLanguageState(value);
     }).catch(() => {});
   }, []);
 
@@ -91,7 +106,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(() => ({
     language,
     setLanguage,
-    t: (key: TranslationKey) => translations[key]?.[language] || translations[key]?.pt || key,
+    t: (key: TranslationKey) => {
+      const entry = translations[key] as Partial<Record<AppLanguage, string>>;
+      return entry?.[language] || entry?.en || entry?.pt || key;
+    },
   }), [language]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

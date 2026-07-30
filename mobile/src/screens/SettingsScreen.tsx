@@ -39,7 +39,8 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
           <View style={styles.languageRow}>
             {([
-              ['pt', 'Português'], ['en', 'English'], ['fr', 'Français'], ['es', 'Español'],
+              ['pt', 'Português'], ['en', 'English'], ['fr', 'Français'],
+              ['es', 'Español'], ['zh', '中文'],
             ] as [AppLanguage, string][]).map(([code, label]) => (
               <TouchableOpacity
                 key={code}

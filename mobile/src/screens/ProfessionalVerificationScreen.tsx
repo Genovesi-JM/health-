@@ -121,7 +121,7 @@ export default function ProfessionalVerificationScreen() {
         </TouchableOpacity>
         <View style={styles.languageRow}>
           {([
-            ['pt', 'PT'], ['en', 'EN'], ['fr', 'FR'], ['es', 'ES'],
+            ['pt', 'PT'], ['en', 'EN'], ['fr', 'FR'], ['es', 'ES'], ['zh', '中'],
           ] as [AppLanguage, string][]).map(([code, label]) => (
             <TouchableOpacity
               key={code}

@@ -22,7 +22,7 @@ from typing import List, Literal, Optional
 
 import httpx
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -64,6 +64,11 @@ class SingleMessage(BaseModel):
     message: str
 
 
+class PublicGuidanceRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=1000)
+    language: Literal["pt", "en", "fr", "es", "zh"] = "pt"
+
+
 # ═══════════════════════════════════════════════════════════════
 # Health System Prompt
 # ═══════════════════════════════════════════════════════════════
@@ -77,7 +82,7 @@ Tens acesso a contexto adicional:
 - `patient_context`: estado clinico do paciente (triagens, consultas, risco).
 
 Regras importantes:
-- Responde SEMPRE em portugues.
+- Responde no idioma indicado pelo contexto; usa portugues por omissao.
 - Se empatica, profissional e clara.
 - Se detectares sintomas de EMERGENCIA (dor no peito, dificuldade respirar,
   AVC, hemorragia grave, perda de consciencia), responde IMEDIATAMENTE
@@ -119,6 +124,17 @@ EMERGENCY_KEYWORDS = [
     "overdose", "envenenamento", "ataque cardiaco",
     "perda de consciencia",
     "vou morrer", "socorro", "112", "ambulancia",
+    # English
+    "chest pain", "cannot breathe", "can't breathe", "difficulty breathing",
+    "stroke", "unconscious", "severe bleeding", "seizure", "poisoning",
+    # French
+    "douleur thoracique", "difficulte a respirer", "je ne peux pas respirer",
+    "inconscient", "hemorragie grave", "empoisonnement",
+    # Spanish
+    "dolor de pecho", "no puedo respirar", "dificultad para respirar",
+    "inconsciente", "sangrado grave", "envenenamiento",
+    # Simplified Chinese
+    "胸痛", "呼吸困难", "无法呼吸", "中风", "失去意识", "严重出血", "抽搐", "中毒",
 ]
 
 
@@ -266,6 +282,7 @@ async def call_openai(
     patient_context: str,
     page: Optional[str] = None,
     page_title: Optional[str] = None,
+    language: str = "pt",
 ) -> str:
     """Call OpenAI with health system prompt + patient context."""
     api_key = settings.openai_api_key or os.getenv("OPENAI_API_KEY")
@@ -276,6 +293,19 @@ async def call_openai(
 
     # Build system messages
     chat_messages = [{"role": "system", "content": HEALTH_SYSTEM_PROMPT}]
+    language_names = {
+        "pt": "Portuguese", "en": "English", "fr": "French",
+        "es": "Spanish", "zh": "Simplified Chinese",
+    }
+    chat_messages.append({
+        "role": "system",
+        "content": (
+            f"Respond in {language_names.get(language, 'Portuguese')}. "
+            "For this public guidance flow, do not diagnose and do not imply access "
+            "to a patient record. Explain KAYA services and recommend registration, "
+            "triage, consultation, or emergency care as appropriate."
+        ),
+    })
 
     # Add patient + page context
     context_parts = []
@@ -334,6 +364,30 @@ async def call_openai(
             return ""
 
     return ""
+
+
+def public_guidance_fallback(message: str, language: str) -> ChatResponse:
+    """Public, non-diagnostic guidance when the AI provider is unavailable."""
+    emergency = {
+        "pt": "Isto pode ser uma emergência. Ligue 112 ou procure imediatamente o serviço de urgência mais próximo. Não espere pela resposta do aplicativo.",
+        "en": "This may be an emergency. Call 112 or go to the nearest emergency department now. Do not wait for an app response.",
+        "fr": "Il peut s’agir d’une urgence. Appelez le 112 ou rendez-vous immédiatement au service d’urgence le plus proche.",
+        "es": "Esto puede ser una emergencia. Llame al 112 o acuda inmediatamente al servicio de urgencias más cercano.",
+        "zh": "这可能是紧急情况。请立即拨打 112 或前往最近的急诊部门，不要等待应用回复。",
+    }
+    general = {
+        "pt": "Posso orientar sobre triagem digital, consultas, teleconsulta, receitas, acompanhamento crónico e registo de pacientes ou profissionais. Não faço diagnósticos. Diga-me o que pretende fazer.",
+        "en": "I can guide you through digital triage, appointments, teleconsultation, prescriptions, chronic care, and patient or professional registration. I do not diagnose. Tell me what you want to do.",
+        "fr": "Je peux vous guider pour le triage numérique, les consultations, la téléconsultation, les ordonnances, le suivi chronique et l’inscription des patients ou professionnels. Je ne pose pas de diagnostic.",
+        "es": "Puedo orientarle sobre triaje digital, consultas, teleconsulta, recetas, atención crónica y registro de pacientes o profesionales. No realizo diagnósticos.",
+        "zh": "我可以指导您使用数字分诊、预约、远程问诊、处方、慢病管理，以及患者或医护人员注册。我不提供诊断。请告诉我您想做什么。",
+    }
+    if is_emergency(message):
+        return ChatResponse(reply=emergency.get(language, emergency["pt"]), action="emergency")
+    return ChatResponse(
+        reply=general.get(language, general["pt"]),
+        suggestions=["Triagem", "Consulta", "Registo profissional"],
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -575,6 +629,24 @@ def parse_ai_response(ai_text: str) -> ChatResponse:
 # ═══════════════════════════════════════════════════════════════
 # Main Endpoints
 # ═══════════════════════════════════════════════════════════════
+
+@router.post("/public-guidance", response_model=ChatResponse)
+async def public_guidance(request: PublicGuidanceRequest):
+    """Landing-page guidance with no authentication or patient-record access."""
+    text = request.message.strip()
+    if is_emergency(text):
+        return public_guidance_fallback(text, request.language)
+    ai_reply = await call_openai(
+        messages=[ChatMessageItem(role="user", content=text)],
+        patient_context="",
+        page="/mobile/landing",
+        page_title="KAYA public guidance",
+        language=request.language,
+    )
+    if ai_reply:
+        return parse_ai_response(ai_reply)
+    return public_guidance_fallback(text, request.language)
+
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
