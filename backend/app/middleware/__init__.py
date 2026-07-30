@@ -9,6 +9,7 @@ Includes:
 
 import hashlib
 import json
+import os
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -129,6 +130,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limits sensitive endpoints by client IP."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # Disable in tests / CI where many identical calls happen in quick
+        # succession. Set KAYA_DISABLE_RATE_LIMIT=1 to opt out.
+        if os.environ.get("KAYA_DISABLE_RATE_LIMIT"):
+            return await call_next(request)
+
         path = request.url.path.rstrip("/")
         method = request.method.upper()
 

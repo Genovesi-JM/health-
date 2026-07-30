@@ -8,6 +8,9 @@ import pytest
 import os
 import tempfile
 
+# Disable rate limiting during tests (identical calls in quick succession).
+os.environ["KAYA_DISABLE_RATE_LIMIT"] = "1"
+
 # Configure tests to use a temporary on-disk SQLite database so the test
 # suite always starts from a clean schema and multiple engine objects (which
 # may be created during import/collection) all point to the same DB file.

@@ -71,20 +71,51 @@ def _make_patient(db, user: User) -> Patient:
 
 
 def _make_doctor(db, user: User, verified: bool = False) -> Doctor:
-    """Create a doctor profile."""
+    """Create a doctor profile.
+
+    When ``verified=True``, also seeds a matching verified ClinicianCredential
+    dossier, since the new business rule requires credentials to be approved
+    before a doctor is verified.
+    """
     d = db.query(Doctor).filter(Doctor.user_id == user.id).first()
-    if d:
-        return d
-    d = Doctor(
-        user_id=user.id,
-        license_number="MED-AO-12345",
-        specialization="clinica_geral",
-        verification_status="verified" if verified else "pending",
-    )
-    db.add(d)
-    db.commit()
-    db.refresh(d)
+    if not d:
+        d = Doctor(
+            user_id=user.id,
+            license_number="MED-AO-12345",
+            specialization="clinica_geral",
+            verification_status="verified" if verified else "pending",
+        )
+        db.add(d)
+        db.commit()
+        db.refresh(d)
+    _seed_credential(db, user, status="verified" if verified else "pending_review")
     return d
+
+
+def _seed_credential(db, user: User, status: str = "verified"):
+    """Seed a ClinicianCredential dossier for tests. Idempotent."""
+    from app.health_models import ClinicianCredential
+    existing = db.query(ClinicianCredential).filter(ClinicianCredential.user_id == user.id).first()
+    if existing:
+        if existing.status != status:
+            existing.status = status
+            db.add(existing); db.commit()
+        return existing
+    cred = ClinicianCredential(
+        user_id=user.id,
+        profession="doctor",
+        legal_name="Test Doctor",
+        practice_country="AO",
+        licence_country="AO",
+        issuing_authority="Ordem dos Médicos",
+        licence_number="OM-TEST-123",
+        diploma_country="AO",
+        diploma_institution="UAN",
+        degree_title="Medicina",
+        status=status,
+    )
+    db.add(cred); db.commit(); db.refresh(cred)
+    return cred
 
 
 def _accept_consents(db, patient: Patient):
@@ -922,6 +953,9 @@ class TestAdminVerification:
         admin = _make_user(db_session, "admin_ver@test.com", "admin")
         d_user = _make_user(db_session, "doc_toverify@test.com", "doctor")
         doc = _make_doctor(db_session, d_user, verified=False)
+        # New business rule: doctor verify requires an already-verified credential dossier
+        # (credentials are reviewed and approved separately in the Credentials workflow).
+        _seed_credential(db_session, d_user, status="verified")
 
         r = client.post(
             f"/api/v1/doctors/{doc.id}/verify",
