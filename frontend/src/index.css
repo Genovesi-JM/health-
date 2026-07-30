@@ -1906,6 +1906,56 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .clinician-modal p { margin: 0.3rem 0 0.8rem; color: var(--text-secondary); font-size: 0.67rem; }
 .clinician-modal textarea { width: 100%; min-height: 160px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; resize: vertical; font: inherit; font-size: 0.68rem; line-height: 1.55; }
 .clinician-modal-note { margin-top: 0.65rem; padding: 0.6rem; border-radius: 9px; background: #fffbeb; color: #92400e; font-size: 0.58rem; }
+.clinician-modal-field { display: grid; gap: 0.3rem; margin-top: 0.65rem; }
+.clinician-modal-field > span { color: var(--text-secondary); font-size: 0.62rem; font-weight: 800; }
+.clinician-modal-field input, .clinician-modal-field select { width: 100%; padding: 0.62rem 0.7rem; border: 1px solid var(--border); border-radius: 9px; background: #fff; font: inherit; font-size: 0.68rem; }
+.clinician-modal-result { margin-top: 0.65rem; padding: 0.65rem; border-radius: 9px; background: #ecfdf5; color: #047857; font-size: 0.65rem; font-weight: 700; }
+.clinician-modal-submit { position: static !important; display: flex !important; width: 100% !important; height: auto !important; margin-top: 0.75rem; padding: 0.72rem 0.9rem; align-items: center; justify-content: center; gap: 0.4rem; border: 0 !important; border-radius: 9px; background: #0f766e !important; color: #fff; font-weight: 800; cursor: pointer; }
+.clinician-modal-submit:disabled { cursor: not-allowed; opacity: 0.55; }
+
+.doctor-escalation-board { margin-bottom: 1rem; overflow: hidden; border: 1px solid #99f6e4; border-radius: 14px; background: linear-gradient(135deg,#f0fdfa 0%,#fff 72%); }
+.doctor-escalation-board > header { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem; border-bottom: 1px solid #ccfbf1; }
+.doctor-escalation-board > header span { display: flex; align-items: center; gap: 0.35rem; color: #0f766e; font-size: 0.62rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; }
+.doctor-escalation-board > header h2 { margin: 0.22rem 0 0; font-size: 1rem; }
+.doctor-escalation-board > header p { margin: 0.2rem 0 0; color: var(--text-muted); font-size: 0.7rem; }
+.doctor-escalation-board > header > strong { align-self: flex-start; padding: 0.3rem 0.62rem; border-radius: 999px; background: #0f766e; color: #fff; font-size: 0.65rem; white-space: nowrap; }
+.doctor-escalation-empty { display: flex; align-items: center; gap: 0.45rem; padding: 1rem 1.15rem; color: #047857; font-size: 0.72rem; font-weight: 700; }
+.doctor-escalation-list { display: grid; }
+.doctor-escalation-list article { display: grid; grid-template-columns: 92px minmax(0,1fr) auto; gap: 0.9rem; align-items: start; padding: 0.9rem 1.15rem; border-bottom: 1px solid #ecfdf5; }
+.doctor-escalation-list article:last-child { border-bottom: 0; }
+.doctor-escalation-urgency { display: flex; align-items: center; justify-content: center; gap: 0.25rem; padding: 0.28rem 0.4rem; border-radius: 999px; background: #fef3c7; color: #b45309; font-size: 0.58rem; font-weight: 900; text-transform: uppercase; }
+.doctor-escalation-urgency.urgent, .doctor-escalation-urgency.emergency { background: #fee2e2; color: #b91c1c; }
+.doctor-escalation-list h3 { margin: 0; font-size: 0.82rem; }
+.doctor-escalation-list div > strong { display: block; margin-top: 0.16rem; color: var(--text-secondary); font-size: 0.7rem; }
+.doctor-escalation-list p { max-width: 650px; margin: 0.22rem 0; overflow: hidden; color: var(--text-muted); font-size: 0.65rem; text-overflow: ellipsis; white-space: nowrap; }
+.doctor-escalation-list small { color: var(--text-muted); font-size: 0.56rem; }
+.doctor-escalation-list button { display: flex; align-items: center; gap: 0.35rem; padding: 0.55rem 0.7rem; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-size: 0.64rem; font-weight: 800; cursor: pointer; }
+.nurse-ecosystem { margin: 0.9rem 0; padding: 0.9rem; border: 1px solid var(--border); border-radius: 14px; background: #fff; }
+.nurse-ecosystem > header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 0.7rem; }
+.nurse-ecosystem > header span { color: #0f766e; font-size: 0.56rem; font-weight: 900; letter-spacing: 0.07em; }
+.nurse-ecosystem > header h2 { margin: 0.15rem 0 0; font-size: 0.88rem; }
+.nurse-ecosystem > header p { margin: 0; color: var(--text-muted); font-size: 0.62rem; }
+.nurse-ecosystem > div { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0.55rem; }
+.nurse-ecosystem button { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; gap: 0.1rem 0.5rem; align-items: center; padding: 0.7rem; border: 1px solid var(--border); border-radius: 10px; background: #fff; text-align: left; cursor: pointer; }
+.nurse-ecosystem button:hover { border-color: #5eead4; box-shadow: 0 6px 18px rgba(15,118,110,0.08); }
+.nurse-ecosystem button > span { grid-row: 1 / 3; display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; }
+.nurse-ecosystem button > span.teal { background: #ccfbf1; color: #0f766e; }
+.nurse-ecosystem button > span.blue { background: #dbeafe; color: #1d4ed8; }
+.nurse-ecosystem button > span.purple { background: #ede9fe; color: #6d28d9; }
+.nurse-ecosystem button > span.amber { background: #fef3c7; color: #b45309; }
+.nurse-ecosystem button strong { min-width: 0; font-size: 0.65rem; }
+.nurse-ecosystem button small { grid-column: 2; overflow: hidden; color: var(--text-muted); font-size: 0.54rem; text-overflow: ellipsis; white-space: nowrap; }
+.nurse-ecosystem button > svg { grid-column: 3; grid-row: 1 / 3; color: var(--text-muted); }
+@media (max-width: 720px) {
+  .doctor-escalation-list article { grid-template-columns: 1fr; }
+  .doctor-escalation-urgency { width: fit-content; }
+  .doctor-escalation-list button { justify-content: center; }
+  .nurse-ecosystem > header { align-items: flex-start; flex-direction: column; }
+  .nurse-ecosystem > div { grid-template-columns: 1fr; }
+}
+@media (min-width: 721px) and (max-width: 1100px) {
+  .nurse-ecosystem > div { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
 
 @media (max-width: 1100px) {
   .clinician-360-hero { grid-template-columns: auto 1fr; }

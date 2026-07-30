@@ -84,18 +84,15 @@ import InstallPrompt from './components/InstallPrompt';
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
 
 export default function App() {
-  if (import.meta.env.DEV && window.location.pathname.endsWith('/preview/nurse')) {
-    return (
-      <I18nProvider>
-        <NurseDashboardPreviewShell />
-      </I18nProvider>
-    );
-  }
-  if (import.meta.env.DEV && window.location.pathname.endsWith('/preview/clinician/patient')) {
+  if (import.meta.env.DEV && window.location.pathname.includes('/preview/')) {
     return (
       <I18nProvider>
         <BrowserRouter basename={BASE}>
-          <ClinicianPatientWorkspacePage preview />
+          <Routes>
+            <Route path="/preview/nurse" element={<NurseDashboardPreviewShell />} />
+            <Route path="/preview/clinician/patient" element={<ClinicianPatientWorkspacePage preview />} />
+            <Route path="*" element={<Navigate to="/preview/nurse" replace />} />
+          </Routes>
         </BrowserRouter>
       </I18nProvider>
     );

@@ -7,6 +7,7 @@ import { specialtyLabel } from '../constants/specialties';
 import {
   Activity, AlertTriangle, CheckCircle2, ChevronRight, ClipboardList, Clock3,
   HeartPulse, HelpCircle, RefreshCw, Search, ShieldCheck, Timer, UserRound, X,
+  Stethoscope, Video, Radio, Banknote,
 } from 'lucide-react';
 import KpiGrid from '../components/KpiGrid';
 
@@ -29,9 +30,9 @@ const PREVIEW_DASH: Dash = {
   waiting_over_30_count: 4,
   unclassified_count: 2,
   recent: [
-    { id: 'preview-1', patient: 'Ana Manuel', specialty: 'general_medicine', risk_level: 'HIGH', chief_complaint: 'Febre e tosse persistente', created_at: '2026-07-30T09:20:00Z', wait_minutes: 42 },
-    { id: 'preview-2', patient: 'Paulo Costa', specialty: 'cardiology', risk_level: 'MEDIUM', chief_complaint: 'Desconforto no peito', created_at: '2026-07-30T09:42:00Z', wait_minutes: 28 },
-    { id: 'preview-3', patient: 'Teresa João', specialty: 'pediatrics', risk_level: null, chief_complaint: 'Dor abdominal', created_at: '2026-07-30T10:05:00Z', wait_minutes: 11 },
+    { id: 'preview-1', patient_id: 'preview-patient', patient: 'Ana Manuel', specialty: 'general_medicine', risk_level: 'HIGH', chief_complaint: 'Febre e tosse persistente', created_at: '2026-07-30T09:20:00Z', wait_minutes: 42 },
+    { id: 'preview-2', patient_id: 'preview-patient', patient: 'Paulo Costa', specialty: 'cardiology', risk_level: 'MEDIUM', chief_complaint: 'Desconforto no peito', created_at: '2026-07-30T09:42:00Z', wait_minutes: 28 },
+    { id: 'preview-3', patient_id: 'preview-patient', patient: 'Teresa João', specialty: 'pediatrics', risk_level: null, chief_complaint: 'Dor abdominal', created_at: '2026-07-30T10:05:00Z', wait_minutes: 11 },
   ],
 };
 
@@ -132,6 +133,27 @@ export default function NurseDashboardPage({ preview = false }: { preview?: bool
 
       <KpiGrid items={kpis} ariaLabel={t('kpi.summary')} />
 
+      <section className="nurse-ecosystem" aria-label="Operações clínicas">
+        <header>
+          <div><span>ECOSSISTEMA CLÍNICO</span><h2>Da triagem à continuidade dos cuidados</h2></div>
+          <p>A enfermagem prepara, monitoriza e escala; o médico diagnostica e prescreve.</p>
+        </header>
+        <div>
+          <button type="button" onClick={() => navigate(preview ? '/preview/clinician/patient' : filteredItems[0]?.patient_id ? `/clinician/patients/${filteredItems[0].patient_id}` : '/nurse')}>
+            <span className="teal"><Stethoscope size={18} /></span><strong>Encaminhar ao médico</strong><small>Prioridade + passagem clínica + Patient 360</small><ChevronRight size={16} />
+          </button>
+          <button type="button" onClick={() => navigate(preview ? '/preview/clinician/patient' : filteredItems[0]?.patient_id ? `/clinician/patients/${filteredItems[0].patient_id}` : '/nurse')}>
+            <span className="blue"><Video size={18} /></span><strong>Teleconsulta assistida</strong><small>Preparar paciente, sinais vitais e sala clínica</small><ChevronRight size={16} />
+          </button>
+          <button type="button" onClick={() => navigate(preview ? '/preview/clinician/patient' : filteredItems[0]?.patient_id ? `/clinician/patients/${filteredItems[0].patient_id}` : '/nurse')}>
+            <span className="purple"><Radio size={18} /></span><strong>Monitorização remota</strong><small>RENPHO, Apple Health, Health Connect e alertas</small><ChevronRight size={16} />
+          </button>
+          <button type="button" onClick={() => navigate(preview ? '/preview/clinician/patient' : '/settings')}>
+            <span className="amber"><Banknote size={18} /></span><strong>Atividade remunerada</strong><small>Eventos auditados e divisão profissional/plataforma</small><ChevronRight size={16} />
+          </button>
+        </div>
+      </section>
+
       <section className="nurse-workspace-grid">
         <div className="nurse-queue-card">
           <div className="nurse-card-header">
@@ -184,7 +206,7 @@ export default function NurseDashboardPage({ preview = false }: { preview?: bool
                         <button
                           className="nurse-open-patient"
                           type="button"
-                          onClick={() => i.patient_id && !preview ? navigate(`/clinician/patients/${i.patient_id}`) : setSelected(i)}
+                          onClick={() => preview ? navigate('/preview/clinician/patient') : i.patient_id ? navigate(`/clinician/patients/${i.patient_id}`) : setSelected(i)}
                         >
                           {t('nurse.open')}
                         </button>

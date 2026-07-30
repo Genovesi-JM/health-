@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import type { ConsultationQueueItem } from '../types';
-import { ClipboardList, CheckCircle2, Play, X, User, Stethoscope, AlertTriangle } from 'lucide-react';
+import { ClipboardList, CheckCircle2, Play, X, User, Stethoscope, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
 import { specialtyLabel } from '../constants/specialties';
@@ -24,21 +25,54 @@ function riskBadge(level?: string) {
   }
 }
 
+interface Escalation {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  consultation_id?: string | null;
+  urgency: string;
+  reason: string;
+  clinical_summary: string;
+  status: string;
+  created_at: string;
+}
+
 export default function DoctorQueuePage() {
   const { t, lang } = useT();
+  const navigate = useNavigate();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [queue, setQueue] = useState<ConsultationQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ConsultationQueueItem | null>(null);
+  const [escalations, setEscalations] = useState<Escalation[]>([]);
+  const [acceptingEscalation, setAcceptingEscalation] = useState<string | null>(null);
 
   useEffect(() => { loadQueue(); }, []);
 
   const loadQueue = () => {
     setLoading(true);
-    api.get('/api/v1/doctor/queue')
-      .then(r => setQueue(r.data))
+    Promise.allSettled([
+      api.get('/api/v1/doctor/queue'),
+      api.get('/api/v1/clinical-operations/escalations', { params: { status: 'pending' } }),
+    ])
+      .then(([queueResult, escalationResult]) => {
+        if (queueResult.status === 'fulfilled') setQueue(queueResult.value.data);
+        if (escalationResult.status === 'fulfilled') setEscalations(escalationResult.value.data.items || []);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  const acceptEscalation = async (item: Escalation) => {
+    setAcceptingEscalation(item.id);
+    try {
+      await api.post(`/api/v1/clinical-operations/escalations/${item.id}/accept`);
+      navigate(`/clinician/patients/${item.patient_id}`);
+    } catch {
+      loadQueue();
+    } finally {
+      setAcceptingEscalation(null);
+    }
   };
 
   const startConsultation = async (id: string) => {
@@ -65,8 +99,40 @@ export default function DoctorQueuePage() {
     <>
       <div className="page-header">
         <h1>{t('queue.title')}</h1>
-        <p>{t('queue.subtitle')}</p>
+        <p>Consultas diretas e encaminhamentos estruturados da equipa de enfermagem.</p>
       </div>
+
+      <section className="doctor-escalation-board">
+        <header>
+          <div>
+            <span><Stethoscope size={17} /> Coordenação clínica</span>
+            <h2>Encaminhamentos de enfermagem</h2>
+            <p>Assuma o episódio com o resumo, prioridade e contexto Patient 360 já preparados.</p>
+          </div>
+          <strong>{escalations.length} pendente{escalations.length === 1 ? '' : 's'}</strong>
+        </header>
+        {escalations.length === 0 ? (
+          <div className="doctor-escalation-empty"><CheckCircle2 size={19} /> Sem novos encaminhamentos clínicos.</div>
+        ) : (
+          <div className="doctor-escalation-list">
+            {escalations.slice(0, 5).map(item => (
+              <article key={item.id}>
+                <span className={`doctor-escalation-urgency ${item.urgency}`}><AlertTriangle size={15} /> {item.urgency}</span>
+                <div>
+                  <h3>{item.patient_name}</h3>
+                  <strong>{item.reason}</strong>
+                  <p>{item.clinical_summary}</p>
+                  <small>{new Date(item.created_at).toLocaleString(locale)}</small>
+                </div>
+                <button type="button" onClick={() => acceptEscalation(item)} disabled={acceptingEscalation === item.id}>
+                  {acceptingEscalation === item.id ? <RefreshCw size={15} className="spin" /> : <ArrowRight size={15} />}
+                  Aceitar e abrir 360°
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="responsive-split" style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 480px' : '1fr', gap: '1.25rem', alignItems: 'start' }}>
 

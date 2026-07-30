@@ -233,7 +233,7 @@ def assert_doctor_can_access_patient(
     Admin / support access is handled separately and must be audited with a
     reason; that check is NOT done here.
     """
-    from app.health_models import Consultation, PrescriptionRequest
+    from app.health_models import CareEscalation, Consultation, PrescriptionRequest
 
     # Check for any consultation connecting doctor ↔ patient
     consultation_exists = (
@@ -257,6 +257,20 @@ def assert_doctor_can_access_patient(
         .first()
     )
     if request_exists:
+        return
+
+    # A doctor who accepted a nurse escalation now owns that episode and needs
+    # the same longitudinal context before and during the handoff.
+    escalation_exists = (
+        db.query(CareEscalation.id)
+        .filter(
+            CareEscalation.assigned_doctor_id == doctor.id,
+            CareEscalation.patient_id == patient_id,
+            CareEscalation.status.in_(("accepted", "resolved")),
+        )
+        .first()
+    )
+    if escalation_exists:
         return
 
     raise HTTPException(

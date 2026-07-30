@@ -132,7 +132,9 @@ const PREVIEW_DATA: Patient360 = {
 const copy = {
   pt: {
     back: 'Voltar', workspace: 'Visão clínica 360°', live: 'Episódio ativo', teleconsult: 'Entrar na teleconsulta',
-    message: 'Mensagens', handoff: 'Criar passagem de turno', prescribe: 'Prescrever', identity: 'Identificação',
+    message: 'Mensagens', handoff: 'Encaminhar ao médico', prescribe: 'Prescrever', identity: 'Identificação',
+    escalationReason: 'Motivo do encaminhamento', escalationSummary: 'Passagem clínica estruturada', escalationSend: 'Enviar ao médico',
+    escalationSent: 'Encaminhamento enviado para a fila médica.', escalationLegal: 'A enfermeira documenta e escala; diagnóstico e prescrição permanecem sob responsabilidade médica.',
     emergency: 'Contacto de emergência', safety: 'Segurança clínica', allergies: 'Alergias', conditions: 'Condições crónicas',
     overview: 'Resumo', triage: 'Triagem', readings: 'Medições e dispositivos', medications: 'Medicação',
     consultations: 'Consultas', coordination: 'Coordenação', recentVitals: 'Medições recentes',
@@ -144,7 +146,9 @@ const copy = {
   },
   en: {
     back: 'Back', workspace: '360° clinical view', live: 'Active episode', teleconsult: 'Join teleconsultation',
-    message: 'Messages', handoff: 'Create handoff', prescribe: 'Prescribe', identity: 'Identity',
+    message: 'Messages', handoff: 'Escalate to doctor', prescribe: 'Prescribe', identity: 'Identity',
+    escalationReason: 'Reason for escalation', escalationSummary: 'Structured clinical handoff', escalationSend: 'Send to doctor',
+    escalationSent: 'Escalation sent to the doctor queue.', escalationLegal: 'The nurse documents and escalates; diagnosis and prescribing remain the doctor’s responsibility.',
     emergency: 'Emergency contact', safety: 'Clinical safety', allergies: 'Allergies', conditions: 'Chronic conditions',
     overview: 'Overview', triage: 'Triage', readings: 'Measurements & devices', medications: 'Medication',
     consultations: 'Consultations', coordination: 'Coordination', recentVitals: 'Recent measurements',
@@ -156,7 +160,9 @@ const copy = {
   },
   fr: {
     back: 'Retour', workspace: 'Vue clinique 360°', live: 'Épisode actif', teleconsult: 'Rejoindre la téléconsultation',
-    message: 'Messages', handoff: 'Créer une transmission', prescribe: 'Prescrire', identity: 'Identité',
+    message: 'Messages', handoff: 'Transmettre au médecin', prescribe: 'Prescrire', identity: 'Identité',
+    escalationReason: 'Motif de la transmission', escalationSummary: 'Transmission clinique structurée', escalationSend: 'Envoyer au médecin',
+    escalationSent: 'Transmission envoyée à la file médicale.', escalationLegal: 'L’infirmier documente et transmet; diagnostic et prescription relèvent du médecin.',
     emergency: 'Contact d’urgence', safety: 'Sécurité clinique', allergies: 'Allergies', conditions: 'Maladies chroniques',
     overview: 'Résumé', triage: 'Triage', readings: 'Mesures et appareils', medications: 'Médicaments',
     consultations: 'Consultations', coordination: 'Coordination', recentVitals: 'Mesures récentes',
@@ -168,7 +174,9 @@ const copy = {
   },
   es: {
     back: 'Volver', workspace: 'Vista clínica 360°', live: 'Episodio activo', teleconsult: 'Entrar en la teleconsulta',
-    message: 'Mensajes', handoff: 'Crear relevo clínico', prescribe: 'Prescribir', identity: 'Identificación',
+    message: 'Mensajes', handoff: 'Derivar al médico', prescribe: 'Prescribir', identity: 'Identificación',
+    escalationReason: 'Motivo de derivación', escalationSummary: 'Relevo clínico estructurado', escalationSend: 'Enviar al médico',
+    escalationSent: 'Derivación enviada a la cola médica.', escalationLegal: 'Enfermería documenta y deriva; el diagnóstico y la prescripción corresponden al médico.',
     emergency: 'Contacto de emergencia', safety: 'Seguridad clínica', allergies: 'Alergias', conditions: 'Condiciones crónicas',
     overview: 'Resumen', triage: 'Triaje', readings: 'Mediciones y dispositivos', medications: 'Medicación',
     consultations: 'Consultas', coordination: 'Coordinación', recentVitals: 'Mediciones recientes',
@@ -180,7 +188,9 @@ const copy = {
   },
   zh: {
     back: '返回', workspace: '360°临床视图', live: '当前护理事件', teleconsult: '加入远程会诊',
-    message: '消息', handoff: '创建交接', prescribe: '开具处方', identity: '身份信息',
+    message: '消息', handoff: '转交医生', prescribe: '开具处方', identity: '身份信息',
+    escalationReason: '转诊原因', escalationSummary: '结构化临床交接', escalationSend: '发送给医生',
+    escalationSent: '已发送至医生队列。', escalationLegal: '护士负责记录和上报；诊断及处方由医生负责。',
     emergency: '紧急联系人', safety: '临床安全', allergies: '过敏', conditions: '慢性病',
     overview: '概览', triage: '分诊', readings: '测量与设备', medications: '用药',
     consultations: '会诊', coordination: '协作', recentVitals: '最近测量',
@@ -203,6 +213,11 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
   const [loading, setLoading] = useState(!preview);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [showHandoff, setShowHandoff] = useState(false);
+  const [escalationUrgency, setEscalationUrgency] = useState('priority');
+  const [escalationReason, setEscalationReason] = useState('');
+  const [escalationSummary, setEscalationSummary] = useState('');
+  const [escalationSending, setEscalationSending] = useState(false);
+  const [escalationResult, setEscalationResult] = useState('');
 
   const load = () => {
     if (preview) { setData(PREVIEW_DATA); return; }
@@ -219,6 +234,41 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
     for (const reading of data?.readings || []) if (!map.has(reading.type)) map.set(reading.type, reading);
     return [...map.values()];
   }, [data?.readings]);
+
+  const openEscalation = () => {
+    if (!data) return;
+    setEscalationReason(data.latest_triage?.chief_complaint || '');
+    setEscalationSummary(
+      `Situação: ${data.latest_triage?.chief_complaint || ''}\n` +
+      `Risco: ${data.latest_triage?.risk_level || ''}\n` +
+      `Medições relevantes: ${latestByType.slice(0, 4).map(readingValue).join(' · ')}\n` +
+      `Recomendação: ${data.latest_triage?.recommended_action || ''}`,
+    );
+    setEscalationResult('');
+    setShowHandoff(true);
+  };
+
+  const submitEscalation = async () => {
+    if (!data || !escalationReason.trim() || !escalationSummary.trim()) return;
+    setEscalationSending(true);
+    try {
+      if (!preview) {
+        await api.post('/api/v1/clinical-operations/escalations', {
+          patient_id: data.identity.id,
+          consultation_id: data.active_episode?.id,
+          triage_session_id: data.latest_triage?.id,
+          urgency: escalationUrgency,
+          reason: escalationReason,
+          clinical_summary: escalationSummary,
+        });
+      }
+      setEscalationResult(c.escalationSent);
+    } catch (error: any) {
+      setEscalationResult(error?.response?.data?.detail || 'Não foi possível enviar o encaminhamento.');
+    } finally {
+      setEscalationSending(false);
+    }
+  };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
   if (!data) return <div className="clinician-360-empty">{c.noData}</div>;
@@ -258,7 +308,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
             <Link className="clinician-action" to="/doctor/mensagens"><MessageSquare size={16} /> {c.message}</Link>
           )}
           {data.access.capabilities.create_handoff && (
-            <button className="clinician-action" type="button" onClick={() => setShowHandoff(true)}>
+            <button className="clinician-action" type="button" onClick={openEscalation}>
               <ClipboardList size={16} /> {c.handoff}
             </button>
           )}
@@ -456,12 +506,37 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
       {showHandoff && (
         <div className="clinician-modal-backdrop" onClick={() => setShowHandoff(false)}>
           <section className="clinician-modal" onClick={event => event.stopPropagation()}>
-            <button type="button" onClick={() => setShowHandoff(false)}><X size={18} /></button>
+            <button type="button" aria-label="Fechar encaminhamento" onClick={() => setShowHandoff(false)}><X size={18} /></button>
             <ClipboardList size={27} />
             <h2>{c.handoff}</h2>
             <p>{data.identity.name} · {data.latest_triage?.risk_level || '—'} · {data.latest_triage?.chief_complaint || '—'}</p>
-            <textarea defaultValue={`Situação: ${data.latest_triage?.chief_complaint || ''}\nRisco: ${data.latest_triage?.risk_level || ''}\nRecomendação: ${data.latest_triage?.recommended_action || ''}`} />
-            <div className="clinician-modal-note">A persistência e envio da passagem de turno será ligada ao módulo de coordenação clínica.</div>
+            <label className="clinician-modal-field">
+              <span>Prioridade</span>
+              <select value={escalationUrgency} onChange={event => setEscalationUrgency(event.target.value)}>
+                <option value="routine">Rotina</option>
+                <option value="priority">Prioritário</option>
+                <option value="urgent">Urgente</option>
+                <option value="emergency">Emergência</option>
+              </select>
+            </label>
+            <label className="clinician-modal-field">
+              <span>{c.escalationReason}</span>
+              <input value={escalationReason} onChange={event => setEscalationReason(event.target.value)} />
+            </label>
+            <label className="clinician-modal-field">
+              <span>{c.escalationSummary}</span>
+              <textarea value={escalationSummary} onChange={event => setEscalationSummary(event.target.value)} />
+            </label>
+            <div className="clinician-modal-note">{c.escalationLegal}</div>
+            {escalationResult && <div className="clinician-modal-result">{escalationResult}</div>}
+            <button
+              type="button"
+              className="clinician-modal-submit"
+              disabled={escalationSending || !escalationReason.trim() || !escalationSummary.trim()}
+              onClick={submitEscalation}
+            >
+              {escalationSending ? <RefreshCw size={15} className="spin" /> : <Stethoscope size={15} />} {c.escalationSend}
+            </button>
           </section>
         </div>
       )}

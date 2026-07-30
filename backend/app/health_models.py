@@ -475,6 +475,126 @@ class Referral(Base):
     consultation = relationship("Consultation", back_populates="referrals")
 
 
+# ── Clinician coordination, e-prescribing gateway & revenue ────────────────
+
+class CareEscalation(Base):
+    """Structured nurse → doctor clinical handoff.
+
+    This is deliberately separate from ``Referral``: a referral is a medical
+    disposition, while an escalation is an operational request for a doctor to
+    take responsibility for an active KAYA care episode.
+    """
+    __tablename__ = "care_escalations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    consultation_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("consultations.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+    triage_session_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("triage_sessions.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_by_user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True,
+    )
+    assigned_doctor_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("doctors.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+    urgency: Mapped[str] = mapped_column(String(20), nullable=False, default="priority")
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    clinical_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    patient = relationship("Patient")
+    consultation = relationship("Consultation")
+    assigned_doctor = relationship("Doctor")
+
+    __table_args__ = (
+        Index("ix_care_escalations_status_urgency", "status", "urgency"),
+    )
+
+
+class ElectronicPrescriptionSubmission(Base):
+    """Audit-safe state for a prescription submitted through a national gateway."""
+    __tablename__ = "electronic_prescription_submissions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    prescription_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("prescriptions.id", ondelete="CASCADE"),
+        nullable=True, index=True,
+    )
+    standalone_prescription_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("standalone_prescriptions.id", ondelete="CASCADE"),
+        nullable=True, index=True,
+    )
+    patient_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    doctor_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("doctors.id", ondelete="RESTRICT"),
+        nullable=False, index=True,
+    )
+    jurisdiction_country: Mapped[str] = mapped_column(String(2), nullable=False, default="PT")
+    network: Mapped[str] = mapped_column(String(30), nullable=False, default="PEM_BDNP")
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="draft")
+    external_reference: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    payload_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    response_code: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    response_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+
+class ClinicianRevenueEvent(Base):
+    """Immutable-style ledger entry for professional/platform revenue sharing."""
+    __tablename__ = "clinician_revenue_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    consultation_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("consultations.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+    escalation_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("care_escalations.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+    clinician_user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True,
+    )
+    professional_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    gross_amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="AOA")
+    platform_fee_amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    professional_amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    earned_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_clinician_revenue_user_status", "clinician_user_id", "status"),
+    )
+
+
 # ── Corporate ──
 
 class CorporateAccount(Base):

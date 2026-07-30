@@ -3,6 +3,7 @@ import {
   FileText, AlertTriangle, CheckCircle2, X, ChevronDown, ChevronUp,
   Activity, Calendar, Stethoscope, AlertCircle, RefreshCw,
   Search, Loader2, SidebarOpen, Pill, Heart,
+  ShieldCheck,
 } from 'lucide-react';
 import api from '../api';
 
@@ -40,6 +41,15 @@ interface ClinicalSummary {
   risk_flags: string[];
 }
 
+interface PemStatus {
+  provider: string;
+  network: string;
+  configured: boolean;
+  mode: string;
+  message: string;
+  requirements: Record<string, boolean>;
+}
+
 const riskConfig = {
   low:    { label: 'Baixo risco',  color: '#059669', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)' },
   medium: { label: 'Risco médio', color: '#d97706', bg: 'rgba(234,179,8,0.1)',   border: 'rgba(234,179,8,0.3)'   },
@@ -71,6 +81,7 @@ export default function DoctorPrescriptionsPage() {
   const [quickView, setQuickView] = useState<RxRequest | null>(null);
   const [clinicalSummary, setClinicalSummary] = useState<ClinicalSummary | null>(null);
   const [clinicalLoading, setClinicalLoading] = useState(false);
+  const [pemStatus, setPemStatus] = useState<PemStatus | null>(null);
 
   const load = async () => {
     setLoading(true); setError('');
@@ -85,6 +96,11 @@ export default function DoctorPrescriptionsPage() {
   };
 
   useEffect(() => { load(); }, [filter]);
+  useEffect(() => {
+    api.get<PemStatus>('/api/v1/clinical-operations/integrations/pem/status')
+      .then(response => setPemStatus(response.data))
+      .catch(() => {});
+  }, []);
 
   const openQuickView = async (rx: RxRequest) => {
     if (quickView?.id === rx.id) { setQuickView(null); setClinicalSummary(null); return; }
@@ -129,6 +145,24 @@ export default function DoctorPrescriptionsPage() {
   return (
     <div style={{ display: 'flex', gap: '1rem', maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
+        <section style={{
+          display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '0.75rem', alignItems: 'center',
+          marginBottom: '1rem', padding: '0.85rem 1rem', border: `1px solid ${pemStatus?.configured ? '#a7f3d0' : '#fde68a'}`,
+          borderRadius: 12, background: pemStatus?.configured ? '#ecfdf5' : '#fffbeb',
+        }}>
+          <span style={{ display: 'grid', placeItems: 'center', width: 36, height: 36, borderRadius: 10, background: pemStatus?.configured ? '#d1fae5' : '#fef3c7', color: pemStatus?.configured ? '#047857' : '#b45309' }}>
+            <ShieldCheck size={19} />
+          </span>
+          <div>
+            <strong style={{ display: 'block', fontSize: '0.78rem' }}>Prescrição eletrónica · PEM / BDNP Portugal</strong>
+            <span style={{ display: 'block', marginTop: '0.15rem', color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
+              {pemStatus?.message || 'A verificar a ligação certificada…'}
+            </span>
+          </div>
+          <span style={{ padding: '0.25rem 0.55rem', borderRadius: 999, background: pemStatus?.configured ? '#047857' : '#b45309', color: '#fff', fontSize: '0.58rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+            {pemStatus?.configured ? 'Gateway configurado' : 'Preparação apenas'}
+          </span>
+        </section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

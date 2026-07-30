@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 from app.config import settings
 from app.services.credential_providers import extract_azure_fields
-from app.health_models import Consultation, Patient
+from app.health_models import CareEscalation, Consultation, Doctor, Patient, Prescription
 
 
 def _register(client, role="doctor", diploma_country="PT"):
@@ -168,6 +168,83 @@ def test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities
         "safety", "active_episode", "latest_triage", "consultations", "readings",
         "medications", "prescriptions", "referrals", "consents", "emergency_family",
     }.issubset(body)
+
+
+def test_nurse_escalation_assigns_doctor_and_opens_patient_360(client, db_session):
+    nurse = _register(client, role="nurse", diploma_country="AO")
+    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    _verify_clinician(client, nurse)
+    _verify_clinician(client, doctor_auth)
+
+    patient_auth = client.post("/auth/register", json={
+        "email": f"patient-escalation-{uuid.uuid4().hex[:8]}@example.com",
+        "password": "strong-pass",
+        "full_name": "Paciente Encaminhado",
+        "sector_focus": "health",
+        "role": "patient",
+    }).json()
+    patient = db_session.query(Patient).filter(
+        Patient.user_id == patient_auth["user"]["id"],
+    ).first()
+    consultation = Consultation(
+        patient_id=patient.id,
+        specialty="clinica_geral",
+        status="requested",
+    )
+    db_session.add(consultation)
+    db_session.commit()
+
+    created = client.post(
+        "/api/v1/clinical-operations/escalations",
+        headers=_headers(nurse),
+        json={
+            "patient_id": patient.id,
+            "consultation_id": consultation.id,
+            "urgency": "urgent",
+            "reason": "Dispneia e febre persistente",
+            "clinical_summary": "SBAR: SpO2 93%, T 38.7 C, tosse há quatro dias.",
+        },
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["status"] == "pending"
+
+    accepted = client.post(
+        f"/api/v1/clinical-operations/escalations/{created.json()['id']}/accept",
+        headers=_headers(doctor_auth),
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["status"] == "accepted"
+
+    db_session.expire_all()
+    doctor = db_session.query(Doctor).filter(
+        Doctor.user_id == doctor_auth["user"]["id"],
+    ).first()
+    assigned_consultation = db_session.query(Consultation).filter(
+        Consultation.id == consultation.id,
+    ).first()
+    assert assigned_consultation.doctor_id == doctor.id
+
+    workspace = client.get(
+        f"/api/v1/clinician/patients/{patient.id}/360",
+        headers=_headers(doctor_auth),
+    )
+    assert workspace.status_code == 200, workspace.text
+    assert workspace.json()["access"]["role"] == "doctor"
+
+
+def test_pem_gateway_is_explicitly_preparation_only_without_credentials(client, db_session, monkeypatch):
+    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    _verify_clinician(client, doctor_auth)
+    for name in ("PEM_API_BASE_URL", "PEM_CLIENT_ID", "PEM_ORGANISATION_ID", "PEM_CLIENT_CERT_PATH"):
+        monkeypatch.delenv(name, raising=False)
+
+    status = client.get(
+        "/api/v1/clinical-operations/integrations/pem/status",
+        headers=_headers(doctor_auth),
+    )
+    assert status.status_code == 200
+    assert status.json()["configured"] is False
+    assert status.json()["mode"] == "preparation_only"
 
 
 def test_registration_rejects_incomplete_clinician_profile(client):
