@@ -120,6 +120,23 @@ def ensure_legacy_schema() -> None:
             except Exception:
                 pass
 
+        # clinician_credentials: columns added after the initial schema
+        try:
+            cc_cols = [c["name"] for c in inspector.get_columns("clinician_credentials")]
+        except Exception:
+            cc_cols = []
+        if cc_cols:
+            if "licence_jurisdiction" not in cc_cols:
+                try:
+                    conn.execute(text("ALTER TABLE clinician_credentials ADD COLUMN licence_jurisdiction TEXT"))
+                except Exception:
+                    pass
+            if "verification_consent_at" not in cc_cols:
+                try:
+                    conn.execute(text("ALTER TABLE clinician_credentials ADD COLUMN verification_consent_at TEXT"))
+                except Exception:
+                    pass
+
         # doctor_invites: role column (doctor | nurse)
         try:
             inv_cols = [c["name"] for c in inspector.get_columns("doctor_invites")]

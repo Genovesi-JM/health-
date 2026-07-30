@@ -225,6 +225,22 @@ def seed_doctor_users() -> int:
                 verification_status=prof.get("verification_status", "pending"),
             )
             db.add(doctor)
+            # Seed a matching verified ClinicianCredential dossier so the doctor
+            # can actually access clinical endpoints under the new business rule.
+            from app.health_models import ClinicianCredential
+            cred = db.query(ClinicianCredential).filter(ClinicianCredential.user_id == user.id).first()
+            if not cred:
+                db.add(ClinicianCredential(
+                    user_id=user.id, profession="doctor",
+                    legal_name=prof.get("display_name") or "Dr. Seed",
+                    practice_country="AO", licence_country="AO",
+                    issuing_authority="Ordem dos Médicos de Angola",
+                    licence_number=prof.get("license_number") or "SEED-OM-000",
+                    diploma_country="AO", diploma_institution="Universidade Agostinho Neto",
+                    degree_title="Medicina",
+                    specialization=prof.get("specialization"),
+                    status="verified",
+                ))
             inserted += 1
 
         db.commit()
