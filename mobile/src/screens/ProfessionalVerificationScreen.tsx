@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Switch, Text
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage, type AppLanguage } from '../i18n/LanguageContext';
 
 type Evidence = { kind: string; original_filename: string };
 type Credential = {
@@ -24,6 +25,7 @@ const LABELS: Record<string, string> = {
 
 export default function ProfessionalVerificationScreen() {
   const { logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [data, setData] = useState<Credential | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState('');
@@ -113,9 +115,28 @@ export default function ProfessionalVerificationScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.backButton} onPress={logout} accessibilityRole="button">
+          <Text style={styles.backButtonText}>‹ {t('common.back_login')}</Text>
+        </TouchableOpacity>
+        <View style={styles.languageRow}>
+          {([
+            ['pt', 'PT'], ['en', 'EN'], ['fr', 'FR'], ['es', 'ES'],
+          ] as [AppLanguage, string][]).map(([code, label]) => (
+            <TouchableOpacity
+              key={code}
+              accessibilityLabel={`Language ${label}`}
+              style={[styles.languageButton, language === code && styles.languageButtonActive]}
+              onPress={() => setLanguage(code)}
+            >
+              <Text style={[styles.languageButtonText, language === code && styles.languageButtonTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
       <Text style={styles.eyebrow}>KAYA CLINICAL SAFETY</Text>
-      <Text style={styles.title}>Professional verification</Text>
-      <Text style={styles.subtitle}>Clinical features unlock only after an authorised human review.</Text>
+      <Text style={styles.title}>{t('verification.title')}</Text>
+      <Text style={styles.subtitle}>{t('verification.subtitle')}</Text>
 
       <View style={styles.statusCard}>
         <Text style={styles.name}>{data.legal_name}</Text>
@@ -124,7 +145,7 @@ export default function ProfessionalVerificationScreen() {
         <Text style={styles.score}>{data.automated_score}% document checks complete</Text>
       </View>
 
-      <Text style={styles.section}>REQUIRED EVIDENCE</Text>
+      <Text style={styles.section}>{t('verification.evidence')}</Text>
       {required.map(kind => {
         const item = data.evidence.find(e => e.kind === kind);
         return (
@@ -141,7 +162,7 @@ export default function ProfessionalVerificationScreen() {
       })}
       <Text style={styles.privacy}>Accepted here: JPG/PNG up to 10 MB. PDF documents can also be uploaded in the KAYA web app. Evidence is private.</Text>
 
-      <Text style={styles.section}>AUTOMATED VERIFICATION</Text>
+      <Text style={styles.section}>{t('verification.automated')}</Text>
       <View style={styles.statusCard}>
         {[
           ['azure', 'Azure document reading'],
@@ -194,6 +215,14 @@ export default function ProfessionalVerificationScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#f0fdfa' },
   content: { padding: 24, paddingTop: 64, paddingBottom: 40 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 20 },
+  backButton: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 11, borderRadius: 9, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: '#fff' },
+  backButtonText: { color: '#334155', fontSize: 12, fontWeight: '700' },
+  languageRow: { flexDirection: 'row', gap: 5 },
+  languageButton: { minWidth: 34, minHeight: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: '#fff' },
+  languageButtonActive: { borderColor: '#0d9488', backgroundColor: '#ccfbf1' },
+  languageButtonText: { color: '#64748b', fontSize: 11, fontWeight: '800' },
+  languageButtonTextActive: { color: '#0f766e' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0fdfa', gap: 12 },
   eyebrow: { fontSize: 11, color: '#0d9488', fontWeight: '800', letterSpacing: 1.2 },
   title: { fontSize: 28, fontWeight: '800', color: '#0f172a', marginTop: 8 },

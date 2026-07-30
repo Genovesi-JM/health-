@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, ExternalLink, FileCheck2, Loader2, ShieldCheck, Upload } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, ExternalLink, FileCheck2, Loader2, ShieldCheck, Upload } from 'lucide-react';
 import api from '../api';
 import { useAuth } from '../AuthContext';
 import { apiErrorMessage } from '../utils/apiError';
+import LanguageSelector from '../components/LanguageSelector';
+import { useT } from '../i18n/LanguageContext';
 
 type Evidence = { id: string; kind: string; original_filename: string; size_bytes: number };
 type ProviderCheck = {
@@ -30,6 +32,7 @@ const LABELS: Record<string, string> = {
 
 export default function ProfessionalVerificationPage() {
   const { user } = useAuth();
+  const { t } = useT();
   const navigate = useNavigate();
   const [credential, setCredential] = useState<Credential | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,9 +119,20 @@ export default function ProfessionalVerificationPage() {
 
   return (
     <>
+      <div style={{ maxWidth: 860, margin: '0 auto .75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.75rem' }}>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
+          aria-label={t('common.back')}
+        >
+          <ArrowLeft size={15} /> {t('common.back')}
+        </button>
+        <LanguageSelector />
+      </div>
       <div className="page-header">
-        <h1>Verificação profissional</h1>
-        <p>Acesso clínico seguro para médicos e enfermeiros.</p>
+        <h1>{t('verification.title')}</h1>
+        <p>{t('verification.subtitle')}</p>
       </div>
       <div style={{ maxWidth: 860, margin: '0 auto', display: 'grid', gap: '1rem' }}>
         <div className="card" style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
