@@ -6,6 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AuthStack';
+import { useLanguage, type AppLanguage } from '../i18n/LanguageContext';
 
 const TEAL      = '#0d9488';
 const TEAL_DARK = '#0a7a6e';
@@ -15,34 +16,42 @@ const MUTED     = '#64748b';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
-const MENU_ITEMS = [
-  { label: 'Entrar',       action: 'login'    },
-  { label: 'Criar conta',  action: 'register' },
-  { label: 'Serviços',     action: 'services' },
-  { label: 'Contactos',    action: 'contact'  },
-  { label: 'Ajuda / FAQ',  action: 'faq'      },
-];
-
-const SERVICES = [
-  { icon: '📅', label: 'Marcar consulta'  },
-  { icon: '🖥',  label: 'Teleconsulta'    },
-  { icon: '💊', label: 'Receitas'         },
-  { icon: '🩺', label: 'Medicação'        },
-  { icon: '❤',  label: 'Cuidado crónico' },
-];
-
 export default function LandingScreen() {
   const navigation = useNavigation<Nav>();
+  const { language, setLanguage, t } = useLanguage();
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+
+  const menuItems = [
+    { label: t('landing.login'), action: 'login' },
+    { label: t('landing.register'), action: 'register' },
+    { label: t('landing.services'), action: 'services' },
+    { label: t('landing.contacts'), action: 'contact' },
+    { label: t('landing.help'), action: 'faq' },
+  ];
+  const services = [
+    { icon: '📅', label: t('landing.book') },
+    { icon: '🖥', label: t('landing.teleconsult') },
+    { icon: '💊', label: t('landing.prescriptions') },
+    { icon: '🩺', label: t('landing.medication') },
+    { icon: '❤', label: t('landing.chronic') },
+  ];
 
   const handleMenu = (action: string) => {
     setMenuOpen(false);
-    if      (action === 'login')    setTimeout(() => navigation.navigate('Login'),    50);
-    else if (action === 'register') setTimeout(() => navigation.navigate('Register'), 50);
-    else if (action === 'services') setTimeout(() => setServicesOpen(true),           50);
+    // Allow the drawer modal to finish dismissing before navigation or opening
+    // another modal. Overlapping native modal animations can lock touch input.
+    if      (action === 'login')    setTimeout(() => navigation.navigate('Login'),    350);
+    else if (action === 'register') setTimeout(() => navigation.navigate('Register'), 350);
+    else if (action === 'services') setTimeout(() => setServicesOpen(true),           350);
     else if (action === 'contact')  Linking.openURL('mailto:suporte@kaya.health');
     else if (action === 'faq')      Linking.openURL('https://kaya.health/faq');
+  };
+
+  const closeServicesAndRegister = () => {
+    setServicesOpen(false);
+    setTimeout(() => navigation.navigate('Register'), 350);
   };
 
   return (
@@ -57,16 +66,26 @@ export default function LandingScreen() {
             KAYA <Text style={styles.logoSub}>Saúde</Text>
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.burgerBtn}
-          onPress={() => setMenuOpen(true)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          activeOpacity={0.7}
-        >
-          <View style={styles.burgerLine} />
-          <View style={[styles.burgerLine, { width: 18 }]} />
-          <View style={styles.burgerLine} />
-        </TouchableOpacity>
+        <View style={styles.topActions}>
+          <TouchableOpacity
+            style={styles.languageTrigger}
+            onPress={() => setLanguageOpen(true)}
+            accessibilityLabel={t('landing.language')}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.languageTriggerText}>◎ {language.toUpperCase()}⌄</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.burgerBtn}
+            onPress={() => setMenuOpen(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.burgerLine} />
+            <View style={[styles.burgerLine, { width: 18 }]} />
+            <View style={styles.burgerLine} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Main centred content */}
@@ -74,15 +93,15 @@ export default function LandingScreen() {
         <View style={styles.brandMark}>
           <Text style={styles.brandMarkText}>K</Text>
         </View>
-        <Text style={styles.tagline}>A tua saúde,{'\n'}mais simples.</Text>
-        <Text style={styles.sub}>Portal do paciente · Angola</Text>
+        <Text style={styles.tagline}>{t('landing.tagline')}</Text>
+        <Text style={styles.sub}>{t('landing.subtitle')}</Text>
 
         <TouchableOpacity
           style={styles.btnPrimary}
           onPress={() => navigation.navigate('Login')}
           activeOpacity={0.85}
         >
-          <Text style={styles.btnPrimaryText}>Entrar no portal</Text>
+          <Text style={styles.btnPrimaryText}>{t('landing.login')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -90,7 +109,7 @@ export default function LandingScreen() {
           onPress={() => navigation.navigate('Register')}
           activeOpacity={0.85}
         >
-          <Text style={styles.btnSecondaryText}>Criar conta gratuita</Text>
+          <Text style={styles.btnSecondaryText}>{t('landing.register')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -98,7 +117,7 @@ export default function LandingScreen() {
           activeOpacity={0.7}
           style={styles.linkBtn}
         >
-          <Text style={styles.linkText}>Conhecer os serviços →</Text>
+          <Text style={styles.linkText}>{t('landing.services_link')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -119,7 +138,8 @@ export default function LandingScreen() {
         animationType="fade"
         onRequestClose={() => setMenuOpen(false)}
       >
-        <Pressable style={styles.overlay} onPress={() => setMenuOpen(false)}>
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)} />
           <View style={styles.drawer}>
             <TouchableOpacity
               onPress={() => setMenuOpen(false)}
@@ -128,7 +148,7 @@ export default function LandingScreen() {
               <Text style={styles.drawerCloseText}>✕</Text>
             </TouchableOpacity>
             <Text style={styles.drawerLogo}>KAYA Saúde</Text>
-            {MENU_ITEMS.map(item => (
+            {menuItems.map(item => (
               <TouchableOpacity
                 key={item.action}
                 style={styles.drawerItem}
@@ -144,7 +164,7 @@ export default function LandingScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </Pressable>
+        </View>
       </Modal>
 
       {/* Services sheet */}
@@ -154,11 +174,12 @@ export default function LandingScreen() {
         animationType="slide"
         onRequestClose={() => setServicesOpen(false)}
       >
-        <Pressable style={styles.overlay} onPress={() => setServicesOpen(false)}>
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.backdrop} onPress={() => setServicesOpen(false)} />
           <View style={styles.sheet}>
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>Os nossos serviços</Text>
-            {SERVICES.map(s => (
+            <Text style={styles.sheetTitle}>{t('landing.services_title')}</Text>
+            {services.map(s => (
               <View key={s.label} style={styles.serviceRow}>
                 <Text style={styles.serviceIcon}>{s.icon}</Text>
                 <Text style={styles.serviceLabel}>{s.label}</Text>
@@ -166,13 +187,41 @@ export default function LandingScreen() {
             ))}
             <TouchableOpacity
               style={[styles.btnPrimary, { marginTop: 20 }]}
-              onPress={() => { setServicesOpen(false); navigation.navigate('Register'); }}
+              onPress={closeServicesAndRegister}
               activeOpacity={0.85}
             >
-              <Text style={styles.btnPrimaryText}>Criar conta e começar</Text>
+              <Text style={styles.btnPrimaryText}>{t('landing.start')}</Text>
             </TouchableOpacity>
           </View>
-        </Pressable>
+        </View>
+      </Modal>
+
+      {/* Language sheet */}
+      <Modal
+        visible={languageOpen}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setLanguageOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.backdrop} onPress={() => setLanguageOpen(false)} />
+          <View style={styles.languageSheet}>
+            <Text style={styles.sheetTitle}>{t('landing.language')}</Text>
+            {([
+              ['pt', 'Português'], ['en', 'English'], ['fr', 'Français'], ['es', 'Español'],
+            ] as [AppLanguage, string][]).map(([code, label]) => (
+              <TouchableOpacity
+                key={code}
+                style={[styles.languageOption, language === code && styles.languageOptionActive]}
+                onPress={() => { setLanguage(code); setLanguageOpen(false); }}
+              >
+                <Text style={[styles.languageOptionText, language === code && styles.languageOptionTextActive]}>{label}</Text>
+                {language === code && <Text style={styles.languageCheck}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -193,6 +242,9 @@ const styles = StyleSheet.create({
   logoDot:   { width: 10, height: 10, borderRadius: 5, backgroundColor: TEAL_SOFT },
   logoText:  { fontSize: 18, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
   logoSub:   { fontWeight: '400', color: 'rgba(255,255,255,0.75)' },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  languageTrigger: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 10, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(255,255,255,.35)', backgroundColor: 'rgba(255,255,255,.08)' },
+  languageTriggerText: { color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: .3 },
   burgerBtn: { padding: 4, gap: 5, alignItems: 'flex-end' },
   burgerLine:{ width: 24, height: 2, borderRadius: 2, backgroundColor: '#fff' },
 
@@ -237,9 +289,8 @@ const styles = StyleSheet.create({
   footer: { paddingBottom: 20, alignItems: 'center' },
   footerText: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
 
-  overlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
-  },
+  modalRoot: { flex: 1 },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
 
   drawer: {
     position: 'absolute', top: 0, right: 0, bottom: 0,
@@ -268,4 +319,10 @@ const styles = StyleSheet.create({
   serviceRow:   { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   serviceIcon:  { fontSize: 22 },
   serviceLabel: { fontSize: 15, fontWeight: '600', color: SLATE },
+  languageSheet: { position: 'absolute', top: 84, right: 18, width: 210, backgroundColor: '#fff', borderRadius: 16, padding: 14, shadowColor: '#000', shadowOpacity: .18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12 },
+  languageOption: { minHeight: 44, paddingHorizontal: 12, borderRadius: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  languageOptionActive: { backgroundColor: TEAL_SOFT },
+  languageOptionText: { color: SLATE, fontSize: 14, fontWeight: '600' },
+  languageOptionTextActive: { color: TEAL_DARK, fontWeight: '800' },
+  languageCheck: { color: TEAL, fontSize: 15, fontWeight: '900' },
 });
