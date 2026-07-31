@@ -35,6 +35,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ChooseAccountTypePage from './pages/ChooseAccountTypePage';
 import PatientOnboardingPage from './pages/PatientOnboardingPage';
+import ProfessionalOnboardingPage from './pages/ProfessionalOnboardingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import DoctorRegisterPage from './pages/DoctorRegisterPage';
 import DoctorApplyPage from './pages/DoctorApplyPage';
@@ -138,6 +139,7 @@ export default function App() {
             <Route path="/consent-gate" element={<ConsentGatePage />} />
             <Route path="/data-consent" element={<ConsentGatePage />} />
             <Route path="/onboarding/patient" element={<PatientOnboardingPage />} />
+            <Route path="/onboarding/professional" element={<ProfessionalOnboardingPage />} />
             {/* Settings — accessible to all roles */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/professional-verification" element={<ProfessionalVerificationPage />} />

@@ -47,6 +47,8 @@ from .routers import (
     teleconsultation,
     onboarding,
     compliance_review,
+    verification_actions,
+    verification_webhooks,
 )
 
 from .seed_data import seed_all
@@ -164,6 +166,8 @@ def create_application() -> FastAPI:
     application.include_router(teleconsultation.router) # teleconsultation readiness, attendance, lifecycle
     application.include_router(onboarding.router)       # /api/v1/onboarding/* — resumable multi-step wizard
     application.include_router(compliance_review.router) # /api/v1/compliance/cases/* — reviewer state-machine actions
+    application.include_router(verification_actions.router)  # /api/v1/verification/* — provider integration
+    application.include_router(verification_webhooks.router) # /api/v1/webhooks/{sumsub,veremark,certn}
 
     # ── Deprecated drone/shop routers (disabled) ──
     # The following routers are from the original GeoVision platform and

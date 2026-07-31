@@ -15,7 +15,7 @@ interface Choice {
 const CHOICES: Choice[] = [
   { key: 'patient',      labelKey: 'ct.patient',      descKey: 'ct.patient_desc',      Icon: Heart,       color: '#0F766E', destination: '/register?role=patient' },
   { key: 'caregiver',    labelKey: 'ct.caregiver',    descKey: 'ct.caregiver_desc',    Icon: Users,       color: '#0891B2', destination: '/register?role=caregiver' },
-  { key: 'professional', labelKey: 'ct.professional', descKey: 'ct.professional_desc', Icon: Stethoscope, color: '#7C3AED', destination: '/register/doctor' },
+  { key: 'professional', labelKey: 'ct.professional', descKey: 'ct.professional_desc', Icon: Stethoscope, color: '#7C3AED', destination: '/onboarding/professional' },
   { key: 'clinic',       labelKey: 'ct.clinic',       descKey: 'ct.clinic_desc',       Icon: Building2,   color: '#D97706', destination: '/candidatura' },
   { key: 'pharmacy',     labelKey: 'ct.pharmacy',     descKey: 'ct.pharmacy_desc',     Icon: Pill,        color: '#059669', destination: '/candidatura?type=pharmacy' },
 ];

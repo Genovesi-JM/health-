@@ -1185,3 +1185,21 @@ class VerificationTransition(Base):
     __table_args__ = (
         Index("ix_verification_transitions_entity", "entity_type", "entity_id", "at"),
     )
+
+
+# ── Webhook event dedup ──────────────────────────────────────────────────────
+# Providers redeliver webhooks aggressively. This table lets us dedupe by
+# (provider, event_id) so downstream logic only fires once.
+
+class VerificationWebhookEvent(Base):
+    __tablename__ = "verification_webhook_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    event_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    payload_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    processed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_webhook_events_dedupe", "provider", "event_id", unique=True),
+    )
