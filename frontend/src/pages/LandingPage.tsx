@@ -334,7 +334,7 @@ export default function LandingPage() {
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
           <div className="lp-tag">Porque nos escolher</div>
-          <h2>Healthcare simplificado. Sem atalhos.</h2>
+          <h2>Cuidados de saúde simplificados. Sem atalhos.</h2>
         </div>
         <div className="lp-trust-grid">
           {TRUST_POINTS.map(tp => (

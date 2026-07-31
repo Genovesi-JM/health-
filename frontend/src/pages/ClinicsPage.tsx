@@ -12,7 +12,7 @@ const DOCTOR_BENEFITS = [
   {
     icon: Banknote,
     color: '#0d9488',
-    title: 'Receita extra sem overhead',
+    title: 'Receita extra sem custos fixos',
     desc: 'Receba pacientes online fora do seu horário principal. Sem aluguer de consultório, sem secretária — só você e o paciente.',
   },
   {

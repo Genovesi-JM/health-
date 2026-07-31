@@ -159,7 +159,7 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/login" className="lp-cta lp-cta--outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>Entrar</Link>
-                <Link to="/register" className="lp-cta lp-cta--primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>Começar grátis</Link>
+                <Link to="/register" className="lp-cta lp-cta--primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>{t('nav.start_free')}</Link>
               </>
             )}
           </div>

@@ -24,7 +24,7 @@ const KITS = [
     price: 'A partir de 55.000 Kz',
     sub: 'Hipertensão • Diabetes • Asma',
     devices: ['Tensiómetro smart', 'Glicómetro conectado', 'Oxímetro de pulso'],
-    features: ['Alertas de risco automáticos', 'Partilha com médico', 'Histórico ilimitado', 'Suporte setup incluso'],
+    features: ['Alertas de risco automáticos', 'Partilha com médico', 'Histórico ilimitado', 'Configuração incluída'],
     cta: 'Kit mais popular',
     badge: 'Mais escolhido',
   },

@@ -21,6 +21,7 @@ const translations: Record<string, TranslationEntry> = {
   'nav.about': { pt: 'Sobre', en: 'About', fr: 'À propos', es: 'Sobre nosotros', zh: '关于 (About)' },
   'nav.services': { pt: 'Serviços', en: 'Services', fr: 'Services', es: 'Servicios', zh: '服务 (Services)' },
   'nav.portal': { pt: 'Portal', en: 'Portal', fr: 'Portail', es: 'Portal', zh: '门户 (Portal)' },
+  'nav.start_free': { pt: 'Começar grátis', en: 'Get started', fr: 'Commencer', es: 'Comenzar gratis' },
   'common.back': { pt: 'Voltar', en: 'Back', fr: 'Retour', es: 'Volver', zh: '返回' },
   'verification.title': { pt: 'Verificação profissional', en: 'Professional verification', fr: 'Vérification professionnelle', es: 'Verificación profesional', zh: '专业资质验证' },
   'verification.subtitle': {
