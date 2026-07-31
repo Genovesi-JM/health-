@@ -34,9 +34,9 @@ def _base_html(title: str, content: str) -> str:
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-<tr><td style="background:linear-gradient(135deg,#1a5276,#2e86c1);padding:30px 40px;text-align:center;">
+<tr><td style="background:linear-gradient(135deg,#0F766E,#14B8A6);padding:30px 40px;text-align:center;">
 <h1 style="margin:0;color:#fff;font-size:24px;font-weight:600;">KAYA</h1>
-<p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Geospatial Intelligence Platform</p>
+<p style="margin:4px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Cuidados de saúde digitais · Angola</p>
 </td></tr>
 <tr><td style="padding:40px;">
 {content}
@@ -59,12 +59,12 @@ def _base_html(title: str, content: str) -> str:
 
 def _reset_password_html(reset_link: str) -> str:
     content = f"""
-    <h2 style="margin:0 0 20px;color:#1a5276;font-size:20px;">Redefinição de Palavra-passe</h2>
+    <h2 style="margin:0 0 20px;color:#0F766E;font-size:20px;">Redefinição de Palavra-passe</h2>
     <p style="color:#333;line-height:1.6;">Recebemos um pedido para redefinir a sua palavra-passe.
     Clique no botão abaixo para criar uma nova palavra-passe:</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
     <tr><td align="center">
-    <a href="{reset_link}" style="display:inline-block;background:#2e86c1;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+    <a href="{reset_link}" style="display:inline-block;background:#0F766E;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
     Redefinir Palavra-passe</a>
     </td></tr></table>
     <p style="color:#666;font-size:13px;line-height:1.6;">Este link expira em <strong>1 hora</strong>.
@@ -76,7 +76,7 @@ def _reset_password_html(reset_link: str) -> str:
 
 def _payment_confirmation_html(order_number: str, amount: str, currency: str, method: str) -> str:
     content = f"""
-    <h2 style="margin:0 0 20px;color:#1a5276;font-size:20px;">Confirmação de Pagamento</h2>
+    <h2 style="margin:0 0 20px;color:#0F766E;font-size:20px;">Confirmação de Pagamento</h2>
     <p style="color:#333;line-height:1.6;">O seu pagamento foi recebido com sucesso!</p>
     <table style="width:100%;margin:20px 0;border-collapse:collapse;">
     <tr><td style="padding:10px;border-bottom:1px solid #eee;color:#666;">Pedido</td>
@@ -93,12 +93,12 @@ def _payment_confirmation_html(order_number: str, amount: str, currency: str, me
 
 def _invite_user_html(inviter_name: str, company_name: str, invite_link: str) -> str:
     content = f"""
-    <h2 style="margin:0 0 20px;color:#1a5276;font-size:20px;">Convite para KAYA</h2>
+    <h2 style="margin:0 0 20px;color:#0F766E;font-size:20px;">Convite para KAYA</h2>
     <p style="color:#333;line-height:1.6;"><strong>{inviter_name}</strong> convidou-o a juntar-se à
     equipa <strong>{company_name}</strong> na plataforma KAYA.</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
     <tr><td align="center">
-    <a href="{invite_link}" style="display:inline-block;background:#2e86c1;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+    <a href="{invite_link}" style="display:inline-block;background:#0F766E;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
     Aceitar Convite</a>
     </td></tr></table>
     <p style="color:#666;font-size:13px;">Este convite expira em 7 dias.</p>
@@ -109,12 +109,12 @@ def _invite_user_html(inviter_name: str, company_name: str, invite_link: str) ->
 def _order_status_html(order_number: str, status: str, message: str) -> str:
     status_colors = {
         "confirmed": "#27ae60", "processing": "#f39c12",
-        "shipped": "#2e86c1", "completed": "#27ae60",
+        "shipped": "#0F766E", "completed": "#27ae60",
         "cancelled": "#e74c3c",
     }
     color = status_colors.get(status, "#333")
     content = f"""
-    <h2 style="margin:0 0 20px;color:#1a5276;font-size:20px;">Atualização do Pedido</h2>
+    <h2 style="margin:0 0 20px;color:#0F766E;font-size:20px;">Atualização do Pedido</h2>
     <p style="color:#333;line-height:1.6;">O seu pedido <strong>{order_number}</strong> tem uma atualização:</p>
     <div style="background:#f8f9fa;border-left:4px solid {color};padding:15px 20px;margin:20px 0;border-radius:4px;">
     <p style="margin:0;color:{color};font-weight:600;font-size:16px;">{status.upper()}</p>
