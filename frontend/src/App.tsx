@@ -70,6 +70,7 @@ import AdminDoctorsPage from './pages/AdminDoctorsPage';
 import AdminPatientsPage from './pages/AdminPatientsPage';
 import AdminApplicationsPage from './pages/AdminApplicationsPage';
 import AdminCredentialsPage from './pages/AdminCredentialsPage';
+import AdminCompliancePage from './pages/AdminCompliancePage';
 import CorporateDashboardPage from './pages/CorporateDashboardPage';
 import NurseDashboardPage from './pages/NurseDashboardPage';
 import StorePage from './pages/StorePage';
@@ -196,6 +197,7 @@ export default function App() {
               <Route path="/admin/patients" element={<AdminPatientsPage />} />
               <Route path="/admin/applications" element={<AdminApplicationsPage />} />
               <Route path="/admin/credentials" element={<AdminCredentialsPage />} />
+              <Route path="/admin/compliance" element={<AdminCompliancePage />} />
             </Route>
           </Route>
 

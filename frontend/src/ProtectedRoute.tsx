@@ -123,6 +123,7 @@ export function ProtectedRoute() {
     '/admin/patients': t('topbar.patients') !== 'topbar.patients' ? t('topbar.patients') : 'Pacientes',
     '/admin/applications': t('topbar.applications'),
     '/admin/credentials': t('topbar.credentials'),
+    '/admin/compliance': t('admc.title'),
     // Cross-role
     '/professional-verification': t('topbar.my_credentials'),
     '/pricing': t('topbar.subscription'),

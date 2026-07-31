@@ -17,15 +17,23 @@ Approve / reject remain on the existing
 ``POST /api/v1/credentials/admin/{id}/decision`` endpoint for now — that
 endpoint has been updated to also write a transition row.
 """
+import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.health_models import ClinicianCredential, Doctor, VerificationTransition
+from app.health_models import (
+    ClinicianCredential,
+    CredentialEvidence,
+    CredentialProviderCheck,
+    Doctor,
+    VerificationTransition,
+)
 from app.models import User
 from app.rbac import require_compliance_reviewer
 from app.services.verification.base import VerificationStatus
@@ -277,3 +285,160 @@ def revoke_case(
         reason_text=body.reason_text,
         reviewer_notes=body.reviewer_notes,
     )
+
+
+# ── Case listing + detail (dashboard) ──────────────────────────────────────
+
+def _last_transition(db: Session, credential_id: str) -> Optional[VerificationTransition]:
+    return (
+        db.query(VerificationTransition)
+        .filter(
+            VerificationTransition.entity_type == ENTITY_TYPE,
+            VerificationTransition.entity_id == credential_id,
+        )
+        .order_by(VerificationTransition.at.desc())
+        .first()
+    )
+
+
+def _serialize_case_row(credential: ClinicianCredential, latest: Optional[VerificationTransition]) -> dict:
+    return {
+        "credential_id": credential.id,
+        "user_id": credential.user_id,
+        "profession": credential.profession,
+        "legal_name": credential.legal_name,
+        "licence_country": credential.licence_country,
+        "licence_number": credential.licence_number,
+        "issuing_authority": credential.issuing_authority,
+        "status": credential.status,
+        "created_at": credential.created_at,
+        "updated_at": credential.updated_at,
+        "verified_at": credential.verified_at,
+        "latest_transition": {
+            "new_status": latest.new_status,
+            "reason_code": latest.reason_code,
+            "actor_kind": latest.actor_kind,
+            "at": latest.at,
+        } if latest else None,
+    }
+
+
+@router.get("/cases")
+def list_cases(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    country: Optional[str] = Query(default=None, description="ISO-2 country code"),
+    profession: Optional[str] = Query(default=None, description="doctor | nurse | pharmacist"),
+    search: Optional[str] = Query(default=None, description="Free-text search on name / licence"),
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0, ge=0),
+    _: User = Depends(require_compliance_reviewer),
+    db: Session = Depends(get_db),
+):
+    """Paginated compliance queue with filters.
+
+    Returns the newest cases first. Empty ``status`` returns everything so
+    reviewers can see fully approved and rejected cases too.
+    """
+    q = db.query(ClinicianCredential)
+    if status_filter:
+        # Accept legacy + canonical statuses transparently.
+        q = q.filter(ClinicianCredential.status == status_filter)
+    if country:
+        q = q.filter(func.upper(ClinicianCredential.licence_country) == country.upper())
+    if profession:
+        q = q.filter(ClinicianCredential.profession == profession.lower())
+    if search:
+        like = f"%{search.strip()}%"
+        q = q.filter(
+            (ClinicianCredential.legal_name.ilike(like))
+            | (ClinicianCredential.licence_number.ilike(like))
+        )
+
+    total = q.count()
+    rows = (
+        q.order_by(ClinicianCredential.updated_at.desc())
+        .offset(offset).limit(limit).all()
+    )
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [_serialize_case_row(c, _last_transition(db, c.id)) for c in rows],
+    }
+
+
+@router.get("/cases/{credential_id}/detail")
+def get_case_detail(
+    credential_id: str,
+    _: User = Depends(require_compliance_reviewer),
+    db: Session = Depends(get_db),
+):
+    """Full drill-down: credential + evidence + provider checks + transitions
+    + extracted-vs-entered diff for reviewer decisions."""
+    credential = (
+        db.query(ClinicianCredential)
+        .options(
+            joinedload(ClinicianCredential.evidence),
+            joinedload(ClinicianCredential.provider_checks),
+        )
+        .filter(ClinicianCredential.id == credential_id)
+        .first()
+    )
+    if not credential:
+        raise HTTPException(404, "Processo não encontrado.")
+
+    # Reviewer needs to compare what the applicant typed vs what the extractor
+    # read. Both live on the credential + provider_checks respectively.
+    entered = {
+        "legal_name": credential.legal_name,
+        "licence_number": credential.licence_number,
+        "issuing_authority": credential.issuing_authority,
+        "licence_expiry_date": credential.licence_expiry_date,
+        "diploma_institution": credential.diploma_institution,
+        "degree_title": credential.degree_title,
+        "graduation_year": credential.graduation_year,
+    }
+    extracted: dict = {}
+    for check in credential.provider_checks or []:
+        try:
+            data = json.loads(check.extracted_data_json or "{}")
+        except (TypeError, ValueError):
+            data = {}
+        if data:
+            extracted[check.provider] = data
+
+    return {
+        "credential_id": credential.id,
+        "user_id": credential.user_id,
+        "profession": credential.profession,
+        "status": credential.status,
+        "entered": entered,
+        "extracted_by_provider": extracted,
+        "evidence": [
+            {
+                "id": e.id, "kind": e.kind, "filename": e.original_filename,
+                "content_type": e.content_type, "sha256": e.sha256,
+                "uploaded_at": e.created_at,
+            }
+            for e in (credential.evidence or [])
+        ],
+        "provider_checks": [
+            {
+                "id": pc.id, "provider": pc.provider, "check_type": pc.check_type,
+                "status": pc.status, "external_id": pc.external_id,
+                "launch_url": pc.launch_url, "error_message": pc.error_message,
+                "requested_at": pc.requested_at, "completed_at": pc.completed_at,
+            }
+            for pc in (credential.provider_checks or [])
+        ],
+        "transitions": [
+            {
+                "id": r.id, "previous_status": r.previous_status, "new_status": r.new_status,
+                "actor_user_id": r.actor_user_id, "actor_kind": r.actor_kind,
+                "reason_code": r.reason_code, "reason_text": r.reason_text,
+                "reviewer_notes": r.reviewer_notes, "provider": r.provider, "at": r.at,
+            }
+            for r in history(db, ENTITY_TYPE, credential_id)
+        ],
+        "allowed_next_statuses": sorted(allowed_next(credential.status)),
+    }
