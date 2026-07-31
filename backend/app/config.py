@@ -97,6 +97,37 @@ class Settings(BaseSettings):
     dataflow_webhook_secret: Optional[str] = None
     credential_provider_timeout_seconds: float = 20.0
 
+    # ── Verification providers (Phase 2a) ─────────────────────────────
+    # Global mode switch. "live" uses real vendor APIs where configured
+    # (silently falls back per-provider when a specific vendor is unset).
+    # "sandbox" forces the in-process deterministic providers even when
+    # live credentials exist — useful for staging demos.
+    kaya_verification_mode: str = "live"
+
+    # Provider selection. Change these to route to Persona/DataFlow instead
+    # of Sumsub/Veremark without any code change.
+    identity_provider: str = "sumsub"           # sumsub | persona | sandbox
+    qualification_provider: str = "veremark"    # veremark | certn | dataflow | sandbox
+
+    # Sumsub
+    sumsub_app_token: Optional[str] = None
+    sumsub_secret_key: Optional[str] = None
+    sumsub_webhook_secret: Optional[str] = None
+    sumsub_level_name: str = "basic-kyc-level"
+
+    # Veremark
+    veremark_api_key: Optional[str] = None
+    veremark_webhook_secret: Optional[str] = None
+
+    # Certn (Veremark alternative)
+    certn_api_key: Optional[str] = None
+    certn_webhook_secret: Optional[str] = None
+
+    # Microsoft Entra Verified ID (adapter shell only in Phase 2a)
+    entra_tenant_id: Optional[str] = None
+    entra_client_id: Optional[str] = None
+    entra_client_secret: Optional[str] = None
+
     # Pydantic v2 settings: accept extra env vars (ignore unknown variables)
     model_config = {
         "env_file": Path(__file__).resolve().parent.parent / ".env",
