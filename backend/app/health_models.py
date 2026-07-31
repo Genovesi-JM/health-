@@ -1104,3 +1104,41 @@ class DoctorReview(Base):
     rating: Mapped[int] = mapped_column(Integer, nullable=False)   # 1..5
     comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+# ── Onboarding Draft ─────────────────────────────────────────────────────────
+# Persists in-progress multi-step onboarding per (user, role) so the applicant
+# can close the tab and come back later without losing anything.
+
+class OnboardingDraft(Base):
+    """A resumable onboarding session for one user in one role."""
+    __tablename__ = "onboarding_drafts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    role: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    # patient | caregiver | doctor | nurse | pharmacist | clinic | laboratory | pharmacy_org | health_org
+
+    current_step: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    total_steps: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    completed_steps_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")  # JSON list[int]
+
+    # Full step payload; step data keyed by step number as string.
+    # {"1": {...}, "2": {...}, ...}
+    data_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
+    # draft | submitted | approved | rejected | abandoned
+
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_onboarding_drafts_user_role", "user_id", "role", unique=True),
+    )

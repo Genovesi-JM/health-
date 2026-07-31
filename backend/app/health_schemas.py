@@ -14,14 +14,22 @@ from pydantic import BaseModel, Field
 
 class RoleEnum:
     PATIENT = "patient"
+    CAREGIVER = "caregiver"
     DOCTOR = "doctor"
     NURSE = "nurse"
+    PHARMACIST = "pharmacist"
     CORPORATE_ADMIN = "corporate_admin"
     CORPORATE_ANALYST = "corporate_analyst"
+    COMPLIANCE_REVIEWER = "compliance_reviewer"
     ADMIN = "admin"
     SUPPORT = "support"
 
-    ALL = [PATIENT, DOCTOR, NURSE, CORPORATE_ADMIN, CORPORATE_ANALYST, ADMIN, SUPPORT]
+    CLINICAL = [DOCTOR, NURSE, PHARMACIST]
+    ALL = [
+        PATIENT, CAREGIVER, DOCTOR, NURSE, PHARMACIST,
+        CORPORATE_ADMIN, CORPORATE_ANALYST,
+        COMPLIANCE_REVIEWER, ADMIN, SUPPORT,
+    ]
 
 
 # ── Patient ──

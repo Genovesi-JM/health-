@@ -115,7 +115,7 @@ export function Navbar() {
               <Link to="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500 }}>
                 {t('nav.portal')}
               </Link>
-              <Link to="/register" style={{
+              <Link to="/choose-account-type" style={{
                 padding: '0.5rem 1.1rem', borderRadius: '8px',
                 background: 'var(--gradient-primary)', color: '#fff',
                 fontWeight: 700, textDecoration: 'none', fontSize: '0.83rem',
@@ -159,7 +159,7 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/login" className="lp-cta lp-cta--outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>Entrar</Link>
-                <Link to="/register" className="lp-cta lp-cta--primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>{t('nav.start_free')}</Link>
+                <Link to="/choose-account-type" className="lp-cta lp-cta--primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>{t('nav.start_free')}</Link>
               </>
             )}
           </div>

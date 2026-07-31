@@ -33,6 +33,8 @@ import DevicesPage from './pages/DevicesPage';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ChooseAccountTypePage from './pages/ChooseAccountTypePage';
+import PatientOnboardingPage from './pages/PatientOnboardingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import DoctorRegisterPage from './pages/DoctorRegisterPage';
 import DoctorApplyPage from './pages/DoctorApplyPage';
@@ -120,6 +122,7 @@ export default function App() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/choose-account-type" element={<ChooseAccountTypePage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/register/doctor" element={<DoctorRegisterPage />} />
           <Route path="/candidatura" element={<DoctorApplyPage />} />
@@ -134,6 +137,7 @@ export default function App() {
             {/* Consent gate — accessible to any authenticated user */}
             <Route path="/consent-gate" element={<ConsentGatePage />} />
             <Route path="/data-consent" element={<ConsentGatePage />} />
+            <Route path="/onboarding/patient" element={<PatientOnboardingPage />} />
             {/* Settings — accessible to all roles */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/professional-verification" element={<ProfessionalVerificationPage />} />
