@@ -1142,3 +1142,46 @@ class OnboardingDraft(Base):
     __table_args__ = (
         Index("ix_onboarding_drafts_user_role", "user_id", "role", unique=True),
     )
+
+
+# ── Verification transition audit ────────────────────────────────────────────
+# Every status change on a verification-bearing entity (ClinicianCredential,
+# future OrganisationVerification, ProviderCheck, …) writes one row here.
+# Reviewers can reconstruct the full case history — who did what, when, why.
+
+class VerificationTransition(Base):
+    __tablename__ = "verification_transitions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+
+    # Polymorphic reference — this record can attach to any verifiable entity.
+    entity_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    # e.g. "clinician_credential", "provider_check", "organisation_verification"
+    entity_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+
+    previous_status: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    new_status: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    # WHO caused this change.
+    actor_user_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+    actor_kind: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
+    # user | system | webhook | provider
+
+    # WHY.
+    reason_code: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    # e.g. "identity_document_expired", "missing_reference_letter", "manual_registry_confirmed"
+    reason_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reviewer_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Reviewer notes are NEVER shown to the applicant; use reason_text for that.
+
+    # HOW / WHERE.
+    provider: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    evidence_ref: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    __table_args__ = (
+        Index("ix_verification_transitions_entity", "entity_type", "entity_id", "at"),
+    )

@@ -106,6 +106,20 @@ def require_admin_or_support(user: User = Depends(get_current_user)) -> User:
     return user
 
 
+def require_compliance_reviewer(user: User = Depends(get_current_user)) -> User:
+    """Require admin or dedicated compliance-reviewer role.
+
+    Deliberately EXCLUDES ``support`` — the spec is explicit that ordinary
+    support agents must not be able to approve or reject professionals.
+    """
+    if user.role not in (RoleEnum.ADMIN, RoleEnum.COMPLIANCE_REVIEWER):
+        raise HTTPException(
+            status_code=403,
+            detail="Acesso restrito a revisores de conformidade ou administradores.",
+        )
+    return user
+
+
 # ═══════════════════════════════════════════════════════════════
 # Row-level access helpers
 # ═══════════════════════════════════════════════════════════════

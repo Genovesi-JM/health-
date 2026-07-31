@@ -493,6 +493,7 @@ def decide_credential(
         if failed:
             raise HTTPException(409, "Não é possível aprovar enquanto faltam verificações obrigatórias.")
 
+    previous_status = credential.status
     credential.status = statuses[action]
     credential.review_notes = body.notes
     credential.rejection_reason = body.notes if action == "reject" else None
@@ -505,6 +506,25 @@ def decide_credential(
         doctor.verification_status = credential.status
         doctor.verified_at = credential.verified_at
         doctor.verified_by = credential.verified_by
+
+    # Write a state-machine audit row — best-effort so a broken transition
+    # graph never blocks a reviewer decision the code already accepted.
+    try:
+        from app.services.verification.state_machine import record_transition
+        record_transition(
+            db,
+            entity_type="clinician_credential",
+            entity_id=credential.id,
+            previous_status=previous_status,
+            new_status=credential.status,
+            actor_user_id=reviewer.id,
+            actor_kind="user",
+            reason_code=f"reviewer_{action}",
+            reason_text=body.notes,
+        )
+    except Exception:
+        pass  # audit failure must not deny an accepted decision.
+
     db.commit()
     return _serialize(_get_credential(db, credential.user_id))
 
