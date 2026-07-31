@@ -96,23 +96,39 @@ export function ProtectedRoute() {
     '/consultations': t('topbar.consultations'),
     '/self-care': t('topbar.self_care'),
     '/consents': t('topbar.consents'),
-    '/consent-gate': 'Consents',
-    '/data-consent': 'Data Consent',
-    '/family': 'Família',
-    '/notifications': 'Alertas',
-    '/patient/readings': 'Minhas Medições',
-    '/doctor/dashboard': 'Dashboard',
-    '/doctor/agenda': 'Agenda',
-    '/doctor/pacientes': 'Os Meus Pacientes',
-    '/doctor/consultas': 'Consultas Ao Vivo',
-    '/doctor/queue': 'Fila de Espera',
-    '/doctor/prescricoes': 'Prescrições Pendentes',
+    '/consent-gate': t('topbar.consents'),
+    '/data-consent': t('topbar.consents'),
+    '/family': t('topbar.family'),
+    '/notifications': t('topbar.notifications'),
+    '/patient/readings': t('topbar.readings'),
+    '/loja': t('topbar.store'),
+    '/corporate': t('topbar.corporate'),
+    // Doctor
+    '/doctor/dashboard': t('topbar.doctor_dashboard'),
+    '/doctor/agenda': t('topbar.agenda'),
+    '/doctor/disponibilidade': t('topbar.availability'),
+    '/doctor/pacientes': t('topbar.my_patients'),
+    '/doctor/consultas': t('topbar.live_consults'),
+    '/doctor/queue': t('topbar.queue'),
+    '/doctor/prescricoes': t('topbar.pending_rx'),
+    '/doctor/mensagens': t('topbar.messages'),
+    '/doctor/financeiro': t('topbar.finance'),
+    '/doctor/avaliacoes': t('topbar.reviews'),
+    '/doctor/profile': t('topbar.public_profile'),
+    // Nurse
+    '/nurse': t('topbar.nurse'),
+    // Admin
     '/admin': t('topbar.admin_dashboard'),
     '/admin/doctors': t('topbar.verify_doctors'),
-    '/admin/patients': 'Pacientes',
+    '/admin/patients': t('topbar.patients') !== 'topbar.patients' ? t('topbar.patients') : 'Pacientes',
+    '/admin/applications': t('topbar.applications'),
+    '/admin/credentials': t('topbar.credentials'),
+    // Cross-role
+    '/professional-verification': t('topbar.my_credentials'),
+    '/pricing': t('topbar.subscription'),
     '/settings': t('topbar.settings'),
   };
-  const pageTitle = crumbs[location.pathname] || 'Dashboard';
+  const pageTitle = crumbs[location.pathname] || '';
 
   return (
     <div className="app-layout">
