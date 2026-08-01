@@ -112,23 +112,25 @@ See `backend/.env.example`. Verification-specific:
 `AZURE_ENTRA_CLIENT_SECRET`.
 
 ## 8. Tests added
-130 new backend test functions across 8 files:
+144 new backend test functions across 9 files:
 onboarding (12), verification providers (32), state machine (18),
 verification actions + webhooks (11), compliance dashboard (12),
-document expiry (12), MFA (19), organisations (14).
+document expiry (12), MFA (19), organisations (14), caregiver (14).
 
 ## 9. Tests passed / failed
 **All passing.** Full backend suite green at the end of each phase (see
-per-commit messages: 104 → 122 → 133 → 145 → 157 → 176 → 190 → 195). No
-known failing tests. Frontend `tsc -b` clean; production build succeeds.
+per-commit messages: 104 → 122 → 133 → 145 → 157 → 176 → 190 → 195 → 209).
+No known failing tests. Frontend `tsc -b` clean; production build succeeds.
 
 ## 10. Remaining limitations
 - Live vendor calls need real credentials (sandbox until then).
 - Entra VID live HTTP calls stubbed (shell complete).
-- Caregiver dedicated wizard: draft steps defined, full UI pending.
 - SMS OTP not wired (no SMS provider); email + TOTP cover the pilot.
-- Production Postgres needs Alembic revisions for the 9 new tables.
+- Production Postgres needs Alembic revisions for the new tables.
 - Expiry scanner runs on demand / external cron (no in-app scheduler).
+
+  (The caregiver dedicated wizard, previously listed here, is now fully
+  implemented — see Phase 5 / §6.)
 
 ## 11. How to run the application
 ```bash
