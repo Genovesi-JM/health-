@@ -189,3 +189,61 @@ def test_cannot_touch_another_caregivers_dependant(client):
 def test_endpoints_require_auth(client):
     assert client.get("/api/v1/caregiver/dependants").status_code in (401, 403)
     assert client.post("/api/v1/caregiver/dependants", json={}).status_code in (401, 403)
+
+
+# ── Scope-enforced data access (Phase 6) ───────────────────────────────
+
+def test_appointments_blocked_without_scope(client):
+    auth = _register(client)
+    link = _add(client, auth).json()  # view_appointments defaults False
+    r = client.get(f"/api/v1/caregiver/dependants/{link['id']}/appointments", headers=_headers(auth))
+    assert r.status_code == 403
+
+
+def test_appointments_allowed_with_scope(client):
+    auth = _register(client)
+    link = _add(client, auth).json()
+    client.patch(f"/api/v1/caregiver/dependants/{link['id']}/scopes",
+                 headers=_headers(auth), json={"can_view_appointments": True})
+    r = client.get(f"/api/v1/caregiver/dependants/{link['id']}/appointments", headers=_headers(auth))
+    assert r.status_code == 200
+    # Dependant has no linked account → empty list, but access is granted.
+    assert r.json()["items"] == []
+
+
+def test_prescriptions_blocked_without_scope(client):
+    auth = _register(client)
+    link = _add(client, auth).json()
+    r = client.get(f"/api/v1/caregiver/dependants/{link['id']}/prescriptions", headers=_headers(auth))
+    assert r.status_code == 403
+
+
+def test_prescriptions_allowed_with_scope(client):
+    auth = _register(client)
+    link = _add(client, auth).json()
+    client.patch(f"/api/v1/caregiver/dependants/{link['id']}/scopes",
+                 headers=_headers(auth), json={"can_view_prescriptions": True})
+    r = client.get(f"/api/v1/caregiver/dependants/{link['id']}/prescriptions", headers=_headers(auth))
+    assert r.status_code == 200
+
+
+def test_scoped_access_blocked_after_revoke(client):
+    auth = _register(client)
+    link = _add(client, auth).json()
+    client.patch(f"/api/v1/caregiver/dependants/{link['id']}/scopes",
+                 headers=_headers(auth), json={"can_view_appointments": True})
+    # Revoke → even a previously-granted scope must now 403.
+    client.post(f"/api/v1/caregiver/dependants/{link['id']}/revoke", headers=_headers(auth))
+    r = client.get(f"/api/v1/caregiver/dependants/{link['id']}/appointments", headers=_headers(auth))
+    assert r.status_code == 403
+
+
+def test_scoped_access_isolated_across_caregivers(client):
+    a = _register(client)
+    b = _register(client)
+    link = _add(client, a).json()
+    client.patch(f"/api/v1/caregiver/dependants/{link['id']}/scopes",
+                 headers=_headers(a), json={"can_view_appointments": True})
+    # Caregiver B cannot read caregiver A's dependant.
+    r = client.get(f"/api/v1/caregiver/dependants/{link['id']}/appointments", headers=_headers(b))
+    assert r.status_code == 404

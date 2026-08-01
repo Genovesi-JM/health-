@@ -27,7 +27,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.health_models import DependantAccessEvent, DependantLink
+from app.health_models import (
+    Consultation,
+    DependantAccessEvent,
+    DependantLink,
+    Patient,
+    Prescription,
+)
 from app.models import User
 from app.services.health_storage import get_health_storage
 
@@ -289,3 +295,89 @@ def access_history(
          "actor_user_id": r.actor_user_id, "at": r.at}
         for r in rows
     ]
+
+
+# ── Scope-enforced dependant data access ────────────────────────────────────
+# These endpoints CONSUME the granular scopes captured at onboarding. A
+# caregiver only sees a dependant's data for scopes explicitly granted, and
+# only while the link is active.
+
+import json
+
+
+def _require_scope(link: DependantLink, scope_attr: str) -> None:
+    """403 unless the link is active and the named scope boolean is True."""
+    if link.status != "active":
+        raise HTTPException(403, "O acesso a este dependente não está ativo.")
+    if not getattr(link, scope_attr, False):
+        raise HTTPException(403, "Não tem permissão para aceder a esta informação do dependente.")
+
+
+def _dependant_patient(db: Session, link: DependantLink) -> Optional[Patient]:
+    """Resolve the dependant's Patient record, if the dependant has a KAYA account."""
+    if not link.dependant_user_id:
+        return None
+    return db.query(Patient).filter(Patient.user_id == link.dependant_user_id).first()
+
+
+@router.get("/dependants/{link_id}/appointments")
+def dependant_appointments(
+    link_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Dependant's consultations — requires the view-appointments scope."""
+    link = _own_link_or_404(db, user.id, link_id)
+    _require_scope(link, "can_view_appointments")
+    patient = _dependant_patient(db, link)
+    if not patient:
+        # Minor without their own account → no linked clinical data yet.
+        return {"dependant_link_id": link.id, "items": []}
+    rows = (
+        db.query(Consultation)
+        .filter(Consultation.patient_id == patient.id)
+        .order_by(Consultation.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    return {
+        "dependant_link_id": link.id,
+        "items": [
+            {
+                "id": c.id, "specialty": c.specialty, "status": c.status,
+                "scheduled_at": c.scheduled_at, "created_at": c.created_at,
+            }
+            for c in rows
+        ],
+    }
+
+
+@router.get("/dependants/{link_id}/prescriptions")
+def dependant_prescriptions(
+    link_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Dependant's prescriptions — requires the view-prescriptions scope."""
+    link = _own_link_or_404(db, user.id, link_id)
+    _require_scope(link, "can_view_prescriptions")
+    patient = _dependant_patient(db, link)
+    if not patient:
+        return {"dependant_link_id": link.id, "items": []}
+    rows = (
+        db.query(Prescription)
+        .join(Consultation, Prescription.consultation_id == Consultation.id)
+        .filter(Consultation.patient_id == patient.id)
+        .order_by(Prescription.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    items = []
+    for p in rows:
+        try:
+            meds = json.loads(p.medications_json or "[]")
+        except (TypeError, ValueError):
+            meds = []
+        items.append({"id": p.id, "consultation_id": p.consultation_id,
+                      "medications": meds, "created_at": p.created_at})
+    return {"dependant_link_id": link.id, "items": items}
