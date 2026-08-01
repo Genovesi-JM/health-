@@ -277,14 +277,14 @@ export default function ProfessionalOnboardingPage() {
       defaults: { profession: initialProfession, practice_country: 'AO', preferred_language: 'pt' },
       render: (ctx) => (
         <>
-          <Field label="Profissão" required>
+          <Field label={t('prob.f_profession')} required>
             <select value={(ctx.data.profession as string) ?? 'doctor'} onChange={e => ctx.setField('profession', e.target.value)} style={inputStyle}>
               <option value="doctor">Médico(a)</option>
               <option value="nurse">Enfermeiro(a)</option>
               <option value="pharmacist">Farmacêutico(a)</option>
             </select>
           </Field>
-          <Field label="País de exercício" required>
+          <Field label={t('prob.f_practice_country')} required>
             <select value={(ctx.data.practice_country as string) ?? 'AO'} onChange={e => ctx.setField('practice_country', e.target.value)} style={inputStyle}>
               <option value="AO">Angola</option>
               <option value="PT">Portugal</option>
@@ -292,7 +292,7 @@ export default function ProfessionalOnboardingPage() {
               <option value="OTHER">Outro</option>
             </select>
           </Field>
-          <Field label="Local principal de trabalho">
+          <Field label={t('prob.f_workplace')}>
             <select value={(ctx.data.workplace_type as string) ?? ''} onChange={e => ctx.setField('workplace_type', e.target.value)} style={inputStyle}>
               <option value="">—</option>
               <option value="clinic">Clínica</option>
@@ -312,10 +312,10 @@ export default function ProfessionalOnboardingPage() {
       subtitle: t('pob.s2_sub'),
       render: (ctx) => (
         <>
-          <Field label="Email profissional" required>
+          <Field label={t('prob.f_email')} required>
             <Text ctx={ctx} k="email" type="email" placeholder="voce@clinica.example" />
           </Field>
-          <Field label="Telemóvel">
+          <Field label={t('prob.f_phone')}>
             <Text ctx={ctx} k="phone" type="tel" placeholder="+244 900 000 000" />
           </Field>
         </>
@@ -342,19 +342,19 @@ export default function ProfessionalOnboardingPage() {
       subtitle: '',
       render: (ctx) => (
         <>
-          <Field label="Nome legal completo" required>
+          <Field label={t('prob.f_legal_name')} required>
             <Text ctx={ctx} k="legal_name" placeholder="Como consta no documento" />
           </Field>
-          <Field label="Autoridade emissora" required>
+          <Field label={t('prob.f_authority')} required>
             <Text ctx={ctx} k="issuing_authority" placeholder="Ex: Ordem dos Médicos de Angola" />
           </Field>
-          <Field label="Número da cédula" required>
+          <Field label={t('prob.f_licence_no')} required>
             <Text ctx={ctx} k="licence_number" placeholder="Ex: AO-DR-12345" />
           </Field>
-          <Field label="Data de emissão">
+          <Field label={t('prob.f_issue_date')}>
             <Text ctx={ctx} k="licence_issue_date" type="date" />
           </Field>
-          <Field label="Data de validade">
+          <Field label={t('prob.f_expiry_date')}>
             <Text ctx={ctx} k="licence_expiry_date" type="date" />
           </Field>
         </>
@@ -404,7 +404,7 @@ export default function ProfessionalOnboardingPage() {
       subtitle: t('prob.s8_sub'),
       optional: true,
       render: (ctx) => (
-        <Field label="Credencial digital" hint="Cole ou anexe se a sua instituição emite uma credencial verificável Entra.">
+        <Field label={t('prob.f_digital_cred')} hint="Cole ou anexe se a sua instituição emite uma credencial verificável Entra.">
           <Textarea ctx={ctx} k="digital_credential_blob" placeholder="{ optional JWT / VC blob }" rows={4} />
         </Field>
       ),
@@ -426,15 +426,15 @@ export default function ProfessionalOnboardingPage() {
       subtitle: '',
       render: (ctx) => (
         <>
-          <Field label="Universidade" required><Text ctx={ctx} k="university" /></Field>
-          <Field label="Curso / grau" required><Text ctx={ctx} k="degree_title" placeholder="Ex: Medicina" /></Field>
-          <Field label="Ano de conclusão"><Text ctx={ctx} k="graduation_year" type="number" placeholder="2018" /></Field>
-          <Field label="Especialidades">
+          <Field label={t('prob.f_university')} required><Text ctx={ctx} k="university" /></Field>
+          <Field label={t('prob.f_degree')} required><Text ctx={ctx} k="degree_title" placeholder="Ex: Medicina" /></Field>
+          <Field label={t('prob.f_grad_year')}><Text ctx={ctx} k="graduation_year" type="number" placeholder="2018" /></Field>
+          <Field label={t('prob.f_specialties')}>
             <Text ctx={ctx} k="specializations" placeholder="Ex: Cardiologia, Pediatria" />
           </Field>
-          <Field label="Anos de experiência"><Text ctx={ctx} k="years_experience" type="number" /></Field>
-          <Field label="Empregador atual"><Text ctx={ctx} k="current_employer" /></Field>
-          <Field label="Biografia">
+          <Field label={t('prob.f_years_exp')}><Text ctx={ctx} k="years_experience" type="number" /></Field>
+          <Field label={t('prob.f_employer')}><Text ctx={ctx} k="current_employer" /></Field>
+          <Field label={t('prob.f_bio')}>
             <Textarea ctx={ctx} k="bio" placeholder="Uma breve descrição profissional (300 caracteres)" rows={3} />
           </Field>
         </>
@@ -449,18 +449,18 @@ export default function ProfessionalOnboardingPage() {
       subtitle: '',
       render: (ctx) => (
         <>
-          <Field label="Condições tratadas">
+          <Field label={t('prob.f_conditions')}>
             <Textarea ctx={ctx} k="conditions_treated" placeholder="Ex: hipertensão, diabetes, ansiedade" rows={3} />
           </Field>
-          <Toggle ctx={ctx} k="offers_teleconsultation" label="Ofereço teleconsulta" />
-          <Toggle ctx={ctx} k="offers_clinic" label="Ofereço consulta em clínica" />
-          <Toggle ctx={ctx} k="offers_home_visit" label="Ofereço visita domiciliária" />
-          <Toggle ctx={ctx} k="prescribing_authority" label="Tenho autoridade para prescrever" />
-          <Toggle ctx={ctx} k="renews_chronic_rx" label="Faço renovações de medicação crónica" />
-          <Field label="Faixas etárias atendidas">
+          <Toggle ctx={ctx} k="offers_teleconsultation" label={t('prob.f_offer_tele')} />
+          <Toggle ctx={ctx} k="offers_clinic" label={t('prob.f_offer_clinic')} />
+          <Toggle ctx={ctx} k="offers_home_visit" label={t('prob.f_offer_home')} />
+          <Toggle ctx={ctx} k="prescribing_authority" label={t('prob.f_prescribe')} />
+          <Toggle ctx={ctx} k="renews_chronic_rx" label={t('prob.f_chronic_rx')} />
+          <Field label={t('prob.f_age_groups')}>
             <Text ctx={ctx} k="age_groups" placeholder="Ex: 18–65, pediátrico" />
           </Field>
-          <Field label="Capacidade máxima por dia">
+          <Field label={t('prob.f_capacity')}>
             <Text ctx={ctx} k="daily_capacity" type="number" placeholder="20" />
           </Field>
         </>
@@ -474,7 +474,7 @@ export default function ProfessionalOnboardingPage() {
       subtitle: '',
       render: (ctx) => (
         <>
-          <Field label="Idiomas (marque todos que fala)">
+          <Field label={t('prob.f_languages')}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {['pt', 'en', 'fr', 'es', 'ln', 'kg'].map(code => {
                 const selected = ((ctx.data.languages as string[]) ?? ['pt']).includes(code);
@@ -498,8 +498,8 @@ export default function ProfessionalOnboardingPage() {
               })}
             </div>
           </Field>
-          <Toggle ctx={ctx} k="sign_language" label="Comunico em língua de sinais" />
-          <Toggle ctx={ctx} k="wheelchair_accessible_clinic" label="Consultório acessível a cadeira de rodas" />
+          <Toggle ctx={ctx} k="sign_language" label={t('prob.f_sign_lang')} />
+          <Toggle ctx={ctx} k="wheelchair_accessible_clinic" label={t('prob.f_wheelchair')} />
         </>
       ),
     },
@@ -511,7 +511,7 @@ export default function ProfessionalOnboardingPage() {
       subtitle: '',
       render: (ctx) => (
         <>
-          <Field label="Dias de trabalho">
+          <Field label={t('prob.f_work_days')}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map(d => {
                 const selected = ((ctx.data.working_days as string[]) ?? []).includes(d);
@@ -535,9 +535,9 @@ export default function ProfessionalOnboardingPage() {
               })}
             </div>
           </Field>
-          <Field label="Horário (ex: 09:00–18:00)"><Text ctx={ctx} k="working_hours" placeholder="09:00–18:00" /></Field>
-          <Field label="Duração média da consulta (min)"><Text ctx={ctx} k="consult_duration" type="number" placeholder="30" /></Field>
-          <Field label="Endereço da clínica (opcional)"><Text ctx={ctx} k="clinic_address" /></Field>
+          <Field label={t('prob.f_hours')}><Text ctx={ctx} k="working_hours" placeholder="09:00–18:00" /></Field>
+          <Field label={t('prob.f_duration')}><Text ctx={ctx} k="consult_duration" type="number" placeholder="30" /></Field>
+          <Field label={t('prob.f_clinic_addr')}><Text ctx={ctx} k="clinic_address" /></Field>
         </>
       ),
     },
@@ -549,16 +549,16 @@ export default function ProfessionalOnboardingPage() {
       subtitle: '',
       render: (ctx) => (
         <>
-          <Field label="Preço teleconsulta (Kz)"><Text ctx={ctx} k="fee_tele" type="number" placeholder="15000" /></Field>
-          <Field label="Preço consulta presencial (Kz)"><Text ctx={ctx} k="fee_in_person" type="number" placeholder="25000" /></Field>
-          <Field label="Preço visita domiciliária (Kz)"><Text ctx={ctx} k="fee_home" type="number" /></Field>
-          <Field label="Nome do titular da conta bancária" required>
+          <Field label={t('prob.f_fee_tele')}><Text ctx={ctx} k="fee_tele" type="number" placeholder="15000" /></Field>
+          <Field label={t('prob.f_fee_person')}><Text ctx={ctx} k="fee_in_person" type="number" placeholder="25000" /></Field>
+          <Field label={t('prob.f_fee_home')}><Text ctx={ctx} k="fee_home" type="number" /></Field>
+          <Field label={t('prob.f_bank_holder')} required>
             <Text ctx={ctx} k="bank_holder_name" />
           </Field>
-          <Field label="IBAN" required hint="Nunca voltará a ser mostrado após guardar.">
+          <Field label={t('prob.f_iban')} required hint="Nunca voltará a ser mostrado após guardar.">
             <Text ctx={ctx} k="iban" placeholder="AO06 …" />
           </Field>
-          <Field label="Nº de contribuinte"><Text ctx={ctx} k="tax_id" /></Field>
+          <Field label={t('prob.f_tax_id')}><Text ctx={ctx} k="tax_id" /></Field>
         </>
       ),
       validate: (d) => (!d.bank_holder_name || !d.iban) ? 'Preencha os dados de pagamento.' : null,
@@ -571,18 +571,18 @@ export default function ProfessionalOnboardingPage() {
       subtitle: '',
       render: (ctx) => (
         <>
-          <Toggle ctx={ctx} k="agree_data_protection" label="Aceito o Acordo de Proteção de Dados." />
-          <Toggle ctx={ctx} k="agree_conduct" label="Aceito o Código de Conduta Profissional." />
-          <Toggle ctx={ctx} k="agree_clinical_responsibility" label="Aceito o Acordo de Responsabilidade Clínica." />
-          <Toggle ctx={ctx} k="agree_telemedicine_rules" label="Aceito as Regras de Telemedicina." />
-          <Toggle ctx={ctx} k="agree_prescription_rules" label="Aceito as Regras de Prescrição." />
-          <Toggle ctx={ctx} k="agree_confidentiality" label="Aceito o Acordo de Confidencialidade." />
-          <Toggle ctx={ctx} k="agree_insurance" label="Confirmo que possuo seguro profissional em vigor." />
-          <Toggle ctx={ctx} k="agree_background_check" label="Autorizo verificações de antecedentes conforme aplicável." />
-          <Toggle ctx={ctx} k="agree_commission" label="Aceito o Acordo Comercial e a comissão da plataforma." />
-          <Toggle ctx={ctx} k="agree_complaints" label="Compreendo o processo de queixas e investigação." />
-          <Toggle ctx={ctx} k="agree_suspension" label="Compreendo as regras de suspensão da conta." />
-          <Toggle ctx={ctx} k="agree_renewal_obligations" label="Comprometo-me a renovar os documentos antes da caducidade." />
+          <Toggle ctx={ctx} k="agree_data_protection" label={t('prob.a_data')} />
+          <Toggle ctx={ctx} k="agree_conduct" label={t('prob.a_conduct')} />
+          <Toggle ctx={ctx} k="agree_clinical_responsibility" label={t('prob.a_clinical')} />
+          <Toggle ctx={ctx} k="agree_telemedicine_rules" label={t('prob.a_tele')} />
+          <Toggle ctx={ctx} k="agree_prescription_rules" label={t('prob.a_rx')} />
+          <Toggle ctx={ctx} k="agree_confidentiality" label={t('prob.a_confid')} />
+          <Toggle ctx={ctx} k="agree_insurance" label={t('prob.a_insurance')} />
+          <Toggle ctx={ctx} k="agree_background_check" label={t('prob.a_background')} />
+          <Toggle ctx={ctx} k="agree_commission" label={t('prob.a_commercial')} />
+          <Toggle ctx={ctx} k="agree_complaints" label={t('prob.a_complaints')} />
+          <Toggle ctx={ctx} k="agree_suspension" label={t('prob.a_suspension')} />
+          <Toggle ctx={ctx} k="agree_renewal_obligations" label={t('prob.a_renewal')} />
         </>
       ),
       validate: (d) => {

@@ -56,6 +56,21 @@ interface ActionSpec {
   run: (reason: string, notes: string) => Promise<void>;
 }
 
+/** Map raw credential field keys to localized labels for the diff table. */
+function fieldLabel(key: string, t: (k: string) => string): string {
+  const map: Record<string, string> = {
+    legal_name: 'admc.fld_legal_name',
+    licence_number: 'admc.fld_licence_number',
+    issuing_authority: 'admc.fld_authority',
+    licence_expiry_date: 'admc.fld_expiry',
+    diploma_institution: 'admc.fld_institution',
+    degree_title: 'admc.fld_degree',
+    graduation_year: 'admc.fld_grad_year',
+  };
+  const tk = map[key];
+  return tk ? t(tk) : key;
+}
+
 export default function CaseDetailDrawer({ credentialId, onClose, onCaseUpdated }: Props) {
   const { t } = useT();
   const [detail, setDetail] = useState<CaseDetail | null>(null);
@@ -200,7 +215,7 @@ export default function CaseDetailDrawer({ credentialId, onClose, onCaseUpdated 
                       const mismatch = extractedValue != null && String(extractedValue) !== String(v);
                       return (
                         <tr key={k} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '0.45rem 0', fontWeight: 600 }}>{k}</td>
+                          <td style={{ padding: '0.45rem 0', fontWeight: 600 }}>{fieldLabel(k, t)}</td>
                           <td style={{ padding: '0.45rem 0', color: 'var(--text-secondary)' }}>{String(v ?? '—')}</td>
                           <td style={{ padding: '0.45rem 0', color: mismatch ? '#b45309' : 'var(--text-secondary)', fontWeight: mismatch ? 700 : 400 }}>
                             {extractedValue == null ? '—' : String(extractedValue)}
