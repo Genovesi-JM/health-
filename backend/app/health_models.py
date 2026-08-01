@@ -1368,3 +1368,72 @@ class OrganisationDocument(Base):
     content_type: Mapped[str] = mapped_column(String(100), nullable=False)
     sha256: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+# ── Caregiver / dependant management (§6) ────────────────────────────────────
+# A caregiver first creates their OWN account, then links dependants with
+# granular access scopes. Access is never all-or-nothing: each scope is an
+# explicit opt-in, and act-on-behalf of a minor requires guardianship
+# evidence. Every grant/revoke/transfer is audited.
+
+class DependantLink(Base):
+    __tablename__ = "dependant_links"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    caregiver_user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    # If the dependant has their own KAYA account, link it; otherwise the
+    # caregiver holds the dependant's details directly.
+    dependant_user_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
+
+    caregiver_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    # parent_minor | legal_guardian | informal | authorised_family | professional
+    relationship: Mapped[str] = mapped_column(String(60), nullable=False)  # e.g. "filho", "mãe"
+
+    full_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    date_of_birth: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)  # ISO
+    is_minor: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Guardianship evidence (required to act on behalf of a minor / ward).
+    evidence_storage_key: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    evidence_filename: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+
+    # Granular access scopes — all default OFF (no auto full-record access).
+    can_view_appointments: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    can_view_prescriptions: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    can_receive_reminders: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    can_act_on_behalf: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active", index=True)
+    # active | revoked | transferred | pending_invite
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+
+class DependantAccessEvent(Base):
+    """Audit trail for a dependant link — who did what, when."""
+    __tablename__ = "dependant_access_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    dependant_link_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("dependant_links.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    actor_user_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+    event_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    # created | scopes_updated | evidence_uploaded | guardian_invited |
+    # access_revoked | access_transferred
+    detail: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    __table_args__ = (
+        Index("ix_dependant_access_events_link_at", "dependant_link_id", "at"),
+    )

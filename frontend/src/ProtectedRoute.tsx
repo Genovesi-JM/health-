@@ -130,6 +130,7 @@ export function ProtectedRoute() {
     '/settings': t('topbar.settings'),
     '/security/mfa': t('mfa.title'),
     '/onboarding/organisation': t('org.title'),
+    '/onboarding/caregiver': t('cg.title'),
   };
   const pageTitle = crumbs[location.pathname] || '';
 

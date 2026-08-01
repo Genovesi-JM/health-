@@ -17,6 +17,9 @@ interface Props {
   accept?: string;
   /** Max size in bytes — default 10 MB matches backend. */
   maxBytes?: number;
+  /** Override the upload endpoint. Default: the clinician-credentials
+   *  evidence endpoint keyed by `kind`. */
+  endpoint?: string;
 }
 
 const DEFAULT_ACCEPT = 'application/pdf,image/jpeg,image/png,image/heic,image/heif';
@@ -24,7 +27,7 @@ const DEFAULT_MAX = 10 * 1024 * 1024;
 
 export default function DocumentUpload({
   kind, label, helper, onUploaded, currentFilename,
-  accept = DEFAULT_ACCEPT, maxBytes = DEFAULT_MAX,
+  accept = DEFAULT_ACCEPT, maxBytes = DEFAULT_MAX, endpoint,
 }: Props) {
   const { t } = useT();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -44,7 +47,7 @@ export default function DocumentUpload({
       const form = new FormData();
       form.append('file', file);
       const res = await api.post(
-        `/api/v1/credentials/me/evidence/${kind}`,
+        endpoint ?? `/api/v1/credentials/me/evidence/${kind}`,
         form,
         { headers: { 'Content-Type': 'multipart/form-data' } },
       );
