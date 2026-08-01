@@ -73,14 +73,18 @@ frontend `App.tsx`, `ProtectedRoute.tsx`, `Sidebar.tsx`, `Navbar.tsx`,
 `LoginPage.tsx`, `i18n/translations.ts`; `backend/.env.example`.
 
 ## 3. Database migrations
-New tables auto-created via `Base.metadata.create_all()` (SQLite dev) — no
-Alembic migration required for new tables; the existing drift-migration
-pattern in `database.py` handles added columns. New tables:
+Dev/SQLite bootstraps via `Base.metadata.create_all()` + the drift-migration
+pattern in `database.py`. **For production Postgres, a single Alembic
+revision now ships**: `alembic/versions/onboarding_verification_v1.py`
+(down_revision `add_teleconsultation_operations_v1`, the prior head). It
+creates all 11 new tables idempotently and is fully reversible
+(`downgrade` drops them in FK-safe order). New tables:
 `onboarding_drafts`, `verification_transitions`,
 `verification_webhook_events`, `document_expiry_reminders`,
 `mfa_credentials`, `mfa_recovery_codes`, `organisation_profiles`,
-`organisation_locations`, `organisation_documents`. **For production
-Postgres, add the equivalent Alembic revision** (see Limitations).
+`organisation_locations`, `organisation_documents`, `dependant_links`,
+`dependant_access_events`. Verified: `alembic upgrade head` creates all 11,
+`alembic downgrade -1` removes all 11.
 
 ## 4. External APIs integrated (adapters written, real HTTP wired)
 - **Sumsub** — identity + liveness (HMAC-signed requests, webhook verify)
@@ -126,8 +130,10 @@ No known failing tests. Frontend `tsc -b` clean; production build succeeds.
 - Live vendor calls need real credentials (sandbox until then).
 - Entra VID live HTTP calls stubbed (shell complete).
 - SMS OTP not wired (no SMS provider); email + TOTP cover the pilot.
-- Production Postgres needs Alembic revisions for the new tables.
 - Expiry scanner runs on demand / external cron (no in-app scheduler).
+
+  (Alembic revisions for the new tables, previously listed here, now ship
+  as `onboarding_verification_v1` — see §3.)
 
   (The caregiver dedicated wizard, previously listed here, is now fully
   implemented — see Phase 5 / §6.)

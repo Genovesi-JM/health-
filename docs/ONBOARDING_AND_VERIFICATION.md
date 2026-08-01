@@ -89,6 +89,10 @@ toggles are individual (mandatory vs optional never bundled).
 Secrets (API keys) are **never** stored in DB rows or the client — only in
 environment variables read by `app/config.py`.
 
+**Migrations:** dev/SQLite uses `create_all()` + drift-migrations; production
+Postgres applies `alembic/versions/onboarding_verification_v1.py`, which
+creates all 11 new tables idempotently and is reversible.
+
 ---
 
 ## 4. Verification state machine
