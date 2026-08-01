@@ -546,6 +546,10 @@ def get_current_user(
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
+    # Partial-auth MFA challenge tokens must not read the profile.
+    if payload.get("mfa_challenge"):
+        raise HTTPException(status_code=401, detail="MFA verification incomplete")
+
     email = payload.get("sub", "")
     user = db.query(User).filter(User.email == email).first()
     if not user:

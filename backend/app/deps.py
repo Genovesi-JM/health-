@@ -26,6 +26,12 @@ def get_current_user(
     except Exception:
         raise HTTPException(status_code=401, detail="Token inv\u00e1lido")
 
+    # Reject partial-auth MFA challenge tokens: they are minted by /auth/login
+    # ONLY to complete the second factor at /auth/mfa/challenge, and must
+    # never be accepted as a full bearer token (that would bypass MFA).
+    if payload.get("mfa_challenge"):
+        raise HTTPException(status_code=401, detail="Verifica\u00e7\u00e3o MFA incompleta.")
+
     uid = payload.get("uid")
     sub = payload.get("sub")
 

@@ -216,3 +216,27 @@ def test_setup_conflicts_when_already_enabled(client):
     _enroll(client, auth)
     r = client.post("/auth/mfa/setup", headers=_headers(auth))
     assert r.status_code == 409
+
+
+# ── Security: MFA challenge token must NOT work as a full bearer token ──────
+
+def test_mfa_challenge_token_cannot_access_protected_endpoints(client):
+    """Regression: the partial-auth mfa_token from /auth/login must be
+    rejected by get_current_user, or MFA is trivially bypassable."""
+    email, auth = _register(client)
+    secret, _codes = _enroll(client, auth)
+    login = client.post("/auth/login", json={"email": email, "password": "strong-pass"}).json()
+    challenge_token = login["mfa_token"]
+    hdr = {"Authorization": f"Bearer {challenge_token}"}
+
+    # A protected endpoint gated by get_current_user must reject it.
+    r = client.get("/api/v1/caregiver/dependants", headers=hdr)
+    assert r.status_code == 401, "MFA challenge token was accepted as full auth!"
+
+    # /auth/me must also refuse it (no profile leak).
+    r2 = client.get("/auth/me", headers=hdr)
+    assert r2.status_code == 401
+
+    # And the mfa/setup-style endpoints too.
+    r3 = client.get("/auth/mfa/status", headers=hdr)
+    assert r3.status_code == 401
