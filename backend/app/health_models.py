@@ -1203,3 +1203,35 @@ class VerificationWebhookEvent(Base):
     __table_args__ = (
         Index("ix_webhook_events_dedupe", "provider", "event_id", unique=True),
     )
+
+
+# ── Document expiry reminder ─────────────────────────────────────────────────
+# Row inserted once per (credential, document_kind, threshold_days) so the
+# expiry scanner is idempotent. Configurable thresholds: 90 / 60 / 30 / 14 / 7 / 0.
+
+class DocumentExpiryReminder(Base):
+    __tablename__ = "document_expiry_reminders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+
+    # Polymorphic — same shape reused for organisation licences later.
+    entity_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    entity_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+
+    document_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    # e.g. "professional_licence", "insurance", "identity_document"
+
+    expiry_date: Mapped[str] = mapped_column(String(10), nullable=False)   # ISO YYYY-MM-DD
+    threshold_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Positive = days before expiry. 0 = on expiry day. Negative = post-expiry.
+
+    notified_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    notification_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+
+    __table_args__ = (
+        Index(
+            "ix_expiry_reminder_dedup",
+            "entity_type", "entity_id", "document_kind", "threshold_days",
+            unique=True,
+        ),
+    )

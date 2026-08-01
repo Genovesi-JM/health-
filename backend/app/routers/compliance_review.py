@@ -442,3 +442,62 @@ def get_case_detail(
         ],
         "allowed_next_statuses": sorted(allowed_next(credential.status)),
     }
+
+
+# ── Document expiry monitoring (§14) ────────────────────────────────────────
+
+@router.post("/expiry/scan")
+def run_expiry_scan(
+    _: User = Depends(require_compliance_reviewer),
+    db: Session = Depends(get_db),
+):
+    """Trigger the expiry scanner immediately.
+
+    Idempotent — safe to invoke as often as a cron wants. Returns a summary
+    of what fired so operators can verify the run.
+    """
+    from app.services.document_expiry import scan_credentials
+    result = scan_credentials(db)
+    return result.to_dict()
+
+
+@router.get("/expiry/upcoming")
+def upcoming_expiries(
+    days: int = Query(default=90, ge=1, le=365),
+    _: User = Depends(require_compliance_reviewer),
+    db: Session = Depends(get_db),
+):
+    """List credentials whose licence expires within the next N days.
+
+    Sorted soonest-first so reviewers see the most urgent renewals at the
+    top. Includes any that have already expired.
+    """
+    from datetime import date, timedelta
+    cutoff = (date.today() + timedelta(days=days)).isoformat()
+    rows = (
+        db.query(ClinicianCredential)
+        .filter(ClinicianCredential.licence_expiry_date.is_not(None))
+        .filter(ClinicianCredential.licence_expiry_date <= cutoff)
+        .order_by(ClinicianCredential.licence_expiry_date.asc())
+        .all()
+    )
+    today = date.today()
+    items = []
+    for c in rows:
+        try:
+            exp = date.fromisoformat(c.licence_expiry_date or "")
+        except ValueError:
+            continue
+        items.append({
+            "credential_id": c.id,
+            "user_id": c.user_id,
+            "legal_name": c.legal_name,
+            "profession": c.profession,
+            "licence_country": c.licence_country,
+            "licence_number": c.licence_number,
+            "issuing_authority": c.issuing_authority,
+            "status": c.status,
+            "expiry_date": c.licence_expiry_date,
+            "days_remaining": (exp - today).days,
+        })
+    return {"cutoff_days": days, "total": len(items), "items": items}
