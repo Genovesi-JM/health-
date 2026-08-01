@@ -129,6 +129,7 @@ export function ProtectedRoute() {
     '/professional-verification': t('topbar.my_credentials'),
     '/pricing': t('topbar.subscription'),
     '/settings': t('topbar.settings'),
+    '/security': t('sec.title'),
     '/security/mfa': t('mfa.title'),
     '/onboarding/organisation': t('org.title'),
     '/onboarding/caregiver': t('cg.title'),

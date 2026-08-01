@@ -110,6 +110,7 @@ def _apply_transition(
         credential.verified_at = datetime.utcnow()
         credential.verified_by = reviewer.id
     _sync_doctor_status(db, credential)
+    _notify_applicant(db, credential, new_status, reason_text)
     db.commit()
     return {
         "credential_id": credential.id,
@@ -118,6 +119,53 @@ def _apply_transition(
         "transition_id": transition.transition_id,
         "at": transition.at,
     }
+
+
+def _notify_applicant(db: Session, credential: ClinicianCredential, new_status: str,
+                      reason_text: Optional[str]) -> None:
+    """Fire an in-app notification to the professional on a status change (§18).
+
+    Uses only the applicant-visible reason_text — never the internal reviewer
+    notes. Best-effort; a notification failure must not block the decision.
+    """
+    from app.health_models import Notification
+    templates = {
+        "action_required": ("Informação adicional necessária",
+                            "A equipa de conformidade precisa de mais informação sobre a sua candidatura.", "warning"),
+        "manual_review":   ("Candidatura em revisão manual",
+                            "A sua candidatura está a ser revista manualmente.", "info"),
+        "completed":       ("Candidatura aprovada",
+                            "A sua verificação profissional foi aprovada. Já pode exercer no KAYA.", "success"),
+        "verified":        ("Candidatura aprovada",
+                            "A sua verificação profissional foi aprovada. Já pode exercer no KAYA.", "success"),
+        "partially_verified": ("Verificação parcial",
+                            "Parte da sua candidatura foi verificada; podem faltar elementos.", "warning"),
+        "unable_to_verify": ("Não foi possível verificar",
+                            "Não foi possível concluir a verificação de alguns elementos.", "warning"),
+        "failed":          ("Candidatura rejeitada",
+                            "A sua candidatura não foi aprovada.", "error"),
+        "rejected":        ("Candidatura rejeitada",
+                            "A sua candidatura não foi aprovada.", "error"),
+        "suspended":       ("Conta suspensa",
+                            "A sua conta profissional foi suspensa. Contacte o suporte.", "error"),
+        "revoked":         ("Acesso revogado",
+                            "O seu acesso profissional foi revogado.", "error"),
+        "expired":         ("Documento expirado",
+                            "Um documento profissional expirou. Renove para manter o acesso.", "error"),
+    }
+    tpl = templates.get(new_status)
+    if not tpl:
+        return
+    title, message, ntype = tpl
+    if reason_text:
+        message = f"{message} {reason_text}"
+    try:
+        db.add(Notification(
+            user_id=credential.user_id, title=title, message=message, type=ntype,
+            related_entity_type=ENTITY_TYPE, related_entity_id=credential.id,
+        ))
+    except Exception:
+        pass
 
 
 # ── Request bodies ──────────────────────────────────────────────────────────

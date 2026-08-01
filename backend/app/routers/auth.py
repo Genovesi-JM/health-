@@ -689,12 +689,19 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+# The GET /me route above is (unfortunately) also named `get_current_user`,
+# which shadows the auth dependency for endpoints defined below it. Import the
+# real dependency under an explicit alias so account-management endpoints
+# receive a User object (not the /me route's dict).
+from ..deps import get_current_user as _require_user
+
+
 @router.post("/change-password")
 def change_password(
     payload: ChangePasswordRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_require_user),
 ):
     old_pw = payload.old_password or payload.current_password
     if not old_pw:
@@ -711,6 +718,159 @@ def change_password(
     log_audit(db, "change_password", user_id=current_user.id, resource_type="user",
               resource_id=current_user.id, request=request)
     return {"message": "Palavra-passe alterada com sucesso."}
+
+
+# ── Change email / phone (§9) — both require password reauth ──────────────
+
+class ChangeEmailRequest(BaseModel):
+    new_email: EmailStr
+    password: str
+
+
+class ChangePhoneRequest(BaseModel):
+    new_phone: str
+    password: str
+
+
+def _reauth(user: User, password: str) -> None:
+    """Verify the caller's current password before a sensitive change."""
+    if not user.password_hash:
+        raise HTTPException(status_code=400, detail="Conta sem senha local — utilize OAuth.")
+    if not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Palavra-passe incorrecta.")
+
+
+@router.post("/change-email")
+def change_email(
+    payload: ChangeEmailRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(_require_user),
+):
+    """Change the account email after password reauth.
+
+    Confirms the new address is free, updates it, logs a security event, and
+    notifies the OLD address (best-effort; falls back to the email log when
+    SMTP is not configured). A full production build would additionally send
+    a verification link to the new address before activating it.
+    """
+    _reauth(current_user, payload.password)
+    new_email = payload.new_email.strip().lower()
+    old_email = current_user.email
+    if new_email == (old_email or "").lower():
+        raise HTTPException(status_code=400, detail="O novo email é igual ao actual.")
+    if db.query(User).filter(User.email == new_email).first():
+        raise HTTPException(status_code=409, detail="Este email já está em uso.")
+
+    current_user.email = new_email
+    db.add(current_user)
+    db.commit()
+    log_audit(db, "change_email", user_id=current_user.id, resource_type="user",
+              resource_id=current_user.id,
+              details={"old": old_email, "new": new_email}, request=request)
+    # Best-effort confirmation to the old address (never blocks the change).
+    try:
+        from ..mail import _send_email  # type: ignore
+        _send_email(old_email, "O seu email KAYA foi alterado",
+                    f"O email da sua conta foi alterado para {new_email}. "
+                    "Se não foi você, contacte o suporte imediatamente.")
+    except Exception:
+        pass
+    return {"message": "Email alterado com sucesso.", "email": new_email}
+
+
+@router.post("/change-phone")
+def change_phone(
+    payload: ChangePhoneRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(_require_user),
+):
+    """Change the profile phone after password reauth. (SMS OTP verification
+    is a documented pilot limitation — no SMS provider is contracted yet.)"""
+    _reauth(current_user, payload.password)
+    phone = (payload.new_phone or "").strip()
+    if len(phone) < 6:
+        raise HTTPException(status_code=400, detail="Número de telefone inválido.")
+    profile = _ensure_profile(db, current_user)
+    profile.phone = phone
+    db.add(profile)
+    db.commit()
+    log_audit(db, "change_phone", user_id=current_user.id, resource_type="user",
+              resource_id=current_user.id, request=request)
+    return {"message": "Telefone alterado com sucesso.", "phone": phone}
+
+
+# ── Active sessions (§10 / §23) ──────────────────────────────────────────
+
+@router.get("/sessions")
+def list_sessions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(_require_user),
+):
+    """List the caller's active login sessions (one per refresh-token family).
+
+    Devices/IPs are not stored on the refresh token, so we report only the
+    session id, when it started, and when it expires — no fabricated
+    device names.
+    """
+    now = datetime.utcnow()
+    rows = (
+        db.query(RefreshTokenModel)
+        .filter(
+            RefreshTokenModel.user_id == current_user.id,
+            RefreshTokenModel.revoked == False,  # noqa: E712
+            RefreshTokenModel.expires_at > now,
+        )
+        .order_by(RefreshTokenModel.created_at.desc())
+        .all()
+    )
+    # Collapse rotated tokens into one row per family (earliest created).
+    families: dict[str, dict] = {}
+    for r in rows:
+        fam = families.setdefault(r.family_id, {
+            "session_id": r.family_id, "started_at": r.created_at, "expires_at": r.expires_at,
+        })
+        if r.created_at < fam["started_at"]:
+            fam["started_at"] = r.created_at
+        if r.expires_at > fam["expires_at"]:
+            fam["expires_at"] = r.expires_at
+    return {"sessions": sorted(families.values(), key=lambda s: s["started_at"], reverse=True)}
+
+
+class RevokeSessionsRequest(BaseModel):
+    keep_current_refresh_token: Optional[str] = None
+
+
+@router.post("/revoke-sessions")
+def revoke_sessions(
+    payload: Optional[RevokeSessionsRequest] = None,
+    request: Request = None,  # type: ignore[assignment]
+    db: Session = Depends(get_db),
+    current_user: User = Depends(_require_user),
+):
+    """Log out of all devices. Optionally keep the current session alive by
+    passing its refresh token, so the caller isn't logged out here-and-now."""
+    keep_family: Optional[str] = None
+    if payload and payload.keep_current_refresh_token:
+        token_hash = _hash_refresh_token(payload.keep_current_refresh_token)
+        current = db.query(RefreshTokenModel).filter(
+            RefreshTokenModel.token_hash == token_hash
+        ).first()
+        if current:
+            keep_family = current.family_id
+
+    q = db.query(RefreshTokenModel).filter(
+        RefreshTokenModel.user_id == current_user.id,
+        RefreshTokenModel.revoked == False,  # noqa: E712
+    )
+    if keep_family:
+        q = q.filter(RefreshTokenModel.family_id != keep_family)
+    revoked = q.update({"revoked": True})
+    db.commit()
+    log_audit(db, "revoke_sessions", user_id=current_user.id, resource_type="user",
+              resource_id=current_user.id, details={"revoked": revoked}, request=request)
+    return {"revoked_sessions": revoked, "kept_current": bool(keep_family)}
 
 
 

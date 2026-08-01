@@ -1,0 +1,2 @@
+[2026-08-01T14:53:08.902303] to=acct-adffbffd@example.com subject=O seu email KAYA foi alterado
+[2026-08-01T14:54:54.177062] to=acct-7489490b@example.com subject=O seu email KAYA foi alterado

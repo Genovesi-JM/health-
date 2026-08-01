@@ -525,6 +525,29 @@ def decide_credential(
     except Exception:
         pass  # audit failure must not deny an accepted decision.
 
+    # Notify the professional of the decision (§18) — applicant-visible copy only.
+    try:
+        from app.health_models import Notification
+        _decision_templates = {
+            "verified": ("Candidatura aprovada",
+                         "A sua verificação profissional foi aprovada. Já pode exercer no KAYA.", "success"),
+            "rejected": ("Candidatura rejeitada", "A sua candidatura não foi aprovada.", "error"),
+            "needs_info": ("Informação adicional necessária",
+                           "A equipa de conformidade precisa de mais informação.", "warning"),
+            "suspended": ("Conta suspensa", "A sua conta profissional foi suspensa.", "error"),
+        }
+        _tpl = _decision_templates.get(credential.status)
+        if _tpl:
+            _title, _msg, _type = _tpl
+            if body.notes:
+                _msg = f"{_msg} {body.notes}"
+            db.add(Notification(
+                user_id=credential.user_id, title=_title, message=_msg, type=_type,
+                related_entity_type="clinician_credential", related_entity_id=credential.id,
+            ))
+    except Exception:
+        pass
+
     db.commit()
     return _serialize(_get_credential(db, credential.user_id))
 

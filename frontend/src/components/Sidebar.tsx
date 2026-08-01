@@ -152,6 +152,7 @@ export function Sidebar({ open, onClose }: Props) {
           {(role === 'patient' || role === 'cliente') && (
             <SidebarSection title={t('sidebar.account')}>
               <SidebarLink to="/settings" icon={Settings} label={t('sidebar.settings')} onClick={onClose} />
+              <SidebarLink to="/security" icon={ShieldCheck} label={t('sec.title')} onClick={onClose} />
             </SidebarSection>
           )}
         </nav>

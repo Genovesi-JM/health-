@@ -317,3 +317,34 @@ def test_manual_review_rejects_bad_outcome(client):
         json={"outcome": "not-a-real-outcome"},
     )
     assert r.status_code == 422
+
+
+# ── Notifications fired on verification events (§18) ────────────────────────
+
+def test_request_information_notifies_applicant(client):
+    doc = _register(client)
+    case = _submit_dossier(client, doc)
+    admin = _admin(client)
+    client.post(
+        f"/api/v1/compliance/cases/{case['id']}/request-information",
+        headers=_headers(admin),
+        json={"reason_text": "Please re-upload your licence."},
+    )
+    # The doctor should now have an in-app notification about it.
+    notifs = client.get("/api/v1/notifications/me", headers=_headers(doc)).json()
+    titles = " ".join(n.get("title", "") for n in (notifs if isinstance(notifs, list) else notifs.get("items", [])))
+    assert "Informação adicional" in titles
+
+
+def test_approval_notifies_applicant(client):
+    doc = _register(client)
+    case = _submit_dossier(client, doc)
+    admin = _admin(client)
+    client.post(
+        f"/api/v1/credentials/admin/{case['id']}/decision",
+        headers=_headers(admin), json={"action": "approve"},
+    )
+    notifs = client.get("/api/v1/notifications/me", headers=_headers(doc)).json()
+    items = notifs if isinstance(notifs, list) else notifs.get("items", [])
+    titles = " ".join(n.get("title", "") for n in items)
+    assert "aprovada" in titles.lower()
