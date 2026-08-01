@@ -124,6 +124,7 @@ export function ProtectedRoute() {
     '/admin/applications': t('topbar.applications'),
     '/admin/credentials': t('topbar.credentials'),
     '/admin/compliance': t('admc.title'),
+    '/admin/expiry': t('exp.title'),
     // Cross-role
     '/professional-verification': t('topbar.my_credentials'),
     '/pricing': t('topbar.subscription'),

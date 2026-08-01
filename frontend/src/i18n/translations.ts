@@ -698,6 +698,22 @@ const translations: Record<string, TranslationEntry> = {
   'admc.applied': { pt: 'Ação aplicada.', en: 'Action applied.', fr: 'Action appliquée.', es: 'Acción aplicada.' },
   'admc.action_failed': { pt: 'Ação não permitida no estado atual.', en: 'Action not allowed in current state.', fr: 'Action non autorisée.', es: 'Acción no permitida.' },
 
+  // ── Expiry dashboard ──
+  'exp.title': { pt: 'Documentos a expirar', en: 'Expiring documents', fr: 'Documents expirants', es: 'Documentos por vencer' },
+  'exp.subtitle': { pt: 'Cédulas profissionais que expiram em breve. Contacte o profissional para renovação.', en: 'Professional licences expiring soon. Contact the professional to renew.', fr: 'Licences expirant bientôt.', es: 'Licencias que vencen pronto.' },
+  'exp.window': { pt: 'Janela', en: 'Window', fr: 'Fenêtre', es: 'Ventana' },
+  'exp.days': { pt: 'dias', en: 'days', fr: 'jours', es: 'días' },
+  'exp.run_scan': { pt: 'Executar verificação', en: 'Run scan', fr: 'Lancer le scan', es: 'Ejecutar escaneo' },
+  'exp.scanning': { pt: 'A verificar…', en: 'Scanning…', fr: 'Analyse…', es: 'Escaneando…' },
+  'exp.scan_done': { pt: 'Verificação concluída', en: 'Scan complete', fr: 'Scan terminé', es: 'Escaneo completo' },
+  'exp.loading': { pt: 'A carregar…', en: 'Loading…', fr: 'Chargement…', es: 'Cargando…' },
+  'exp.empty': { pt: 'Nenhum documento expira nesta janela.', en: 'No documents expire in this window.', fr: 'Aucun document.', es: 'Ningún documento.' },
+  'exp.col_name': { pt: 'Profissional', en: 'Professional', fr: 'Professionnel', es: 'Profesional' },
+  'exp.col_authority': { pt: 'Autoridade / cédula', en: 'Authority / licence', fr: 'Autorité / licence', es: 'Autoridad / licencia' },
+  'exp.col_expiry': { pt: 'Validade', en: 'Expiry', fr: 'Expiration', es: 'Vencimiento' },
+  'exp.col_remaining': { pt: 'Restam', en: 'Remaining', fr: 'Restant', es: 'Restante' },
+  'exp.expired': { pt: 'Expirado', en: 'Expired', fr: 'Expiré', es: 'Vencido' },
+
   // ── MFA ──
   'mfa.challenge_title': { pt: 'Verificação em dois passos', en: 'Two-step verification', fr: 'Vérification en deux étapes', es: 'Verificación en dos pasos' },
   'mfa.challenge_subtitle': { pt: 'Introduza o código da sua aplicação de autenticação.', en: 'Enter the code from your authenticator app.', fr: 'Saisissez le code de votre application d’authentification.', es: 'Introduzca el código de su app de autenticación.' },

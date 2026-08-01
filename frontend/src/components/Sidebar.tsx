@@ -122,6 +122,7 @@ export function Sidebar({ open, onClose }: Props) {
               <SidebarLink to="/admin/applications" icon={Briefcase}   label={t('sidebar.applications')}   onClick={onClose} />
               <SidebarLink to="/admin/credentials"  icon={ShieldCheck} label={t('sidebar.credentials')}    onClick={onClose} />
               <SidebarLink to="/admin/compliance"   icon={Shield}      label={t('admc.title')}             onClick={onClose} />
+              <SidebarLink to="/admin/expiry"       icon={Clock}       label={t('exp.title')}              onClick={onClose} />
             </SidebarSection>
           )}
           {role === 'admin' && (
