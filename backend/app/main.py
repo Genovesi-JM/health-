@@ -18,7 +18,7 @@ from .database import init_db_engine
 from .middleware import SecurityHeadersMiddleware, RateLimitMiddleware, HTTPSRedirectMiddleware
 
 # Core routers (kept from original)
-from .routers import auth, admin, me
+from .routers import auth, admin, me, mfa
 
 # Health platform routers (new)
 from .routers import (
@@ -137,6 +137,7 @@ def create_application() -> FastAPI:
 
     # ── Core routers (auth, admin, user profile) ──
     application.include_router(auth.router)       # /auth/*
+    application.include_router(mfa.router)        # /auth/mfa/* — TOTP + recovery codes
     application.include_router(admin.router)      # /admin/*
     application.include_router(me.router)         # /me
 

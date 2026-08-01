@@ -128,6 +128,7 @@ export function ProtectedRoute() {
     '/professional-verification': t('topbar.my_credentials'),
     '/pricing': t('topbar.subscription'),
     '/settings': t('topbar.settings'),
+    '/security/mfa': t('mfa.title'),
   };
   const pageTitle = crumbs[location.pathname] || '';
 

@@ -287,11 +287,17 @@ def _build_auth_response(db: Session, user: User) -> dict:
         "name": getattr(profile, "full_name", None) or "",
     }
 
+    from app.services.mfa import mfa_is_mandatory
+    from app.health_models import MfaCredential
+    mfa_row = db.query(MfaCredential).filter(MfaCredential.user_id == user.id).first()
+
     return {
         "access_token": access_token,
         "user": user_data,
         "account": account,
         "refresh_token": refresh_token,
+        "mfa_enrolled": bool(mfa_row and mfa_row.enabled),
+        "mfa_mandatory": mfa_is_mandatory(role),
     }
 
 
@@ -409,11 +415,14 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     log_audit(db, "register", user_id=user.id, user_email=user.email,
               resource_type="user", resource_id=user.id, request=request)
 
+    from app.services.mfa import mfa_is_mandatory
     return AuthResponse(access_token=access_token, user=user, account=account,
-                        refresh_token=refresh_token)
+                        refresh_token=refresh_token,
+                        mfa_enrolled=False,
+                        mfa_mandatory=mfa_is_mandatory(user.role))
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login")
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
     email = (payload.email or "").strip().lower()
     user = db.query(User).filter(User.email == email).first()
@@ -437,6 +446,20 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Password incorreta. Usa 'Esqueceu a senha?' para redefinir."
         )
+
+    # MFA gate: if the user has MFA enabled, the password alone does NOT
+    # yield tokens. Return a short-lived challenge token instead; the client
+    # completes login via POST /auth/mfa/challenge with the TOTP/recovery code.
+    from app.health_models import MfaCredential
+    from datetime import timedelta as _td
+    mfa_row = db.query(MfaCredential).filter(MfaCredential.user_id == user.id).first()
+    if mfa_row and mfa_row.enabled:
+        challenge = create_access_token(
+            {"sub": user.email, "uid": user.id, "mfa_challenge": True},
+            expires_delta=_td(minutes=5),
+        )
+        log_audit(db, "login_mfa_challenge", user_id=user.id, user_email=user.email, request=request)
+        return {"mfa_required": True, "mfa_token": challenge}
 
     resp = _build_auth_response(db, user)
     log_audit(db, "login", user_id=user.id, user_email=user.email, request=request)

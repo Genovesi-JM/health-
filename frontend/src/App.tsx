@@ -75,6 +75,7 @@ import CorporateDashboardPage from './pages/CorporateDashboardPage';
 import NurseDashboardPage from './pages/NurseDashboardPage';
 import StorePage from './pages/StorePage';
 import SettingsPage from './pages/SettingsPage';
+import SecurityMfaPage from './pages/SecurityMfaPage';
 import SelfCarePage from './pages/SelfCarePage';
 import FamilyPage from './pages/FamilyPage';
 import NotificationsPage from './pages/NotificationsPage';
@@ -143,6 +144,7 @@ export default function App() {
             <Route path="/onboarding/professional" element={<ProfessionalOnboardingPage />} />
             {/* Settings — accessible to all roles */}
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/security/mfa" element={<SecurityMfaPage />} />
             <Route path="/professional-verification" element={<ProfessionalVerificationPage />} />
             <Route element={<RoleRoute allowedRoles={['doctor', 'nurse']} />}>
               <Route path="/clinician/patients/:patientId" element={<ClinicianPatientWorkspacePage />} />

@@ -93,6 +93,9 @@ class AuthResponse(BaseModel):
     refresh_token: Optional[str] = None
     user: UserOut
     account: Optional[AccountOut] = None
+    # MFA posture — lets the frontend prompt enrollment where mandatory.
+    mfa_enrolled: bool = False
+    mfa_mandatory: bool = False
 
 
 class AccountCreate(BaseModel):

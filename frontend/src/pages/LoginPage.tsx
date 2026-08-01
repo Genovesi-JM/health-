@@ -26,18 +26,43 @@ export default function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMsg, setForgotMsg] = useState('');
 
+  // MFA challenge state — set when /auth/login returns mfa_required.
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+
+  const finishLogin = (data: any) => {
+    login(data);
+    const role = data.user?.role;
+    const from = (location.state as any)?.from?.pathname;
+    const defaultDest = role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : role === 'nurse' ? '/nurse' : role === 'corporate_admin' ? '/corporate' : '/dashboard';
+    navigate(from || defaultDest, { replace: true });
+  };
+
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess(''); setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
-      login(res.data);
-      const role = res.data.user?.role;
-      const from = (location.state as any)?.from?.pathname;
-      const defaultDest = role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : role === 'nurse' ? '/nurse' : role === 'corporate_admin' ? '/corporate' : '/dashboard';
-      navigate(from || defaultDest, { replace: true });
+      // MFA gate: password alone did not yield tokens.
+      if (res.data.mfa_required) {
+        setMfaToken(res.data.mfa_token);
+        setLoading(false);
+        return;
+      }
+      finishLogin(res.data);
     } catch (err: any) {
       setError(apiErrorMessage(err, t('login.invalid')));
+    } finally { setLoading(false); }
+  };
+
+  const handleMfaChallenge = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      const res = await api.post('/auth/mfa/challenge', { mfa_token: mfaToken, code: mfaCode.trim() });
+      finishLogin(res.data);
+    } catch (err: any) {
+      setError(apiErrorMessage(err, t('mfa.invalid_code')));
     } finally { setLoading(false); }
   };
 
@@ -71,10 +96,43 @@ export default function LoginPage() {
           <span className="auth-brand-text">KAYA</span>
         </div>
 
-        <h1 className="auth-title">{t('login.title')}</h1>
-        <p className="auth-subtitle">{t('login.subtitle')}</p>
+        <h1 className="auth-title">{mfaToken ? t('mfa.challenge_title') : t('login.title')}</h1>
+        <p className="auth-subtitle">{mfaToken ? t('mfa.challenge_subtitle') : t('login.subtitle')}</p>
 
-        {/* Login Form */}
+        {/* MFA challenge step — shown after a correct password when MFA is on */}
+        {mfaToken ? (
+          <form onSubmit={handleMfaChallenge}>
+            <div className="form-group">
+              <label className="form-label">{t('mfa.code_label')}</label>
+              <input
+                className="form-input"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                value={mfaCode}
+                onChange={e => setMfaCode(e.target.value)}
+                placeholder="123456"
+                style={{ letterSpacing: '0.3em', fontSize: '1.1rem', textAlign: 'center' }}
+              />
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                {t('mfa.code_help')}
+              </div>
+            </div>
+            {error && <div className="auth-error">{error}</div>}
+            <button type="submit" className="btn btn-primary auth-submit" disabled={loading || !mfaCode.trim()}>
+              {loading ? '…' : t('mfa.verify')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ width: '100%', marginTop: 8 }}
+              onClick={() => { setMfaToken(null); setMfaCode(''); setError(''); }}
+            >
+              {t('mfa.back_to_login')}
+            </button>
+          </form>
+        ) : (
+        /* Login Form */
         <form onSubmit={handleLogin}>
           <div className="form-group">
             <label className="form-label">{t('login.email')}</label>
@@ -103,7 +161,10 @@ export default function LoginPage() {
             {loading ? t('login.loading') : t('login.submit')}
           </button>
         </form>
+        )}
 
+        {!mfaToken && (
+        <>
         {/* OAuth */}
         <button type="button" className="auth-oauth-btn" onClick={() => handleOAuth('google')}
           style={{ marginBottom: '0.5rem' }}>
@@ -142,6 +203,8 @@ export default function LoginPage() {
         }}>
           {t('login.access_hint')}
         </div>
+        </>
+        )}
 
         <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
           <Link to="/" style={{ color: 'var(--accent-teal)', fontSize: '0.82rem', textDecoration: 'none' }}>

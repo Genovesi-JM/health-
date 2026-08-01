@@ -1235,3 +1235,42 @@ class DocumentExpiryReminder(Base):
             unique=True,
         ),
     )
+
+
+# ── Multi-factor authentication ──────────────────────────────────────────────
+# TOTP (RFC 6238) is mandatory for clinical + admin roles. Secret is stored
+# base32-encoded; recovery codes are stored hashed (never plaintext).
+
+class MfaCredential(Base):
+    __tablename__ = "mfa_credentials"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, unique=True, index=True,
+    )
+    secret: Mapped[str] = mapped_column(String(64), nullable=False)   # base32
+    method: Mapped[str] = mapped_column(String(20), nullable=False, default="totp")
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+
+class MfaRecoveryCode(Base):
+    __tablename__ = "mfa_recovery_codes"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    code_hash: Mapped[str] = mapped_column(String(64), nullable=False)   # sha256 hex
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_mfa_recovery_user_code", "user_id", "code_hash", unique=True),
+    )
