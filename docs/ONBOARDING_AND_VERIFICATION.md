@@ -219,7 +219,11 @@ reminders at **90 / 60 / 30 / 14 / 7 / 0** days, one `Notification` each
 `verified` credential to `expired` (privileges drop automatically, history
 preserved). Idempotent per threshold. Triggered by
 `POST /api/v1/compliance/expiry/scan` (cron-friendly) or listed via
-`GET /api/v1/compliance/expiry/upcoming?days=N`.
+`GET /api/v1/compliance/expiry/upcoming?days=N`. An **opt-in in-process
+scheduler** (`services/scheduler.py`, enabled with `EXPIRY_SCAN_ENABLED`,
+interval `EXPIRY_SCAN_INTERVAL_HOURS`) runs the scan automatically for
+single-worker deployments; multi-replica deployments should instead drive
+the endpoint from an external cron on one worker.
 
 ---
 

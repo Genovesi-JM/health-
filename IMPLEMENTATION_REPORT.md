@@ -116,10 +116,15 @@ See `backend/.env.example`. Verification-specific:
 `AZURE_ENTRA_CLIENT_SECRET`.
 
 ## 8. Tests added
-144 new backend test functions across 9 files:
+148 new backend test functions across 10 files:
 onboarding (12), verification providers (32), state machine (18),
 verification actions + webhooks (11), compliance dashboard (12),
-document expiry (12), MFA (19), organisations (14), caregiver (14).
+document expiry (12), MFA (19), organisations (14), caregiver (14),
+scheduler (4).
+
+Document-expiry scans can run automatically via the opt-in in-process
+scheduler (`EXPIRY_SCAN_ENABLED` / `EXPIRY_SCAN_INTERVAL_HOURS`,
+`services/scheduler.py`) or via external cron hitting the scan endpoint.
 
 ## 9. Tests passed / failed
 **All passing.** Full backend suite green at the end of each phase (see
@@ -130,10 +135,11 @@ No known failing tests. Frontend `tsc -b` clean; production build succeeds.
 - Live vendor calls need real credentials (sandbox until then).
 - Entra VID live HTTP calls stubbed (shell complete).
 - SMS OTP not wired (no SMS provider); email + TOTP cover the pilot.
-- Expiry scanner runs on demand / external cron (no in-app scheduler).
 
   (Alembic revisions for the new tables, previously listed here, now ship
-  as `onboarding_verification_v1` — see §3.)
+  as `onboarding_verification_v1` — see §3. The in-app expiry scheduler,
+  also previously listed, now ships opt-in via `EXPIRY_SCAN_ENABLED` —
+  see §8.)
 
   (The caregiver dedicated wizard, previously listed here, is now fully
   implemented — see Phase 5 / §6.)

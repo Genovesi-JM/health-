@@ -186,6 +186,20 @@ def create_application() -> FastAPI:
     def healthcheck() -> dict:
         return {"status": "ok", "platform": "health"}
 
+    # ── Optional in-process document-expiry scheduler ────────────────
+    # Off by default (EXPIRY_SCAN_ENABLED); when on, runs the expiry scan
+    # on a fixed interval. Started/stopped with the app lifecycle.
+    if settings.expiry_scan_enabled:
+        from .services.scheduler import scheduler
+
+        @application.on_event("startup")
+        async def _start_expiry_scheduler() -> None:  # pragma: no cover - lifecycle glue
+            scheduler.start()
+
+        @application.on_event("shutdown")
+        async def _stop_expiry_scheduler() -> None:  # pragma: no cover - lifecycle glue
+            await scheduler.stop()
+
     return application
 
 
