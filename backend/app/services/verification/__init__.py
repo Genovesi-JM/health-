@@ -15,6 +15,8 @@ from typing import Callable
 from app.config import settings
 
 from .base import (
+    DigitalCredentialProvider,
+    DigitalCredentialRequest,
     DocumentIntelligenceProvider,
     IdentityApplicant,
     IdentityVerificationProvider,
@@ -27,6 +29,7 @@ from .base import (
     VerificationStatus,
 )
 from .certn import CertnQualificationProvider
+from .entra import EntraVerifiedIdProvider
 from .manual_registry import ManualRegistryProvider, lookup_authority
 from .sandbox import (
     SandboxIdentityProvider,
@@ -88,16 +91,24 @@ def get_registry_provider() -> RegulatoryRegistryProvider:
     return ManualRegistryProvider()
 
 
+def get_digital_credential_provider() -> DigitalCredentialProvider:
+    """Entra Verified ID (or another VC provider later). Always optional —
+    falls back to NOT_CONFIGURED when tenant credentials are absent."""
+    return EntraVerifiedIdProvider()
+
+
 __all__ = [
     # Interfaces
     "IdentityVerificationProvider",
     "QualificationVerificationProvider",
     "RegulatoryRegistryProvider",
     "DocumentIntelligenceProvider",
+    "DigitalCredentialProvider",
     # Value types
     "IdentityApplicant",
     "QualificationApplicant",
     "RegistryCheckRequest",
+    "DigitalCredentialRequest",
     "VerificationResult",
     "VerificationStatus",
     "ProviderMode",
@@ -105,6 +116,7 @@ __all__ = [
     "get_identity_provider",
     "get_qualification_provider",
     "get_registry_provider",
+    "get_digital_credential_provider",
     # Config helpers
     "lookup_authority",
 ]

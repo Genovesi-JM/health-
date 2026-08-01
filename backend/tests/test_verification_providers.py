@@ -34,6 +34,11 @@ from app.services.verification.sandbox import (
 )
 from app.services.verification.sumsub import SumsubIdentityProvider
 from app.services.verification.veremark import VeremarkQualificationProvider
+from app.services.verification.entra import EntraVerifiedIdProvider
+from app.services.verification.base import (
+    DigitalCredentialProvider,
+    DigitalCredentialRequest,
+)
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
@@ -296,3 +301,49 @@ def test_certn_parse_webhook_needs_review_becomes_manual(monkeypatch):
         "report_result": "consider",
     })
     assert result.status == VerificationStatus.MANUAL_REVIEW
+
+
+# ── Entra Verified ID (optional digital credential) ────────────────────────
+
+def test_entra_conforms_to_digital_credential_protocol():
+    assert isinstance(EntraVerifiedIdProvider(), DigitalCredentialProvider)
+
+
+def test_entra_not_configured_without_tenant(monkeypatch):
+    for attr in ("entra_tenant_id", "entra_client_id", "entra_client_secret"):
+        monkeypatch.setattr(settings, attr, None, raising=False)
+    provider = EntraVerifiedIdProvider()
+    assert provider.mode == ProviderMode.MOCK
+    result = provider.create_presentation_request(DigitalCredentialRequest(
+        reference_id="apl-1", subject_name="Ana Manuel",
+        credential_types=("MedicalLicenceCredential",),
+    ))
+    assert result.status == VerificationStatus.NOT_CONFIGURED
+    assert "message" in result.raw
+
+
+def test_entra_live_mode_when_configured(monkeypatch):
+    monkeypatch.setattr(settings, "entra_tenant_id", "tenant-123", raising=False)
+    monkeypatch.setattr(settings, "entra_client_id", "client-123", raising=False)
+    monkeypatch.setattr(settings, "entra_client_secret", "secret-xyz", raising=False)
+    provider = EntraVerifiedIdProvider()
+    assert provider.mode == ProviderMode.LIVE
+    result = provider.create_presentation_request(DigitalCredentialRequest(
+        reference_id="apl-1", subject_name="Ana Manuel",
+    ))
+    assert result.status == VerificationStatus.ACTION_REQUIRED
+
+
+def test_entra_parse_webhook_maps_verified(monkeypatch):
+    monkeypatch.setattr(settings, "entra_tenant_id", "t", raising=False)
+    monkeypatch.setattr(settings, "entra_client_id", "c", raising=False)
+    monkeypatch.setattr(settings, "entra_client_secret", "s", raising=False)
+    result = EntraVerifiedIdProvider().parse_webhook({
+        "requestStatus": "presentation_verified", "state": "apl-1",
+    })
+    assert result.status == VerificationStatus.COMPLETED
+
+
+def test_get_digital_credential_provider_selector():
+    from app.services.verification import get_digital_credential_provider
+    assert isinstance(get_digital_credential_provider(), EntraVerifiedIdProvider)

@@ -155,6 +155,38 @@ class DocumentIntelligenceProvider(Protocol):
     def fetch_result(self, operation_id: str) -> VerificationResult: ...
 
 
+@dataclass(frozen=True)
+class DigitalCredentialRequest:
+    reference_id: str
+    subject_name: str
+    credential_types: tuple[str, ...] = ()   # e.g. ("MedicalLicenceCredential",)
+
+
+@runtime_checkable
+class DigitalCredentialProvider(Protocol):
+    """Microsoft Entra Verified ID and equivalents.
+
+    Verifies digitally-issued verifiable credentials (VCs) presented from a
+    wallet. Only usable when the issuing institution actually issues a
+    compatible credential — most PDF diplomas do NOT, so this is always an
+    optional path (spec §7 step 8).
+    """
+    name: str
+    mode: ProviderMode
+
+    def create_presentation_request(self, request: DigitalCredentialRequest) -> VerificationResult:
+        """Start a presentation request; returns a QR/deep-link URL for the wallet."""
+        ...
+
+    def fetch_status(self, provider_reference: str) -> VerificationResult:
+        """Poll for the wallet's response + issuer/expiry/revocation validation."""
+        ...
+
+    def verify_webhook(self, raw_body: bytes, headers: dict[str, Any]) -> bool: ...
+
+    def parse_webhook(self, payload: dict[str, Any]) -> VerificationResult: ...
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def credentials_missing(*values: Optional[str]) -> bool:
