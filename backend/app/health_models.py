@@ -1274,3 +1274,97 @@ class MfaRecoveryCode(Base):
     __table_args__ = (
         Index("ix_mfa_recovery_user_code", "user_id", "code_hash", unique=True),
     )
+
+
+# ── Organisation onboarding (clinic / laboratory / pharmacy / health org) ─────
+# Kaya builds and controls the organisational profile + verification workflow;
+# external providers (Azure DI, business verification) plug in per §8.
+
+class OrganisationProfile(Base):
+    __tablename__ = "organisation_profiles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    org_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    # clinic | laboratory | pharmacy_org | health_org
+
+    legal_name: Mapped[str] = mapped_column(String(250), nullable=False)
+    trading_name: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+    registration_number: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    tax_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    country: Mapped[str] = mapped_column(String(2), nullable=False, default="AO")
+    registered_address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    operating_address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    website: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+    general_email: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+    general_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    representative_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    responsible_professional: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    # Banking / commercial (never expose full values back after save).
+    bank_holder_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    iban_last4: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    subscription_plan: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+
+    # Integration posture (§8).
+    integration_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="draft", index=True)
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    verified_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+    )
+
+    locations = relationship("OrganisationLocation", cascade="all, delete-orphan", backref="organisation")
+    documents = relationship("OrganisationDocument", cascade="all, delete-orphan", backref="organisation")
+
+    __table_args__ = (
+        Index("ix_org_reg_country", "registration_number", "country", unique=True),
+    )
+
+
+class OrganisationLocation(Base):
+    __tablename__ = "organisation_locations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organisation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("organisation_profiles.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    city: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    latitude: Mapped[Optional[float]] = mapped_column(Numeric(10, 6), nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(Numeric(10, 6), nullable=True)
+    opening_hours: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    services: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    emergency_available: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    home_delivery: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    home_sample_collection: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    manager_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class OrganisationDocument(Base):
+    __tablename__ = "organisation_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organisation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("organisation_profiles.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    kind: Mapped[str] = mapped_column(String(50), nullable=False)
+    # business_registration | tax_certificate | operating_licence |
+    # healthcare_licence | pharmacy_licence | lab_accreditation | insurance | ...
+    storage_key: Mapped[str] = mapped_column(String(300), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(250), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    sha256: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

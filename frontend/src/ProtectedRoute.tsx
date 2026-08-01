@@ -129,6 +129,7 @@ export function ProtectedRoute() {
     '/pricing': t('topbar.subscription'),
     '/settings': t('topbar.settings'),
     '/security/mfa': t('mfa.title'),
+    '/onboarding/organisation': t('org.title'),
   };
   const pageTitle = crumbs[location.pathname] || '';
 

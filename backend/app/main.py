@@ -49,6 +49,7 @@ from .routers import (
     compliance_review,
     verification_actions,
     verification_webhooks,
+    organisations,
 )
 
 from .seed_data import seed_all
@@ -169,6 +170,7 @@ def create_application() -> FastAPI:
     application.include_router(compliance_review.router) # /api/v1/compliance/cases/* — reviewer state-machine actions
     application.include_router(verification_actions.router)  # /api/v1/verification/* — provider integration
     application.include_router(verification_webhooks.router) # /api/v1/webhooks/{sumsub,veremark,certn}
+    application.include_router(organisations.router)      # /api/v1/organisations/* — clinic/lab/pharmacy onboarding
 
     # ── Deprecated drone/shop routers (disabled) ──
     # The following routers are from the original GeoVision platform and
