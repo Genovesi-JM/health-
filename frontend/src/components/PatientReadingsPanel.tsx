@@ -4,6 +4,10 @@ import {
   Activity, Heart, Droplets, ThermometerSun, Wind,
   Weight, HeartPulse, AlertTriangle, Loader2, RefreshCw, Pill,
 } from 'lucide-react';
+import { useT, type Lang } from '../i18n/LanguageContext';
+
+const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
+type TFn = (k: string) => string;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -44,45 +48,46 @@ interface PatientMedication {
 // ── Range flags (visual only — NOT diagnosis) ─────────────────────────────────
 
 interface RangeRule {
-  label: string;
+  key: string;
   check: (r: DeviceReading) => boolean;
 }
 
 const RANGE_RULES: Record<ReadingType, RangeRule[]> = {
   blood_pressure: [
-    { label: 'Sistólica fora do intervalo típico — rever manualmente', check: r => r.systolic != null && (r.systolic < 90 || r.systolic > 140) },
-    { label: 'Diastólica fora do intervalo típico — rever manualmente', check: r => r.diastolic != null && (r.diastolic < 60 || r.diastolic > 90) },
+    { key: 'prp.flag_systolic', check: r => r.systolic != null && (r.systolic < 90 || r.systolic > 140) },
+    { key: 'prp.flag_diastolic', check: r => r.diastolic != null && (r.diastolic < 60 || r.diastolic > 90) },
   ],
   glucose: [
-    { label: 'Glicose fora do intervalo típico em jejum — rever manualmente', check: r => r.value != null && (r.value < 70 || r.value > 125) },
+    { key: 'prp.flag_glucose', check: r => r.value != null && (r.value < 70 || r.value > 125) },
   ],
   temperature: [
-    { label: 'Temperatura fora do intervalo típico — rever manualmente', check: r => r.value != null && (r.value < 36.0 || r.value > 37.5) },
+    { key: 'prp.flag_temp', check: r => r.value != null && (r.value < 36.0 || r.value > 37.5) },
   ],
   oxygen_saturation: [
-    { label: 'Saturação abaixo do típico — rever manualmente', check: r => r.value != null && r.value < 95 },
+    { key: 'prp.flag_o2', check: r => r.value != null && r.value < 95 },
   ],
   weight: [],
   heart_rate: [
-    { label: 'Frequência cardíaca fora do intervalo típico — rever manualmente', check: r => r.value != null && (r.value < 50 || r.value > 100) },
+    { key: 'prp.flag_hr', check: r => r.value != null && (r.value < 50 || r.value > 100) },
   ],
 };
 
-function getFlags(r: DeviceReading): string[] {
+/** Returns matching range-rule translation keys for a reading. */
+function getFlagKeys(r: DeviceReading): string[] {
   return (RANGE_RULES[r.reading_type] ?? [])
     .filter(rule => rule.check(r))
-    .map(rule => rule.label);
+    .map(rule => rule.key);
 }
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
-const TYPE_META: Record<ReadingType, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  blood_pressure:    { label: 'Pressão Arterial',      icon: Heart,          color: '#ef4444', bg: 'rgba(239,68,68,0.1)'   },
-  glucose:           { label: 'Glicose',               icon: Droplets,       color: '#f59e0b', bg: 'rgba(245,158,11,0.1)'  },
-  temperature:       { label: 'Temperatura',           icon: ThermometerSun, color: '#f97316', bg: 'rgba(249,115,22,0.1)'  },
-  oxygen_saturation: { label: 'Saturação O₂',          icon: Wind,           color: '#3b82f6', bg: 'rgba(59,130,246,0.1)'  },
-  weight:            { label: 'Peso',                  icon: Weight,         color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
-  heart_rate:        { label: 'Freq. Cardíaca',        icon: HeartPulse,     color: '#ec4899', bg: 'rgba(236,72,153,0.1)'  },
+const TYPE_META: Record<ReadingType, { labelKey: string; icon: React.ElementType; color: string; bg: string }> = {
+  blood_pressure:    { labelKey: 'prp.type_bp',      icon: Heart,          color: '#ef4444', bg: 'rgba(239,68,68,0.1)'   },
+  glucose:           { labelKey: 'prp.type_glucose', icon: Droplets,       color: '#f59e0b', bg: 'rgba(245,158,11,0.1)'  },
+  temperature:       { labelKey: 'prp.type_temp',    icon: ThermometerSun, color: '#f97316', bg: 'rgba(249,115,22,0.1)'  },
+  oxygen_saturation: { labelKey: 'prp.type_o2',      icon: Wind,           color: '#3b82f6', bg: 'rgba(59,130,246,0.1)'  },
+  weight:            { labelKey: 'prp.type_weight',  icon: Weight,         color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
+  heart_rate:        { labelKey: 'prp.type_hr',      icon: HeartPulse,     color: '#ec4899', bg: 'rgba(236,72,153,0.1)'  },
 };
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -97,8 +102,8 @@ function fmtValue(r: DeviceReading): string {
   return r.value != null ? `${r.value} ${r.unit ?? ''}`.trim() : '—';
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleString('pt-PT', {
+function fmtDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(locale, {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -106,10 +111,10 @@ function fmtDate(iso: string) {
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
 
-function SummaryCard({ type, reading }: { type: ReadingType; reading: DeviceReading | undefined }) {
+function SummaryCard({ type, reading, t, locale }: { type: ReadingType; reading: DeviceReading | undefined; t: TFn; locale: string }) {
   const meta = TYPE_META[type];
   const Icon = meta.icon;
-  const flags = reading ? getFlags(reading) : [];
+  const flags = reading ? getFlagKeys(reading).map(t) : [];
   const hasFlag = flags.length > 0;
 
   return (
@@ -122,14 +127,14 @@ function SummaryCard({ type, reading }: { type: ReadingType; reading: DeviceRead
         <span style={{ width: 28, height: 28, borderRadius: '8px', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Icon size={14} style={{ color: meta.color }} />
         </span>
-        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{meta.label}</span>
+        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t(meta.labelKey)}</span>
         {hasFlag && <span title={flags[0]} style={{ marginLeft: 'auto', lineHeight: 0 }}><AlertTriangle size={13} style={{ color: '#f97316' }} /></span>}
       </div>
       <div style={{ fontSize: '1.1rem', fontWeight: 800, color: hasFlag ? '#dc2626' : 'var(--text-primary)', lineHeight: 1 }}>
-        {reading ? fmtValue(reading) : <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--text-muted)' }}>Sem dados</span>}
+        {reading ? fmtValue(reading) : <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--text-muted)' }}>{t('prp.no_data')}</span>}
       </div>
       {reading && (
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{fmtDate(reading.measured_at)}</div>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{fmtDate(reading.measured_at, locale)}</div>
       )}
       {hasFlag && (
         <div style={{ fontSize: '0.68rem', color: '#d97706', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 6, padding: '0.2rem 0.4rem', marginTop: '0.1rem', lineHeight: 1.4 }}>
@@ -153,6 +158,8 @@ const ALL_TYPES: ReadingType[] = [
 ];
 
 export default function PatientReadingsPanel({ patientId, patientName }: Props) {
+  const { t, lang } = useT();
+  const locale = LOCALES[lang] || 'pt-PT';
   const [readings, setReadings] = useState<DeviceReading[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -165,7 +172,7 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
     setError('');
     api.get<ReadingListOut>(`/api/v1/readings/patient/${patientId}?limit=50`)
       .then(r => { setReadings(r.data.readings); setTotal(r.data.total); })
-      .catch(() => setError('Não foi possível carregar as medições.'))
+      .catch(() => setError(t('prp.readings_error')))
       .finally(() => setLoading(false));
 
     setMedsLoading(true);
@@ -179,10 +186,10 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
 
   // Latest reading per type
   const latest = Object.fromEntries(
-    ALL_TYPES.map(t => [t, readings.find(r => r.reading_type === t)])
+    ALL_TYPES.map(rt => [rt, readings.find(r => r.reading_type === rt)])
   ) as Record<ReadingType, DeviceReading | undefined>;
 
-  const allFlags = readings.flatMap(r => getFlags(r).map(f => ({ type: r.reading_type, flag: f, date: r.measured_at })));
+  const allFlags = readings.flatMap(r => getFlagKeys(r).map(fk => ({ type: r.reading_type, flag: t(fk), date: r.measured_at })));
 
   return (
     <div>
@@ -191,22 +198,22 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Activity size={16} style={{ color: 'var(--brand-primary)' }} />
           <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
-            Medições do Paciente{patientName ? ` — ${patientName}` : ''}
+            {t('prp.heading')}{patientName ? ` — ${patientName}` : ''}
           </span>
           {total > 0 && (
             <span style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem', borderRadius: 999, background: 'var(--brand-light)', color: 'var(--brand-primary)', fontWeight: 700 }}>
-              {total} total
+              {total} {t('prp.total')}
             </span>
           )}
         </div>
         <button onClick={load} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', padding: '0.25rem' }}>
-          <RefreshCw size={12} /> Actualizar
+          <RefreshCw size={12} /> {t('common.refresh')}
         </button>
       </div>
 
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>
-          <Loader2 size={16} className="spin" /> A carregar medições…
+          <Loader2 size={16} className="spin" /> {t('prp.loading_readings')}
         </div>
       ) : error ? (
         <div style={{ color: '#dc2626', fontSize: '0.85rem', padding: '0.75rem', background: 'rgba(239,68,68,0.06)', borderRadius: 8 }}>
@@ -215,7 +222,7 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
       ) : readings.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
           <Activity size={24} style={{ color: 'var(--border)', marginBottom: '0.5rem', display: 'block', margin: '0 auto 0.5rem' }} />
-          Este paciente não tem medições registadas.
+          {t('prp.no_readings')}
         </div>
       ) : (
         <>
@@ -223,11 +230,11 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
           {allFlags.length > 0 && (
             <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 10, padding: '0.75rem 1rem', marginBottom: '1rem' }}>
               <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#d97706', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <AlertTriangle size={13} /> {allFlags.length} valor{allFlags.length > 1 ? 'es' : ''} fora do intervalo típico — rever manualmente
+                <AlertTriangle size={13} /> {allFlags.length} {allFlags.length > 1 ? t('prp.flags_many') : t('prp.flags_one')}
               </div>
               <ul style={{ margin: 0, padding: '0 0 0 1rem', fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
                 {allFlags.slice(0, 5).map((f, i) => (
-                  <li key={i}>{TYPE_META[f.type].label}: {f.flag}</li>
+                  <li key={i}>{t(TYPE_META[f.type].labelKey)}: {f.flag}</li>
                 ))}
               </ul>
             </div>
@@ -235,40 +242,40 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
 
           {/* 6 latest summary cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.6rem', marginBottom: '1.25rem' }}>
-            {ALL_TYPES.map(t => <SummaryCard key={t} type={t} reading={latest[t]} />)}
+            {ALL_TYPES.map(rt => <SummaryCard key={rt} type={rt} reading={latest[rt]} t={t} locale={locale} />)}
           </div>
 
           {/* History table */}
           <div style={{ borderRadius: '10px', border: '1px solid var(--border)', overflow: 'hidden' }}>
             <div style={{ padding: '0.65rem 1rem', background: 'var(--surface-2, #f9fafb)', borderBottom: '1px solid var(--border)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Histórico de medições (últimas {readings.length})
+              {t('prp.history')} ({readings.length})
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                 <thead>
                   <tr style={{ background: 'var(--surface-2, #f9fafb)' }}>
-                    {['Tipo', 'Valor', 'Data', 'Dispositivo', 'Notas', ''].map(h => (
-                      <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>{h}</th>
+                    {[['type', t('prp.col_type')], ['value', t('prp.col_value')], ['date', t('prp.col_date')], ['device', t('prp.col_device')], ['notes', t('prp.col_notes')], ['sp', '']].map(([k, h]) => (
+                      <th key={k} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {readings.map((r, i) => {
                     const meta = TYPE_META[r.reading_type];
-                    const flags = getFlags(r);
+                    const flags = getFlagKeys(r).map(t);
                     return (
                       <tr key={r.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none', background: flags.length > 0 ? 'rgba(251,191,36,0.04)' : undefined }}>
                         <td style={{ padding: '0.6rem 0.75rem', whiteSpace: 'nowrap' }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
                             <meta.icon size={12} style={{ color: meta.color }} />
-                            {meta.label}
+                            {t(meta.labelKey)}
                           </span>
                         </td>
                         <td style={{ padding: '0.6rem 0.75rem', fontWeight: 700, whiteSpace: 'nowrap', color: flags.length > 0 ? '#dc2626' : 'var(--text-primary)' }}>
                           {fmtValue(r)}
                           {flags.length > 0 && <span title={flags[0]} style={{ lineHeight: 0 }}><AlertTriangle size={11} style={{ color: '#f97316', marginLeft: 4, verticalAlign: 'middle' }} /></span>}
                         </td>
-                        <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtDate(r.measured_at)}</td>
+                        <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtDate(r.measured_at, locale)}</td>
                         <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-muted)' }}>
                           {[r.device_brand, r.device_model].filter(Boolean).join(' ') || r.source || '—'}
                         </td>
@@ -292,19 +299,19 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
       <div style={{ marginTop: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
           <Pill size={15} style={{ color: '#ef4444' }} />
-          <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>Medicação actual</span>
+          <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{t('prp.meds_current')}</span>
           {medications.length > 0 && (
             <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.45rem', borderRadius: 999, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: 700 }}>
-              {medications.filter(m => m.is_current).length} actual
+              {medications.filter(m => m.is_current).length} {t('prp.meds_badge')}
             </span>
           )}
         </div>
         {medsLoading ? (
           <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Loader2 size={13} className="spin" /> A carregar medicamentos…
+            <Loader2 size={13} className="spin" /> {t('prp.loading_meds')}
           </div>
         ) : medications.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sem medicamentos registados.</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{t('prp.no_meds')}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {medications.map(med => (
@@ -318,7 +325,7 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                     {med.medication_name}
-                    {!med.is_current && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>(histórico)</span>}
+                    {!med.is_current && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>({t('prp.historic')})</span>}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
                     {med.dosage && <span style={{ marginRight: '0.65rem' }}>💊 {med.dosage}</span>}

@@ -1728,6 +1728,41 @@ const translations: Record<string, TranslationEntry> = {
   'dlive.none_title': { pt: 'Sem consultas hoje', en: 'No consultations today', fr: 'Aucune consultation aujourd’hui', es: 'Sin consultas hoy' },
   'dlive.none_desc': { pt: 'Não há teleconsultas agendadas para hoje.', en: 'There are no teleconsultations scheduled for today.', fr: 'Aucune téléconsultation n’est prévue aujourd’hui.', es: 'No hay teleconsultas programadas para hoy.' },
   'dlive.today': { pt: 'CONSULTAS DE HOJE', en: 'TODAY’S CONSULTATIONS', fr: 'CONSULTATIONS DU JOUR', es: 'CONSULTAS DE HOY' },
+
+  /* ═══════════════════════════════════════════════════════════
+     PATIENT READINGS PANEL (clinician view of vitals)
+     ═══════════════════════════════════════════════════════════ */
+  'prp.flag_systolic': { pt: 'Sistólica fora do intervalo típico — rever manualmente', en: 'Systolic outside the typical range — review manually', fr: 'Systolique hors de la plage typique — à vérifier manuellement', es: 'Sistólica fuera del rango típico — revisar manualmente' },
+  'prp.flag_diastolic': { pt: 'Diastólica fora do intervalo típico — rever manualmente', en: 'Diastolic outside the typical range — review manually', fr: 'Diastolique hors de la plage typique — à vérifier manuellement', es: 'Diastólica fuera del rango típico — revisar manualmente' },
+  'prp.flag_glucose': { pt: 'Glicose fora do intervalo típico em jejum — rever manualmente', en: 'Fasting glucose outside the typical range — review manually', fr: 'Glycémie à jeun hors de la plage typique — à vérifier manuellement', es: 'Glucosa en ayunas fuera del rango típico — revisar manualmente' },
+  'prp.flag_temp': { pt: 'Temperatura fora do intervalo típico — rever manualmente', en: 'Temperature outside the typical range — review manually', fr: 'Température hors de la plage typique — à vérifier manuellement', es: 'Temperatura fuera del rango típico — revisar manualmente' },
+  'prp.flag_o2': { pt: 'Saturação abaixo do típico — rever manualmente', en: 'Saturation below typical — review manually', fr: 'Saturation inférieure à la normale — à vérifier manuellement', es: 'Saturación por debajo de lo típico — revisar manualmente' },
+  'prp.flag_hr': { pt: 'Frequência cardíaca fora do intervalo típico — rever manualmente', en: 'Heart rate outside the typical range — review manually', fr: 'Fréquence cardiaque hors de la plage typique — à vérifier manuellement', es: 'Frecuencia cardíaca fuera del rango típico — revisar manualmente' },
+  'prp.type_bp': { pt: 'Pressão Arterial', en: 'Blood Pressure', fr: 'Tension artérielle', es: 'Presión arterial' },
+  'prp.type_glucose': { pt: 'Glicose', en: 'Glucose', fr: 'Glycémie', es: 'Glucosa' },
+  'prp.type_temp': { pt: 'Temperatura', en: 'Temperature', fr: 'Température', es: 'Temperatura' },
+  'prp.type_o2': { pt: 'Saturação O₂', en: 'O₂ Saturation', fr: 'Saturation O₂', es: 'Saturación O₂' },
+  'prp.type_weight': { pt: 'Peso', en: 'Weight', fr: 'Poids', es: 'Peso' },
+  'prp.type_hr': { pt: 'Freq. Cardíaca', en: 'Heart Rate', fr: 'Fréq. cardiaque', es: 'Frec. cardíaca' },
+  'prp.no_data': { pt: 'Sem dados', en: 'No data', fr: 'Aucune donnée', es: 'Sin datos' },
+  'prp.heading': { pt: 'Medições do Paciente', en: 'Patient Readings', fr: 'Mesures du patient', es: 'Mediciones del paciente' },
+  'prp.total': { pt: 'total', en: 'total', fr: 'total', es: 'total' },
+  'prp.loading_readings': { pt: 'A carregar medições…', en: 'Loading readings…', fr: 'Chargement des mesures…', es: 'Cargando mediciones…' },
+  'prp.readings_error': { pt: 'Não foi possível carregar as medições.', en: 'Could not load the readings.', fr: 'Impossible de charger les mesures.', es: 'No se pudieron cargar las mediciones.' },
+  'prp.no_readings': { pt: 'Este paciente não tem medições registadas.', en: 'This patient has no recorded readings.', fr: 'Ce patient n’a aucune mesure enregistrée.', es: 'Este paciente no tiene mediciones registradas.' },
+  'prp.flags_one': { pt: 'valor fora do intervalo típico — rever manualmente', en: 'value outside the typical range — review manually', fr: 'valeur hors de la plage typique — à vérifier manuellement', es: 'valor fuera del rango típico — revisar manualmente' },
+  'prp.flags_many': { pt: 'valores fora do intervalo típico — rever manualmente', en: 'values outside the typical range — review manually', fr: 'valeurs hors de la plage typique — à vérifier manuellement', es: 'valores fuera del rango típico — revisar manualmente' },
+  'prp.history': { pt: 'Histórico de medições', en: 'Readings history', fr: 'Historique des mesures', es: 'Historial de mediciones' },
+  'prp.col_type': { pt: 'Tipo', en: 'Type', fr: 'Type', es: 'Tipo' },
+  'prp.col_value': { pt: 'Valor', en: 'Value', fr: 'Valeur', es: 'Valor' },
+  'prp.col_date': { pt: 'Data', en: 'Date', fr: 'Date', es: 'Fecha' },
+  'prp.col_device': { pt: 'Dispositivo', en: 'Device', fr: 'Appareil', es: 'Dispositivo' },
+  'prp.col_notes': { pt: 'Notas', en: 'Notes', fr: 'Notes', es: 'Notas' },
+  'prp.meds_current': { pt: 'Medicação actual', en: 'Current medication', fr: 'Médication actuelle', es: 'Medicación actual' },
+  'prp.meds_badge': { pt: 'actual', en: 'current', fr: 'actuels', es: 'actual' },
+  'prp.loading_meds': { pt: 'A carregar medicamentos…', en: 'Loading medications…', fr: 'Chargement des médicaments…', es: 'Cargando medicamentos…' },
+  'prp.no_meds': { pt: 'Sem medicamentos registados.', en: 'No medications recorded.', fr: 'Aucun médicament enregistré.', es: 'Sin medicamentos registrados.' },
+  'prp.historic': { pt: 'histórico', en: 'past', fr: 'historique', es: 'histórico' },
 };
 
 export default translations;
