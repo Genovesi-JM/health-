@@ -2170,6 +2170,43 @@ const translations: Record<string, TranslationEntry> = {
   'emp.plan_ent_f5': { pt: 'Gestor dedicado', en: 'Dedicated manager', fr: 'Gestionnaire dédié', es: 'Gestor dedicado' },
   'emp.final_title': { pt: 'Pronto para avançar?', en: 'Ready to move forward?', fr: 'Prêt à avancer ?', es: '¿Listo para avanzar?' },
   'emp.final_desc': { pt: 'Fale connosco. Preparamos uma proposta personalizada para o tamanho e necessidades da sua empresa.', en: 'Talk to us. We’ll prepare a proposal tailored to your company’s size and needs.', fr: 'Contactez-nous. Nous préparons une proposition adaptée à la taille et aux besoins de votre entreprise.', es: 'Hable con nosotros. Preparamos una propuesta personalizada según el tamaño y las necesidades de su empresa.' },
+  'spec.nutricao': { pt: 'Nutrição', en: 'Nutrition', fr: 'Nutrition', es: 'Nutrición' },
+
+  /* ═══════════════════════════════════════════════════════════
+     TELECONSULTA PAGE (public)
+     ═══════════════════════════════════════════════════════════ */
+  'tele.tag': { pt: 'Teleconsulta', en: 'Teleconsultation', fr: 'Téléconsultation', es: 'Teleconsulta' },
+  'tele.title': { pt: 'Médico em casa. Agora mesmo.', en: 'A doctor at home. Right now.', fr: 'Un médecin chez vous. Tout de suite.', es: 'Un médico en casa. Ahora mismo.' },
+  'tele.subtitle': { pt: 'Consulta médica por vídeo com especialistas verificados — sem deslocação, sem espera, com toda a segurança.', en: 'Video medical consultations with verified specialists — no travel, no waiting, fully secure.', fr: 'Consultation médicale par vidéo avec des spécialistes vérifiés — sans déplacement, sans attente, en toute sécurité.', es: 'Consulta médica por vídeo con especialistas verificados — sin desplazamientos, sin esperas, con total seguridad.' },
+  'tele.cta_start': { pt: 'Iniciar Teleconsulta', en: 'Start Teleconsultation', fr: 'Démarrer la téléconsultation', es: 'Iniciar teleconsulta' },
+  'tele.cta_specialties': { pt: 'Ver especialidades', en: 'View specialties', fr: 'Voir les spécialités', es: 'Ver especialidades' },
+  'tele.how_tag': { pt: 'Como funciona', en: 'How it works', fr: 'Comment ça marche', es: 'Cómo funciona' },
+  'tele.how_title': { pt: 'Simples, rápido e seguro.', en: 'Simple, fast, and secure.', fr: 'Simple, rapide et sécurisé.', es: 'Simple, rápido y seguro.' },
+  'tele.s1_title': { pt: 'Selecciona a especialidade', en: 'Choose the specialty', fr: 'Choisissez la spécialité', es: 'Seleccione la especialidad' },
+  'tele.s1_desc': { pt: 'Clínica geral, psicologia, pediatria e muitas mais disponíveis por videochamada.', en: 'General practice, psychology, paediatrics, and many more available by video call.', fr: 'Médecine générale, psychologie, pédiatrie et bien plus par appel vidéo.', es: 'Medicina general, psicología, pediatría y muchas más por videollamada.' },
+  'tele.s2_title': { pt: 'Confirma a marcação', en: 'Confirm the booking', fr: 'Confirmez le rendez-vous', es: 'Confirme la cita' },
+  'tele.s2_desc': { pt: 'Escolha o horário e o médico disponível. Confirmação imediata por email.', en: 'Pick an available time and doctor. Immediate confirmation by email.', fr: 'Choisissez l’horaire et le médecin disponible. Confirmation immédiate par e-mail.', es: 'Elija el horario y el médico disponible. Confirmación inmediata por correo.' },
+  'tele.s3_title': { pt: 'Entra na consulta', en: 'Join the consultation', fr: 'Rejoignez la consultation', es: 'Entre en la consulta' },
+  'tele.s3_desc': { pt: 'Link seguro enviado por email. Consulta por vídeo, sem instalação de apps.', en: 'Secure link sent by email. Video consultation, no app installation.', fr: 'Lien sécurisé envoyé par e-mail. Consultation vidéo, sans installation d’application.', es: 'Enlace seguro enviado por correo. Consulta por vídeo, sin instalar aplicaciones.' },
+  'tele.s4_title': { pt: 'Recebe seguimento', en: 'Get follow-up', fr: 'Recevez un suivi', es: 'Reciba seguimiento' },
+  'tele.s4_desc': { pt: 'Receita digital, relatório e próximos passos disponíveis no portal.', en: 'Digital prescription, report, and next steps available in the portal.', fr: 'Ordonnance numérique, rapport et étapes suivantes disponibles sur le portail.', es: 'Receta digital, informe y próximos pasos disponibles en el portal.' },
+  'tele.spec_tag': { pt: 'Especialidades disponíveis', en: 'Available specialties', fr: 'Spécialités disponibles', es: 'Especialidades disponibles' },
+  'tele.spec_title': { pt: 'Teleconsulta para as principais especialidades.', en: 'Teleconsultation for the main specialties.', fr: 'Téléconsultation pour les principales spécialités.', es: 'Teleconsulta para las principales especialidades.' },
+  'tele.adv_tag': { pt: 'Vantagens', en: 'Benefits', fr: 'Avantages', es: 'Ventajas' },
+  'tele.adv_title': { pt: 'Porque escolher teleconsulta.', en: 'Why choose teleconsultation.', fr: 'Pourquoi choisir la téléconsultation.', es: 'Por qué elegir la teleconsulta.' },
+  'tele.b1_label': { pt: 'Consulta em minutos', en: 'Consultation in minutes', fr: 'Consultation en quelques minutes', es: 'Consulta en minutos' },
+  'tele.b1_desc': { pt: 'Sem filas. Sem espera. Médico disponível quando precisar.', en: 'No queues. No waiting. A doctor available when you need one.', fr: 'Pas de file d’attente. Pas d’attente. Un médecin disponible quand vous en avez besoin.', es: 'Sin colas. Sin esperas. Un médico disponible cuando lo necesite.' },
+  'tele.b2_label': { pt: 'Totalmente seguro', en: 'Fully secure', fr: 'Entièrement sécurisé', es: 'Totalmente seguro' },
+  'tele.b2_desc': { pt: 'Videoconferência encriptada. Dados protegidos.', en: 'Encrypted video calls. Protected data.', fr: 'Visioconférence chiffrée. Données protégées.', es: 'Videoconferencia cifrada. Datos protegidos.' },
+  'tele.b3_label': { pt: 'Qualquer dispositivo', en: 'Any device', fr: 'Tout appareil', es: 'Cualquier dispositivo' },
+  'tele.b3_desc': { pt: 'Computador, tablet ou telemóvel. Sem instalação.', en: 'Computer, tablet, or phone. No installation.', fr: 'Ordinateur, tablette ou téléphone. Sans installation.', es: 'Ordenador, tableta o móvil. Sin instalación.' },
+  'tele.b4_label': { pt: 'Historial integrado', en: 'Integrated history', fr: 'Historique intégré', es: 'Historial integrado' },
+  'tele.b4_desc': { pt: 'Notas e receitas guardadas automaticamente no portal.', en: 'Notes and prescriptions saved automatically in the portal.', fr: 'Notes et ordonnances enregistrées automatiquement sur le portail.', es: 'Notas y recetas guardadas automáticamente en el portal.' },
+  'tele.cta_tag': { pt: 'Pronto para começar?', en: 'Ready to start?', fr: 'Prêt à commencer ?', es: '¿Listo para empezar?' },
+  'tele.final_title': { pt: 'A sua próxima consulta é agora.', en: 'Your next consultation is now.', fr: 'Votre prochaine consultation, c’est maintenant.', es: 'Su próxima consulta es ahora.' },
+  'tele.final_desc': { pt: 'Crie conta gratuita e marque a sua primeira teleconsulta em menos de 2 minutos.', en: 'Create a free account and book your first teleconsultation in under 2 minutes.', fr: 'Créez un compte gratuit et réservez votre première téléconsultation en moins de 2 minutes.', es: 'Cree una cuenta gratuita y reserve su primera teleconsulta en menos de 2 minutos.' },
+  'tele.final_cta1': { pt: 'Criar conta gratuita', en: 'Create a free account', fr: 'Créer un compte gratuit', es: 'Crear cuenta gratuita' },
+  'tele.final_cta2': { pt: 'Entrar no portal', en: 'Sign in to the portal', fr: 'Accéder au portail', es: 'Entrar al portal' },
 };
 
 export default translations;
