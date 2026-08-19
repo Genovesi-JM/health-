@@ -6,21 +6,35 @@ import {
   Stethoscope, User, Mail, Phone, MapPin, BookOpen,
   CheckCircle2, AlertCircle, Loader2, Building2, FileText,
 } from 'lucide-react';
+import { useT } from '../i18n/LanguageContext';
 
-const SPECIALTIES = [
-  'Clínica Geral', 'Pediatria', 'Cardiologia', 'Ginecologia',
-  'Dermatologia', 'Ortopedia', 'Oftalmologia', 'Neurologia',
-  'Psiquiatria', 'Psicologia', 'Fisioterapia', 'Medicina Dentária',
-  'Medicina Interna', 'Urgência / Emergência', 'Outra',
+// value = canonical PT label sent to the backend; key = translation for display.
+const SPECIALTIES: Array<{ value: string; key: string }> = [
+  { value: 'Clínica Geral', key: 'spec.clinica_geral' },
+  { value: 'Pediatria', key: 'spec.pediatria' },
+  { value: 'Cardiologia', key: 'spec.cardiologia' },
+  { value: 'Ginecologia', key: 'spec.ginecologia' },
+  { value: 'Dermatologia', key: 'spec.dermatologia' },
+  { value: 'Ortopedia', key: 'spec.ortopedia' },
+  { value: 'Oftalmologia', key: 'spec.oftalmologia' },
+  { value: 'Neurologia', key: 'spec.neurologia' },
+  { value: 'Psiquiatria', key: 'spec.psiquiatria' },
+  { value: 'Psicologia', key: 'spec.psicologia' },
+  { value: 'Fisioterapia', key: 'spec.fisioterapia' },
+  { value: 'Medicina Dentária', key: 'spec.odontologia' },
+  { value: 'Medicina Interna', key: 'spec.medicina_interna' },
+  { value: 'Urgência / Emergência', key: 'spec.urgencia' },
+  { value: 'Outra', key: 'spec.outra' },
 ];
 
 const TYPES = [
-  { value: 'medico',       label: '👨‍⚕️ Médico individual / independente' },
-  { value: 'especialista', label: '🔬 Especialista' },
-  { value: 'clinica',      label: '🏥 Clínica ou centro de saúde' },
+  { value: 'medico',       key: 'dapply.type_medico' },
+  { value: 'especialista', key: 'dapply.type_especialista' },
+  { value: 'clinica',      key: 'dapply.type_clinica' },
 ];
 
 export default function DoctorApplyPage() {
+  const { t } = useT();
   const [type, setType] = useState('medico');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -53,7 +67,7 @@ export default function DoctorApplyPage() {
       await api.post('/api/v1/doctors/apply', body);
       setDone(true);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Não foi possível enviar a candidatura. Tente novamente ou contacte parcerias@kaya.ao.');
+      setError(err.response?.data?.detail || t('dapply.error'));
     } finally {
       setLoading(false);
     }
@@ -78,14 +92,14 @@ export default function DoctorApplyPage() {
               <CheckCircle2 size={32} color="#0d9488" />
             </div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem' }}>
-              Candidatura recebida! 🎉
+              {t('dapply.received_title')}
             </h2>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-              Obrigado pelo teu interesse em juntar-te à KAYA.<br />
-              A nossa equipa irá analisar a tua candidatura e entrar em contacto em <strong>24–48 horas</strong>.
+              {t('dapply.received_p1')}<br />
+              {t('dapply.received_p2_pre')} <strong>{t('dapply.hours')}</strong>{t('dapply.received_p2_post')}
             </p>
             <a href="/" className="btn btn-primary" style={{ display: 'inline-flex', gap: '0.4rem' }}>
-              Voltar ao início
+              {t('dapply.back_home')}
             </a>
           </div>
         </div>
@@ -105,9 +119,9 @@ export default function DoctorApplyPage() {
           <div className="landing-hero-icon" style={{ background: 'rgba(255,255,255,0.15)' }}>
             <Stethoscope size={28} color="#fff" />
           </div>
-          <h1 className="landing-hero-title">Junta-te à KAYA</h1>
+          <h1 className="landing-hero-title">{t('dapply.hero_title')}</h1>
           <p className="landing-hero-subtitle" style={{ maxWidth: '560px' }}>
-            Médicos, especialistas e clínicas — candidata-te para fazer parte da nossa rede de saúde digital.
+            {t('dapply.hero_subtitle')}
           </p>
         </div>
       </section>
@@ -117,26 +131,26 @@ export default function DoctorApplyPage() {
 
         {/* Type selector */}
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-          {TYPES.map(t => (
+          {TYPES.map(opt => (
             <button
-              key={t.value}
+              key={opt.value}
               type="button"
-              onClick={() => setType(t.value)}
+              onClick={() => setType(opt.value)}
               style={{
                 flex: 1, minWidth: 160,
                 padding: '0.75rem 1rem',
                 borderRadius: 12,
-                border: `2px solid ${type === t.value ? 'var(--accent-teal)' : 'rgba(0,0,0,0.1)'}`,
-                background: type === t.value ? 'rgba(13,148,136,0.07)' : '#fff',
-                fontWeight: type === t.value ? 700 : 500,
-                color: type === t.value ? 'var(--accent-teal)' : 'var(--text-secondary)',
+                border: `2px solid ${type === opt.value ? 'var(--accent-teal)' : 'rgba(0,0,0,0.1)'}`,
+                background: type === opt.value ? 'rgba(13,148,136,0.07)' : '#fff',
+                fontWeight: type === opt.value ? 700 : 500,
+                color: type === opt.value ? 'var(--accent-teal)' : 'var(--text-secondary)',
                 cursor: 'pointer',
                 fontSize: '0.85rem',
                 transition: 'all 0.15s',
                 textAlign: 'left',
               }}
             >
-              {t.label}
+              {t(opt.key)}
             </button>
           ))}
         </div>
@@ -147,7 +161,7 @@ export default function DoctorApplyPage() {
           <div className="form-group">
             <label className="form-label">
               <User size={14} style={{ marginRight: 4 }} />
-              {type === 'clinica' ? 'Nome do responsável' : 'Nome completo'}
+              {type === 'clinica' ? t('dapply.name_responsible') : t('dapply.name_full')}
             </label>
             <input className="form-input" required value={name}
               onChange={e => setName(e.target.value)}
@@ -158,7 +172,7 @@ export default function DoctorApplyPage() {
           {type === 'clinica' && (
             <div className="form-group">
               <label className="form-label">
-                <Building2 size={14} style={{ marginRight: 4 }} /> Nome da clínica / instituição
+                <Building2 size={14} style={{ marginRight: 4 }} /> {t('dapply.org_name')}
               </label>
               <input className="form-input" required value={orgName}
                 onChange={e => setOrgName(e.target.value)}
@@ -170,12 +184,12 @@ export default function DoctorApplyPage() {
           {type !== 'clinica' && (
             <div className="form-group">
               <label className="form-label">
-                <BookOpen size={14} style={{ marginRight: 4 }} /> Especialidade
+                <BookOpen size={14} style={{ marginRight: 4 }} /> {t('dapply.specialty')}
               </label>
               <select className="form-input" required value={specialty}
                 onChange={e => setSpecialty(e.target.value)}>
-                <option value="">Selecionar especialidade…</option>
-                {SPECIALTIES.map(s => <option key={s} value={s}>{s}</option>)}
+                <option value="">{t('dapply.select_specialty')}</option>
+                {SPECIALTIES.map(s => <option key={s.value} value={s.value}>{t(s.key)}</option>)}
               </select>
             </div>
           )}
@@ -183,7 +197,7 @@ export default function DoctorApplyPage() {
           {/* Email */}
           <div className="form-group">
             <label className="form-label">
-              <Mail size={14} style={{ marginRight: 4 }} /> Email de contacto
+              <Mail size={14} style={{ marginRight: 4 }} /> {t('dapply.email')}
             </label>
             <input className="form-input" type="email" required value={email}
               onChange={e => setEmail(e.target.value)}
@@ -193,7 +207,7 @@ export default function DoctorApplyPage() {
           {/* Phone */}
           <div className="form-group">
             <label className="form-label">
-              <Phone size={14} style={{ marginRight: 4 }} /> Telefone / WhatsApp
+              <Phone size={14} style={{ marginRight: 4 }} /> {t('dapply.phone')}
             </label>
             <input className="form-input" type="tel" required value={phone}
               onChange={e => setPhone(e.target.value)}
@@ -203,7 +217,7 @@ export default function DoctorApplyPage() {
           {/* Location */}
           <div className="form-group">
             <label className="form-label">
-              <MapPin size={14} style={{ marginRight: 4 }} /> Localização (cidade / província)
+              <MapPin size={14} style={{ marginRight: 4 }} /> {t('dapply.location')}
             </label>
             <input className="form-input" required value={location}
               onChange={e => setLocation(e.target.value)}
@@ -213,19 +227,19 @@ export default function DoctorApplyPage() {
           {/* License number */}
           <div className="form-group">
             <label className="form-label">
-              <FileText size={14} style={{ marginRight: 4 }} /> Número de cédula / licença profissional
+              <FileText size={14} style={{ marginRight: 4 }} /> {t('dapply.license')}
             </label>
             <input className="form-input" value={license}
               onChange={e => setLicense(e.target.value)}
-              placeholder="Opcional mas recomendado" />
+              placeholder={t('dapply.license_ph')} />
           </div>
 
           {/* Message */}
           <div className="form-group">
-            <label className="form-label">Mensagem (opcional)</label>
+            <label className="form-label">{t('dapply.message')}</label>
             <textarea className="form-input" rows={3} value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="Descreve brevemente a tua experiência e motivação…"
+              placeholder={t('dapply.message_ph')}
               style={{ resize: 'vertical' }} />
           </div>
 
@@ -241,13 +255,13 @@ export default function DoctorApplyPage() {
             disabled={loading}
             style={{ width: '100%', justifyContent: 'center', gap: '0.5rem' }}>
             {loading
-              ? <><Loader2 size={16} className="spin" /> A enviar…</>
-              : <><Stethoscope size={16} /> Enviar candidatura</>
+              ? <><Loader2 size={16} className="spin" /> {t('dapply.sending')}</>
+              : <><Stethoscope size={16} /> {t('dapply.submit')}</>
             }
           </button>
 
           <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Após análise, receberás um convite por email para ativar a tua conta KAYA.
+            {t('dapply.footer')}
           </p>
         </form>
       </section>

@@ -1885,6 +1885,37 @@ const translations: Record<string, TranslationEntry> = {
   'cgate.accept_continue': { pt: 'Aceitar e Continuar', en: 'Accept and Continue', fr: 'Accepter et continuer', es: 'Aceptar y continuar' },
   'cgate.already_tag': { pt: '(já aceite)', en: '(already accepted)', fr: '(déjà accepté)', es: '(ya aceptado)' },
   'cgate.footer_pre': { pt: 'Estes consentimentos são registados com o seu endereço IP e data/hora, conforme exigido para fins de auditoria. Pode rever os consentimentos aceites a qualquer momento na secção', en: 'These consents are recorded with your IP address and timestamp, as required for audit purposes. You can review accepted consents at any time in the', fr: 'Ces consentements sont enregistrés avec votre adresse IP et l’horodatage, comme l’exige l’audit. Vous pouvez consulter les consentements acceptés à tout moment dans la section', es: 'Estos consentimientos se registran con su dirección IP y fecha/hora, según se exige para fines de auditoría. Puede revisar los consentimientos aceptados en cualquier momento en la sección' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR APPLICATION (public apply form)
+     ═══════════════════════════════════════════════════════════ */
+  'dapply.received_title': { pt: 'Candidatura recebida! 🎉', en: 'Application received! 🎉', fr: 'Candidature reçue ! 🎉', es: '¡Solicitud recibida! 🎉' },
+  'dapply.received_p1': { pt: 'Obrigado pelo teu interesse em juntar-te à KAYA.', en: 'Thank you for your interest in joining KAYA.', fr: 'Merci de votre intérêt à rejoindre KAYA.', es: 'Gracias por tu interés en unirte a KAYA.' },
+  'dapply.received_p2_pre': { pt: 'A nossa equipa irá analisar a tua candidatura e entrar em contacto em', en: 'Our team will review your application and get in touch within', fr: 'Notre équipe examinera votre candidature et vous contactera sous', es: 'Nuestro equipo revisará tu solicitud y se pondrá en contacto en' },
+  'dapply.received_p2_post': { pt: '.', en: '.', fr: '.', es: '.' },
+  'dapply.hours': { pt: '24–48 horas', en: '24–48 hours', fr: '24–48 heures', es: '24–48 horas' },
+  'dapply.back_home': { pt: 'Voltar ao início', en: 'Back to home', fr: 'Retour à l’accueil', es: 'Volver al inicio' },
+  'dapply.hero_title': { pt: 'Junta-te à KAYA', en: 'Join KAYA', fr: 'Rejoignez KAYA', es: 'Únete a KAYA' },
+  'dapply.hero_subtitle': { pt: 'Médicos, especialistas e clínicas — candidata-te para fazer parte da nossa rede de saúde digital.', en: 'Doctors, specialists and clinics — apply to join our digital health network.', fr: 'Médecins, spécialistes et cliniques — postulez pour rejoindre notre réseau de santé numérique.', es: 'Médicos, especialistas y clínicas — solicita formar parte de nuestra red de salud digital.' },
+  'dapply.type_medico': { pt: '👨‍⚕️ Médico individual / independente', en: '👨‍⚕️ Individual / independent doctor', fr: '👨‍⚕️ Médecin individuel / indépendant', es: '👨‍⚕️ Médico individual / independiente' },
+  'dapply.type_especialista': { pt: '🔬 Especialista', en: '🔬 Specialist', fr: '🔬 Spécialiste', es: '🔬 Especialista' },
+  'dapply.type_clinica': { pt: '🏥 Clínica ou centro de saúde', en: '🏥 Clinic or health centre', fr: '🏥 Clinique ou centre de santé', es: '🏥 Clínica o centro de salud' },
+  'dapply.name_responsible': { pt: 'Nome do responsável', en: 'Responsible person’s name', fr: 'Nom du responsable', es: 'Nombre del responsable' },
+  'dapply.name_full': { pt: 'Nome completo', en: 'Full name', fr: 'Nom complet', es: 'Nombre completo' },
+  'dapply.org_name': { pt: 'Nome da clínica / instituição', en: 'Clinic / institution name', fr: 'Nom de la clinique / institution', es: 'Nombre de la clínica / institución' },
+  'dapply.specialty': { pt: 'Especialidade', en: 'Specialty', fr: 'Spécialité', es: 'Especialidad' },
+  'dapply.select_specialty': { pt: 'Selecionar especialidade…', en: 'Select a specialty…', fr: 'Sélectionner une spécialité…', es: 'Seleccionar especialidad…' },
+  'dapply.email': { pt: 'Email de contacto', en: 'Contact email', fr: 'E-mail de contact', es: 'Correo de contacto' },
+  'dapply.phone': { pt: 'Telefone / WhatsApp', en: 'Phone / WhatsApp', fr: 'Téléphone / WhatsApp', es: 'Teléfono / WhatsApp' },
+  'dapply.location': { pt: 'Localização (cidade / província)', en: 'Location (city / province)', fr: 'Localisation (ville / province)', es: 'Ubicación (ciudad / provincia)' },
+  'dapply.license': { pt: 'Número de cédula / licença profissional', en: 'Licence / professional registration number', fr: 'Numéro de licence / d’enregistrement professionnel', es: 'Número de cédula / licencia profesional' },
+  'dapply.license_ph': { pt: 'Opcional mas recomendado', en: 'Optional but recommended', fr: 'Facultatif mais recommandé', es: 'Opcional pero recomendado' },
+  'dapply.message': { pt: 'Mensagem (opcional)', en: 'Message (optional)', fr: 'Message (facultatif)', es: 'Mensaje (opcional)' },
+  'dapply.message_ph': { pt: 'Descreve brevemente a tua experiência e motivação…', en: 'Briefly describe your experience and motivation…', fr: 'Décrivez brièvement votre expérience et votre motivation…', es: 'Describe brevemente tu experiencia y motivación…' },
+  'dapply.error': { pt: 'Não foi possível enviar a candidatura. Tente novamente ou contacte parcerias@kaya.ao.', en: 'Could not send the application. Please try again or contact parcerias@kaya.ao.', fr: 'Impossible d’envoyer la candidature. Réessayez ou contactez parcerias@kaya.ao.', es: 'No se pudo enviar la solicitud. Inténtelo de nuevo o contacte a parcerias@kaya.ao.' },
+  'dapply.sending': { pt: 'A enviar…', en: 'Sending…', fr: 'Envoi…', es: 'Enviando…' },
+  'dapply.submit': { pt: 'Enviar candidatura', en: 'Submit application', fr: 'Envoyer la candidature', es: 'Enviar solicitud' },
+  'dapply.footer': { pt: 'Após análise, receberás um convite por email para ativar a tua conta KAYA.', en: 'After review, you’ll receive an email invitation to activate your KAYA account.', fr: 'Après examen, vous recevrez une invitation par e-mail pour activer votre compte KAYA.', es: 'Tras la revisión, recibirás una invitación por correo para activar tu cuenta KAYA.' },
 };
 
 export default translations;
