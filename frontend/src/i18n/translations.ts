@@ -2317,6 +2317,23 @@ const translations: Record<string, TranslationEntry> = {
   'dlist.no_slots': { pt: 'Sem vagas', en: 'No availability', fr: 'Complet', es: 'Sin plazas' },
   'dlist.price_from': { pt: 'A partir de', en: 'From', fr: 'À partir de', es: 'Desde' },
   'dlist.price_upto': { pt: 'Até', en: 'Up to', fr: 'Jusqu’à', es: 'Hasta' },
+
+  /* ═══════════════════════════════════════════════════════════
+     PUBLIC DOCTOR PROFILE
+     ═══════════════════════════════════════════════════════════ */
+  'pubdoc.not_found': { pt: 'Médico não encontrado.', en: 'Doctor not found.', fr: 'Médecin introuvable.', es: 'Médico no encontrado.' },
+  'pubdoc.see_all': { pt: 'Ver todos os médicos', en: 'See all doctors', fr: 'Voir tous les médecins', es: 'Ver todos los médicos' },
+  'pubdoc.all_doctors': { pt: 'Todos os médicos', en: 'All doctors', fr: 'Tous les médecins', es: 'Todos los médicos' },
+  'pubdoc.verified': { pt: 'Verificado', en: 'Verified', fr: 'Vérifié', es: 'Verificado' },
+  'pubdoc.years_exp': { pt: 'anos de experiência', en: 'years of experience', fr: 'ans d’expérience', es: 'años de experiencia' },
+  'pubdoc.accepts': { pt: 'Aceita pacientes', en: 'Accepting patients', fr: 'Accepte des patients', es: 'Acepta pacientes' },
+  'pubdoc.about': { pt: 'Sobre mim', en: 'About me', fr: 'À propos', es: 'Sobre mí' },
+  'pubdoc.education': { pt: '🎓 Formação', en: '🎓 Education', fr: '🎓 Formation', es: '🎓 Formación' },
+  'pubdoc.consult_types': { pt: 'Tipos de consulta', en: 'Consultation types', fr: 'Types de consultation', es: 'Tipos de consulta' },
+  'pubdoc.languages': { pt: 'Idiomas', en: 'Languages', fr: 'Langues', es: 'Idiomas' },
+  'pubdoc.book': { pt: 'Marcar consulta', en: 'Book appointment', fr: 'Prendre rendez-vous', es: 'Reservar cita' },
+  'pubdoc.book_desc': { pt: 'Entre em contacto directamente com o médico.', en: 'Get in touch directly with the doctor.', fr: 'Contactez directement le médecin.', es: 'Póngase en contacto directamente con el médico.' },
+  'pubdoc.create_account': { pt: 'Criar conta de paciente', en: 'Create a patient account', fr: 'Créer un compte patient', es: 'Crear cuenta de paciente' },
 };
 
 export default translations;
