@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Shield, CheckCircle2, AlertTriangle, Loader2, Heart } from 'lucide-react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 
 /**
  * ConsentGatePage — shown to authenticated patients who have not yet
@@ -26,6 +27,7 @@ const REQUIRED_CONSENTS = [
 ] as const;
 
 export default function ConsentGatePage() {
+  const { t } = useT();
   const navigate = useNavigate();
   const [existing, setExisting] = useState<string[]>([]);
   const [checked, setChecked] = useState({
@@ -65,7 +67,7 @@ export default function ConsentGatePage() {
   const handleSubmit = async () => {
     const allChecked = REQUIRED_CONSENTS.every(c => checked[c as keyof typeof checked]);
     if (!allChecked) {
-      setError('Aceite todos os cinco itens para continuar.');
+      setError(t('cgate.error_all'));
       return;
     }
     setSubmitting(true);
@@ -81,7 +83,7 @@ export default function ConsentGatePage() {
       sessionStorage.setItem('consents_accepted', 'true');
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to save consents. Please try again.');
+      setError(err.response?.data?.detail || t('cgate.save_error'));
     } finally {
       setSubmitting(false);
     }
@@ -105,13 +107,13 @@ export default function ConsentGatePage() {
           padding: '2.5rem', maxWidth: '480px', width: '100%', textAlign: 'center' }}>
           <CheckCircle2 size={48} style={{ color: '#10b981', marginBottom: '1rem' }} />
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-            Consentimentos já aceites
+            {t('cgate.already_title')}
           </h2>
           <p style={{ color: 'var(--text-muted, #64748b)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Já aceitou anteriormente todos os consentimentos obrigatórios.
+            {t('cgate.already_desc')}
           </p>
           <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>
-            Ir para o Painel
+            {t('cgate.go_dashboard')}
           </button>
         </div>
       </div>
@@ -133,19 +135,17 @@ export default function ConsentGatePage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
           <Shield size={26} style={{ color: 'var(--accent-teal, #0d9488)' }} />
-          <h1 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0 }}>Antes de continuar</h1>
+          <h1 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0 }}>{t('cgate.title')}</h1>
         </div>
         <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '0.875rem', marginBottom: '1.75rem', lineHeight: 1.6 }}>
-          A KAYA trata dados de saúde sensíveis e presta serviços de coordenação de cuidados.
-          Leia e aceite os seguintes termos antes de aceder à sua conta.
+          {t('cgate.intro')}
         </p>
 
         {/* Emergency warning */}
         <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px',
           padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '0.83rem',
           color: '#7f1d1d', lineHeight: 1.5 }}>
-          <strong>🚨 Não é um serviço de emergência.</strong> Em caso de emergência médica,
-          ligue imediatamente para o <strong>número de emergência local</strong>.
+          <strong>{t('cgate.emergency_bold')}</strong> {t('cgate.emergency_rest')}
         </div>
 
         {/* Consent checkboxes */}
@@ -157,13 +157,13 @@ export default function ConsentGatePage() {
             onChange={() => toggle('terms_of_service')}
             label={
               <>
-                Li e aceito os{' '}
+                {t('cgate.c_terms_pre')}{' '}
                 <Link to="/terms" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Termos de Serviço
+                  {t('cgate.link_terms')}
                 </Link>
               </>
             }
-            description="Regula a utilização da plataforma, as responsabilidades da conta e o âmbito do serviço."
+            description={t('cgate.c_terms_desc')}
           />
 
           <ConsentItem
@@ -172,13 +172,13 @@ export default function ConsentGatePage() {
             onChange={() => toggle('medical_disclaimer')}
             label={
               <>
-                Reconheço o{' '}
+                {t('cgate.c_disclaimer_pre')}{' '}
                 <Link to="/medical-disclaimer" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Aviso Médico
+                  {t('cgate.link_disclaimer')}
                 </Link>
               </>
             }
-            description="Esta plataforma não é um serviço de emergência e não substitui os cuidados médicos presenciais. As medições de dispositivos podem conter erros e devem ser revistas por um profissional."
+            description={t('cgate.c_disclaimer_desc')}
           />
 
           <ConsentItem
@@ -187,13 +187,13 @@ export default function ConsentGatePage() {
             onChange={() => toggle('health_data_processing')}
             label={
               <>
-                Consinto o tratamento dos meus dados de saúde conforme descrito na{' '}
+                {t('cgate.c_healthdata_pre')}{' '}
                 <Link to="/privacy" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Política de Privacidade
+                  {t('cgate.link_privacy')}
                 </Link>
               </>
             }
-            description="Os dados de saúde são tratados para prestar serviços de coordenação de cuidados. Pode solicitar a eliminação ou exportação a qualquer momento nas Definições."
+            description={t('cgate.c_healthdata_desc')}
           />
 
           <ConsentItem
@@ -202,21 +202,21 @@ export default function ConsentGatePage() {
             onChange={() => toggle('privacy_policy')}
             label={
               <>
-                Li e aceito a{' '}
+                {t('cgate.c_privacy_pre')}{' '}
                 <Link to="/privacy" target="_blank" style={{ color: 'var(--accent-teal, #0d9488)' }}>
-                  Política de Privacidade
+                  {t('cgate.link_privacy')}
                 </Link>
               </>
             }
-            description="Descreve como recolhemos, usamos, armazenamos e protegemos os seus dados pessoais, em conformidade com a legislação de proteção de dados aplicável."
+            description={t('cgate.c_privacy_desc')}
           />
 
           <ConsentItem
             checked={checked.telemedicine_consent}
             already={existing.includes('telemedicine_consent')}
             onChange={() => toggle('telemedicine_consent')}
-            label="Consinto receber serviços de telemedicina através desta plataforma"
-            description="As teleconsultas são prestadas por profissionais licenciados. Reconhece as limitações do atendimento remoto e o seu direito a alternativas presenciais."
+            label={t('cgate.c_telemed_label')}
+            description={t('cgate.c_telemed_desc')}
           />
         </div>
 
@@ -236,15 +236,14 @@ export default function ConsentGatePage() {
           disabled={submitting || !REQUIRED_CONSENTS.every(c => checked[c as keyof typeof checked])}
         >
           {submitting
-            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> A guardar…</>
-            : 'Aceitar e Continuar'}
+            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t('common.saving')}</>
+            : t('cgate.accept_continue')}
         </button>
 
         <p style={{ marginTop: '1rem', fontSize: '0.78rem', color: 'var(--text-muted, #94a3b8)',
           lineHeight: 1.5, textAlign: 'center' }}>
-          Estes consentimentos são registados com o seu endereço IP e data/hora, conforme exigido
-          para fins de auditoria. Pode rever os consentimentos aceites a qualquer momento na secção{' '}
-          <Link to="/consents" style={{ color: 'var(--accent-teal, #0d9488)' }}>Consentimentos</Link>.
+          {t('cgate.footer_pre')}{' '}
+          <Link to="/consents" style={{ color: 'var(--accent-teal, #0d9488)' }}>{t('cgate.link_consents')}</Link>.
         </p>
       </div>
     </div>
@@ -264,6 +263,7 @@ function ConsentItem({
   label: React.ReactNode;
   description: string;
 }) {
+  const { t } = useT();
   return (
     <label style={{
       display: 'flex',
@@ -293,7 +293,7 @@ function ConsentItem({
           marginBottom: '0.2rem', lineHeight: 1.4 }}>
           {label}
           {already && <span style={{ marginLeft: '0.4rem', fontSize: '0.75rem',
-            color: '#10b981', fontWeight: 400 }}>(já aceite)</span>}
+            color: '#10b981', fontWeight: 400 }}>{t('cgate.already_tag')}</span>}
         </div>
         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)', lineHeight: 1.5 }}>
           {description}
