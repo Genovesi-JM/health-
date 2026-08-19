@@ -3,6 +3,9 @@ import { Users, Search, X, User, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
 import api from '../api';
+import { useT, type Lang } from '../i18n/LanguageContext';
+
+const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
 
 interface Patient {
   id: string;
@@ -17,13 +20,15 @@ interface Patient {
   status: 'urgent' | 'chronic' | 'stable' | string;
 }
 
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  urgent:  { label: 'Urgente', color: '#dc2626', bg: 'rgba(239,68,68,0.1)'  },
-  chronic: { label: 'Crónico', color: '#d97706', bg: 'rgba(234,179,8,0.1)'  },
-  stable:  { label: 'Estável', color: '#059669', bg: 'rgba(16,185,129,0.1)' },
+const STATUS_STYLE: Record<string, { key: string; color: string; bg: string }> = {
+  urgent:  { key: 'dpat.st_urgent',  color: '#dc2626', bg: 'rgba(239,68,68,0.1)'  },
+  chronic: { key: 'dpat.st_chronic', color: '#d97706', bg: 'rgba(234,179,8,0.1)'  },
+  stable:  { key: 'dpat.st_stable',  color: '#059669', bg: 'rgba(16,185,129,0.1)' },
 };
 
 export default function DoctorPatientsPage() {
+  const { t, lang } = useT();
+  const locale = LOCALES[lang] || 'pt-PT';
   const [search, setSearch] = useState('');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [total, setTotal] = useState(0);
@@ -52,37 +57,37 @@ export default function DoctorPatientsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Users size={20} style={{ color: 'var(--brand-primary)' }} /> Os Meus Pacientes
+            <Users size={20} style={{ color: 'var(--brand-primary)' }} /> {t('dpat.title')}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>{total} paciente{total !== 1 ? 's' : ''} registado{total !== 1 ? 's' : ''}</p>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>{total} {total !== 1 ? t('dpat.patient_many') : t('dpat.patient_one')}</p>
         </div>
         <button onClick={fetchPatients} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1rem', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
           <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-          {loading ? 'A carregar…' : 'Actualizar'}
+          {loading ? t('common.loading') : t('common.refresh')}
         </button>
       </div>
 
       <div style={{ position: 'relative', marginBottom: '1.25rem', display: 'flex', gap: '0.5rem' }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input className="form-input" placeholder="Pesquisar por nome…" value={search}
+          <input className="form-input" placeholder={t('dpat.search_placeholder')} value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && fetchPatients()}
             style={{ paddingLeft: '2.1rem' }} />
         </div>
         <button onClick={fetchPatients} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 8, padding: '0 1rem', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-          Pesquisar
+          {t('dpat.search_btn')}
         </button>
       </div>
 
       {loading && patients.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>A carregar pacientes…</div>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>{t('dpat.loading_patients')}</div>
       )}
 
       {!loading && patients.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
           <Users size={32} style={{ margin: '0 auto 0.75rem', display: 'block', opacity: 0.3 }} />
-          Nenhum paciente encontrado. As consultas realizadas aparecerão aqui.
+          {t('dpat.empty')}
         </div>
       )}
 
@@ -91,12 +96,13 @@ export default function DoctorPatientsPage() {
         {/* ── Patient list ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {shown.map(p => {
-            const s = STATUS_STYLE[p.status] ?? { label: p.status, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' };
+            const s = STATUS_STYLE[p.status] ?? { key: '', color: '#6366f1', bg: 'rgba(99,102,241,0.1)' };
+            const sLabel = s.key ? t(s.key) : p.status;
             const isActive = selected?.id === p.id;
             const lastVisit = p.last_consultation_at
-              ? new Date(p.last_consultation_at).toLocaleDateString('pt-PT')
+              ? new Date(p.last_consultation_at).toLocaleDateString(locale)
               : '—';
-            const conditions = (p.chronic_conditions ?? []).slice(0, 2).join(' · ') || 'Sem condições crónicas';
+            const conditions = (p.chronic_conditions ?? []).slice(0, 2).join(' · ') || t('dpat.no_chronic');
             return (
               <div key={p.id} className="card"
                 style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', cursor: 'pointer', border: isActive ? '1.5px solid var(--brand-primary)' : undefined, background: isActive ? 'var(--brand-light, rgba(15,118,110,0.04))' : undefined }}
@@ -107,12 +113,12 @@ export default function DoctorPatientsPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{p.name}</div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-                    {p.age != null ? `${p.age} anos` : 'Idade desconhecida'} · {conditions}
+                    {p.age != null ? `${p.age} ${t('dpat.years')}` : t('dpat.age_unknown')} · {conditions}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <span style={{ padding: '0.2rem 0.65rem', borderRadius: 999, background: s.bg, color: s.color, fontSize: '0.73rem', fontWeight: 700, display: 'block', marginBottom: '0.2rem' }}>{s.label}</span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Últ. {lastVisit}</span>
+                  <span style={{ padding: '0.2rem 0.65rem', borderRadius: 999, background: s.bg, color: s.color, fontSize: '0.73rem', fontWeight: 700, display: 'block', marginBottom: '0.2rem' }}>{sLabel}</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('dpat.last_prefix')} {lastVisit}</span>
                 </div>
               </div>
             );
@@ -136,20 +142,20 @@ export default function DoctorPatientsPage() {
 
               {/* Basic info */}
               <div>
-                <SecLabel>Informação Clínica</SecLabel>
+                <SecLabel>{t('dpat.sec_clinical')}</SecLabel>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.83rem' }}>
-                  <InfoRow label="Idade" value={selected.age != null ? `${selected.age} anos` : '—'} />
-                  <InfoRow label="Género" value={selected.gender ?? '—'} />
-                  <InfoRow label="Grupo Sanguíneo" value={selected.blood_type ?? '—'} />
-                  <InfoRow label="Estado" value={<span style={{ fontWeight: 700, color: STATUS_STYLE[selected.status]?.color }}>{STATUS_STYLE[selected.status]?.label ?? selected.status}</span>} />
-                  <InfoRow label="Consultas" value={`${selected.consultation_count} consulta${selected.consultation_count !== 1 ? 's' : ''}`} />
-                  <InfoRow label="Última visita" value={selected.last_consultation_at ? new Date(selected.last_consultation_at).toLocaleDateString('pt-PT') : '—'} />
+                  <InfoRow label={t('dpat.info_age')} value={selected.age != null ? `${selected.age} ${t('dpat.years')}` : '—'} />
+                  <InfoRow label={t('dpat.info_gender')} value={selected.gender ?? '—'} />
+                  <InfoRow label={t('dpat.info_blood')} value={selected.blood_type ?? '—'} />
+                  <InfoRow label={t('dpat.info_status')} value={<span style={{ fontWeight: 700, color: STATUS_STYLE[selected.status]?.color }}>{STATUS_STYLE[selected.status]?.key ? t(STATUS_STYLE[selected.status].key) : selected.status}</span>} />
+                  <InfoRow label={t('dpat.info_consultations')} value={`${selected.consultation_count} ${selected.consultation_count !== 1 ? t('dfin.consult_many') : t('dfin.consult_one')}`} />
+                  <InfoRow label={t('dpat.info_last_visit')} value={selected.last_consultation_at ? new Date(selected.last_consultation_at).toLocaleDateString(locale) : '—'} />
                 </div>
               </div>
 
               {(selected.chronic_conditions ?? []).length > 0 && (
                 <div>
-                  <SecLabel>Condições Crónicas</SecLabel>
+                  <SecLabel>{t('dpat.sec_chronic')}</SecLabel>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                     {selected.chronic_conditions.map(c => (
                       <span key={c} style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: 999, background: 'rgba(239,68,68,0.08)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.2)', fontWeight: 600 }}>{c}</span>
@@ -160,7 +166,7 @@ export default function DoctorPatientsPage() {
 
               {(selected.allergies ?? []).length > 0 && (
                 <div>
-                  <SecLabel>Alergias</SecLabel>
+                  <SecLabel>{t('dpat.sec_allergies')}</SecLabel>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                     {selected.allergies.map(a => (
                       <span key={a} style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: 999, background: 'rgba(234,179,8,0.08)', color: '#d97706', border: '1px solid rgba(234,179,8,0.2)', fontWeight: 600 }}>{a}</span>
@@ -173,7 +179,7 @@ export default function DoctorPatientsPage() {
                 to={`/clinician/patients/${selected.id}`}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, borderRadius: 10, background: 'linear-gradient(135deg, #0f766e, #14b8a6)', color: '#fff', fontSize: '0.78rem', fontWeight: 800, textDecoration: 'none' }}
               >
-                Abrir visão clínica 360°
+                {t('dpat.open_360')}
               </Link>
 
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>

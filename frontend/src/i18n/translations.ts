@@ -1683,6 +1683,34 @@ const translations: Record<string, TranslationEntry> = {
   'acr.st_verified': { pt: 'Verificado', en: 'Verified', fr: 'Vérifié', es: 'Verificado' },
   'acr.st_rejected': { pt: 'Rejeitado', en: 'Rejected', fr: 'Rejeté', es: 'Rechazado' },
   'acr.st_suspended': { pt: 'Suspenso', en: 'Suspended', fr: 'Suspendu', es: 'Suspendido' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR — MY PATIENTS
+     ═══════════════════════════════════════════════════════════ */
+  'dpat.title': { pt: 'Os Meus Pacientes', en: 'My Patients', fr: 'Mes patients', es: 'Mis pacientes' },
+  'dpat.patient_one': { pt: 'paciente registado', en: 'patient registered', fr: 'patient enregistré', es: 'paciente registrado' },
+  'dpat.patient_many': { pt: 'pacientes registados', en: 'patients registered', fr: 'patients enregistrés', es: 'pacientes registrados' },
+  'dpat.search_placeholder': { pt: 'Pesquisar por nome…', en: 'Search by name…', fr: 'Rechercher par nom…', es: 'Buscar por nombre…' },
+  'dpat.search_btn': { pt: 'Pesquisar', en: 'Search', fr: 'Rechercher', es: 'Buscar' },
+  'dpat.loading_patients': { pt: 'A carregar pacientes…', en: 'Loading patients…', fr: 'Chargement des patients…', es: 'Cargando pacientes…' },
+  'dpat.empty': { pt: 'Nenhum paciente encontrado. As consultas realizadas aparecerão aqui.', en: 'No patients found. Completed consultations will appear here.', fr: 'Aucun patient trouvé. Les consultations réalisées apparaîtront ici.', es: 'No se encontraron pacientes. Las consultas realizadas aparecerán aquí.' },
+  'dpat.no_chronic': { pt: 'Sem condições crónicas', en: 'No chronic conditions', fr: 'Aucune maladie chronique', es: 'Sin condiciones crónicas' },
+  'dpat.years': { pt: 'anos', en: 'years old', fr: 'ans', es: 'años' },
+  'dpat.age_unknown': { pt: 'Idade desconhecida', en: 'Age unknown', fr: 'Âge inconnu', es: 'Edad desconocida' },
+  'dpat.last_prefix': { pt: 'Últ.', en: 'Last', fr: 'Dern.', es: 'Últ.' },
+  'dpat.sec_clinical': { pt: 'Informação Clínica', en: 'Clinical Information', fr: 'Informations cliniques', es: 'Información clínica' },
+  'dpat.sec_chronic': { pt: 'Condições Crónicas', en: 'Chronic Conditions', fr: 'Maladies chroniques', es: 'Condiciones crónicas' },
+  'dpat.sec_allergies': { pt: 'Alergias', en: 'Allergies', fr: 'Allergies', es: 'Alergias' },
+  'dpat.info_age': { pt: 'Idade', en: 'Age', fr: 'Âge', es: 'Edad' },
+  'dpat.info_gender': { pt: 'Género', en: 'Gender', fr: 'Genre', es: 'Género' },
+  'dpat.info_blood': { pt: 'Grupo Sanguíneo', en: 'Blood Type', fr: 'Groupe sanguin', es: 'Grupo sanguíneo' },
+  'dpat.info_status': { pt: 'Estado', en: 'Status', fr: 'Statut', es: 'Estado' },
+  'dpat.info_consultations': { pt: 'Consultas', en: 'Consultations', fr: 'Consultations', es: 'Consultas' },
+  'dpat.info_last_visit': { pt: 'Última visita', en: 'Last visit', fr: 'Dernière visite', es: 'Última visita' },
+  'dpat.open_360': { pt: 'Abrir visão clínica 360°', en: 'Open 360° clinical view', fr: 'Ouvrir la vue clinique 360°', es: 'Abrir vista clínica 360°' },
+  'dpat.st_urgent': { pt: 'Urgente', en: 'Urgent', fr: 'Urgent', es: 'Urgente' },
+  'dpat.st_chronic': { pt: 'Crónico', en: 'Chronic', fr: 'Chronique', es: 'Crónico' },
+  'dpat.st_stable': { pt: 'Estável', en: 'Stable', fr: 'Stable', es: 'Estable' },
 };
 
 export default translations;
