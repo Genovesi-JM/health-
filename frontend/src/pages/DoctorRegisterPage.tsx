@@ -7,23 +7,14 @@ import {
   CheckCircle2, AlertCircle, Loader2, ChevronRight, Globe,
 } from 'lucide-react';
 import api, { persistSession } from '../api';
+import { useT, type Lang } from '../i18n/LanguageContext';
 
-const SPECIALTIES = [
-  { value: 'clinica_geral',    label: 'Clínica Geral' },
-  { value: 'pediatria',        label: 'Pediatria' },
-  { value: 'cardiologia',      label: 'Cardiologia' },
-  { value: 'ginecologia',      label: 'Ginecologia' },
-  { value: 'dermatologia',     label: 'Dermatologia' },
-  { value: 'ortopedia',        label: 'Ortopedia' },
-  { value: 'oftalmologia',     label: 'Oftalmologia' },
-  { value: 'neurologia',       label: 'Neurologia' },
-  { value: 'psiquiatria',      label: 'Psiquiatria' },
-  { value: 'psicologia',       label: 'Psicologia' },
-  { value: 'fisioterapia',     label: 'Fisioterapia' },
-  { value: 'odontologia',      label: 'Medicina Dentária' },
-  { value: 'medicina_interna', label: 'Medicina Interna' },
-  { value: 'urgencia',         label: 'Urgência / Emergência' },
-  { value: 'outro',            label: 'Outra especialidade' },
+const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
+
+const SPECIALTY_VALUES = [
+  'clinica_geral', 'pediatria', 'cardiologia', 'ginecologia', 'dermatologia',
+  'ortopedia', 'oftalmologia', 'neurologia', 'psiquiatria', 'psicologia',
+  'fisioterapia', 'odontologia', 'medicina_interna', 'urgencia', 'outro',
 ];
 
 const PROVINCES = [
@@ -31,20 +22,19 @@ const PROVINCES = [
   'Huíla','Namibe','Cunene','Cuando Cubango','Moxico','Uíge','Zaire',
   'Cabinda','Bengo','Cuanza Norte','Cuanza Sul',
 ];
-const CREDENTIAL_COUNTRIES = [
-  ['AO','Angola'], ['US','Estados Unidos'], ['GB','Reino Unido'], ['PT','Portugal'],
-  ['ES','Espanha'], ['CU','Cuba'], ['RU','Rússia'], ['BR','Brasil'], ['CV','Cabo Verde'],
-  ['MZ','Moçambique'], ['CD','R. D. Congo'], ['ST','São Tomé e Príncipe'], ['ZW','Zimbabwe'],
-  ['AT','Áustria'], ['BE','Bélgica'], ['BG','Bulgária'], ['HR','Croácia'], ['CY','Chipre'],
-  ['CZ','Chéquia'], ['DK','Dinamarca'], ['EE','Estónia'], ['FI','Finlândia'], ['FR','França'],
-  ['DE','Alemanha'], ['GR','Grécia'], ['HU','Hungria'], ['IE','Irlanda'], ['IT','Itália'],
-  ['LV','Letónia'], ['LT','Lituânia'], ['LU','Luxemburgo'], ['MT','Malta'], ['NL','Países Baixos'],
-  ['PL','Polónia'], ['RO','Roménia'], ['SK','Eslováquia'], ['SI','Eslovénia'], ['SE','Suécia'],
-] as const;
+// Country codes only — names are rendered locale-aware via Intl.DisplayNames.
+const CREDENTIAL_COUNTRY_CODES = [
+  'AO','US','GB','PT','ES','CU','RU','BR','CV','MZ','CD','ST','ZW',
+  'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
+  'LV','LT','LU','MT','NL','PL','RO','SK','SI','SE',
+];
 
 type Step = 'validating' | 'invalid' | 'form' | 'success';
 
 export default function DoctorRegisterPage() {
+  const { t, lang } = useT();
+  const locale = LOCALES[lang] || 'pt-PT';
+  const regionNames = new Intl.DisplayNames([locale], { type: 'region' });
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = params.get('token') || '';
@@ -91,22 +81,22 @@ export default function DoctorRegisterPage() {
       .catch(() => setStep('invalid'));
   }, [token]);
 
-  const toggleConsultType = (t: string) => {
+  const toggleConsultType = (ct: string) => {
     setConsultTypes(prev =>
-      prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]
+      prev.includes(ct) ? prev.filter(x => x !== ct) : [...prev, ct]
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!displayName.trim()) return setError('Nome completo obrigatório.');
-    if (password !== confirmPassword) return setError('As palavras-passe não coincidem.');
-    if (password.length < 8) return setError('Palavra-passe: mínimo 8 caracteres.');
+    if (!displayName.trim()) return setError(t('dreg.err_name'));
+    if (password !== confirmPassword) return setError(t('dsec.mismatch'));
+    if (password.length < 8) return setError(t('dreg.err_pw_short'));
     if (!license.trim() || !authority.trim() || !institution.trim() || !degreeTitle.trim()) {
-      return setError('Licença, autoridade profissional e dados do diploma são obrigatórios.');
+      return setError(t('dreg.err_creds'));
     }
-    if (consultTypes.length === 0) return setError('Selecione pelo menos um tipo de consulta.');
+    if (consultTypes.length === 0) return setError(t('dreg.err_consult'));
 
     setLoading(true);
     try {
@@ -145,7 +135,7 @@ export default function DoctorRegisterPage() {
       setStep('success');
       setTimeout(() => navigate('/professional-verification'), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao registar. Tente novamente.');
+      setError(err.response?.data?.detail || t('dreg.err_generic'));
     } finally {
       setLoading(false);
     }
@@ -158,7 +148,7 @@ export default function DoctorRegisterPage() {
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
             <Loader2 size={32} style={{ color: 'var(--brand-primary)', animation: 'spin 1s linear infinite' }} />
-            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>A validar o seu convite…</p>
+            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>{t('dreg.validating')}</p>
           </div>
         </div>
         <Footer />
@@ -173,10 +163,9 @@ export default function DoctorRegisterPage() {
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div className="card" style={{ maxWidth: 480, textAlign: 'center', padding: '2.5rem' }}>
             <AlertCircle size={40} style={{ color: '#ef4444', marginBottom: '1rem' }} />
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Convite inválido ou expirado</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('dreg.invalid_title')}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6 }}>
-              Este link de convite não é válido, já foi utilizado ou expirou.<br />
-              Contacte a equipa KAYA para receber um novo convite.
+              {t('dreg.invalid_body')}
             </p>
             <a href="mailto:parcerias@kaya.ao" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex', marginTop: '1.5rem' }}>
               <Mail size={15} /> parcerias@kaya.ao
@@ -195,10 +184,9 @@ export default function DoctorRegisterPage() {
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div className="card" style={{ maxWidth: 480, textAlign: 'center', padding: '2.5rem' }}>
             <CheckCircle2 size={48} style={{ color: '#10b981', marginBottom: '1rem' }} />
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Registo concluído!</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('dreg.success_title')}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6 }}>
-              A sua conta foi criada com sucesso. O perfil está pendente de verificação.<br />
-              A redirecionar para o seu perfil…
+              {t('dreg.success_body')}
             </p>
           </div>
         </div>
@@ -213,12 +201,12 @@ export default function DoctorRegisterPage() {
       <Navbar />
 
       <section className="lp-page-hero" style={{ paddingBottom: '1.5rem' }}>
-        <div className="lp-tag"><Stethoscope size={12} /> Registo de Médico Parceiro</div>
+        <div className="lp-tag"><Stethoscope size={12} /> {t('dreg.tag')}</div>
         <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)' }}>
-          Bem-vindo ao <span className="lp-hero__accent">KAYA</span>
+          {t('dreg.welcome_pre')} <span className="lp-hero__accent">KAYA</span>
         </h1>
         <p style={{ maxWidth: 520, margin: '0 auto' }}>
-          Complete o registo para activar o seu perfil público e começar a receber pacientes.
+          {t('dreg.subtitle')}
           {inviteInfo?.note && <><br /><em style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>"{inviteInfo.note}"</em></>}
         </p>
       </section>
@@ -228,12 +216,12 @@ export default function DoctorRegisterPage() {
 
           {/* ── Identity ── */}
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-            <User size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Identidade
+            <User size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />{t('dpe.sec_identity')}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label">Título</label>
+              <label className="form-label">{t('dpe.title_label')}</label>
               <select className="form-input" value={title} onChange={e => setTitle(e.target.value)}>
                 <option>Dr.</option>
                 <option>Dra.</option>
@@ -244,29 +232,29 @@ export default function DoctorRegisterPage() {
               </select>
             </div>
             <div>
-              <label className="form-label">Nome completo *</label>
-              <input className="form-input" placeholder="Como aparece no perfil público" value={displayName} onChange={e => setDisplayName(e.target.value)} required />
+              <label className="form-label">{t('dapply.name_full')} *</label>
+              <input className="form-input" placeholder={t('dreg.name_ph')} value={displayName} onChange={e => setDisplayName(e.target.value)} required />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label"><Mail size={13} /> Email *</label>
+              <label className="form-label"><Mail size={13} /> {t('dsup.email')} *</label>
               <input className="form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             <div>
-              <label className="form-label"><Phone size={13} /> Telefone</label>
+              <label className="form-label"><Phone size={13} /> {t('dreg.phone')}</label>
               <input className="form-input" type="tel" placeholder="+244 9XX XXX XXX" value={phone} onChange={e => setPhone(e.target.value)} />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label"><Lock size={13} /> Palavra-passe *</label>
-              <input className="form-input" type="password" placeholder="Mínimo 8 caracteres" value={password} onChange={e => setPassword(e.target.value)} required />
+              <label className="form-label"><Lock size={13} /> {t('dreg.password')} *</label>
+              <input className="form-input" type="password" placeholder={t('dreg.password_ph')} value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
             <div>
-              <label className="form-label"><Lock size={13} /> Confirmar palavra-passe *</label>
+              <label className="form-label"><Lock size={13} /> {t('dreg.confirm_password')} *</label>
               <input className="form-input" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
             </div>
           </div>
@@ -274,76 +262,76 @@ export default function DoctorRegisterPage() {
           {/* ── Credentials ── */}
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
             <Stethoscope size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
-            {inviteInfo?.role === 'nurse' ? 'Credenciais de enfermagem' : 'Credenciais médicas'}
+            {inviteInfo?.role === 'nurse' ? t('dreg.sec_creds_nurse') : t('dreg.sec_creds_doctor')}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label">Especialidade *</label>
+              <label className="form-label">{t('dpe.specialty')} *</label>
               {inviteInfo?.role === 'nurse' ? (
-                <input className="form-input" value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="ex: Enfermagem geral" />
+                <input className="form-input" value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder={t('dreg.specialty_nurse_ph')} />
               ) : (
                 <select className="form-input" value={specialty} onChange={e => setSpecialty(e.target.value)}>
-                  {SPECIALTIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  {SPECIALTY_VALUES.map(v => <option key={v} value={v}>{t(`spec.${v}`)}</option>)}
                 </select>
               )}
             </div>
             <div>
-              <label className="form-label">Nº de Licença / Cédula *</label>
-              <input className="form-input" placeholder="ex: OMEN-12345" value={license} onChange={e => setLicense(e.target.value)} required />
+              <label className="form-label">{t('dreg.license')} *</label>
+              <input className="form-input" placeholder={t('dreg.license_ph')} value={license} onChange={e => setLicense(e.target.value)} required />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
             {[
-              ['País de exercício / registo', practiceCountry, setPracticeCountry],
-              ['País que emitiu a licença', licenceCountry, setLicenceCountry],
-              ['País que emitiu o diploma / certificado', diplomaCountry, setDiplomaCountry],
-            ].map(([label, value, setter]: any) => (
-              <div key={label}>
-                <label className="form-label">{label}</label>
+              ['dreg.country_practice', practiceCountry, setPracticeCountry],
+              ['dreg.country_licence', licenceCountry, setLicenceCountry],
+              ['dreg.country_diploma', diplomaCountry, setDiplomaCountry],
+            ].map(([labelKey, value, setter]: any) => (
+              <div key={labelKey}>
+                <label className="form-label">{t(labelKey)}</label>
                 <select className="form-input" value={value} onChange={e => setter(e.target.value)}>
-                  {CREDENTIAL_COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+                  {CREDENTIAL_COUNTRY_CODES.map(code => <option key={code} value={code}>{regionNames.of(code) || code}</option>)}
                 </select>
               </div>
             ))}
           </div>
           {licenceCountry === 'US' && (
-            <input className="form-input" placeholder="Estado / jurisdição da licença dos EUA *"
+            <input className="form-input" placeholder={t('dreg.us_jurisdiction_ph')}
               value={licenceJurisdiction} onChange={e => setLicenceJurisdiction(e.target.value)} required />
           )}
           {practiceCountry !== diplomaCountry && (
             <div style={{ padding: '.65rem', borderRadius: 8, background: '#fffbeb', color: '#92400e', fontSize: '.78rem' }}>
-              Diploma estrangeiro: será necessário enviar reconhecimento/equivalência no passo seguinte.
+              {t('dreg.foreign_diploma')}
             </div>
           )}
-          <input className="form-input" placeholder="Autoridade emissora / Ordem profissional *" value={authority} onChange={e => setAuthority(e.target.value)} required />
+          <input className="form-input" placeholder={t('dreg.authority_ph')} value={authority} onChange={e => setAuthority(e.target.value)} required />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <input className="form-input" placeholder="Instituição do diploma *" value={institution} onChange={e => setInstitution(e.target.value)} required />
-            <input className="form-input" placeholder="Título do curso / grau *" value={degreeTitle} onChange={e => setDegreeTitle(e.target.value)} required />
+            <input className="form-input" placeholder={t('dreg.institution_ph')} value={institution} onChange={e => setInstitution(e.target.value)} required />
+            <input className="form-input" placeholder={t('dreg.degree_ph')} value={degreeTitle} onChange={e => setDegreeTitle(e.target.value)} required />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label">Anos de experiência <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
-              <input className="form-input" type="number" min="0" max="60" placeholder="ex: 8" value={years} onChange={e => setYears(e.target.value)} />
+              <label className="form-label">{t('dpe.years_exp')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('dpe.optional')}</span></label>
+              <input className="form-input" type="number" min="0" max="60" placeholder={t('dreg.years_ph')} value={years} onChange={e => setYears(e.target.value)} />
             </div>
           </div>
 
           {/* ── Location ── */}
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-            <MapPin size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Localização
+            <MapPin size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />{t('dpe.sec_location')}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label">Cidade / Município</label>
-              <input className="form-input" placeholder="ex: Luanda" value={city} onChange={e => setCity(e.target.value)} />
+              <label className="form-label">{t('dpe.city')}</label>
+              <input className="form-input" placeholder={t('dreg.city_ph')} value={city} onChange={e => setCity(e.target.value)} />
             </div>
             <div>
-              <label className="form-label">Província</label>
+              <label className="form-label">{t('dpe.province')}</label>
               <select className="form-input" value={province} onChange={e => setProvince(e.target.value)}>
-                <option value="">— Seleccionar —</option>
+                <option value="">{t('dpe.select')}</option>
                 {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
@@ -351,13 +339,13 @@ export default function DoctorRegisterPage() {
 
           {/* ── Consultation types ── */}
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-            <Globe size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Tipo de consulta
+            <Globe size={15} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />{t('dpe.sec_consult_type')}
           </h3>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {[
-              { key: 'teleconsulta', label: '📹 Teleconsulta' },
-              { key: 'presencial',   label: '🏥 Presencial' },
-              { key: 'domicilio',    label: '🏠 Domicílio' },
+              { key: 'teleconsulta', label: t('dpe.ct_tele') },
+              { key: 'presencial',   label: t('dpe.ct_presencial') },
+              { key: 'domicilio',    label: t('dpe.ct_domicilio') },
             ].map(ct => (
               <label key={ct.key} style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -376,8 +364,8 @@ export default function DoctorRegisterPage() {
 
           {/* ── Bio ── */}
           <div>
-            <label className="form-label"><BookOpen size={13} /> Bio / Apresentação <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional — aparece no perfil público)</span></label>
-            <textarea className="form-input" rows={3} placeholder="Apresente-se brevemente aos pacientes…" value={bio} onChange={e => setBio(e.target.value)} style={{ resize: 'vertical' }} />
+            <label className="form-label"><BookOpen size={13} /> {t('dreg.bio_label')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('dreg.bio_optional')}</span></label>
+            <textarea className="form-input" rows={3} placeholder={t('dreg.bio_ph')} value={bio} onChange={e => setBio(e.target.value)} style={{ resize: 'vertical' }} />
           </div>
 
           {error && (
@@ -387,12 +375,11 @@ export default function DoctorRegisterPage() {
           )}
 
           <button type="submit" disabled={loading} className="btn btn-primary" style={{ padding: '0.9rem', fontSize: '0.95rem', fontWeight: 700 }}>
-            {loading ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> A registar…</> : <>Criar perfil médico <ChevronRight size={16} /></>}
+            {loading ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t('dreg.registering')}</> : <>{t('dreg.submit')} <ChevronRight size={16} /></>}
           </button>
 
           <p style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Ao registar, o seu perfil ficará pendente de verificação pela equipa KAYA.<br />
-            Consulte os <Link to="/terms" style={{ color: 'var(--brand-primary)' }}>Termos de Uso</Link>.
+            {t('dreg.footer_pre')} <Link to="/terms" style={{ color: 'var(--brand-primary)' }}>{t('dreg.terms_link')}</Link>.
           </p>
         </form>
       </div>
