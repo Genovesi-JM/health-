@@ -3,6 +3,7 @@ import { MapPin, Search, Loader2, Phone, Clock, Ambulance, Home, Navigation } fr
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 
 type Facility = {
   id: string;
@@ -31,10 +32,10 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 const TYPE_FILTERS = [
-  { value: '', label: 'Todos' },
-  { value: 'clinic', label: 'Clínicas / Hospitais' },
-  { value: 'laboratory', label: 'Laboratórios' },
-  { value: 'pharmacy_org', label: 'Farmácias' },
+  { value: '', key: 'mapa.filter_all' },
+  { value: 'clinic', key: 'mapa.filter_clinics' },
+  { value: 'laboratory', key: 'mapa.filter_labs' },
+  { value: 'pharmacy_org', key: 'mapa.filter_pharmacies' },
 ];
 
 // Luanda — sensible default centre for the Angola pilot.
@@ -82,6 +83,7 @@ function pinIcon(L: any, color: string) {
 }
 
 export default function MapaPage() {
+  const { t } = useT();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -104,7 +106,7 @@ export default function MapaPage() {
         const res = await api.get('/api/v1/public/facilities');
         if (active) setFacilities(Array.isArray(res.data) ? res.data : []);
       } catch {
-        if (active) setError('Não foi possível carregar as unidades de saúde.');
+        if (active) setError(t('mapa.load_error'));
       } finally {
         if (active) setLoading(false);
       }
@@ -191,9 +193,9 @@ export default function MapaPage() {
       <Navbar />
 
       <section className="lp-page-hero" style={{ paddingBottom: '1.5rem' }}>
-        <div className="lp-tag">Encontrar cuidados</div>
-        <h1>Mapa de Clínicas & Hospitais.</h1>
-        <p>Encontre clínicas, hospitais, laboratórios e farmácias verificados perto de si.</p>
+        <div className="lp-tag">{t('mapa.tag')}</div>
+        <h1>{t('mapa.title')}</h1>
+        <p>{t('mapa.subtitle')}</p>
       </section>
 
       <section className="lp-section" style={{ paddingTop: 0 }}>
@@ -205,23 +207,23 @@ export default function MapaPage() {
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Procurar por nome ou cidade…"
+                placeholder={t('mapa.search_ph')}
                 style={{ width: '100%', padding: '0.7rem 0.7rem 0.7rem 2.3rem', borderRadius: '10px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: 'var(--text-primary)', fontSize: '0.88rem', boxSizing: 'border-box' }}
               />
             </div>
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-              {TYPE_FILTERS.map(t => (
+              {TYPE_FILTERS.map(tf => (
                 <button
-                  key={t.value}
-                  onClick={() => setTypeFilter(t.value)}
+                  key={tf.value}
+                  onClick={() => setTypeFilter(tf.value)}
                   style={{
                     padding: '0.4rem 0.75rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-                    border: `1px solid ${typeFilter === t.value ? 'var(--accent-teal)' : 'var(--border)'}`,
-                    background: typeFilter === t.value ? 'rgba(20,184,166,0.12)' : 'transparent',
-                    color: typeFilter === t.value ? 'var(--accent-teal)' : 'var(--text-secondary)',
+                    border: `1px solid ${typeFilter === tf.value ? 'var(--accent-teal)' : 'var(--border)'}`,
+                    background: typeFilter === tf.value ? 'rgba(20,184,166,0.12)' : 'transparent',
+                    color: typeFilter === tf.value ? 'var(--accent-teal)' : 'var(--text-secondary)',
                   }}
                 >
-                  {t.label}
+                  {t(tf.key)}
                 </button>
               ))}
             </div>
@@ -229,15 +231,13 @@ export default function MapaPage() {
             <div style={{ flex: 1, overflowY: 'auto', maxHeight: '520px', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               {loading ? (
                 <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0' }}>
-                  <Loader2 size={22} className="spin" style={{ margin: '0 auto 0.5rem', display: 'block' }} /> A carregar…
+                  <Loader2 size={22} className="spin" style={{ margin: '0 auto 0.5rem', display: 'block' }} /> {t('mapa.loading')}
                 </div>
               ) : error ? (
                 <div style={{ color: '#ef4444', fontSize: '0.85rem', padding: '1rem 0' }}>{error}</div>
               ) : filtered.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1.5rem 0', textAlign: 'center' }}>
-                  {facilities.length === 0
-                    ? 'Ainda não há unidades verificadas no mapa. Volte em breve — estamos a integrar clínicas e hospitais parceiros.'
-                    : 'Nenhuma unidade corresponde à sua pesquisa.'}
+                  {facilities.length === 0 ? t('mapa.empty_none') : t('mapa.empty_search')}
                 </div>
               ) : (
                 filtered.map(f => (
@@ -266,8 +266,8 @@ export default function MapaPage() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.73rem', color: 'var(--text-muted)' }}>
                       {f.contact_phone && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Phone size={12} /> {f.contact_phone}</span>}
                       {f.opening_hours && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={12} /> {f.opening_hours}</span>}
-                      {f.emergency_available && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444' }}><Ambulance size={12} /> Urgência</span>}
-                      {(f.home_delivery || f.home_sample_collection) && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Home size={12} /> Ao domicílio</span>}
+                      {f.emergency_available && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444' }}><Ambulance size={12} /> {t('mapa.emergency')}</span>}
+                      {(f.home_delivery || f.home_sample_collection) && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Home size={12} /> {t('mapa.home_service')}</span>}
                     </div>
                     {f.latitude != null && f.longitude != null && (
                       <a
@@ -276,7 +276,7 @@ export default function MapaPage() {
                         onClick={e => e.stopPropagation()}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.55rem', fontSize: '0.74rem', color: 'var(--accent-teal)', textDecoration: 'none', fontWeight: 600 }}
                       >
-                        <Navigation size={12} /> Ver direções
+                        <Navigation size={12} /> {t('mapa.directions')}
                       </a>
                     )}
                   </button>
@@ -289,7 +289,7 @@ export default function MapaPage() {
           <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', minHeight: '480px', position: 'relative' }}>
             {mapError ? (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                Não foi possível carregar o mapa interativo. Verifique a sua ligação à internet.
+                {t('mapa.map_error')}
               </div>
             ) : (
               <div ref={mapDivRef} style={{ width: '100%', height: '100%', minHeight: '480px' }} />

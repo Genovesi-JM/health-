@@ -2008,6 +2008,55 @@ const translations: Record<string, TranslationEntry> = {
   'dpres.latest_vitals': { pt: 'Últimas medições', en: 'Latest readings', fr: 'Dernières mesures', es: 'Últimas mediciones' },
   'dpres.prev_consults': { pt: '📋 Consultas anteriores', en: '📋 Previous consultations', fr: '📋 Consultations précédentes', es: '📋 Consultas anteriores' },
   'dpres.current_request': { pt: '💊 Pedido actual', en: '💊 Current request', fr: '💊 Demande actuelle', es: '💊 Solicitud actual' },
+
+  /* ═══════════════════════════════════════════════════════════
+     CONTACT PAGE (public)
+     ═══════════════════════════════════════════════════════════ */
+  'contact.tag': { pt: 'Contacto', en: 'Contact', fr: 'Contact', es: 'Contacto' },
+  'contact.title': { pt: 'Fale connosco.', en: 'Get in touch.', fr: 'Contactez-nous.', es: 'Hable con nosotros.' },
+  'contact.subtitle': { pt: 'Tem dúvidas, quer ser parceiro ou explorar soluções corporativas? Estamos disponíveis.', en: 'Questions, partnerships, or corporate solutions? We’re here to help.', fr: 'Des questions, un partenariat ou des solutions pour entreprises ? Nous sommes là.', es: '¿Dudas, alianzas o soluciones corporativas? Estamos disponibles.' },
+  'contact.card_support': { pt: 'Suporte geral', en: 'General support', fr: 'Assistance générale', es: 'Soporte general' },
+  'contact.card_partners': { pt: 'Parcerias', en: 'Partnerships', fr: 'Partenariats', es: 'Alianzas' },
+  'contact.card_business': { pt: 'Empresas', en: 'Business', fr: 'Entreprises', es: 'Empresas' },
+  'contact.card_location': { pt: 'Localização', en: 'Location', fr: 'Localisation', es: 'Ubicación' },
+  'contact.send_title': { pt: 'Enviar mensagem', en: 'Send a message', fr: 'Envoyer un message', es: 'Enviar mensaje' },
+  'contact.sent_title': { pt: 'Mensagem enviada', en: 'Message sent', fr: 'Message envoyé', es: 'Mensaje enviado' },
+  'contact.sent_sub': { pt: 'Respondemos em até 24 horas úteis.', en: 'We reply within 24 business hours.', fr: 'Nous répondons sous 24 heures ouvrées.', es: 'Respondemos en un máximo de 24 horas hábiles.' },
+  'contact.name': { pt: 'Nome', en: 'Name', fr: 'Nom', es: 'Nombre' },
+  'contact.name_ph': { pt: 'O seu nome', en: 'Your name', fr: 'Votre nom', es: 'Su nombre' },
+  'contact.email': { pt: 'Email', en: 'Email', fr: 'E-mail', es: 'Correo' },
+  'contact.subject': { pt: 'Assunto', en: 'Subject', fr: 'Sujet', es: 'Asunto' },
+  'contact.subj_support': { pt: 'Suporte geral', en: 'General support', fr: 'Assistance générale', es: 'Soporte general' },
+  'contact.subj_doctor': { pt: 'Médico independente — quero trabalhar no portal', en: 'Independent doctor — I want to work on the portal', fr: 'Médecin indépendant — je veux travailler sur le portail', es: 'Médico independiente — quiero trabajar en el portal' },
+  'contact.subj_partner': { pt: 'Parceria institucional (clínica / hospital)', en: 'Institutional partnership (clinic / hospital)', fr: 'Partenariat institutionnel (clinique / hôpital)', es: 'Alianza institucional (clínica / hospital)' },
+  'contact.subj_corporate': { pt: 'Solução corporativa', en: 'Corporate solution', fr: 'Solution entreprise', es: 'Solución corporativa' },
+  'contact.subj_media': { pt: 'Media / imprensa', en: 'Media / press', fr: 'Médias / presse', es: 'Medios / prensa' },
+  'contact.subj_other': { pt: 'Outro', en: 'Other', fr: 'Autre', es: 'Otro' },
+  'contact.message': { pt: 'Mensagem', en: 'Message', fr: 'Message', es: 'Mensaje' },
+  'contact.message_ph': { pt: 'A sua mensagem...', en: 'Your message...', fr: 'Votre message...', es: 'Su mensaje...' },
+  'contact.send_error': { pt: 'Não foi possível enviar. Tente novamente ou escreva para suporte@kaya.ao.', en: 'Could not send. Please try again or email suporte@kaya.ao.', fr: 'Envoi impossible. Réessayez ou écrivez à suporte@kaya.ao.', es: 'No se pudo enviar. Inténtelo de nuevo o escriba a suporte@kaya.ao.' },
+  'contact.sending': { pt: 'A enviar…', en: 'Sending…', fr: 'Envoi…', es: 'Enviando…' },
+  'contact.send_btn': { pt: 'Enviar mensagem', en: 'Send message', fr: 'Envoyer le message', es: 'Enviar mensaje' },
+
+  /* ═══════════════════════════════════════════════════════════
+     FACILITY MAP (public)
+     ═══════════════════════════════════════════════════════════ */
+  'mapa.tag': { pt: 'Encontrar cuidados', en: 'Find care', fr: 'Trouver des soins', es: 'Encontrar atención' },
+  'mapa.title': { pt: 'Mapa de Clínicas & Hospitais.', en: 'Clinic & Hospital Map.', fr: 'Carte des cliniques et hôpitaux.', es: 'Mapa de clínicas y hospitales.' },
+  'mapa.subtitle': { pt: 'Encontre clínicas, hospitais, laboratórios e farmácias verificados perto de si.', en: 'Find verified clinics, hospitals, laboratories, and pharmacies near you.', fr: 'Trouvez des cliniques, hôpitaux, laboratoires et pharmacies vérifiés près de chez vous.', es: 'Encuentre clínicas, hospitales, laboratorios y farmacias verificados cerca de usted.' },
+  'mapa.filter_all': { pt: 'Todos', en: 'All', fr: 'Tous', es: 'Todos' },
+  'mapa.filter_clinics': { pt: 'Clínicas / Hospitais', en: 'Clinics / Hospitals', fr: 'Cliniques / Hôpitaux', es: 'Clínicas / Hospitales' },
+  'mapa.filter_labs': { pt: 'Laboratórios', en: 'Laboratories', fr: 'Laboratoires', es: 'Laboratorios' },
+  'mapa.filter_pharmacies': { pt: 'Farmácias', en: 'Pharmacies', fr: 'Pharmacies', es: 'Farmacias' },
+  'mapa.search_ph': { pt: 'Procurar por nome ou cidade…', en: 'Search by name or city…', fr: 'Rechercher par nom ou ville…', es: 'Buscar por nombre o ciudad…' },
+  'mapa.loading': { pt: 'A carregar…', en: 'Loading…', fr: 'Chargement…', es: 'Cargando…' },
+  'mapa.load_error': { pt: 'Não foi possível carregar as unidades de saúde.', en: 'Could not load the health facilities.', fr: 'Impossible de charger les établissements de santé.', es: 'No se pudieron cargar los centros de salud.' },
+  'mapa.empty_none': { pt: 'Ainda não há unidades verificadas no mapa. Volte em breve — estamos a integrar clínicas e hospitais parceiros.', en: 'No verified facilities on the map yet. Check back soon — we’re onboarding partner clinics and hospitals.', fr: 'Aucun établissement vérifié sur la carte pour l’instant. Revenez bientôt — nous intégrons des cliniques et hôpitaux partenaires.', es: 'Aún no hay centros verificados en el mapa. Vuelva pronto — estamos incorporando clínicas y hospitales asociados.' },
+  'mapa.empty_search': { pt: 'Nenhuma unidade corresponde à sua pesquisa.', en: 'No facility matches your search.', fr: 'Aucun établissement ne correspond à votre recherche.', es: 'Ningún centro coincide con su búsqueda.' },
+  'mapa.emergency': { pt: 'Urgência', en: 'Emergency', fr: 'Urgences', es: 'Urgencias' },
+  'mapa.home_service': { pt: 'Ao domicílio', en: 'Home service', fr: 'À domicile', es: 'A domicilio' },
+  'mapa.directions': { pt: 'Ver direções', en: 'Get directions', fr: 'Itinéraire', es: 'Cómo llegar' },
+  'mapa.map_error': { pt: 'Não foi possível carregar o mapa interativo. Verifique a sua ligação à internet.', en: 'Could not load the interactive map. Please check your internet connection.', fr: 'Impossible de charger la carte interactive. Vérifiez votre connexion internet.', es: 'No se pudo cargar el mapa interactivo. Compruebe su conexión a internet.' },
 };
 
 export default translations;
