@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { openVideoRoom } from '../utils/video';
-import { Calendar, Clock, User, Video, MapPin, ChevronLeft, ChevronRight, Check, X, RefreshCw, Plus } from 'lucide-react';
+import { Calendar, Video, MapPin, ChevronLeft, ChevronRight, Check, X, Plus } from 'lucide-react';
+import { useT, type Lang } from '../i18n/LanguageContext';
 
 interface Appointment {
   id: string;
@@ -14,17 +15,16 @@ interface Appointment {
   status: string;   // confirmed | pending | in_progress | completed | cancelled | no_show
 }
 
-const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
 
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  confirmed:   { label: 'Confirmada',  color: '#059669', bg: 'rgba(16,185,129,0.1)'  },
-  pending:     { label: 'Pendente',    color: '#d97706', bg: 'rgba(234,179,8,0.12)'  },
-  in_progress: { label: 'Em curso',    color: '#0891b2', bg: 'rgba(8,145,178,0.12)'  },
-  completed:   { label: 'Concluída',   color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
-  cancelled:   { label: 'Cancelada',   color: '#dc2626', bg: 'rgba(239,68,68,0.1)'   },
-  no_show:     { label: 'Faltou',      color: '#dc2626', bg: 'rgba(239,68,68,0.1)'   },
-  done:        { label: 'Concluída',   color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
+const statusConfig: Record<string, { key: string; color: string; bg: string }> = {
+  confirmed:   { key: 'status.confirmed',           color: '#059669', bg: 'rgba(16,185,129,0.1)'  },
+  pending:     { key: 'status.pending',             color: '#d97706', bg: 'rgba(234,179,8,0.12)'  },
+  in_progress: { key: 'consult.status_in_progress', color: '#0891b2', bg: 'rgba(8,145,178,0.12)'  },
+  completed:   { key: 'consult.status_completed',   color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
+  cancelled:   { key: 'consult.status_cancelled',   color: '#dc2626', bg: 'rgba(239,68,68,0.1)'   },
+  no_show:     { key: 'consult.status_no_show',     color: '#dc2626', bg: 'rgba(239,68,68,0.1)'   },
+  done:        { key: 'consult.status_completed',   color: '#6366f1', bg: 'rgba(99,102,241,0.1)'  },
 };
 
 function buildWeek(anchor: Date): Date[] {
@@ -35,6 +35,8 @@ function buildWeek(anchor: Date): Date[] {
 }
 
 export default function DoctorAgendaPage() {
+  const { t, lang } = useT();
+  const locale = LOCALES[lang] || 'pt-PT';
   const today = new Date();
   const [anchor, setAnchor] = useState(new Date(today));
   const [selected, setSelected] = useState(new Date(today));
@@ -82,14 +84,14 @@ export default function DoctorAgendaPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Calendar size={20} style={{ color: 'var(--brand-primary)' }} /> Agenda
+            <Calendar size={20} style={{ color: 'var(--brand-primary)' }} /> {t('dag.title')}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>
-            {MONTHS[selected.getMonth()]} {selected.getFullYear()}
+          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem', textTransform: 'capitalize' }}>
+            {selected.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
           </p>
         </div>
         <Link to="/doctor/disponibilidade" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1rem', borderRadius: '10px', background: 'var(--brand-primary)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: '0.83rem', cursor: 'pointer' }}>
-          <Plus size={15} /> Disponibilidade
+          <Plus size={15} /> {t('dag.availability')}
         </Link>
       </div>
 
@@ -105,7 +107,7 @@ export default function DoctorAgendaPage() {
                 background: isToday(d) && isSelected(d) ? 'var(--brand-primary)' : isSelected(d) ? 'var(--brand-light)' : isToday(d) ? 'rgba(var(--brand-rgb,14,165,233),0.06)' : 'transparent',
                 cursor: 'pointer', minWidth: 52,
               }}>
-                <span style={{ fontSize: '0.7rem', color: isSelected(d) && isToday(d) ? '#fff' : 'var(--text-muted)', fontWeight: 600 }}>{DAYS[d.getDay()]}</span>
+                <span style={{ fontSize: '0.7rem', color: isSelected(d) && isToday(d) ? '#fff' : 'var(--text-muted)', fontWeight: 600, textTransform: 'capitalize' }}>{d.toLocaleDateString(locale, { weekday: 'short' })}</span>
                 <span style={{ fontSize: '1rem', fontWeight: 800, color: isSelected(d) && isToday(d) ? '#fff' : isSelected(d) ? 'var(--brand-primary)' : isToday(d) ? 'var(--brand-primary)' : 'var(--text-primary)', marginTop: '0.15rem' }}>{d.getDate()}</span>
                 {isToday(d) && <span style={{ width: 5, height: 5, borderRadius: '50%', background: isSelected(d) ? '#fff' : 'var(--brand-primary)', marginTop: '0.2rem' }} />}
               </button>
@@ -119,9 +121,9 @@ export default function DoctorAgendaPage() {
       {isToday(selected) && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
           {[
-            { label: 'Confirmadas', val: confirmed, color: '#059669' },
-            { label: 'Pendentes',   val: pending,   color: '#d97706' },
-            { label: 'Concluídas',  val: done,       color: '#6366f1' },
+            { label: t('dag.confirmed'), val: confirmed, color: '#059669' },
+            { label: t('dag.pending'),   val: pending,   color: '#d97706' },
+            { label: t('dag.done'),      val: done,       color: '#6366f1' },
           ].map(s => (
             <div key={s.label} className="card" style={{ textAlign: 'center', padding: '0.85rem 0.5rem' }}>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: s.color }}>{s.val}</div>
@@ -137,13 +139,14 @@ export default function DoctorAgendaPage() {
       ) : shownAppts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
           <Calendar size={36} style={{ display: 'block', margin: '0 auto 0.75rem', color: 'var(--text-muted)' }} />
-          <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Sem consultas neste dia</div>
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>Seleccione outro dia ou crie uma nova consulta.</div>
+          <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>{t('dag.empty_title')}</div>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>{t('dag.empty_desc')}</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {shownAppts.map(a => {
-            const s = statusConfig[a.status] ?? { label: a.status, color: '#64748b', bg: 'rgba(100,116,139,0.1)' };
+            const s = statusConfig[a.status] ?? { key: '', color: '#64748b', bg: 'rgba(100,116,139,0.1)' };
+            const sLabel = s.key ? t(s.key) : a.status;
             return (
               <div key={a.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', opacity: a.status === 'cancelled' ? 0.5 : 1 }}>
                 {/* Time */}
@@ -158,22 +161,22 @@ export default function DoctorAgendaPage() {
                   <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{a.patient}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
                     {a.type === 'teleconsulta' ? <Video size={12} style={{ color: '#3b82f6' }} /> : <MapPin size={12} style={{ color: '#10b981' }} />}
-                    <span style={{ fontSize: '0.77rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{a.type}</span>
+                    <span style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{a.type === 'teleconsulta' ? t('appt.teleconsulta') : t('appt.presencial')}</span>
                     <span style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>· {a.reason}</span>
                   </div>
                 </div>
                 {/* Status */}
-                <span style={{ padding: '0.25rem 0.65rem', borderRadius: 999, background: s.bg, color: s.color, fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>{s.label}</span>
+                <span style={{ padding: '0.25rem 0.65rem', borderRadius: 999, background: s.bg, color: s.color, fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>{sLabel}</span>
                 {/* Actions */}
                 {a.status === 'pending' && (
                   <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
-                    <button onClick={() => updateStatus(a.id, 'confirmed')} title="Confirmar" style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: '#059669', cursor: 'pointer' }}><Check size={15} /></button>
-                    <button onClick={() => updateStatus(a.id, 'cancelled')} title="Cancelar" style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', cursor: 'pointer' }}><X size={15} /></button>
+                    <button onClick={() => updateStatus(a.id, 'confirmed')} title={t('common.confirm')} style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: '#059669', cursor: 'pointer' }}><Check size={15} /></button>
+                    <button onClick={() => updateStatus(a.id, 'cancelled')} title={t('common.cancel')} style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', cursor: 'pointer' }}><X size={15} /></button>
                   </div>
                 )}
                 {(a.status === 'confirmed' || a.status === 'in_progress') && (
                   <button onClick={() => openVideoRoom(a.id)} style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1.5px solid rgba(59,130,246,0.3)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <Video size={13} /> Entrar
+                    <Video size={13} /> {t('common.enter')}
                   </button>
                 )}
               </div>

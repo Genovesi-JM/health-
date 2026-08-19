@@ -4,6 +4,9 @@ import {
   CheckCheck, Loader2, RefreshCw,
 } from 'lucide-react';
 import api from '../api';
+import { useT, type Lang } from '../i18n/LanguageContext';
+
+const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
 
 interface Notification {
   id: string;
@@ -23,19 +26,22 @@ const TYPE_CONFIG = {
   error:   { icon: <X size={17} />,            color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)'   },
 };
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, locale: string): string {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
   const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'agora mesmo';
-  if (m < 60) return `há ${m} min`;
+  const m = Math.round(diff / 60000);
+  if (m < 1) return rtf.format(0, 'minute');
+  if (m < 60) return rtf.format(-m, 'minute');
   const h = Math.floor(m / 60);
-  if (h < 24) return `há ${h}h`;
+  if (h < 24) return rtf.format(-h, 'hour');
   const d = Math.floor(h / 24);
-  if (d < 7) return `há ${d} dia${d > 1 ? 's' : ''}`;
-  return new Date(iso).toLocaleDateString('pt-PT');
+  if (d < 7) return rtf.format(-d, 'day');
+  return new Date(iso).toLocaleDateString(locale);
 }
 
 export default function NotificationsPage() {
+  const { t, lang } = useT();
+  const locale = LOCALES[lang] || 'pt-PT';
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
@@ -49,11 +55,11 @@ export default function NotificationsPage() {
       const { data } = await api.get<Notification[]>('/api/v1/notifications/me');
       setNotifications(data);
     } catch (e: any) {
-      setError(e?.response?.data?.detail ?? 'Erro ao carregar notificações.');
+      setError(e?.response?.data?.detail ?? t('notif.load_error'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -89,7 +95,7 @@ export default function NotificationsPage() {
         <div>
           <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Bell size={20} style={{ color: 'var(--brand-primary)' }} />
-            Alertas &amp; Notificações
+            {t('notif.title')}
             {unreadCount > 0 && (
               <span style={{ fontSize: '0.75rem', fontWeight: 700, background: '#ef4444', color: '#fff', borderRadius: 999, padding: '0.15rem 0.55rem', marginLeft: '0.25rem' }}>
                 {unreadCount}
@@ -97,7 +103,7 @@ export default function NotificationsPage() {
             )}
           </h1>
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.82rem' }}>
-            As suas notificações de saúde e actualizações de pedidos
+            {t('notif.subtitle')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -105,7 +111,7 @@ export default function NotificationsPage() {
             onClick={load}
             style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.7rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}
           >
-            <RefreshCw size={13} /> Actualizar
+            <RefreshCw size={13} /> {t('common.refresh')}
           </button>
           {unreadCount > 0 && (
             <button
@@ -114,7 +120,7 @@ export default function NotificationsPage() {
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.85rem', borderRadius: '8px', background: 'var(--brand-light)', color: 'var(--brand-primary)', border: '1px solid rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8rem', cursor: markingAll ? 'not-allowed' : 'pointer', opacity: markingAll ? 0.7 : 1 }}
             >
               {markingAll ? <Loader2 size={13} /> : <CheckCheck size={13} />}
-              Marcar todas como lidas
+              {t('notif.mark_all')}
             </button>
           )}
         </div>
@@ -128,7 +134,7 @@ export default function NotificationsPage() {
             onClick={() => setFilter(f)}
             style={{ padding: '0.4rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}
           >
-            {f === 'all' ? `Todas (${notifications.length})` : `Não lidas (${unreadCount})`}
+            {f === 'all' ? `${t('notif.all')} (${notifications.length})` : `${t('notif.unread')} (${unreadCount})`}
           </button>
         ))}
       </div>
@@ -137,7 +143,7 @@ export default function NotificationsPage() {
       {loading && (
         <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
           <Loader2 size={28} style={{ display: 'block', margin: '0 auto 0.5rem' }} />
-          A carregar…
+          {t('common.loading')}
         </div>
       )}
 
@@ -153,10 +159,10 @@ export default function NotificationsPage() {
             <Bell size={30} style={{ color: 'var(--brand-primary)', opacity: 0.5 }} />
           </div>
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>
-            {filter === 'unread' ? 'Está tudo em dia!' : 'Sem notificações'}
+            {filter === 'unread' ? t('notif.empty_unread_title') : t('notif.empty_title')}
           </div>
           <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-            {filter === 'unread' ? 'Não tem notificações por ler.' : 'As suas notificações aparecerão aqui.'}
+            {filter === 'unread' ? t('notif.empty_unread_desc') : t('notif.empty_desc')}
           </div>
         </div>
       )}
@@ -195,14 +201,14 @@ export default function NotificationsPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: n.is_read ? 600 : 800, fontSize: '0.88rem', marginBottom: '0.2rem' }}>{n.title}</div>
                   <div style={{ fontSize: '0.81rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{n.message}</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>{timeAgo(n.created_at)}</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>{timeAgo(n.created_at, locale)}</div>
                 </div>
 
                 {!n.is_read && (
                   <button
                     onClick={() => markOne(n.id)}
                     disabled={isBusy}
-                    title="Marcar como lida"
+                    title={t('notif.mark_read')}
                     style={{ background: 'none', border: 'none', cursor: isBusy ? 'not-allowed' : 'pointer', color: 'var(--text-muted)', padding: '0.25rem', borderRadius: '6px', flexShrink: 0, alignSelf: 'flex-start', marginTop: '0.1rem' }}
                   >
                     {isBusy ? <Loader2 size={15} /> : <CheckCheck size={15} />}

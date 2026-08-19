@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { Heart } from 'lucide-react';
 import type { Role } from '../types';
 import kayaLogo from '/kaya-logo.svg';
+import { useT } from '../i18n/LanguageContext';
 
 export default function AuthCallbackPage() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -34,12 +35,12 @@ export default function AuthCallbackPage() {
         });
         navigate(redirect, { replace: true });
       } catch {
-        setError('Erro ao processar autenticação.');
+        setError(t('authcb.process_error'));
       }
     } else {
-      setError(searchParams.get('error') || 'Autenticação falhou.');
+      setError(searchParams.get('error') || t('authcb.failed'));
     }
-  }, [searchParams, login, navigate]);
+  }, [searchParams, login, navigate, t]);
 
   return (
     <div className="auth-shell">
@@ -50,14 +51,14 @@ export default function AuthCallbackPage() {
         </div>
         {error ? (
           <>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Erro de Autenticação</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('authcb.error_title')}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>{error}</p>
-            <button className="btn btn-primary" onClick={() => navigate('/login')}>Voltar ao Login</button>
+            <button className="btn btn-primary" onClick={() => navigate('/login')}>{t('authcb.back_login')}</button>
           </>
         ) : (
           <>
             <div className="spinner" style={{ margin: '1.5rem auto' }} />
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>A processar autenticação…</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>{t('authcb.processing')}</p>
           </>
         )}
       </div>

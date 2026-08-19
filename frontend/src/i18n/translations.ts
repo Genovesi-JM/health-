@@ -1491,6 +1491,125 @@ const translations: Record<string, TranslationEntry> = {
   'triage.for_whom': { pt: 'Para quem é a triagem?', en: 'Who is this triage for?', fr: 'Pour qui est ce triage ?', es: '¿Para quién es este triaje?' },
   'triage.for_me': { pt: 'Para mim', en: 'For me', fr: 'Pour moi', es: 'Para mí' },
   'triage.for_dependent': { pt: 'Para um familiar', en: 'For a family member', fr: 'Pour un membre de la famille', es: 'Para un familiar' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR — SUPPORT CENTRE
+     ═══════════════════════════════════════════════════════════ */
+  'dsup.title': { pt: 'Centro de Suporte', en: 'Support Centre', fr: 'Centre d’assistance', es: 'Centro de soporte' },
+  'dsup.email': { pt: 'Email', en: 'Email', fr: 'E-mail', es: 'Correo' },
+  'dsup.email_action': { pt: 'Enviar email', en: 'Send email', fr: 'Envoyer un e-mail', es: 'Enviar correo' },
+  'dsup.chat': { pt: 'Chat ao vivo', en: 'Live chat', fr: 'Chat en direct', es: 'Chat en vivo' },
+  'dsup.chat_sub': { pt: 'Resposta em <2 horas', en: 'Reply within 2 hours', fr: 'Réponse sous 2 heures', es: 'Respuesta en menos de 2 horas' },
+  'dsup.chat_action': { pt: 'Iniciar chat', en: 'Start chat', fr: 'Démarrer le chat', es: 'Iniciar chat' },
+  'dsup.faq': { pt: 'Perguntas frequentes', en: 'Frequently asked questions', fr: 'Questions fréquentes', es: 'Preguntas frecuentes' },
+  'dsup.contact_kaya': { pt: 'Falar com o suporte KAYA', en: 'Contact KAYA support', fr: 'Contacter le support KAYA', es: 'Hablar con el soporte KAYA' },
+  'dsup.q1': { pt: 'Como activar a minha conta de médico?', en: 'How do I activate my doctor account?', fr: 'Comment activer mon compte médecin ?', es: '¿Cómo activo mi cuenta de médico?' },
+  'dsup.a1': { pt: 'A conta é activada automaticamente após registo via convite. Se tiver dificuldades, contacte o suporte.', en: 'The account is activated automatically after registering via invitation. If you have trouble, contact support.', fr: 'Le compte est activé automatiquement après inscription via invitation. En cas de difficulté, contactez le support.', es: 'La cuenta se activa automáticamente tras registrarse mediante invitación. Si tiene dificultades, contacte con soporte.' },
+  'dsup.q2': { pt: 'Como funciona o pagamento das consultas?', en: 'How are consultation payments handled?', fr: 'Comment fonctionne le paiement des consultations ?', es: '¿Cómo funciona el pago de las consultas?' },
+  'dsup.a2': { pt: 'Os pagamentos são processados pela plataforma. O saldo líquido é transferido quinzenalmente para a sua conta bancária.', en: 'Payments are processed by the platform. Your net balance is transferred to your bank account every two weeks.', fr: 'Les paiements sont traités par la plateforme. Votre solde net est viré sur votre compte bancaire toutes les deux semaines.', es: 'Los pagos son procesados por la plataforma. El saldo neto se transfiere quincenalmente a su cuenta bancaria.' },
+  'dsup.q3': { pt: 'Posso alterar o preço das minhas consultas?', en: 'Can I change my consultation prices?', fr: 'Puis-je modifier le prix de mes consultations ?', es: '¿Puedo cambiar el precio de mis consultas?' },
+  'dsup.a3': { pt: 'Sim, aceda a Perfil Público → preços e actualize os valores. Alterações entram em vigor imediatamente.', en: 'Yes — go to Public Profile → pricing and update the values. Changes take effect immediately.', fr: 'Oui, allez dans Profil public → tarifs et mettez à jour les montants. Les modifications prennent effet immédiatement.', es: 'Sí, vaya a Perfil público → precios y actualice los valores. Los cambios se aplican de inmediato.' },
+  'dsup.q4': { pt: 'O que fazer se houver problemas técnicos durante uma teleconsulta?', en: 'What should I do if there are technical problems during a teleconsultation?', fr: 'Que faire en cas de problème technique pendant une téléconsultation ?', es: '¿Qué hacer si hay problemas técnicos durante una teleconsulta?' },
+  'dsup.a4': { pt: 'Tente recarregar a página. Se o problema persistir, contacte o paciente por mensagem e reagende.', en: 'Try reloading the page. If the problem persists, contact the patient by message and reschedule.', fr: 'Essayez de recharger la page. Si le problème persiste, contactez le patient par message et reprogrammez.', es: 'Intente recargar la página. Si el problema persiste, contacte al paciente por mensaje y reprograme.' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR — REVIEWS
+     ═══════════════════════════════════════════════════════════ */
+  'drev.title': { pt: 'Avaliações dos Pacientes', en: 'Patient Reviews', fr: 'Avis des patients', es: 'Reseñas de pacientes' },
+  'drev.empty_title': { pt: 'Ainda sem avaliações', en: 'No reviews yet', fr: 'Pas encore d’avis', es: 'Aún sin reseñas' },
+  'drev.empty_desc': { pt: 'As avaliações dos pacientes aparecem aqui após as consultas concluídas.', en: 'Patient reviews appear here after completed consultations.', fr: 'Les avis des patients apparaissent ici après les consultations terminées.', es: 'Las reseñas de los pacientes aparecen aquí tras las consultas completadas.' },
+  'drev.count_one': { pt: 'avaliação', en: 'review', fr: 'avis', es: 'reseña' },
+  'drev.count_many': { pt: 'avaliações', en: 'reviews', fr: 'avis', es: 'reseñas' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR — SECURITY
+     ═══════════════════════════════════════════════════════════ */
+  'dsec.title': { pt: 'Segurança', en: 'Security', fr: 'Sécurité', es: 'Seguridad' },
+  'dsec.change_password': { pt: 'Alterar Palavra-passe', en: 'Change Password', fr: 'Changer le mot de passe', es: 'Cambiar contraseña' },
+  'dsec.current': { pt: 'Palavra-passe actual', en: 'Current password', fr: 'Mot de passe actuel', es: 'Contraseña actual' },
+  'dsec.new': { pt: 'Nova palavra-passe', en: 'New password', fr: 'Nouveau mot de passe', es: 'Nueva contraseña' },
+  'dsec.confirm': { pt: 'Confirmar nova palavra-passe', en: 'Confirm new password', fr: 'Confirmer le nouveau mot de passe', es: 'Confirmar nueva contraseña' },
+  'dsec.mismatch': { pt: 'As palavras-passe não coincidem.', en: 'Passwords do not match.', fr: 'Les mots de passe ne correspondent pas.', es: 'Las contraseñas no coinciden.' },
+  'dsec.too_short': { pt: 'A nova palavra-passe deve ter pelo menos 8 caracteres.', en: 'The new password must be at least 8 characters.', fr: 'Le nouveau mot de passe doit comporter au moins 8 caractères.', es: 'La nueva contraseña debe tener al menos 8 caracteres.' },
+  'dsec.updated': { pt: 'Palavra-passe actualizada com sucesso!', en: 'Password updated successfully!', fr: 'Mot de passe mis à jour avec succès !', es: '¡Contraseña actualizada con éxito!' },
+  'dsec.update_error': { pt: 'Erro ao actualizar. Verifique a palavra-passe actual.', en: 'Update failed. Check your current password.', fr: 'Échec de la mise à jour. Vérifiez votre mot de passe actuel.', es: 'Error al actualizar. Verifique su contraseña actual.' },
+  'dsec.saving': { pt: 'A guardar…', en: 'Saving…', fr: 'Enregistrement…', es: 'Guardando…' },
+  'dsec.update_btn': { pt: 'Actualizar palavra-passe', en: 'Update password', fr: 'Mettre à jour le mot de passe', es: 'Actualizar contraseña' },
+  'dsec.mfa_title': { pt: 'Autenticação de dois factores', en: 'Two-factor authentication', fr: 'Authentification à deux facteurs', es: 'Autenticación de dos factores' },
+  'dsec.mfa_desc': { pt: 'Obrigatória para profissionais. Configure a aplicação de autenticação e os códigos de recuperação.', en: 'Required for professionals. Set up your authenticator app and recovery codes.', fr: 'Obligatoire pour les professionnels. Configurez votre application d’authentification et vos codes de récupération.', es: 'Obligatoria para profesionales. Configure su aplicación de autenticación y los códigos de recuperación.' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR — FINANCE
+     ═══════════════════════════════════════════════════════════ */
+  'dfin.title': { pt: 'Financeiro', en: 'Finance', fr: 'Finances', es: 'Finanzas' },
+  'dfin.today': { pt: 'Receita hoje', en: 'Revenue today', fr: 'Revenu aujourd’hui', es: 'Ingresos hoy' },
+  'dfin.month': { pt: 'Receita este mês', en: 'Revenue this month', fr: 'Revenu ce mois-ci', es: 'Ingresos este mes' },
+  'dfin.pending': { pt: 'Pagamentos pendentes', en: 'Pending payments', fr: 'Paiements en attente', es: 'Pagos pendientes' },
+  'dfin.pending_sub': { pt: 'A aguardar confirmação', en: 'Awaiting confirmation', fr: 'En attente de confirmation', es: 'A la espera de confirmación' },
+  'dfin.fee': { pt: 'Taxa da plataforma', en: 'Platform fee', fr: 'Frais de plateforme', es: 'Comisión de la plataforma' },
+  'dfin.net': { pt: 'Líquido a receber (após taxa)', en: 'Net payout (after fee)', fr: 'Montant net à recevoir (après frais)', es: 'Neto a recibir (tras comisión)' },
+  'dfin.recent': { pt: 'Transacções Recentes', en: 'Recent Transactions', fr: 'Transactions récentes', es: 'Transacciones recientes' },
+  'dfin.empty': { pt: 'Ainda não há transacções. Aparecem aqui quando os pacientes pagam as consultas.', en: 'No transactions yet. They appear here when patients pay for consultations.', fr: 'Aucune transaction pour l’instant. Elles apparaissent ici lorsque les patients paient leurs consultations.', es: 'Aún no hay transacciones. Aparecen aquí cuando los pacientes pagan las consultas.' },
+  'dfin.consult_one': { pt: 'consulta', en: 'consultation', fr: 'consultation', es: 'consulta' },
+  'dfin.consult_many': { pt: 'consultas', en: 'consultations', fr: 'consultations', es: 'consultas' },
+
+  /* ═══════════════════════════════════════════════════════════
+     AUTH CALLBACK
+     ═══════════════════════════════════════════════════════════ */
+  'authcb.process_error': { pt: 'Erro ao processar autenticação.', en: 'Error processing authentication.', fr: 'Erreur lors du traitement de l’authentification.', es: 'Error al procesar la autenticación.' },
+  'authcb.failed': { pt: 'Autenticação falhou.', en: 'Authentication failed.', fr: 'L’authentification a échoué.', es: 'La autenticación falló.' },
+  'authcb.error_title': { pt: 'Erro de Autenticação', en: 'Authentication Error', fr: 'Erreur d’authentification', es: 'Error de autenticación' },
+  'authcb.back_login': { pt: 'Voltar ao Login', en: 'Back to Login', fr: 'Retour à la connexion', es: 'Volver al inicio de sesión' },
+  'authcb.processing': { pt: 'A processar autenticação…', en: 'Processing authentication…', fr: 'Traitement de l’authentification…', es: 'Procesando la autenticación…' },
+
+  /* ═══════════════════════════════════════════════════════════
+     NURSE — PREVIEW SHELL
+     ═══════════════════════════════════════════════════════════ */
+  'nurse.portal_sub': { pt: 'Portal de Enfermagem', en: 'Nursing Portal', fr: 'Portail infirmier', es: 'Portal de Enfermería' },
+  'nurse.role_label': { pt: 'Enfermeira', en: 'Nurse', fr: 'Infirmière', es: 'Enfermera' },
+
+  /* ═══════════════════════════════════════════════════════════
+     COMMON — shared UI atoms
+     ═══════════════════════════════════════════════════════════ */
+  'common.menu': { pt: 'Menu', en: 'Menu', fr: 'Menu', es: 'Menú' },
+  'common.close_menu': { pt: 'Fechar menu', en: 'Close menu', fr: 'Fermer le menu', es: 'Cerrar menú' },
+  'common.enter': { pt: 'Entrar', en: 'Join', fr: 'Rejoindre', es: 'Entrar' },
+  'common.confirm': { pt: 'Confirmar', en: 'Confirm', fr: 'Confirmer', es: 'Confirmar' },
+
+  /* ═══════════════════════════════════════════════════════════
+     STATUS BADGES (shared)
+     ═══════════════════════════════════════════════════════════ */
+  'status.confirmed': { pt: 'Confirmada', en: 'Confirmed', fr: 'Confirmée', es: 'Confirmada' },
+  'status.pending': { pt: 'Pendente', en: 'Pending', fr: 'En attente', es: 'Pendiente' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR — AGENDA
+     ═══════════════════════════════════════════════════════════ */
+  'dag.title': { pt: 'Agenda', en: 'Agenda', fr: 'Agenda', es: 'Agenda' },
+  'dag.availability': { pt: 'Disponibilidade', en: 'Availability', fr: 'Disponibilité', es: 'Disponibilidad' },
+  'dag.confirmed': { pt: 'Confirmadas', en: 'Confirmed', fr: 'Confirmées', es: 'Confirmadas' },
+  'dag.pending': { pt: 'Pendentes', en: 'Pending', fr: 'En attente', es: 'Pendientes' },
+  'dag.done': { pt: 'Concluídas', en: 'Completed', fr: 'Terminées', es: 'Completadas' },
+  'dag.empty_title': { pt: 'Sem consultas neste dia', en: 'No consultations on this day', fr: 'Aucune consultation ce jour', es: 'Sin consultas este día' },
+  'dag.empty_desc': { pt: 'Seleccione outro dia ou crie uma nova consulta.', en: 'Select another day or create a new consultation.', fr: 'Sélectionnez un autre jour ou créez une nouvelle consultation.', es: 'Seleccione otro día o cree una nueva consulta.' },
+  'appt.teleconsulta': { pt: 'Teleconsulta', en: 'Teleconsultation', fr: 'Téléconsultation', es: 'Teleconsulta' },
+  'appt.presencial': { pt: 'Presencial', en: 'In person', fr: 'En personne', es: 'Presencial' },
+
+  /* ═══════════════════════════════════════════════════════════
+     NOTIFICATIONS
+     ═══════════════════════════════════════════════════════════ */
+  'common.refresh': { pt: 'Actualizar', en: 'Refresh', fr: 'Actualiser', es: 'Actualizar' },
+  'notif.title': { pt: 'Alertas & Notificações', en: 'Alerts & Notifications', fr: 'Alertes et notifications', es: 'Alertas y notificaciones' },
+  'notif.subtitle': { pt: 'As suas notificações de saúde e actualizações de pedidos', en: 'Your health notifications and request updates', fr: 'Vos notifications de santé et mises à jour de demandes', es: 'Sus notificaciones de salud y actualizaciones de solicitudes' },
+  'notif.mark_all': { pt: 'Marcar todas como lidas', en: 'Mark all as read', fr: 'Tout marquer comme lu', es: 'Marcar todas como leídas' },
+  'notif.mark_read': { pt: 'Marcar como lida', en: 'Mark as read', fr: 'Marquer comme lu', es: 'Marcar como leída' },
+  'notif.all': { pt: 'Todas', en: 'All', fr: 'Toutes', es: 'Todas' },
+  'notif.unread': { pt: 'Não lidas', en: 'Unread', fr: 'Non lues', es: 'No leídas' },
+  'notif.load_error': { pt: 'Erro ao carregar notificações.', en: 'Failed to load notifications.', fr: 'Échec du chargement des notifications.', es: 'Error al cargar las notificaciones.' },
+  'notif.empty_title': { pt: 'Sem notificações', en: 'No notifications', fr: 'Aucune notification', es: 'Sin notificaciones' },
+  'notif.empty_desc': { pt: 'As suas notificações aparecerão aqui.', en: 'Your notifications will appear here.', fr: 'Vos notifications apparaîtront ici.', es: 'Sus notificaciones aparecerán aquí.' },
+  'notif.empty_unread_title': { pt: 'Está tudo em dia!', en: 'All caught up!', fr: 'Tout est à jour !', es: '¡Todo al día!' },
+  'notif.empty_unread_desc': { pt: 'Não tem notificações por ler.', en: 'You have no unread notifications.', fr: 'Vous n’avez aucune notification non lue.', es: 'No tiene notificaciones sin leer.' },
 };
 
 export default translations;
