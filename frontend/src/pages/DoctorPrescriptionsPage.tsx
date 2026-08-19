@@ -6,6 +6,9 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import api from '../api';
+import { useT, type Lang } from '../i18n/LanguageContext';
+
+const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
 
 interface RxRequest {
   id: string;
@@ -51,22 +54,24 @@ interface PemStatus {
 }
 
 const riskConfig = {
-  low:    { label: 'Baixo risco',  color: '#059669', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)' },
-  medium: { label: 'Risco médio', color: '#d97706', bg: 'rgba(234,179,8,0.1)',   border: 'rgba(234,179,8,0.3)'   },
-  high:   { label: 'Alto risco',  color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.3)'   },
+  low:    { key: 'dpres.risk_low',    color: '#059669', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)' },
+  medium: { key: 'dpres.risk_medium', color: '#d97706', bg: 'rgba(234,179,8,0.1)',   border: 'rgba(234,179,8,0.3)'   },
+  high:   { key: 'dpres.risk_high',   color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.3)'   },
 };
 
-const actionMap: Record<string, string> = {
-  approve:            '✓ Aprovada',
-  adjust:             '~ Dose ajustada',
-  consult_requested:  '📅 Consulta solicitada',
-  exams_requested:    '🔬 Exames pedidos',
-  reject:             '✗ Recusada',
+const actionKeyMap: Record<string, string> = {
+  approve:            'dpres.act_approve',
+  adjust:             'dpres.act_adjust',
+  consult_requested:  'dpres.act_consult',
+  exams_requested:    'dpres.act_exams',
+  reject:             'dpres.act_reject',
 };
 
 type Action = 'approve' | 'adjust' | 'consult_requested' | 'exams_requested' | 'reject';
 
 export default function DoctorPrescriptionsPage() {
+  const { t, lang } = useT();
+  const locale = LOCALES[lang] || 'pt-PT';
   const [requests, setRequests] = useState<RxRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,7 +96,7 @@ export default function DoctorPrescriptionsPage() {
       setRequests(data);
       if (data.length > 0) setExpanded(data[0].id);
     } catch (e: any) {
-      setError(e?.response?.data?.detail ?? 'Erro ao carregar pedidos.');
+      setError(e?.response?.data?.detail ?? t('dpres.load_error'));
     } finally { setLoading(false); }
   };
 
@@ -126,7 +131,7 @@ export default function DoctorPrescriptionsPage() {
       });
       setRequests(prev => prev.map(r => r.id === id ? data : r));
     } catch (e: any) {
-      alert(e?.response?.data?.detail ?? 'Erro ao processar decisão.');
+      alert(e?.response?.data?.detail ?? t('dpres.decide_error'));
     } finally { setSubmitting(null); setNoteFor(null); setNoteText(''); setAdjDoseText(''); setAdjFreqText(''); }
   };
 
@@ -154,26 +159,26 @@ export default function DoctorPrescriptionsPage() {
             <ShieldCheck size={19} />
           </span>
           <div>
-            <strong style={{ display: 'block', fontSize: '0.78rem' }}>Prescrição eletrónica · PEM / BDNP Portugal</strong>
+            <strong style={{ display: 'block', fontSize: '0.78rem' }}>{t('dpres.pem_title')}</strong>
             <span style={{ display: 'block', marginTop: '0.15rem', color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-              {pemStatus?.message || 'A verificar a ligação certificada…'}
+              {pemStatus?.message || t('dpres.pem_checking')}
             </span>
           </div>
           <span style={{ padding: '0.25rem 0.55rem', borderRadius: 999, background: pemStatus?.configured ? '#047857' : '#b45309', color: '#fff', fontSize: '0.58rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
-            {pemStatus?.configured ? 'Gateway configurado' : 'Preparação apenas'}
+            {pemStatus?.configured ? t('dpres.pem_configured') : t('dpres.pem_prep')}
           </span>
         </section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileText size={20} style={{ color: '#ef4444' }} /> Prescrições Pendentes
+              <FileText size={20} style={{ color: '#ef4444' }} /> {t('dpres.title')}
             </h1>
-            <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>Contexto clínico completo disponível</p>
+            <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>{t('dpres.subtitle')}</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {pending.length > 0 && <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '0.35rem 0.75rem', borderRadius: 999 }}>{pending.length} pendentes</span>}
+            {pending.length > 0 && <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '0.35rem 0.75rem', borderRadius: 999 }}>{pending.length} {t('dpres.pending_badge')}</span>}
             <button onClick={load} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.75rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
-              <RefreshCw size={13} /> Actualizar
+              <RefreshCw size={13} /> {t('common.refresh')}
             </button>
           </div>
         </div>
@@ -181,22 +186,22 @@ export default function DoctorPrescriptionsPage() {
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 180, position: 'relative' }}>
             <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input className="form-input" placeholder="Pesquisar…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.1rem' }} />
+            <input className="form-input" placeholder={t('dpres.search_ph')} value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.1rem' }} />
           </div>
           {(['pending', 'all'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}>
-              {f === 'pending' ? 'Pendentes' : 'Todos'}
+              {f === 'pending' ? t('dpres.filter_pending') : t('dpres.filter_all')}
             </button>
           ))}
         </div>
 
-        {loading && <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}><Loader2 size={28} style={{ display: 'block', margin: '0 auto 0.5rem' }} />A carregar…</div>}
+        {loading && <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}><Loader2 size={28} style={{ display: 'block', margin: '0 auto 0.5rem' }} />{t('common.loading')}</div>}
         {!loading && error && <div style={{ padding: '1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', fontSize: '0.85rem' }}>{error}</div>}
         {!loading && !error && shown.length === 0 && (
           <div style={{ textAlign: 'center', padding: '4rem 0' }}>
             <CheckCircle2 size={40} style={{ color: '#10b981', margin: '0 auto 0.75rem', display: 'block' }} />
-            <div style={{ fontWeight: 700, color: '#10b981' }}>Tudo em dia!</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>Sem prescrições pendentes.</div>
+            <div style={{ fontWeight: 700, color: '#10b981' }}>{t('dpres.empty_title')}</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>{t('dpres.empty_desc')}</div>
           </div>
         )}
 
@@ -213,14 +218,14 @@ export default function DoctorPrescriptionsPage() {
                     {(rx.patient_name ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700 }}>{rx.patient_name ?? 'Paciente'}{rx.patient_age ? ` · ${rx.patient_age} anos` : ''}</div>
+                    <div style={{ fontWeight: 700 }}>{rx.patient_name ?? 'Paciente'}{rx.patient_age ? ` · ${rx.patient_age} ${t('dpat.years')}` : ''}</div>
                     <div style={{ fontSize: '0.8rem', fontWeight: 500, marginTop: '0.1rem' }}>💊 {rx.medication_name}{rx.dose ? ` — ${rx.dose}` : ''}{rx.frequency ? ` ${rx.frequency}` : ''}</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem', flexShrink: 0 }}>
-                    {rx.risk_level && <span style={{ fontSize: '0.73rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 999, background: risk.bg, color: risk.color }}>{risk.label}</span>}
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(rx.created_at).toLocaleDateString('pt-PT')}</span>
+                    {rx.risk_level && <span style={{ fontSize: '0.73rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 999, background: risk.bg, color: risk.color }}>{t(risk.key)}</span>}
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(rx.created_at).toLocaleDateString(locale)}</span>
                     <button onClick={e => { e.stopPropagation(); openQuickView(rx); }} style={{ fontSize: '0.72rem', background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      <SidebarOpen size={13} /> Perfil
+                      <SidebarOpen size={13} /> {t('dpres.profile')}
                     </button>
                     {isOpen ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />}
                   </div>
@@ -237,43 +242,43 @@ export default function DoctorPrescriptionsPage() {
                   <div style={{ padding: '1.25rem', borderTop: rx.risk_alert ? undefined : '1px solid var(--border)' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                       {(rx.chronic_conditions ?? []).length > 0 && (
-                        <DetailBlock title="🩺 Condições crónicas">
+                        <DetailBlock title={t('dpres.detail_chronic')}>
                           {(rx.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
                         </DetailBlock>
                       )}
                       {(rx.allergies ?? []).length > 0 && (
-                        <DetailBlock title="⚠️ Alergias">
+                        <DetailBlock title={t('dpres.detail_allergies')}>
                           {(rx.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
                         </DetailBlock>
                       )}
                     </div>
                     {rx.reason && (
                       <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.025)', border: '1px solid var(--border)', marginBottom: '1.25rem', fontSize: '0.83rem' }}>
-                        <span style={{ fontWeight: 700 }}>Motivo: </span>{rx.reason}
+                        <span style={{ fontWeight: 700 }}>{t('dpres.reason')} </span>{rx.reason}
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <ActionBtn onClick={() => handleAction(rx, 'approve')} disabled={isBusy} color="#059669" bg="rgba(16,185,129,0.1)" border="rgba(16,185,129,0.3)" icon={<CheckCircle2 size={15} />} label={isBusy ? '…' : 'Aprovar'} />
-                      <ActionBtn onClick={() => handleAction(rx, 'adjust')} disabled={isBusy} color="#d97706" bg="rgba(234,179,8,0.1)" border="rgba(234,179,8,0.3)" icon={<Stethoscope size={15} />} label="Ajustar dose" />
-                      <ActionBtn onClick={() => handleAction(rx, 'consult_requested')} disabled={isBusy} color="#3b82f6" bg="rgba(59,130,246,0.1)" border="rgba(59,130,246,0.3)" icon={<Calendar size={15} />} label="Solicitar consulta" />
-                      <ActionBtn onClick={() => handleAction(rx, 'exams_requested')} disabled={isBusy} color="#8b5cf6" bg="rgba(139,92,246,0.1)" border="rgba(139,92,246,0.3)" icon={<Activity size={15} />} label="Pedir exames" />
-                      <ActionBtn onClick={() => handleAction(rx, 'reject')} disabled={isBusy} color="#dc2626" bg="rgba(239,68,68,0.08)" border="rgba(239,68,68,0.25)" icon={<X size={15} />} label="Recusar" />
+                      <ActionBtn onClick={() => handleAction(rx, 'approve')} disabled={isBusy} color="#059669" bg="rgba(16,185,129,0.1)" border="rgba(16,185,129,0.3)" icon={<CheckCircle2 size={15} />} label={isBusy ? '…' : t('dpres.approve')} />
+                      <ActionBtn onClick={() => handleAction(rx, 'adjust')} disabled={isBusy} color="#d97706" bg="rgba(234,179,8,0.1)" border="rgba(234,179,8,0.3)" icon={<Stethoscope size={15} />} label={t('dpres.adjust')} />
+                      <ActionBtn onClick={() => handleAction(rx, 'consult_requested')} disabled={isBusy} color="#3b82f6" bg="rgba(59,130,246,0.1)" border="rgba(59,130,246,0.3)" icon={<Calendar size={15} />} label={t('dpres.request_consult')} />
+                      <ActionBtn onClick={() => handleAction(rx, 'exams_requested')} disabled={isBusy} color="#8b5cf6" bg="rgba(139,92,246,0.1)" border="rgba(139,92,246,0.3)" icon={<Activity size={15} />} label={t('dpres.request_exams')} />
+                      <ActionBtn onClick={() => handleAction(rx, 'reject')} disabled={isBusy} color="#dc2626" bg="rgba(239,68,68,0.08)" border="rgba(239,68,68,0.25)" icon={<X size={15} />} label={t('dpres.reject')} />
                     </div>
                     {noteFor?.id === rx.id && (
                       <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
                         <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '0.4rem' }}>
-                          {noteFor.action === 'reject' ? 'Motivo da recusa *' : 'Ajuste pretendido *'}
+                          {noteFor.action === 'reject' ? t('dpres.note_reject') : t('dpres.note_adjust')}
                         </label>
                         {noteFor.action === 'adjust' && (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <input className="form-input" placeholder="Nova dose" value={adjDoseText} onChange={e => setAdjDoseText(e.target.value)} />
-                            <input className="form-input" placeholder="Nova frequência" value={adjFreqText} onChange={e => setAdjFreqText(e.target.value)} />
+                            <input className="form-input" placeholder={t('dpres.new_dose')} value={adjDoseText} onChange={e => setAdjDoseText(e.target.value)} />
+                            <input className="form-input" placeholder={t('dpres.new_freq')} value={adjFreqText} onChange={e => setAdjFreqText(e.target.value)} />
                           </div>
                         )}
-                        <textarea className="form-input" rows={2} value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Justificação clínica…" style={{ resize: 'vertical', marginBottom: '0.6rem' }} />
+                        <textarea className="form-input" rows={2} value={noteText} onChange={e => setNoteText(e.target.value)} placeholder={t('dpres.justification_ph')} style={{ resize: 'vertical', marginBottom: '0.6rem' }} />
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button onClick={() => decide(rx.id, noteFor.action, noteText, adjDoseText, adjFreqText)} disabled={!noteText.trim()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>Confirmar</button>
-                          <button onClick={() => setNoteFor(null)} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'none', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>Cancelar</button>
+                          <button onClick={() => decide(rx.id, noteFor.action, noteText, adjDoseText, adjFreqText)} disabled={!noteText.trim()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>{t('common.confirm')}</button>
+                          <button onClick={() => setNoteFor(null)} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'none', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>{t('common.cancel')}</button>
                         </div>
                       </div>
                     )}
@@ -286,12 +291,12 @@ export default function DoctorPrescriptionsPage() {
 
         {done.length > 0 && (
           <div style={{ marginTop: '2rem' }}>
-            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Processadas ({done.length})</div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>{t('dpres.processed')} ({done.length})</div>
             {done.map(rx => (
               <div key={rx.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 1rem', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', marginBottom: '0.4rem', opacity: 0.6 }}>
                 <CheckCircle2 size={15} style={{ color: '#10b981' }} />
                 <span style={{ flex: 1, fontSize: '0.82rem', fontWeight: 500 }}>{rx.patient_name ?? 'Paciente'} — {rx.medication_name}</span>
-                <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontWeight: 600 }}>{actionMap[rx.status] ?? rx.status}</span>
+                <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontWeight: 600 }}>{actionKeyMap[rx.status] ? t(actionKeyMap[rx.status]) : rx.status}</span>
               </div>
             ))}
           </div>
@@ -302,14 +307,14 @@ export default function DoctorPrescriptionsPage() {
         <div style={{ width: 290, flexShrink: 0 }}>
           <div className="card" style={{ padding: '1.25rem', position: 'sticky', top: '1rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontWeight: 800, fontSize: '0.88rem' }}>Perfil Clínico</span>
+              <span style={{ fontWeight: 800, fontSize: '0.88rem' }}>{t('dpres.quick_profile')}</span>
               <button onClick={() => { setQuickView(null); setClinicalSummary(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
             </div>
 
             {clinicalLoading && (
               <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'var(--text-muted)' }}>
                 <Loader2 size={20} style={{ display: 'block', margin: '0 auto 0.4rem' }} />
-                <span style={{ fontSize: '0.8rem' }}>A carregar histórico…</span>
+                <span style={{ fontSize: '0.8rem' }}>{t('dpres.loading_history')}</span>
               </div>
             )}
 
@@ -322,7 +327,7 @@ export default function DoctorPrescriptionsPage() {
                   </div>
                   <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{clinicalSummary?.identity.name ?? quickView.patient_name ?? 'Paciente'}</div>
                   <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>
-                    {clinicalSummary?.identity.age ?? quickView.patient_age ?? '—'} anos
+                    {clinicalSummary?.identity.age ?? quickView.patient_age ?? '—'} {t('dpat.years')}
                     {(clinicalSummary?.identity.gender ?? quickView.patient_gender) ? ` · ${clinicalSummary?.identity.gender ?? quickView.patient_gender}` : ''}
                     {clinicalSummary?.identity.blood_type ? ` · ${clinicalSummary.identity.blood_type}` : ''}
                   </div>
@@ -331,7 +336,7 @@ export default function DoctorPrescriptionsPage() {
                 {/* Risk flags */}
                 {(clinicalSummary?.risk_flags ?? []).length > 0 && (
                   <div style={{ marginBottom: '0.85rem', padding: '0.6rem 0.75rem', borderRadius: '8px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                    <SectionLabel>⚠️ Alertas de risco</SectionLabel>
+                    <SectionLabel>{t('dpres.risk_alerts')}</SectionLabel>
                     {clinicalSummary!.risk_flags.map((f, i) => <div key={i} style={{ fontSize: '0.76rem', color: '#dc2626', marginBottom: '0.2rem' }}>• {f}</div>)}
                   </div>
                 )}
@@ -339,7 +344,7 @@ export default function DoctorPrescriptionsPage() {
                 {/* Chronic conditions */}
                 {((clinicalSummary?.chronic_conditions ?? quickView.chronic_conditions) ?? []).length > 0 && (
                   <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel>🩺 Condições crónicas</SectionLabel>
+                    <SectionLabel>{t('dpres.detail_chronic')}</SectionLabel>
                     {(clinicalSummary?.chronic_conditions ?? quickView.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
                   </div>
                 )}
@@ -347,7 +352,7 @@ export default function DoctorPrescriptionsPage() {
                 {/* Allergies */}
                 {((clinicalSummary?.allergies ?? quickView.allergies) ?? []).length > 0 && (
                   <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel>⚠️ Alergias</SectionLabel>
+                    <SectionLabel>{t('dpres.detail_allergies')}</SectionLabel>
                     {(clinicalSummary?.allergies ?? quickView.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
                   </div>
                 )}
@@ -355,7 +360,7 @@ export default function DoctorPrescriptionsPage() {
                 {/* Current medications */}
                 {clinicalSummary && clinicalSummary.current_medications.length > 0 && (
                   <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel><Pill size={11} style={{ display: 'inline', marginRight: 3 }} />Medicações actuais</SectionLabel>
+                    <SectionLabel><Pill size={11} style={{ display: 'inline', marginRight: 3 }} />{t('dpres.current_meds')}</SectionLabel>
                     {clinicalSummary.current_medications.map(m => (
                       <div key={m.id} style={{ fontSize: '0.77rem', padding: '0.25rem 0', borderBottom: '1px solid var(--border)' }}>
                         <span style={{ fontWeight: 600 }}>{m.name}</span>
@@ -369,7 +374,7 @@ export default function DoctorPrescriptionsPage() {
                 {/* Latest vitals */}
                 {clinicalSummary && clinicalSummary.last_vitals.length > 0 && (
                   <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel><Heart size={11} style={{ display: 'inline', marginRight: 3 }} />Últimas medições</SectionLabel>
+                    <SectionLabel><Heart size={11} style={{ display: 'inline', marginRight: 3 }} />{t('dpres.latest_vitals')}</SectionLabel>
                     {clinicalSummary.last_vitals.slice(0, 5).map((v, i) => (
                       <div key={i} style={{ fontSize: '0.77rem', display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0', borderBottom: '1px solid var(--border)' }}>
                         <span style={{ textTransform: 'capitalize' }}>{v.reading_type.replace(/_/g, ' ')}</span>
@@ -382,7 +387,7 @@ export default function DoctorPrescriptionsPage() {
                 {/* Last consultations */}
                 {clinicalSummary && clinicalSummary.last_consultations.length > 0 && (
                   <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel>📋 Consultas anteriores</SectionLabel>
+                    <SectionLabel>{t('dpres.prev_consults')}</SectionLabel>
                     {clinicalSummary.last_consultations.slice(0, 3).map(c => (
                       <div key={c.id} style={{ fontSize: '0.77rem', padding: '0.2rem 0', borderBottom: '1px solid var(--border)' }}>
                         {c.specialty.replace(/_/g, ' ')} · <span style={{ color: 'var(--text-muted)' }}>{c.status}</span>
@@ -393,7 +398,7 @@ export default function DoctorPrescriptionsPage() {
 
                 {/* Current request */}
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-                  <SectionLabel>💊 Pedido actual</SectionLabel>
+                  <SectionLabel>{t('dpres.current_request')}</SectionLabel>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{quickView.medication_name}</div>
                   {quickView.dose && <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{quickView.dose} · {quickView.frequency}</div>}
                   {quickView.reason && <div style={{ fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>"{quickView.reason}"</div>}
