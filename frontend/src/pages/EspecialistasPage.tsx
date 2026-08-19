@@ -7,48 +7,52 @@ import {
   Search, Filter,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useT } from '../i18n/LanguageContext';
 
 const SPECIALTIES = [
-  { icon: Stethoscope, label: 'Clínica Geral',   color: '#0d9488', desc: 'Consultas gerais, orientação inicial e encaminhamento.', modalidade: ['presencial', 'teleconsulta'] },
-  { icon: Baby,        label: 'Pediatria',        color: '#0891b2', desc: 'Cuidados médicos para crianças e adolescentes até 18 anos.', modalidade: ['presencial', 'teleconsulta'] },
-  { icon: Heart,       label: 'Ginecologia',      color: '#db2777', desc: 'Saúde da mulher, gravidez e planeamento familiar.', modalidade: ['presencial'] },
-  { icon: HeartPulse,  label: 'Cardiologia',      color: '#dc2626', desc: 'Doenças do coração, hipertensão e ECG.', modalidade: ['presencial', 'teleconsulta'] },
-  { icon: Activity,    label: 'Dermatologia',     color: '#ea580c', desc: 'Pele, cabelo, unhas e doenças dermatológicas.', modalidade: ['presencial', 'teleconsulta'] },
-  { icon: Brain,       label: 'Psicologia',       color: '#7c3aed', desc: 'Apoio emocional, saúde mental e psicoterapia.', modalidade: ['teleconsulta'] },
-  { icon: Brain,       label: 'Psiquiatria',      color: '#6d28d9', desc: 'Diagnóstico e tratamento de doenças mentais.', modalidade: ['presencial', 'teleconsulta'] },
-  { icon: Eye,         label: 'Oftalmologia',     color: '#0369a1', desc: 'Visão, olhos e doenças oftalmológicas.', modalidade: ['presencial'] },
-  { icon: Stethoscope, label: 'Dentária',         color: '#0891b2', desc: 'Saúde oral, cáries, ortodontia e implantes.', modalidade: ['presencial'] },
-  { icon: Wind,        label: 'Fisioterapia',     color: '#059669', desc: 'Reabilitação, dor crónica e lesões musculares.', modalidade: ['presencial'] },
-  { icon: Activity,    label: 'Neurologia',       color: '#4f46e5', desc: 'Sistema nervoso, enxaquecas e AVC.', modalidade: ['presencial', 'teleconsulta'] },
-  { icon: Bone,        label: 'Ortopedia',        color: '#b45309', desc: 'Ossos, articulações, fracturas e cirurgia ortopédica.', modalidade: ['presencial'] },
-  { icon: Apple,       label: 'Nutrição',         color: '#16a34a', desc: 'Dieta, obesidade, diabetes e planos alimentares.', modalidade: ['presencial', 'teleconsulta'] },
+  { icon: Stethoscope, labelKey: 'spec.clinica_geral', color: '#0d9488', descKey: 'esp.d_clinica_geral', modalidade: ['presencial', 'teleconsulta'] },
+  { icon: Baby,        labelKey: 'spec.pediatria',     color: '#0891b2', descKey: 'esp.d_pediatria', modalidade: ['presencial', 'teleconsulta'] },
+  { icon: Heart,       labelKey: 'spec.ginecologia',   color: '#db2777', descKey: 'esp.d_ginecologia', modalidade: ['presencial'] },
+  { icon: HeartPulse,  labelKey: 'spec.cardiologia',   color: '#dc2626', descKey: 'esp.d_cardiologia', modalidade: ['presencial', 'teleconsulta'] },
+  { icon: Activity,    labelKey: 'spec.dermatologia',  color: '#ea580c', descKey: 'esp.d_dermatologia', modalidade: ['presencial', 'teleconsulta'] },
+  { icon: Brain,       labelKey: 'spec.psicologia',    color: '#7c3aed', descKey: 'esp.d_psicologia', modalidade: ['teleconsulta'] },
+  { icon: Brain,       labelKey: 'spec.psiquiatria',   color: '#6d28d9', descKey: 'esp.d_psiquiatria', modalidade: ['presencial', 'teleconsulta'] },
+  { icon: Eye,         labelKey: 'spec.oftalmologia',  color: '#0369a1', descKey: 'esp.d_oftalmologia', modalidade: ['presencial'] },
+  { icon: Stethoscope, labelKey: 'esp.dentaria',       color: '#0891b2', descKey: 'esp.d_dentaria', modalidade: ['presencial'] },
+  { icon: Wind,        labelKey: 'spec.fisioterapia',  color: '#059669', descKey: 'esp.d_fisioterapia', modalidade: ['presencial'] },
+  { icon: Activity,    labelKey: 'spec.neurologia',    color: '#4f46e5', descKey: 'esp.d_neurologia', modalidade: ['presencial', 'teleconsulta'] },
+  { icon: Bone,        labelKey: 'spec.ortopedia',     color: '#b45309', descKey: 'esp.d_ortopedia', modalidade: ['presencial'] },
+  { icon: Apple,       labelKey: 'spec.nutricao',      color: '#16a34a', descKey: 'esp.d_nutricao', modalidade: ['presencial', 'teleconsulta'] },
 ];
 
 export default function EspecialistasPage() {
+  const { t } = useT();
   const [filter, setFilter] = useState<'todos' | 'teleconsulta' | 'presencial'>('todos');
   const [search, setSearch] = useState('');
 
-  const filtered = SPECIALTIES.filter(s => {
-    const matchFilter = filter === 'todos' || s.modalidade.includes(filter);
-    const matchSearch = s.label.toLowerCase().includes(search.toLowerCase()) || s.desc.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
+  const filtered = SPECIALTIES
+    .map(s => ({ ...s, label: t(s.labelKey), desc: t(s.descKey) }))
+    .filter(s => {
+      const matchFilter = filter === 'todos' || s.modalidade.includes(filter);
+      const matchSearch = s.label.toLowerCase().includes(search.toLowerCase()) || s.desc.toLowerCase().includes(search.toLowerCase());
+      return matchFilter && matchSearch;
+    });
 
   return (
     <div className="landing-wrapper">
       <Navbar />
 
       <section className="lp-page-hero" style={{ paddingBottom: '3rem' }}>
-        <div className="lp-tag">Especialidades Médicas</div>
-        <h1>Encontre o especialista certo.</h1>
-        <p>Presencial ou teleconsulta — consulte qualquer especialidade com médicos verificados e parceiros de confiança.</p>
+        <div className="lp-tag">{t('esp.tag')}</div>
+        <h1>{t('esp.title')}</h1>
+        <p>{t('esp.subtitle')}</p>
 
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem', maxWidth: '600px', margin: '2rem auto 0' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
             <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="Pesquisar especialidade..."
+              placeholder={t('esp.search_ph')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{ width: '100%', paddingLeft: '2.4rem', paddingRight: '1rem', paddingTop: '0.7rem', paddingBottom: '0.7rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#0f172a', fontSize: '0.9rem', boxSizing: 'border-box' }}
@@ -59,7 +63,7 @@ export default function EspecialistasPage() {
               <button key={f} onClick={() => setFilter(f)}
                 style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: filter === f ? '#0d9488' : '#ffffff', color: filter === f ? '#fff' : '#475569', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 {f === 'todos' ? <Filter size={13} /> : f === 'teleconsulta' ? <Video size={13} /> : <Calendar size={13} />}
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+                {f === 'todos' ? t('esp.filter_all') : f === 'teleconsulta' ? t('appt.teleconsulta') : t('appt.presencial')}
               </button>
             ))}
           </div>
@@ -100,7 +104,7 @@ export default function EspecialistasPage() {
                     background: m === 'teleconsulta' ? '#e0f2fe' : '#dcfce7',
                     color: m === 'teleconsulta' ? '#0369a1' : '#15803d',
                   }}>
-                    {m === 'teleconsulta' ? <Video size={11} /> : <Calendar size={11} />} {m}
+                    {m === 'teleconsulta' ? <Video size={11} /> : <Calendar size={11} />} {m === 'teleconsulta' ? t('appt.teleconsulta') : t('appt.presencial')}
                   </span>
                 ))}
               </div>
@@ -113,13 +117,13 @@ export default function EspecialistasPage() {
               }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-                Marcar consulta <ChevronRight size={15} />
+                {t('esp.book')} <ChevronRight size={15} />
               </Link>
             </div>
           ))}
         </div>
         {filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Nenhuma especialidade encontrada.</div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>{t('esp.empty')}</div>
         )}
       </section>
 

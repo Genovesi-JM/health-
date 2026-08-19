@@ -2207,6 +2207,31 @@ const translations: Record<string, TranslationEntry> = {
   'tele.final_desc': { pt: 'Crie conta gratuita e marque a sua primeira teleconsulta em menos de 2 minutos.', en: 'Create a free account and book your first teleconsultation in under 2 minutes.', fr: 'Créez un compte gratuit et réservez votre première téléconsultation en moins de 2 minutes.', es: 'Cree una cuenta gratuita y reserve su primera teleconsulta en menos de 2 minutos.' },
   'tele.final_cta1': { pt: 'Criar conta gratuita', en: 'Create a free account', fr: 'Créer un compte gratuit', es: 'Crear cuenta gratuita' },
   'tele.final_cta2': { pt: 'Entrar no portal', en: 'Sign in to the portal', fr: 'Accéder au portail', es: 'Entrar al portal' },
+
+  /* ═══════════════════════════════════════════════════════════
+     ESPECIALISTAS PAGE (public)
+     ═══════════════════════════════════════════════════════════ */
+  'esp.tag': { pt: 'Especialidades Médicas', en: 'Medical Specialties', fr: 'Spécialités médicales', es: 'Especialidades médicas' },
+  'esp.title': { pt: 'Encontre o especialista certo.', en: 'Find the right specialist.', fr: 'Trouvez le bon spécialiste.', es: 'Encuentre al especialista adecuado.' },
+  'esp.subtitle': { pt: 'Presencial ou teleconsulta — consulte qualquer especialidade com médicos verificados e parceiros de confiança.', en: 'In person or by teleconsultation — see any specialty with verified doctors and trusted partners.', fr: 'En personne ou en téléconsultation — consultez toute spécialité avec des médecins vérifiés et des partenaires de confiance.', es: 'Presencial o por teleconsulta — consulte cualquier especialidad con médicos verificados y socios de confianza.' },
+  'esp.search_ph': { pt: 'Pesquisar especialidade...', en: 'Search specialty...', fr: 'Rechercher une spécialité...', es: 'Buscar especialidad...' },
+  'esp.filter_all': { pt: 'Todos', en: 'All', fr: 'Tous', es: 'Todos' },
+  'esp.book': { pt: 'Marcar consulta', en: 'Book appointment', fr: 'Prendre rendez-vous', es: 'Reservar cita' },
+  'esp.empty': { pt: 'Nenhuma especialidade encontrada.', en: 'No specialty found.', fr: 'Aucune spécialité trouvée.', es: 'No se encontró ninguna especialidad.' },
+  'esp.dentaria': { pt: 'Dentária', en: 'Dentistry', fr: 'Dentaire', es: 'Odontología' },
+  'esp.d_clinica_geral': { pt: 'Consultas gerais, orientação inicial e encaminhamento.', en: 'General consultations, initial guidance, and referrals.', fr: 'Consultations générales, orientation initiale et orientation.', es: 'Consultas generales, orientación inicial y derivación.' },
+  'esp.d_pediatria': { pt: 'Cuidados médicos para crianças e adolescentes até 18 anos.', en: 'Medical care for children and teenagers up to 18.', fr: 'Soins médicaux pour enfants et adolescents jusqu’à 18 ans.', es: 'Atención médica para niños y adolescentes hasta los 18 años.' },
+  'esp.d_ginecologia': { pt: 'Saúde da mulher, gravidez e planeamento familiar.', en: 'Women’s health, pregnancy, and family planning.', fr: 'Santé de la femme, grossesse et planification familiale.', es: 'Salud de la mujer, embarazo y planificación familiar.' },
+  'esp.d_cardiologia': { pt: 'Doenças do coração, hipertensão e ECG.', en: 'Heart disease, hypertension, and ECG.', fr: 'Maladies cardiaques, hypertension et ECG.', es: 'Enfermedades del corazón, hipertensión y ECG.' },
+  'esp.d_dermatologia': { pt: 'Pele, cabelo, unhas e doenças dermatológicas.', en: 'Skin, hair, nails, and dermatological conditions.', fr: 'Peau, cheveux, ongles et affections dermatologiques.', es: 'Piel, cabello, uñas y enfermedades dermatológicas.' },
+  'esp.d_psicologia': { pt: 'Apoio emocional, saúde mental e psicoterapia.', en: 'Emotional support, mental health, and psychotherapy.', fr: 'Soutien émotionnel, santé mentale et psychothérapie.', es: 'Apoyo emocional, salud mental y psicoterapia.' },
+  'esp.d_psiquiatria': { pt: 'Diagnóstico e tratamento de doenças mentais.', en: 'Diagnosis and treatment of mental illness.', fr: 'Diagnostic et traitement des maladies mentales.', es: 'Diagnóstico y tratamiento de enfermedades mentales.' },
+  'esp.d_oftalmologia': { pt: 'Visão, olhos e doenças oftalmológicas.', en: 'Vision, eyes, and ophthalmological conditions.', fr: 'Vision, yeux et affections ophtalmologiques.', es: 'Visión, ojos y enfermedades oftalmológicas.' },
+  'esp.d_dentaria': { pt: 'Saúde oral, cáries, ortodontia e implantes.', en: 'Oral health, cavities, orthodontics, and implants.', fr: 'Santé bucco-dentaire, caries, orthodontie et implants.', es: 'Salud bucal, caries, ortodoncia e implantes.' },
+  'esp.d_fisioterapia': { pt: 'Reabilitação, dor crónica e lesões musculares.', en: 'Rehabilitation, chronic pain, and muscle injuries.', fr: 'Rééducation, douleur chronique et lésions musculaires.', es: 'Rehabilitación, dolor crónico y lesiones musculares.' },
+  'esp.d_neurologia': { pt: 'Sistema nervoso, enxaquecas e AVC.', en: 'Nervous system, migraines, and stroke.', fr: 'Système nerveux, migraines et AVC.', es: 'Sistema nervioso, migrañas y ACV.' },
+  'esp.d_ortopedia': { pt: 'Ossos, articulações, fracturas e cirurgia ortopédica.', en: 'Bones, joints, fractures, and orthopaedic surgery.', fr: 'Os, articulations, fractures et chirurgie orthopédique.', es: 'Huesos, articulaciones, fracturas y cirugía ortopédica.' },
+  'esp.d_nutricao': { pt: 'Dieta, obesidade, diabetes e planos alimentares.', en: 'Diet, obesity, diabetes, and meal plans.', fr: 'Régime, obésité, diabète et plans alimentaires.', es: 'Dieta, obesidad, diabetes y planes de alimentación.' },
 };
 
 export default translations;
