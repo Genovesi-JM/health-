@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, ExternalLink, FileSearch, RefreshCw, XCircle } from 'lucide-react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 
 type Dossier = {
   id: string; profession: string; legal_name: string; status: string; automated_score: number;
@@ -16,12 +17,13 @@ type Dossier = {
   }[];
 };
 
-const statusLabel: Record<string, string> = {
-  draft: 'Rascunho', needs_info: 'Precisa de informação', pending_review: 'Por rever',
-  verified: 'Verificado', rejected: 'Rejeitado', suspended: 'Suspenso',
+const statusKey: Record<string, string> = {
+  draft: 'acr.st_draft', needs_info: 'acr.st_needs_info', pending_review: 'acr.st_pending_review',
+  verified: 'acr.st_verified', rejected: 'acr.st_rejected', suspended: 'acr.st_suspended',
 };
 
 export default function AdminCredentialsPage() {
+  const { t } = useT();
   const [items, setItems] = useState<Dossier[]>([]);
   const [selected, setSelected] = useState<Dossier | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export default function AdminCredentialsPage() {
     if (!selected) return;
     let notes = '';
     if (action !== 'approve') {
-      notes = window.prompt(action === 'reject' ? 'Motivo obrigatório da rejeição:' : 'Informação adicional necessária:') || '';
+      notes = window.prompt(action === 'reject' ? t('acr.reject_reason') : t('acr.needs_info_prompt')) || '';
       if (!notes.trim()) return;
     }
     await api.post(`/api/v1/credentials/admin/${selected.id}/decision`, { action, notes: notes || null });
@@ -60,23 +62,23 @@ export default function AdminCredentialsPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Credenciais clínicas</h1>
-        <p>Revisão humana assistida para médicos e enfermeiros.</p>
+        <h1>{t('acr.title')}</h1>
+        <p>{t('acr.subtitle')}</p>
       </div>
       <div className="tab-nav" style={{ marginBottom: '1rem' }}>
         {[
-          ['pending_review', 'Por rever'], ['needs_info', 'Informação'], ['verified', 'Verificados'],
-          ['rejected', 'Rejeitados'], ['', 'Todos'],
+          ['pending_review', t('acr.tab_pending')], ['needs_info', t('acr.tab_needs_info')], ['verified', t('acr.tab_verified')],
+          ['rejected', t('acr.tab_rejected')], ['', t('acr.tab_all')],
         ].map(([value, label]) => (
           <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}</button>
         ))}
-        <button onClick={load}><RefreshCw size={13} /> Actualizar</button>
+        <button onClick={load}><RefreshCw size={13} /> {t('common.refresh')}</button>
       </div>
 
       {loading ? <div className="page-loading"><div className="spinner" /></div> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, .8fr) minmax(360px, 1.5fr)', gap: '1rem', alignItems: 'start' }}>
           <div className="card" style={{ overflow: 'hidden' }}>
-            {items.length === 0 ? <div className="empty-state" style={{ padding: '2.5rem 1rem' }}><FileSearch /><p>Sem processos neste estado.</p></div> :
+            {items.length === 0 ? <div className="empty-state" style={{ padding: '2.5rem 1rem' }}><FileSearch /><p>{t('acr.empty')}</p></div> :
               items.map(item => (
                 <button key={item.id} onClick={() => setSelected(item)} style={{
                   width: '100%', border: 0, borderBottom: '1px solid var(--border)', textAlign: 'left',
@@ -89,7 +91,7 @@ export default function AdminCredentialsPage() {
                     </span>
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '.76rem', marginTop: 5 }}>
-                    {item.profession === 'doctor' ? 'Médico/a' : 'Enfermeiro/a'} · {statusLabel[item.status] || item.status}
+                    {item.profession === 'doctor' ? t('acr.doctor') : t('acr.nurse')} · {statusKey[item.status] ? t(statusKey[item.status]) : item.status}
                   </div>
                 </button>
               ))}
@@ -101,14 +103,14 @@ export default function AdminCredentialsPage() {
                 <div>
                   <h2 style={{ margin: 0, fontSize: '1.15rem' }}>{selected.legal_name}</h2>
                   <p style={{ margin: '.3rem 0', color: 'var(--text-muted)', fontSize: '.8rem' }}>
-                    {selected.issuing_authority} · licença {selected.licence_number}
+                    {selected.issuing_authority} · {t('acr.licence_short')} {selected.licence_number}
                   </p>
                 </div>
-                {selected.registry?.url && <a className="btn btn-secondary btn-sm" href={selected.registry.url} target="_blank" rel="noreferrer">Abrir registo oficial <ExternalLink size={13} /></a>}
+                {selected.registry?.url && <a className="btn btn-secondary btn-sm" href={selected.registry.url} target="_blank" rel="noreferrer">{t('acr.open_registry')} <ExternalLink size={13} /></a>}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '.7rem', margin: '1rem 0' }}>
-                {[['Exercício', selected.practice_country], ['Licença', `${selected.licence_country}${selected.licence_jurisdiction ? ` · ${selected.licence_jurisdiction}` : ''}`], ['Diploma', selected.diploma_country], ['Formação', `${selected.degree_title} — ${selected.diploma_institution}`]].map(([label, value]) => (
+                {[[t('acr.field_practice'), selected.practice_country], [t('acr.field_licence'), `${selected.licence_country}${selected.licence_jurisdiction ? ` · ${selected.licence_jurisdiction}` : ''}`], [t('acr.field_diploma'), selected.diploma_country], [t('acr.field_training'), `${selected.degree_title} — ${selected.diploma_institution}`]].map(([label, value]) => (
                   <div key={label} style={{ padding: '.7rem', background: 'var(--bg-subtle,#f8fafc)', borderRadius: 8 }}>
                     <div style={{ fontSize: '.68rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{label}</div>
                     <strong style={{ fontSize: '.8rem' }}>{value}</strong>
@@ -116,21 +118,21 @@ export default function AdminCredentialsPage() {
                 ))}
               </div>
 
-              <h3 style={{ fontSize: '.9rem' }}>Documentos privados</h3>
+              <h3 style={{ fontSize: '.9rem' }}>{t('acr.docs')}</h3>
               {selected.evidence.map(item => (
                 <button key={item.id} onClick={() => download(item.id, item.original_filename)} className="btn btn-secondary btn-sm" style={{ margin: '0 .45rem .45rem 0' }}>
                   <Download size={13} /> {item.kind} · {(item.size_bytes / 1024).toFixed(0)} KB
                 </button>
               ))}
 
-              <h3 style={{ fontSize: '.9rem', marginTop: '1rem' }}>Verificações</h3>
+              <h3 style={{ fontSize: '.9rem', marginTop: '1rem' }}>{t('acr.checks')}</h3>
               {selected.automated_checks.map(check => (
                 <div key={check.code} style={{ display: 'flex', gap: 7, margin: '.4rem 0', fontSize: '.8rem' }}>
                   {check.passed ? <CheckCircle2 size={15} color="#059669" /> : <AlertTriangle size={15} color="#d97706" />} {check.label}
                 </div>
               ))}
 
-              <h3 style={{ fontSize: '.9rem', marginTop: '1rem' }}>Fornecedores externos</h3>
+              <h3 style={{ fontSize: '.9rem', marginTop: '1rem' }}>{t('acr.providers')}</h3>
               {selected.provider_checks?.length ? selected.provider_checks.map(check => (
                 <div key={check.id} style={{ padding: '.7rem', border: '1px solid var(--border)', borderRadius: 8, marginBottom: '.55rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
@@ -147,18 +149,18 @@ export default function AdminCredentialsPage() {
                     </div>
                   ))}
                 </div>
-              )) : <p style={{ color: 'var(--text-muted)', fontSize: '.78rem' }}>Ainda não iniciados.</p>}
+              )) : <p style={{ color: 'var(--text-muted)', fontSize: '.78rem' }}>{t('acr.not_started')}</p>}
 
               {selected.status !== 'verified' && selected.status !== 'suspended' && (
                 <div style={{ display: 'flex', gap: '.6rem', marginTop: '1.2rem', flexWrap: 'wrap' }}>
                   <button className="btn btn-primary" disabled={selected.missing_evidence.length > 0} onClick={() => decide('approve')}>
-                    <CheckCircle2 size={15} /> Aprovar
+                    <CheckCircle2 size={15} /> {t('acr.approve')}
                   </button>
                   <button className="btn btn-secondary" onClick={() => decide('needs_info')}>
-                    <AlertTriangle size={15} /> Pedir informação
+                    <AlertTriangle size={15} /> {t('acr.request_info')}
                   </button>
                   <button className="btn btn-sm" onClick={() => decide('reject')} style={{ color: '#b91c1c', border: '1px solid #fecaca' }}>
-                    <XCircle size={15} /> Rejeitar
+                    <XCircle size={15} /> {t('acr.reject')}
                   </button>
                 </div>
               )}

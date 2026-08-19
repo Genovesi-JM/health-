@@ -1648,6 +1648,41 @@ const translations: Record<string, TranslationEntry> = {
   'aap.type_clinica': { pt: 'Clínica', en: 'Clinic', fr: 'Clinique', es: 'Clínica' },
   'aap.act_invite': { pt: 'Marcar como convidado', en: 'Mark as invited', fr: 'Marquer comme invité', es: 'Marcar como invitado' },
   'aap.act_reject': { pt: 'Rejeitar', en: 'Reject', fr: 'Rejeter', es: 'Rechazar' },
+
+  /* ═══════════════════════════════════════════════════════════
+     ADMIN — CLINICAL CREDENTIALS REVIEW
+     ═══════════════════════════════════════════════════════════ */
+  'acr.title': { pt: 'Credenciais clínicas', en: 'Clinical credentials', fr: 'Justificatifs cliniques', es: 'Credenciales clínicas' },
+  'acr.subtitle': { pt: 'Revisão humana assistida para médicos e enfermeiros.', en: 'Assisted human review for doctors and nurses.', fr: 'Revue humaine assistée pour médecins et infirmiers.', es: 'Revisión humana asistida para médicos y enfermeros.' },
+  'acr.tab_pending': { pt: 'Por rever', en: 'To review', fr: 'À examiner', es: 'Por revisar' },
+  'acr.tab_needs_info': { pt: 'Informação', en: 'Info needed', fr: 'Information', es: 'Información' },
+  'acr.tab_verified': { pt: 'Verificados', en: 'Verified', fr: 'Vérifiés', es: 'Verificados' },
+  'acr.tab_rejected': { pt: 'Rejeitados', en: 'Rejected', fr: 'Rejetés', es: 'Rechazados' },
+  'acr.tab_all': { pt: 'Todos', en: 'All', fr: 'Tous', es: 'Todos' },
+  'acr.reject_reason': { pt: 'Motivo obrigatório da rejeição:', en: 'Required rejection reason:', fr: 'Motif de rejet obligatoire :', es: 'Motivo obligatorio del rechazo:' },
+  'acr.needs_info_prompt': { pt: 'Informação adicional necessária:', en: 'Additional information required:', fr: 'Informations supplémentaires requises :', es: 'Información adicional requerida:' },
+  'acr.empty': { pt: 'Sem processos neste estado.', en: 'No cases in this state.', fr: 'Aucun dossier dans cet état.', es: 'Sin casos en este estado.' },
+  'acr.doctor': { pt: 'Médico/a', en: 'Doctor', fr: 'Médecin', es: 'Médico/a' },
+  'acr.nurse': { pt: 'Enfermeiro/a', en: 'Nurse', fr: 'Infirmier/ère', es: 'Enfermero/a' },
+  'acr.open_registry': { pt: 'Abrir registo oficial', en: 'Open official registry', fr: 'Ouvrir le registre officiel', es: 'Abrir registro oficial' },
+  'acr.licence_short': { pt: 'licença', en: 'licence', fr: 'licence', es: 'licencia' },
+  'acr.field_practice': { pt: 'Exercício', en: 'Practice', fr: 'Exercice', es: 'Ejercicio' },
+  'acr.field_licence': { pt: 'Licença', en: 'Licence', fr: 'Licence', es: 'Licencia' },
+  'acr.field_diploma': { pt: 'Diploma', en: 'Diploma', fr: 'Diplôme', es: 'Diploma' },
+  'acr.field_training': { pt: 'Formação', en: 'Training', fr: 'Formation', es: 'Formación' },
+  'acr.docs': { pt: 'Documentos privados', en: 'Private documents', fr: 'Documents privés', es: 'Documentos privados' },
+  'acr.checks': { pt: 'Verificações', en: 'Checks', fr: 'Vérifications', es: 'Verificaciones' },
+  'acr.providers': { pt: 'Fornecedores externos', en: 'External providers', fr: 'Fournisseurs externes', es: 'Proveedores externos' },
+  'acr.not_started': { pt: 'Ainda não iniciados.', en: 'Not started yet.', fr: 'Pas encore démarrés.', es: 'Aún no iniciados.' },
+  'acr.approve': { pt: 'Aprovar', en: 'Approve', fr: 'Approuver', es: 'Aprobar' },
+  'acr.request_info': { pt: 'Pedir informação', en: 'Request info', fr: 'Demander des infos', es: 'Solicitar información' },
+  'acr.reject': { pt: 'Rejeitar', en: 'Reject', fr: 'Rejeter', es: 'Rechazar' },
+  'acr.st_draft': { pt: 'Rascunho', en: 'Draft', fr: 'Brouillon', es: 'Borrador' },
+  'acr.st_needs_info': { pt: 'Precisa de informação', en: 'Needs info', fr: 'Information requise', es: 'Necesita información' },
+  'acr.st_pending_review': { pt: 'Por rever', en: 'To review', fr: 'À examiner', es: 'Por revisar' },
+  'acr.st_verified': { pt: 'Verificado', en: 'Verified', fr: 'Vérifié', es: 'Verificado' },
+  'acr.st_rejected': { pt: 'Rejeitado', en: 'Rejected', fr: 'Rejeté', es: 'Rechazado' },
+  'acr.st_suspended': { pt: 'Suspenso', en: 'Suspended', fr: 'Suspendu', es: 'Suspendido' },
 };
 
 export default translations;
