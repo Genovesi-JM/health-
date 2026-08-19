@@ -6,33 +6,33 @@ import {
   Bell, Calendar, Video, Shield, CheckCircle2,
   ArrowRight, Users, Clock, AlertTriangle,
 } from 'lucide-react';
-
-const CONDITIONS = [
-  { icon: Activity,      color: '#dc2626', bg: 'rgba(220,38,38,0.1)',   label: 'Hipertensão',          sub: 'Monitorização diária de tensão arterial com alertas de risco.' },
-  { icon: TrendingUp,    color: '#d97706', bg: 'rgba(217,119,6,0.1)',   label: 'Diabetes',             sub: 'Glicemia em jejum, pós-prandial e HbA1c — todos registados.' },
-  { icon: Wind,          color: '#0891b2', bg: 'rgba(8,145,178,0.1)',   label: 'Asma e DPOC',          sub: 'SpO₂, pico de fluxo e frequência respiratória em tempo real.' },
-  { icon: Heart,         color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', label: 'Doença Cardíaca',      sub: 'ECG simplificado, frequência cardíaca, variabilidade.' },
-  { icon: Users,         color: '#059669', bg: 'rgba(5,150,105,0.1)',  label: 'Obesidade',            sub: 'IMC, peso, cintura — tendências mensais com plano nutricional.' },
-  { icon: Clock,         color: '#0d9488', bg: 'rgba(13,148,136,0.1)', label: 'Cuidado do Idoso',     sub: 'Medicação múltipla, mobilidade e monitorização familiar.' },
-];
-
-const FEATURES = [
-  { icon: RefreshCw,  color: '#0d9488', title: 'Renovação automática de receitas',    desc: 'Medicação crónica reabastecida sem deslocação. O médico valida e emite a receita digitalmente.' },
-  { icon: Calendar,   color: '#0891b2', title: 'Check-ins mensais com o médico',      desc: 'Consulta de acompanhamento mensal incluída. O médico analisa as suas leituras e ajusta o plano.' },
-  { icon: Activity,   color: '#dc2626', title: 'Gráficos de evolução das leituras',   desc: 'Veja como a tensão, glicemia e outros vitais evoluem ao longo dos meses. Resultados visíveis.' },
-  { icon: Bell,       color: '#d97706', title: 'Alertas de risco personalizados',     desc: 'Recebe notificação imediata quando uma leitura está fora do intervalo seguro para o seu perfil.' },
-  { icon: Users,      color: '#7c3aed', title: 'Monitorização familiar',             desc: 'Um familiar pode acompanhar as suas leituras. Ideal para idosos ou doentes dependentes.' },
-  { icon: Shield,     color: '#059669', title: 'Plano de saúde personalizado',        desc: 'O médico define os intervalos seguros, frequência de medição e medicação para o seu caso.' },
-];
-
-const JOURNEY = [
-  { step: '01', icon: Activity, color: '#dc2626', title: 'Registe a sua condição',        desc: 'Adicione as suas condições de saúde, medicação actual e historial. Rápido e confidencial.' },
-  { step: '02', icon: TrendingUp, color: '#0891b2', title: 'Meça e envie vitais',          desc: 'Use os seus dispositivos existentes ou adquira um kit KAYA. Dados sincronizados automaticamente.' },
-  { step: '03', icon: Calendar, color: '#7c3aed', title: 'Check-in com o médico',         desc: 'Reunião digital mensal. O médico vê toda a evolução e ajusta o tratamento.' },
-  { step: '04', icon: RefreshCw, color: '#059669', title: 'Receita sem sair de casa',     desc: 'Renovação aprovada digitalmente e enviada à sua farmácia ou clínica parceira.' },
-];
+import { useT } from '../i18n/LanguageContext';
 
 export default function ChronicCarePage() {
+  const { t } = useT();
+  const CONDITIONS = [
+    { icon: Activity,   color: '#dc2626', bg: 'rgba(220,38,38,0.1)',   label: t('cc.c1_label'), sub: t('cc.c1_sub') },
+    { icon: TrendingUp, color: '#d97706', bg: 'rgba(217,119,6,0.1)',   label: t('cc.c2_label'), sub: t('cc.c2_sub') },
+    { icon: Wind,       color: '#0891b2', bg: 'rgba(8,145,178,0.1)',   label: t('cc.c3_label'), sub: t('cc.c3_sub') },
+    { icon: Heart,      color: '#7c3aed', bg: 'rgba(124,58,237,0.1)',  label: t('cc.c4_label'), sub: t('cc.c4_sub') },
+    { icon: Users,      color: '#059669', bg: 'rgba(5,150,105,0.1)',   label: t('cc.c5_label'), sub: t('cc.c5_sub') },
+    { icon: Clock,      color: '#0d9488', bg: 'rgba(13,148,136,0.1)',  label: t('cc.c6_label'), sub: t('cc.c6_sub') },
+  ];
+  const FEATURES = [
+    { icon: RefreshCw, color: '#0d9488', title: t('cc.f1_title'), desc: t('cc.f1_desc') },
+    { icon: Calendar,  color: '#0891b2', title: t('cc.f2_title'), desc: t('cc.f2_desc') },
+    { icon: Activity,  color: '#dc2626', title: t('cc.f3_title'), desc: t('cc.f3_desc') },
+    { icon: Bell,      color: '#d97706', title: t('cc.f4_title'), desc: t('cc.f4_desc') },
+    { icon: Users,     color: '#7c3aed', title: t('cc.f5_title'), desc: t('cc.f5_desc') },
+    { icon: Shield,    color: '#059669', title: t('cc.f6_title'), desc: t('cc.f6_desc') },
+  ];
+  const JOURNEY = [
+    { step: '01', icon: Activity,   color: '#dc2626', title: t('cc.j1_title'), desc: t('cc.j1_desc') },
+    { step: '02', icon: TrendingUp, color: '#0891b2', title: t('cc.j2_title'), desc: t('cc.j2_desc') },
+    { step: '03', icon: Calendar,   color: '#7c3aed', title: t('cc.j3_title'), desc: t('cc.j3_desc') },
+    { step: '04', icon: RefreshCw,  color: '#059669', title: t('cc.j4_title'), desc: t('cc.j4_desc') },
+  ];
+  const chips = [t('cc.chip1'), t('cc.chip2'), t('cc.chip3'), t('cc.chip4'), t('cc.chip5'), t('cc.chip6')];
   return (
     <div className="landing-wrapper">
       <Navbar />
@@ -40,16 +40,15 @@ export default function ChronicCarePage() {
       {/* ── Hero ── */}
       <section className="lp-page-hero">
         <div className="lp-tag" style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>
-          <Heart size={12} /> Cuidado Crónico
+          <Heart size={12} /> {t('cc.tag')}
         </div>
-        <h1>Healthcare que continua<br /><span className="lp-hero__accent">entre consultas.</span></h1>
+        <h1>{t('cc.title1')}<br /><span className="lp-hero__accent">{t('cc.title2')}</span></h1>
         <p>
-          Para quem vive com hipertensão, diabetes, asma ou outra condição crónica —
-          monitorização contínua, renovação automática e acompanhamento real.
+          {t('cc.subtitle')}
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--primary"><Heart size={15} /> Começar programa crónico</Link>
-          <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={15} /> Falar com médico</Link>
+          <Link to="/register" className="lp-cta lp-cta--primary"><Heart size={15} /> {t('cc.cta_start')}</Link>
+          <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={15} /> {t('cc.cta_talk')}</Link>
         </div>
       </section>
 
@@ -58,8 +57,7 @@ export default function ChronicCarePage() {
         <div className="disclaimer-box">
           <AlertTriangle size={16} style={{ color: '#d97706', flexShrink: 0 }} />
           <span>
-            O KAYA não substitui o seu médico. Todas as decisões clínicas são validadas por um profissional de saúde certificado.
-            A plataforma apoia — nunca substitui — o acompanhamento médico tradicional.
+            {t('cc.disclaimer')}
           </span>
         </div>
       </div>
@@ -67,9 +65,9 @@ export default function ChronicCarePage() {
       {/* ── Conditions ── */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">Condições suportadas</div>
-          <h2>Desenhado para as principais doenças crónicas.</h2>
-          <p>Cada condição tem um protocolo de monitorização personalizado, validado por especialistas.</p>
+          <div className="lp-tag">{t('cc.cond_tag')}</div>
+          <h2>{t('cc.cond_title')}</h2>
+          <p>{t('cc.cond_desc')}</p>
         </div>
         <div className="conditions-grid">
           {CONDITIONS.map(c => (
@@ -87,8 +85,8 @@ export default function ChronicCarePage() {
       {/* ── Features ── */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Funcionalidades</div>
-          <h2>Tudo o que precisa para gerir a sua saúde crónica.</h2>
+          <div className="lp-tag">{t('cc.feat_tag')}</div>
+          <h2>{t('cc.feat_title')}</h2>
         </div>
         <div className="feat-grid">
           {FEATURES.map(f => (
@@ -108,8 +106,8 @@ export default function ChronicCarePage() {
       {/* ── Journey ── */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">Como funciona</div>
-          <h2>Do diagnóstico ao acompanhamento contínuo.</h2>
+          <div className="lp-tag">{t('cc.journey_tag')}</div>
+          <h2>{t('cc.journey_title')}</h2>
         </div>
         <div className="journey-steps">
           {JOURNEY.map(s => (
@@ -128,32 +126,32 @@ export default function ChronicCarePage() {
       {/* ── Pricing callout ── */}
       <section className="lp-section">
         <div className="page-callout" style={{ borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(220,38,38,0.03)' }}>
-          <div className="lp-tag" style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>Plano Chronic Care</div>
+          <div className="lp-tag" style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{t('cc.plan_tag')}</div>
           <h2 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 800, margin: '0.5rem 0 0.75rem' }}>
-            Acompanhamento completo desde 3.500 Kz/mês.
+            {t('cc.plan_title')}
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-            Inclui check-ins mensais, renovação de receita, vitals tracking, alertas de risco e historial completo.
+            {t('cc.plan_desc')}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            {['Check-in mensal', 'Renovação automática', 'Vitals tracking', 'Alertas de risco', 'Historial completo', 'Família incluída'].map(f => (
+            {chips.map(f => (
               <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.7rem', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, color: '#dc2626' }}>
                 <CheckCircle2 size={12} /> {f}
               </span>
             ))}
           </div>
-          <Link to="/register" className="lp-cta lp-cta--danger"><ArrowRight size={15} /> Activar Chronic Care</Link>
+          <Link to="/register" className="lp-cta lp-cta--danger"><ArrowRight size={15} /> {t('cc.plan_cta')}</Link>
         </div>
       </section>
 
       {/* ── Final CTA ── */}
       <section className="lp-final-cta">
-        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>Cuidado Crónico</div>
-        <h2>A sua saúde não deve parar entre consultas.</h2>
-        <p>Monitorização contínua, médico sempre disponível e renovação automática. Começa hoje.</p>
+        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>{t('cc.tag')}</div>
+        <h2>{t('cc.final_title')}</h2>
+        <p>{t('cc.final_desc')}</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--white">Começar programa <ArrowRight size={14} /></Link>
-          <Link to="/contacto" className="lp-cta lp-cta--white-outline">Falar com especialista</Link>
+          <Link to="/register" className="lp-cta lp-cta--white">{t('cc.final_cta1')} <ArrowRight size={14} /></Link>
+          <Link to="/contacto" className="lp-cta lp-cta--white-outline">{t('cc.final_cta2')}</Link>
         </div>
       </section>
 
