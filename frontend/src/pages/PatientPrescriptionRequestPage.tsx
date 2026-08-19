@@ -5,6 +5,9 @@ import {
   AlertTriangle, Loader2, Send, ArrowLeft,
 } from 'lucide-react';
 import api from '../api';
+import { useT, type Lang } from '../i18n/LanguageContext';
+
+const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
 
 interface Doctor {
   id: string;
@@ -27,16 +30,18 @@ interface RxRequest {
   decided_at?: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  pending:           { label: 'Pendente',           color: '#d97706', bg: 'rgba(234,179,8,0.1)',    icon: <Clock size={13} /> },
-  approve:           { label: 'Aprovada',            color: '#059669', bg: 'rgba(16,185,129,0.1)',   icon: <CheckCircle2 size={13} /> },
-  adjust:            { label: 'Dose ajustada',       color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',   icon: <CheckCircle2 size={13} /> },
-  consult_requested: { label: 'Consulta solicitada', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)',   icon: <Clock size={13} /> },
-  exams_requested:   { label: 'Exames pedidos',      color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',   icon: <Clock size={13} /> },
-  reject:            { label: 'Recusada',            color: '#dc2626', bg: 'rgba(239,68,68,0.1)',    icon: <X size={13} /> },
+const STATUS_CONFIG: Record<string, { key: string; color: string; bg: string; icon: React.ReactNode }> = {
+  pending:           { key: 'ppr.st_pending', color: '#d97706', bg: 'rgba(234,179,8,0.1)',    icon: <Clock size={13} /> },
+  approve:           { key: 'ppr.st_approve', color: '#059669', bg: 'rgba(16,185,129,0.1)',   icon: <CheckCircle2 size={13} /> },
+  adjust:            { key: 'ppr.st_adjust',  color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',   icon: <CheckCircle2 size={13} /> },
+  consult_requested: { key: 'ppr.st_consult', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)',   icon: <Clock size={13} /> },
+  exams_requested:   { key: 'ppr.st_exams',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',   icon: <Clock size={13} /> },
+  reject:            { key: 'ppr.st_reject',  color: '#dc2626', bg: 'rgba(239,68,68,0.1)',    icon: <X size={13} /> },
 };
 
 export default function PatientPrescriptionRequestPage() {
+  const { t, lang } = useT();
+  const locale = LOCALES[lang] || 'pt-PT';
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -92,11 +97,11 @@ export default function PatientPrescriptionRequestPage() {
         reason: reason.trim() || undefined,
       });
       setHistory(h => [data, ...h]);
-      setSuccessMsg('Pedido enviado com sucesso. O médico irá analisar brevemente.');
+      setSuccessMsg(t('ppr.success'));
       setMedName(''); setDose(''); setFrequency(''); setReason(''); setDoctorId('');
       setShowForm(false);
     } catch (err: any) {
-      setErrorMsg(err?.response?.data?.detail ?? 'Erro ao enviar pedido. Tente novamente.');
+      setErrorMsg(err?.response?.data?.detail ?? t('ppr.error'));
     } finally {
       setSubmitting(false);
     }
@@ -114,24 +119,24 @@ export default function PatientPrescriptionRequestPage() {
         </button>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Pill size={20} style={{ color: 'var(--brand-primary)' }} /> Pedidos de Prescrição
+            <Pill size={20} style={{ color: 'var(--brand-primary)' }} /> {t('ppr.title')}
           </h1>
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.82rem' }}>
-            Solicite renovação de medicação ao seu médico
+            {t('ppr.subtitle')}
           </p>
         </div>
         <button
           onClick={() => setShowForm(f => !f)}
           style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', borderRadius: '10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
         >
-          <Send size={14} /> Novo pedido
+          <Send size={14} /> {t('ppr.new_request')}
         </button>
       </div>
 
       {/* Pending badge */}
       {pending > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', borderRadius: '10px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#d97706', fontWeight: 600 }}>
-          <Clock size={15} /> {pending} pedido{pending > 1 ? 's' : ''} pendente{pending > 1 ? 's' : ''} em análise
+          <Clock size={15} /> {pending} {pending > 1 ? t('ppr.pending_many') : t('ppr.pending_one')}
         </div>
       )}
 
@@ -151,43 +156,43 @@ export default function PatientPrescriptionRequestPage() {
       {showForm && (
         <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 1.25rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-            <Send size={16} style={{ color: 'var(--brand-primary)' }} /> Novo Pedido de Prescrição
+            <Send size={16} style={{ color: 'var(--brand-primary)' }} /> {t('ppr.form_title')}
           </h2>
 
           {/* Safety notice */}
           <div style={{ display: 'flex', gap: '0.6rem', padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#3b82f6' }}>
             <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>Os pedidos de prescrição são revistos por um profissional de saúde licenciado. Em caso de emergência, contacte o <strong>112</strong> ou dirija-se ao serviço de urgência mais próximo.</span>
+            <span>{t('ppr.safety_pre')} <strong>112</strong> {t('ppr.safety_post')}</span>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
-              <label className="form-label">Medicamento *</label>
-              <input className="form-input" placeholder="ex: Metformina 850mg" value={medName} onChange={e => setMedName(e.target.value)} required />
+              <label className="form-label">{t('ppr.med')} *</label>
+              <input className="form-input" placeholder={t('ppr.med_ph')} value={medName} onChange={e => setMedName(e.target.value)} required />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label className="form-label">Dose</label>
-                <input className="form-input" placeholder="ex: 850mg" value={dose} onChange={e => setDose(e.target.value)} />
+                <label className="form-label">{t('ppr.dose')}</label>
+                <input className="form-input" placeholder={t('ppr.dose_ph')} value={dose} onChange={e => setDose(e.target.value)} />
               </div>
               <div>
-                <label className="form-label">Frequência</label>
-                <input className="form-input" placeholder="ex: 2x/dia" value={frequency} onChange={e => setFrequency(e.target.value)} />
+                <label className="form-label">{t('ppr.freq')}</label>
+                <input className="form-input" placeholder={t('ppr.freq_ph')} value={frequency} onChange={e => setFrequency(e.target.value)} />
               </div>
             </div>
             <div>
-              <label className="form-label">Motivo do pedido</label>
-              <textarea className="form-input" rows={3} placeholder="Descreva brevemente o motivo da renovação…" value={reason} onChange={e => setReason(e.target.value)} style={{ resize: 'vertical' }} />
+              <label className="form-label">{t('ppr.reason')}</label>
+              <textarea className="form-input" rows={3} placeholder={t('ppr.reason_ph')} value={reason} onChange={e => setReason(e.target.value)} style={{ resize: 'vertical' }} />
             </div>
             <div>
-              <label className="form-label">Médico *</label>
+              <label className="form-label">{t('ppr.doctor')} *</label>
               {loadingDocs ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', padding: '0.5rem 0' }}><Loader2 size={14} style={{ display: 'inline', marginRight: 6 }} />A carregar médicos…</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', padding: '0.5rem 0' }}><Loader2 size={14} style={{ display: 'inline', marginRight: 6 }} />{t('ppr.loading_docs')}</div>
               ) : doctors.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', padding: '0.5rem 0' }}>Nenhum médico disponível de momento.</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', padding: '0.5rem 0' }}>{t('ppr.no_docs')}</div>
               ) : (
                 <select className="form-input" value={doctorId} onChange={e => setDoctorId(e.target.value)} required>
-                  <option value="">— Seleccionar médico —</option>
+                  <option value="">{t('ppr.select_doctor')}</option>
                   {doctors.map(d => (
                     <option key={d.id} value={d.id}>
                       {d.title ? `${d.title} ` : ''}{d.display_name}{d.specialization ? ` · ${d.specialization}` : ''}
@@ -198,11 +203,11 @@ export default function PatientPrescriptionRequestPage() {
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
               <button type="button" onClick={() => setShowForm(false)} style={{ padding: '0.55rem 1.1rem', borderRadius: '10px', background: 'none', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.83rem', cursor: 'pointer' }}>
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button type="submit" disabled={submitting || !medName.trim() || !doctorId} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.25rem', borderRadius: '10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.83rem', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
                 {submitting ? <Loader2 size={15} /> : <Send size={15} />}
-                {submitting ? 'A enviar…' : 'Enviar pedido'}
+                {submitting ? t('ppr.sending') : t('ppr.send')}
               </button>
             </div>
           </form>
@@ -212,21 +217,22 @@ export default function PatientPrescriptionRequestPage() {
       {/* History */}
       <div>
         <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
-          Histórico
+          {t('ppr.history')}
         </div>
         {loadingHist && (
           <div style={{ textAlign: 'center', padding: '2.5rem 0', color: 'var(--text-muted)' }}>
-            <Loader2 size={24} style={{ display: 'block', margin: '0 auto 0.5rem' }} /> A carregar…
+            <Loader2 size={24} style={{ display: 'block', margin: '0 auto 0.5rem' }} /> {t('common.loading')}
           </div>
         )}
         {!loadingHist && history.length === 0 && (
           <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            Sem pedidos anteriores.
+            {t('ppr.no_history')}
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {history.map(req => {
-            const sc = STATUS_CONFIG[req.status] ?? { label: req.status, color: '#6b7280', bg: 'rgba(107,114,128,0.1)', icon: null };
+            const sc = STATUS_CONFIG[req.status] ?? { key: '', color: '#6b7280', bg: 'rgba(107,114,128,0.1)', icon: null };
+            const scLabel = sc.key ? t(sc.key) : req.status;
             const isOpen = expandedId === req.id;
             const hasDecision = req.doctor_note || req.adjusted_dose || req.adjusted_frequency;
             return (
@@ -241,12 +247,12 @@ export default function PatientPrescriptionRequestPage() {
                     <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                       {req.dose && <span>{req.dose} · </span>}
                       {req.frequency && <span>{req.frequency} · </span>}
-                      {new Date(req.created_at).toLocaleDateString('pt-PT')}
+                      {new Date(req.created_at).toLocaleDateString(locale)}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 999, background: sc.bg, color: sc.color }}>
-                      {sc.icon} {sc.label}
+                      {sc.icon} {scLabel}
                     </span>
                     {hasDecision && (isOpen ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />)}
                   </div>
@@ -255,7 +261,7 @@ export default function PatientPrescriptionRequestPage() {
                   <div style={{ padding: '0.85rem 1.1rem', borderTop: '1px solid var(--border)', background: 'rgba(0,0,0,0.018)', fontSize: '0.82rem' }}>
                     {(req.adjusted_dose || req.adjusted_frequency) && (
                       <div style={{ marginBottom: '0.5rem', fontWeight: 600 }}>
-                        Dose ajustada: {req.adjusted_dose ?? req.dose}{req.adjusted_frequency ? ` · ${req.adjusted_frequency}` : ''}
+                        {t('ppr.adjusted')} {req.adjusted_dose ?? req.dose}{req.adjusted_frequency ? ` · ${req.adjusted_frequency}` : ''}
                       </div>
                     )}
                     {req.doctor_note && (
@@ -265,7 +271,7 @@ export default function PatientPrescriptionRequestPage() {
                     )}
                     {req.decided_at && (
                       <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
-                        Decidido a {new Date(req.decided_at).toLocaleString('pt-PT')}
+                        {t('ppr.decided_at')} {new Date(req.decided_at).toLocaleString(locale)}
                       </div>
                     )}
                   </div>
