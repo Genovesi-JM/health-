@@ -6,120 +6,68 @@ import {
   ArrowRight, CheckCircle2, Shield, Clock, FileText,
   Smartphone, RefreshCw, TrendingUp, Baby,
 } from 'lucide-react';
-
-const FEATURES = [
-  {
-    icon: Calendar,
-    color: '#0d9488',
-    title: 'Marque consultas online',
-    desc: 'Escolha a clínica, especialidade, data e hora. Confirmação imediata sem telefonemas.',
-  },
-  {
-    icon: Activity,
-    color: '#dc2626',
-    title: 'Envie as suas leituras antes da consulta',
-    desc: 'Tensão, glicemia, oximetria — o médico recebe os seus dados antes de chegar. Consulta mais eficiente.',
-  },
-  {
-    icon: Video,
-    color: '#0891b2',
-    title: 'Teleconsulta de casa',
-    desc: 'Consulta por vídeo com médico certificado. Sem deslocação, sem espera, sem stress.',
-  },
-  {
-    icon: Pill,
-    color: '#7c3aed',
-    title: 'Renovação de receita',
-    desc: 'Medicação crónica? Solicite renovação em 2 cliques. Médico valida e emite a receita digitalmente.',
-  },
-  {
-    icon: Bell,
-    color: '#d97706',
-    title: 'Lembretes inteligentes',
-    desc: 'Nunca se esqueça de uma consulta, medição ou medicação. Alertas personalizados para cada necessidade.',
-  },
-  {
-    icon: Users,
-    color: '#0d9488',
-    title: 'Gestão familiar',
-    desc: 'Gerencie a saúde de filhos, pais e cônjuge a partir de uma única conta. Um portal para toda a família.',
-  },
-  {
-    icon: FileText,
-    color: '#0891b2',
-    title: 'Historial clínico organizado',
-    desc: 'Todas as consultas, receitas e resultados num só lugar. Partilhe com qualquer médico, quando precisar.',
-  },
-  {
-    icon: RefreshCw,
-    color: '#059669',
-    title: 'Acompanhamento de doenças crónicas',
-    desc: 'Hipertensão, diabetes, asma — monitorização contínua com alertas de risco e check-ins mensais.',
-  },
-];
-
-const JOURNEY = [
-  { step: '01', icon: Smartphone, color: '#0d9488', title: 'Registe-se em 2 minutos', desc: 'Crie o seu perfil, adicione a família e configure as suas condições de saúde.' },
-  { step: '02', icon: Activity,   color: '#0891b2', title: 'Meça os seus vitais em casa', desc: 'Tensão, glicemia, SpO₂ — sincronize com o portal antes da consulta.' },
-  { step: '03', icon: Calendar,   color: '#7c3aed', title: 'Marque ou entre em teleconsulta', desc: 'O médico vê os seus dados e a consulta começa com contexto completo.' },
-  { step: '04', icon: TrendingUp, color: '#d97706', title: 'Acompanhe a sua saúde', desc: 'Gráficos, tendências, receitas e próximas consultas — tudo organizado.' },
-];
-
-const PLANS = [
-  {
-    label: 'Basic',
-    price: 'Gratuito',
-    sub: 'Para começar',
-    color: '#0d9488',
-    features: ['Marcação de consultas', 'Triagem básica', '1 perfil', 'Historial de 6 meses'],
-    cta: 'Criar conta grátis',
-    featured: false,
-  },
-  {
-    label: 'Premium',
-    price: '3.500 Kz/mês',
-    sub: '≈ 42.000 Kz/ano',
-    color: '#0891b2',
-    features: ['Teleconsulta ilimitada', 'Vitals tracking', 'Renovação de receita', 'Lembretes', '3 perfis', 'Historial completo'],
-    cta: 'Começar Premium',
-    featured: true,
-  },
-  {
-    label: 'Family',
-    price: '7.500 Kz/mês',
-    sub: 'Até 6 membros',
-    color: '#7c3aed',
-    features: ['Tudo do Premium', '6 perfis', 'Perfis pediátricos', 'Dashboard familiar', 'Suporte prioritário'],
-    cta: 'Family Plan',
-    featured: false,
-  },
-];
+import { useT } from '../i18n/LanguageContext';
 
 export default function PatientsPage() {
+  const { t } = useT();
+  const FEATURES = [
+    { icon: Calendar,  color: '#0d9488', title: t('pat.f1_title'), desc: t('pat.f1_desc') },
+    { icon: Activity,  color: '#dc2626', title: t('pat.f2_title'), desc: t('pat.f2_desc') },
+    { icon: Video,     color: '#0891b2', title: t('pat.f3_title'), desc: t('pat.f3_desc') },
+    { icon: Pill,      color: '#7c3aed', title: t('pat.f4_title'), desc: t('pat.f4_desc') },
+    { icon: Bell,      color: '#d97706', title: t('pat.f5_title'), desc: t('pat.f5_desc') },
+    { icon: Users,     color: '#0d9488', title: t('pat.f6_title'), desc: t('pat.f6_desc') },
+    { icon: FileText,  color: '#0891b2', title: t('pat.f7_title'), desc: t('pat.f7_desc') },
+    { icon: RefreshCw, color: '#059669', title: t('pat.f8_title'), desc: t('pat.f8_desc') },
+  ];
+  const JOURNEY = [
+    { step: '01', icon: Smartphone, color: '#0d9488', title: t('pat.j1_title'), desc: t('pat.j1_desc') },
+    { step: '02', icon: Activity,   color: '#0891b2', title: t('pat.j2_title'), desc: t('pat.j2_desc') },
+    { step: '03', icon: Calendar,   color: '#7c3aed', title: t('pat.j3_title'), desc: t('pat.j3_desc') },
+    { step: '04', icon: TrendingUp, color: '#d97706', title: t('pat.j4_title'), desc: t('pat.j4_desc') },
+  ];
+  const FAMILY = [
+    { icon: Baby,  color: '#0891b2', label: t('pat.fam_children'), desc: t('pat.fam_children_desc') },
+    { icon: Heart, color: '#dc2626', label: t('pat.fam_adults'),   desc: t('pat.fam_adults_desc') },
+    { icon: Users, color: '#7c3aed', label: t('pat.fam_elderly'),  desc: t('pat.fam_elderly_desc') },
+  ];
+  const PLANS = [
+    { label: 'Basic', price: t('pat.plan_basic_price'), sub: t('pat.plan_basic_sub'), color: '#0d9488',
+      features: [t('pat.plan_basic_f1'), t('pat.plan_basic_f2'), t('pat.plan_basic_f3'), t('pat.plan_basic_f4')], cta: t('pat.plan_basic_cta'), featured: false },
+    { label: 'Premium', price: '3.500 Kz/mês', sub: t('pat.plan_prem_sub'), color: '#0891b2',
+      features: [t('pat.plan_prem_f1'), t('pat.plan_prem_f2'), t('pat.plan_prem_f3'), t('pat.plan_prem_f4'), t('pat.plan_prem_f5'), t('pat.plan_prem_f6')], cta: t('pat.plan_prem_cta'), featured: true },
+    { label: 'Family', price: '7.500 Kz/mês', sub: t('pat.plan_fam_sub'), color: '#7c3aed',
+      features: [t('pat.plan_fam_f1'), t('pat.plan_fam_f2'), t('pat.plan_fam_f3'), t('pat.plan_fam_f4'), t('pat.plan_fam_f5')], cta: t('pat.plan_fam_cta'), featured: false },
+  ];
+  const TRUST = [
+    { icon: Shield,       color: '#0d9488', label: t('pat.trust1'), desc: t('pat.trust1_desc') },
+    { icon: CheckCircle2, color: '#0891b2', label: t('pat.trust2'), desc: t('pat.trust2_desc') },
+    { icon: Clock,        color: '#7c3aed', label: t('pat.trust3'), desc: t('pat.trust3_desc') },
+    { icon: Shield,       color: '#d97706', label: t('pat.trust4'), desc: t('pat.trust4_desc') },
+  ];
   return (
     <div className="landing-wrapper">
       <Navbar />
 
       {/* ── Page Hero ── */}
       <section className="lp-page-hero">
-        <div className="lp-tag"><Heart size={12} /> Para Pacientes</div>
-        <h1>A sua saúde, organizada.<br /><span className="lp-hero__accent">Simples, rápida e contínua.</span></h1>
+        <div className="lp-tag"><Heart size={12} /> {t('pat.tag')}</div>
+        <h1>{t('pat.title1')}<br /><span className="lp-hero__accent">{t('pat.title2')}</span></h1>
         <p>
-          Marque consultas, envie leituras antes de chegar, renove receitas e acompanhe a saúde da família —
-          tudo num só portal, desenhado para Angola.
+          {t('pat.subtitle')}
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={16} /> Criar conta grátis</Link>
-          <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={16} /> Teleconsulta agora</Link>
+          <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={16} /> {t('pat.cta_free')}</Link>
+          <Link to="/telemedicina" className="lp-cta lp-cta--secondary"><Video size={16} /> {t('pat.cta_tele')}</Link>
         </div>
       </section>
 
       {/* ── Features Grid ── */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">O que pode fazer</div>
-          <h2>Tudo o que precisa para cuidar da sua saúde.</h2>
-          <p>Ferramentas reais para pacientes reais. Sem complicação.</p>
+          <div className="lp-tag">{t('pat.feat_tag')}</div>
+          <h2>{t('pat.feat_title')}</h2>
+          <p>{t('pat.feat_desc')}</p>
         </div>
         <div className="feat-grid">
           {FEATURES.map(f => (
@@ -139,9 +87,9 @@ export default function PatientsPage() {
       {/* ── Patient Journey ── */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Como funciona</div>
-          <h2>De paciente a utilizador activo de saúde.</h2>
-          <p>Quatro passos que transformam a forma como cuida de si e da família.</p>
+          <div className="lp-tag">{t('pat.journey_tag')}</div>
+          <h2>{t('pat.journey_title')}</h2>
+          <p>{t('pat.journey_desc')}</p>
         </div>
         <div className="journey-steps">
           {JOURNEY.map((s, i) => (
@@ -166,30 +114,26 @@ export default function PatientsPage() {
               <Heart size={22} />
             </div>
             <div>
-              <div className="lp-tag" style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', margin: 0 }}>Cuidado Crónico</div>
-              <h3 style={{ margin: '0.2rem 0 0', fontSize: '1.2rem', fontWeight: 800 }}>Tem hipertensão, diabetes ou asma?</h3>
+              <div className="lp-tag" style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', margin: 0 }}>{t('pat.chronic_tag')}</div>
+              <h3 style={{ margin: '0.2rem 0 0', fontSize: '1.2rem', fontWeight: 800 }}>{t('pat.chronic_title')}</h3>
             </div>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-            O KAYA tem um programa dedicado para doentes crónicos — monitorização contínua, renovação automática de receitas e check-ins mensais com o seu médico.
+            {t('pat.chronic_desc')}
           </p>
-          <Link to="/chronic-care" className="lp-cta lp-cta--danger"><RefreshCw size={15} /> Ver programa de cuidado crónico</Link>
+          <Link to="/chronic-care" className="lp-cta lp-cta--danger"><RefreshCw size={15} /> {t('pat.chronic_cta')}</Link>
         </div>
       </section>
 
       {/* ── Family feature ── */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Gestão Familiar</div>
-          <h2>Um portal para cuidar de toda a família.</h2>
-          <p>Gerencie a saúde dos seus filhos, pais e cônjuge — sem criar contas separadas.</p>
+          <div className="lp-tag">{t('pat.fam_tag')}</div>
+          <h2>{t('pat.fam_title')}</h2>
+          <p>{t('pat.fam_desc')}</p>
         </div>
         <div className="family-row">
-          {[
-            { icon: Baby,  color: '#0891b2', label: 'Crianças', desc: 'Calendário de vacinas, consultas pediátricas, altura e peso.' },
-            { icon: Heart, color: '#dc2626', label: 'Adultos',  desc: 'Medicação crónica, marcações, teleconsulta.' },
-            { icon: Users, color: '#7c3aed', label: 'Idosos',   desc: 'Monitorização de tensão, glicemia e check-ins regulares.' },
-          ].map(m => (
+          {FAMILY.map(m => (
             <div key={m.label} className="family-card">
               <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}15`, color: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
                 <m.icon size={22} />
@@ -204,9 +148,9 @@ export default function PatientsPage() {
       {/* ── Pricing ── */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">Planos</div>
-          <h2>Comece grátis. Escale quando precisar.</h2>
-          <p>Sem contratos anuais. Cancele quando quiser.</p>
+          <div className="lp-tag">{t('pat.plans_tag')}</div>
+          <h2>{t('pat.plans_title')}</h2>
+          <p>{t('pat.plans_desc')}</p>
         </div>
         <div className="lp-pricing">
           {PLANS.map(p => (
@@ -232,17 +176,12 @@ export default function PatientsPage() {
       {/* ── Trust ── */}
       <section className="lp-section">
         <div className="trust-bar">
-          {[
-            { icon: Shield,       color: '#0d9488', label: 'Dados encriptados',         desc: 'AES-256 em repouso e em trânsito.' },
-            { icon: CheckCircle2, color: '#0891b2', label: 'Médico real valida tudo',   desc: 'Nenhuma IA toma decisões clínicas.' },
-            { icon: Clock,        color: '#7c3aed', label: 'Disponível 24/7',           desc: 'Portal sempre online.' },
-            { icon: Shield,       color: '#d97706', label: 'Privacidade garantida',     desc: 'Os seus dados nunca são vendidos.' },
-          ].map(t => (
-            <div key={t.label} className="trust-item">
-              <t.icon size={20} style={{ color: t.color }} />
+          {TRUST.map(item => (
+            <div key={item.label} className="trust-item">
+              <item.icon size={20} style={{ color: item.color }} />
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{t.label}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>{t.desc}</div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{item.label}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>{item.desc}</div>
               </div>
             </div>
           ))}
@@ -251,12 +190,12 @@ export default function PatientsPage() {
 
       {/* ── Final CTA ── */}
       <section className="lp-final-cta">
-        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>Comece hoje</div>
-        <h2>A sua saúde merece este cuidado.</h2>
-        <p>Crie a sua conta gratuita agora. Sem cartão, sem compromisso.</p>
+        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>{t('pat.final_tag')}</div>
+        <h2>{t('pat.final_title')}</h2>
+        <p>{t('pat.final_desc')}</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--white">Criar conta grátis <ArrowRight size={15} /></Link>
-          <Link to="/telemedicina" className="lp-cta lp-cta--white-outline"><Video size={15} /> Teleconsulta agora</Link>
+          <Link to="/register" className="lp-cta lp-cta--white">{t('pat.cta_free')} <ArrowRight size={15} /></Link>
+          <Link to="/telemedicina" className="lp-cta lp-cta--white-outline"><Video size={15} /> {t('pat.cta_tele')}</Link>
         </div>
       </section>
 
