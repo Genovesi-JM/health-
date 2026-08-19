@@ -97,10 +97,12 @@ export default function TeleconsultationControl({
   consultationId,
   role,
   preview = false,
+  onEnterRoom,
 }: {
   consultationId: string;
   role: 'doctor' | 'nurse' | 'patient';
   preview?: boolean;
+  onEnterRoom?: (roomUrl: string) => void;
 }) {
   const { lang } = useT();
   const c = words[lang as keyof typeof words] || words.en;
@@ -191,7 +193,8 @@ export default function TeleconsultationControl({
         setSession((await api.post(`/api/v1/teleconsultations/${consultationId}/start`)).data);
       }
       const response = await api.post(`/api/v1/teleconsultations/${consultationId}/join`);
-      window.open(response.data.room_url, '_blank', 'noopener,noreferrer');
+      if (onEnterRoom) onEnterRoom(response.data.room_url);
+      else window.open(response.data.room_url, '_blank', 'noopener,noreferrer');
     } catch { setError(c.error); } finally { setBusy(false); }
   };
 

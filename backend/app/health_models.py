@@ -1437,3 +1437,20 @@ class DependantAccessEvent(Base):
     __table_args__ = (
         Index("ix_dependant_access_events_link_at", "dependant_link_id", "at"),
     )
+
+
+# ── Public contact message (§ website contact form) ──────────────────────────
+# Stores messages submitted from the public "Fale connosco" form so nothing is
+# lost to a mailto: client. A best-effort email is also sent to support.
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(250), nullable=False)
+    subject: Mapped[str] = mapped_column(String(200), nullable=False, default="Suporte geral")
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="new", index=True)  # new | read | closed
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)

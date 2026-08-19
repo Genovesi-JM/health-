@@ -19,6 +19,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/especialistas', label: 'Especialistas',  sub: 'Encontre o médico certo' },
       { to: '/telemedicina', label: 'Teleconsulta',    sub: 'Consulta online imediata' },
       { to: '/chronic-care', label: 'Cuidado Crónico', sub: 'Hipertensão, diabetes, asma' },
+      { to: '/mapa',         label: 'Mapa de Clínicas', sub: 'Clínicas, hospitais e laboratórios' },
     ],
   },
   {

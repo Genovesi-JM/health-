@@ -26,6 +26,7 @@ import UrgenciaPage from './pages/UrgenciaPage';
 import EmpresasPage from './pages/EmpresasPage';
 import FAQPage from './pages/FAQPage';
 import ContactoPage from './pages/ContactoPage';
+import MapaPage from './pages/MapaPage';
 import PatientsPage from './pages/PatientsPage';
 import ClinicsPage from './pages/ClinicsPage';
 import ChronicCarePage from './pages/ChronicCarePage';
@@ -122,6 +123,7 @@ export default function App() {
           <Route path="/empresas" element={<EmpresasPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/contacto" element={<ContactoPage />} />
+          <Route path="/mapa" element={<MapaPage />} />
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/clinics" element={<ClinicsPage />} />
           <Route path="/chronic-care" element={<ChronicCarePage />} />

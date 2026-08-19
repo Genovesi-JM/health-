@@ -51,6 +51,8 @@ from .routers import (
     verification_webhooks,
     organisations,
     caregiver,
+    public_contact,
+    public_facilities,
 )
 
 from .seed_data import seed_all
@@ -173,6 +175,8 @@ def create_application() -> FastAPI:
     application.include_router(verification_webhooks.router) # /api/v1/webhooks/{sumsub,veremark,certn}
     application.include_router(organisations.router)      # /api/v1/organisations/* — clinic/lab/pharmacy onboarding
     application.include_router(caregiver.router)          # /api/v1/caregiver/* — dependant management
+    application.include_router(public_contact.router)     # /api/v1/contact — public contact form
+    application.include_router(public_facilities.router)  # /api/v1/public/facilities — clinic/hospital map
 
     # ── Deprecated drone/shop routers (disabled) ──
     # The following routers are from the original GeoVision platform and

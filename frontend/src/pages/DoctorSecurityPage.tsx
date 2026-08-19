@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Lock, Eye, EyeOff, ShieldCheck, ChevronRight } from 'lucide-react';
 import api from '../api';
 
 export default function DoctorSecurityPage() {
@@ -58,14 +59,14 @@ export default function DoctorSecurityPage() {
         </form>
       </div>
 
-      <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <Link to="/security/mfa" className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
         <ShieldCheck size={28} style={{ color: '#10b981', flexShrink: 0 }} />
         <div>
           <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Autenticação de dois factores</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Brevemente disponível. Aumenta a segurança da sua conta.</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Obrigatória para profissionais. Configure a aplicação de autenticação e os códigos de recuperação.</div>
         </div>
-        <span style={{ marginLeft: 'auto', fontSize: '0.73rem', fontWeight: 700, padding: '0.25rem 0.65rem', borderRadius: 999, background: 'rgba(234,179,8,0.1)', color: '#d97706' }}>Em breve</span>
-      </div>
+        <ChevronRight size={18} style={{ marginLeft: 'auto', color: 'var(--text-muted)' }} />
+      </Link>
     </div>
   );
 }
