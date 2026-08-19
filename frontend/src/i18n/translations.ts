@@ -2296,6 +2296,27 @@ const translations: Record<string, TranslationEntry> = {
   'cc.final_desc': { pt: 'Monitorização contínua, médico sempre disponível e renovação automática. Começa hoje.', en: 'Continuous monitoring, a doctor always available, and automatic renewal. Start today.', fr: 'Surveillance continue, un médecin toujours disponible et renouvellement automatique. Commencez aujourd’hui.', es: 'Monitoreo continuo, un médico siempre disponible y renovación automática. Empiece hoy.' },
   'cc.final_cta1': { pt: 'Começar programa', en: 'Start programme', fr: 'Démarrer le programme', es: 'Iniciar programa' },
   'cc.final_cta2': { pt: 'Falar com especialista', en: 'Talk to a specialist', fr: 'Parler à un spécialiste', es: 'Hablar con un especialista' },
+  'appt.domicilio': { pt: 'Domicílio', en: 'Home visit', fr: 'À domicile', es: 'Domicilio' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTORS LIST (public find-a-doctor)
+     ═══════════════════════════════════════════════════════════ */
+  'dlist.all_specialties': { pt: 'Todas as especialidades', en: 'All specialties', fr: 'Toutes les spécialités', es: 'Todas las especialidades' },
+  'dlist.title': { pt: 'Encontre um médico', en: 'Find a doctor', fr: 'Trouver un médecin', es: 'Encuentre un médico' },
+  'dlist.subtitle': { pt: 'Profissionais de saúde verificados em Angola', en: 'Verified healthcare professionals in Angola', fr: 'Professionnels de santé vérifiés en Angola', es: 'Profesionales de salud verificados en Angola' },
+  'dlist.search_ph': { pt: 'Pesquisar por nome, especialidade, cidade…', en: 'Search by name, specialty, city…', fr: 'Rechercher par nom, spécialité, ville…', es: 'Buscar por nombre, especialidad, ciudad…' },
+  'dlist.filters': { pt: 'Filtros', en: 'Filters', fr: 'Filtres', es: 'Filtros' },
+  'dlist.consult_type': { pt: 'Tipo de consulta', en: 'Consultation type', fr: 'Type de consultation', es: 'Tipo de consulta' },
+  'dlist.clear': { pt: 'Limpar filtros', en: 'Clear filters', fr: 'Effacer les filtres', es: 'Limpiar filtros' },
+  'dlist.error': { pt: 'Não foi possível carregar os médicos.', en: 'Could not load the doctors.', fr: 'Impossible de charger les médecins.', es: 'No se pudieron cargar los médicos.' },
+  'dlist.empty': { pt: 'Nenhum médico encontrado para esta pesquisa.', en: 'No doctors found for this search.', fr: 'Aucun médecin trouvé pour cette recherche.', es: 'No se encontraron médicos para esta búsqueda.' },
+  'dlist.found_one': { pt: 'médico encontrado', en: 'doctor found', fr: 'médecin trouvé', es: 'médico encontrado' },
+  'dlist.found_many': { pt: 'médicos encontrados', en: 'doctors found', fr: 'médecins trouvés', es: 'médicos encontrados' },
+  'dlist.default_specialty': { pt: 'Medicina', en: 'Medicine', fr: 'Médecine', es: 'Medicina' },
+  'dlist.doctor': { pt: 'Médico', en: 'Doctor', fr: 'Médecin', es: 'Médico' },
+  'dlist.no_slots': { pt: 'Sem vagas', en: 'No availability', fr: 'Complet', es: 'Sin plazas' },
+  'dlist.price_from': { pt: 'A partir de', en: 'From', fr: 'À partir de', es: 'Desde' },
+  'dlist.price_upto': { pt: 'Até', en: 'Up to', fr: 'Jusqu’à', es: 'Hasta' },
 };
 
 export default translations;
