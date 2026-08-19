@@ -6,172 +6,101 @@ import {
   CheckCircle2, ArrowRight, Star, RefreshCw,
   Shield, Clock, TrendingUp,
 } from 'lucide-react';
-
-const TIERS = [
-  {
-    label: 'Basic',
-    price: 'Gratuito',
-    period: 'Para sempre',
-    color: '#64748b',
-    popular: false,
-    target: 'Pacientes individuais que querem começar',
-    features: [
-      'Marcação de consultas (5/mês)',
-      'Triagem básica de sintomas',
-      '1 perfil de utilizador',
-      'Historial últimos 6 meses',
-      'Notificações por email',
-    ],
-    notIncluded: ['Teleconsulta', 'Registo de sinais vitais', 'Renovação de receitas', 'Perfis familiares'],
-    cta: 'Criar conta grátis',
-    ctaLink: '/register',
-  },
-  {
-    label: 'Premium',
-    price: '3.500 Kz',
-    period: '/mês',
-    color: '#0d9488',
-    popular: true,
-    target: 'Pacientes activos e famílias pequenas',
-    features: [
-      'Marcações ilimitadas',
-      'Teleconsulta incluída (4/mês)',
-      'Registo de sinais vitais (tensão, SpO₂, peso)',
-      'Renovação de receita crónica',
-      'Lembretes personalizados',
-      '3 perfis de utilizador',
-      'Historial completo',
-      'Suporte por chat',
-    ],
-    notIncluded: ['Painel familiar avançado', 'Perfis pediátricos ilimitados'],
-    cta: 'Experimentar Premium',
-    ctaLink: '/register',
-  },
-  {
-    label: 'Família',
-    price: '7.500 Kz',
-    period: '/mês',
-    color: '#7c3aed',
-    popular: false,
-    target: 'Famílias completas, incluindo idosos e crianças',
-    features: [
-      'Tudo do Premium',
-      'Até 6 perfis de utilizador',
-      'Perfis pediátricos (vacinas, crescimento)',
-      'Painel familiar unificado',
-      'Monitorização de idosos',
-      'Partilha de historial entre membros',
-      'Suporte prioritário',
-    ],
-    notIncluded: [],
-    cta: 'Plano Família',
-    ctaLink: '/register',
-  },
-  {
-    label: 'Cuidado Crónico',
-    price: '4.500 Kz',
-    period: '/mês',
-    color: '#dc2626',
-    popular: false,
-    target: 'Doentes com condições crónicas (HTA, DM, asma)',
-    features: [
-      'Registo de sinais vitais avançado',
-      'Alertas de risco personalizados',
-      'Check-in mensal com médico',
-      'Renovação automática de receitas',
-      'Histórico de leituras ilimitado',
-      'Plano de saúde personalizado',
-      'Monitorização familiar opcional',
-    ],
-    notIncluded: [],
-    cta: 'Activar Cuidado Crónico',
-    ctaLink: '/register',
-  },
-];
-
-const CLINIC_PLANS = [
-  {
-    label: 'Starter Clínica',
-    price: '15.000 Kz/mês',
-    sub: '1–3 médicos',
-    features: ['50 marcações/mês', 'Perfil na rede', '1 especialidade', 'Relatórios básicos'],
-    cta: 'Começar',
-    color: '#0d9488',
-    featured: false,
-  },
-  {
-    label: 'Business Clínica',
-    price: '35.000 Kz/mês',
-    sub: '4–10 médicos',
-    features: ['Marcações ilimitadas', 'Teleconsulta', 'Sinais vitais pré-chegada', 'Painel de análises', '3 especialidades'],
-    cta: 'Mais escolhido',
-    color: '#0891b2',
-    featured: true,
-  },
-  {
-    label: 'Enterprise',
-    price: 'Personalizado',
-    sub: 'Hospitais e grupos',
-    features: ['Tudo ilimitado', 'API / HIS integração', 'SLA 99.9%', 'Gestor dedicado', 'Formação presencial'],
-    cta: 'Contactar',
-    color: '#7c3aed',
-    featured: false,
-  },
-];
-
-const FAQ_PRICING = [
-  { q: 'Posso cancelar a qualquer momento?', a: 'Sim. Sem contratos anuais. Cancele quando quiser, sem penalidades.' },
-  { q: 'Quais os métodos de pagamento aceites?', a: 'Multicaixa Express, transferência bancária, Visa/Mastercard e pagamento em clínica parceira.' },
-  { q: 'O plano Basic é realmente gratuito?', a: 'Sim. Basic é gratuito para sempre, com funcionalidades essenciais. Sem cartão de crédito necessário.' },
-  { q: 'Posso mudar de plano mais tarde?', a: 'Sim. Pode fazer upgrade ou downgrade a qualquer momento. A diferença é calculada pro-rata.' },
-  { q: 'Os dispositivos estão incluídos nos planos?', a: 'Os planos incluem software e sincronização. Os dispositivos físicos são adquiridos separadamente ou em kit.' },
-];
+import { useT } from '../i18n/LanguageContext';
 
 export default function PricingPage() {
+  const { t } = useT();
+  const TIERS = [
+    {
+      label: t('price.t1_label'), price: t('price.free'), period: t('price.forever'), color: '#64748b', popular: false,
+      target: t('price.t1_target'),
+      features: [t('price.t1_f1'), t('price.t1_f2'), t('price.t1_f3'), t('price.t1_f4'), t('price.t1_f5')],
+      notIncluded: [t('price.t1_n1'), t('price.t1_n2'), t('price.t1_n3'), t('price.t1_n4')],
+      cta: t('price.t1_cta'), ctaLink: '/register',
+    },
+    {
+      label: t('price.t2_label'), price: '3.500 Kz', period: t('price.per_month'), color: '#0d9488', popular: true,
+      target: t('price.t2_target'),
+      features: [t('price.t2_f1'), t('price.t2_f2'), t('price.t2_f3'), t('price.t2_f4'), t('price.t2_f5'), t('price.t2_f6'), t('price.t2_f7'), t('price.t2_f8')],
+      notIncluded: [t('price.t2_n1'), t('price.t2_n2')],
+      cta: t('price.t2_cta'), ctaLink: '/register',
+    },
+    {
+      label: t('price.t3_label'), price: '7.500 Kz', period: t('price.per_month'), color: '#7c3aed', popular: false,
+      target: t('price.t3_target'),
+      features: [t('price.t3_f1'), t('price.t3_f2'), t('price.t3_f3'), t('price.t3_f4'), t('price.t3_f5'), t('price.t3_f6'), t('price.t3_f7')],
+      notIncluded: [] as string[],
+      cta: t('price.t3_cta'), ctaLink: '/register',
+    },
+    {
+      label: t('price.t4_label'), price: '4.500 Kz', period: t('price.per_month'), color: '#dc2626', popular: false,
+      target: t('price.t4_target'),
+      features: [t('price.t4_f1'), t('price.t4_f2'), t('price.t4_f3'), t('price.t4_f4'), t('price.t4_f5'), t('price.t4_f6'), t('price.t4_f7')],
+      notIncluded: [] as string[],
+      cta: t('price.t4_cta'), ctaLink: '/register',
+    },
+  ];
+  const CLINIC_PLANS = [
+    { label: t('price.c1_label'), price: '15.000 Kz/mês', sub: t('price.c1_sub'), features: [t('price.c1_f1'), t('price.c1_f2'), t('price.c1_f3'), t('price.c1_f4')], cta: t('price.c1_cta'), color: '#0d9488', featured: false },
+    { label: t('price.c2_label'), price: '35.000 Kz/mês', sub: t('price.c2_sub'), features: [t('price.c2_f1'), t('price.c2_f2'), t('price.c2_f3'), t('price.c2_f4'), t('price.c2_f5')], cta: t('price.c2_cta'), color: '#0891b2', featured: true },
+    { label: t('price.c3_label'), price: t('price.custom'), sub: t('price.c3_sub'), features: [t('price.c3_f1'), t('price.c3_f2'), t('price.c3_f3'), t('price.c3_f4'), t('price.c3_f5')], cta: t('price.c3_cta'), color: '#7c3aed', featured: false },
+  ];
+  const TRUST = [
+    { icon: Shield,    color: '#0d9488', label: t('price.trust1'), desc: t('price.trust1_desc') },
+    { icon: Clock,     color: '#0891b2', label: t('price.trust2'), desc: t('price.trust2_desc') },
+    { icon: RefreshCw, color: '#7c3aed', label: t('price.trust3'), desc: t('price.trust3_desc') },
+    { icon: Users,     color: '#d97706', label: t('price.trust4'), desc: t('price.trust4_desc') },
+  ];
+  const FAQ_PRICING = [
+    { q: t('price.q1'), a: t('price.a1') },
+    { q: t('price.q2'), a: t('price.a2') },
+    { q: t('price.q3'), a: t('price.a3') },
+    { q: t('price.q4'), a: t('price.a4') },
+    { q: t('price.q5'), a: t('price.a5') },
+  ];
   return (
     <div className="landing-wrapper">
       <Navbar />
 
       {/* ── Hero ── */}
       <section className="lp-page-hero">
-        <div className="lp-tag"><TrendingUp size={12} /> Preços</div>
-        <h1>Preços simples.<br /><span className="lp-hero__accent">Sem surpresas.</span></h1>
+        <div className="lp-tag"><TrendingUp size={12} /> {t('price.tag')}</div>
+        <h1>{t('price.title1')}<br /><span className="lp-hero__accent">{t('price.title2')}</span></h1>
         <p>
-          Comece grátis. Evolua quando a sua saúde precisar. Planos para pacientes, famílias e clínicas —
-          todos com cancelamento livre a qualquer momento.
+          {t('price.subtitle')}
         </p>
       </section>
 
       {/* ── Patient plans ── */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag"><Heart size={12} /> Para Pacientes</div>
-          <h2>Planos para cada necessidade de saúde.</h2>
-          <p>Escolha o plano que se adapta ao seu perfil. Cancele quando quiser.</p>
+          <div className="lp-tag"><Heart size={12} /> {t('price.pat_tag')}</div>
+          <h2>{t('price.pat_title')}</h2>
+          <p>{t('price.pat_desc')}</p>
         </div>
         <div className="pricing-grid">
-          {TIERS.map(t => (
-            <div key={t.label} className={`pricing-card${t.popular ? ' pricing-card--popular' : ''}`}>
-              {t.popular && <div className="pricing-popular-badge"><Star size={11} /> Mais escolhido</div>}
-              <div className="pricing-card__top" style={{ borderColor: `${t.color}30` }}>
-                <div className="pricing-label" style={{ color: t.color }}>{t.label}</div>
+          {TIERS.map(tier => (
+            <div key={tier.label} className={`pricing-card${tier.popular ? ' pricing-card--popular' : ''}`}>
+              {tier.popular && <div className="pricing-popular-badge"><Star size={11} /> {t('price.popular')}</div>}
+              <div className="pricing-card__top" style={{ borderColor: `${tier.color}30` }}>
+                <div className="pricing-label" style={{ color: tier.color }}>{tier.label}</div>
                 <div className="pricing-amount">
-                  <span className="pricing-price">{t.price}</span>
-                  <span className="pricing-period">{t.period}</span>
+                  <span className="pricing-price">{tier.price}</span>
+                  <span className="pricing-period">{tier.period}</span>
                 </div>
-                <div className="pricing-target">{t.target}</div>
+                <div className="pricing-target">{tier.target}</div>
               </div>
               <div className="pricing-features">
-                <div className="pricing-features__title">Inclui</div>
-                {t.features.map(f => (
+                <div className="pricing-features__title">{t('price.includes')}</div>
+                {tier.features.map(f => (
                   <div key={f} className="pricing-feature">
-                    <CheckCircle2 size={13} style={{ color: t.color, flexShrink: 0 }} /> {f}
+                    <CheckCircle2 size={13} style={{ color: tier.color, flexShrink: 0 }} /> {f}
                   </div>
                 ))}
-                {t.notIncluded.length > 0 && (
+                {tier.notIncluded.length > 0 && (
                   <>
-                    <div className="pricing-features__title" style={{ marginTop: '0.75rem', opacity: 0.5 }}>Não inclui</div>
-                    {t.notIncluded.map(f => (
+                    <div className="pricing-features__title" style={{ marginTop: '0.75rem', opacity: 0.5 }}>{t('price.not_includes')}</div>
+                    {tier.notIncluded.map(f => (
                       <div key={f} className="pricing-feature pricing-feature--no">
                         <span style={{ width: 13, height: 13, borderRadius: '50%', border: '1.5px solid var(--text-muted)', flexShrink: 0, display: 'inline-block' }} /> {f}
                       </div>
@@ -179,8 +108,8 @@ export default function PricingPage() {
                   </>
                 )}
               </div>
-              <Link to={t.ctaLink} className="pricing-cta" style={{ background: t.popular ? t.color : 'transparent', color: t.popular ? '#fff' : t.color, borderColor: t.color }}>
-                {t.cta} {t.popular && <ArrowRight size={14} />}
+              <Link to={tier.ctaLink} className="pricing-cta" style={{ background: tier.popular ? tier.color : 'transparent', color: tier.popular ? '#fff' : tier.color, borderColor: tier.color }}>
+                {tier.cta} {tier.popular && <ArrowRight size={14} />}
               </Link>
             </div>
           ))}
@@ -190,9 +119,9 @@ export default function PricingPage() {
       {/* ── Clinic plans ── */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag"><Building2 size={12} /> Para Clínicas</div>
-          <h2>Planos B2B para clínicas e hospitais.</h2>
-          <p>Onboarding em 48 horas. Suporte dedicado no primeiro mês.</p>
+          <div className="lp-tag"><Building2 size={12} /> {t('price.clin_tag')}</div>
+          <h2>{t('price.clin_title')}</h2>
+          <p>{t('price.clin_desc')}</p>
         </div>
         <div className="lp-pricing">
           {CLINIC_PLANS.map(p => (
@@ -212,24 +141,19 @@ export default function PricingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <Link to="/clinics" className="lp-link-more">Saber mais sobre parcerias clínicas <ArrowRight size={14} /></Link>
+          <Link to="/clinics" className="lp-link-more">{t('price.clin_more')} <ArrowRight size={14} /></Link>
         </div>
       </section>
 
       {/* ── Trust ── */}
       <section className="lp-section lp-section--alt">
         <div className="pricing-trust-row">
-          {[
-            { icon: Shield,    color: '#0d9488', label: 'Dados encriptados',      desc: 'AES-256. Os seus dados nunca são vendidos.' },
-            { icon: Clock,     color: '#0891b2', label: 'Cancelamento livre',     desc: 'Sem contratos. Sem penalidades.' },
-            { icon: RefreshCw, color: '#7c3aed', label: 'Mude de plano quando quiser', desc: 'Pro-rata calculado automaticamente.' },
-            { icon: Users,     color: '#d97706', label: 'Suporte real',           desc: 'Equipa disponível para ajudar.' },
-          ].map(t => (
-            <div key={t.label} className="pricing-trust-item">
-              <t.icon size={20} style={{ color: t.color }} />
+          {TRUST.map(item => (
+            <div key={item.label} className="pricing-trust-item">
+              <item.icon size={20} style={{ color: item.color }} />
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{t.label}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>{t.desc}</div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{item.label}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>{item.desc}</div>
               </div>
             </div>
           ))}
@@ -239,8 +163,8 @@ export default function PricingPage() {
       {/* ── FAQ ── */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Dúvidas sobre preços</div>
-          <h2>Perguntas frequentes.</h2>
+          <div className="lp-tag">{t('price.faq_tag')}</div>
+          <h2>{t('price.faq_title')}</h2>
         </div>
         <div className="pricing-faq">
           {FAQ_PRICING.map(item => (
@@ -251,18 +175,18 @@ export default function PricingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link to="/faq" className="lp-link-more">Ver todas as perguntas frequentes <ArrowRight size={14} /></Link>
+          <Link to="/faq" className="lp-link-more">{t('price.faq_more')} <ArrowRight size={14} /></Link>
         </div>
       </section>
 
       {/* ── Final CTA ── */}
       <section className="lp-final-cta">
-        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>Comece hoje</div>
-        <h2>O plano certo para cada fase da sua saúde.</h2>
-        <p>Gratuito para começar. Premium quando precisar de mais.</p>
+        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>{t('price.final_tag')}</div>
+        <h2>{t('price.final_title')}</h2>
+        <p>{t('price.final_desc')}</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--white">Criar conta grátis <ArrowRight size={14} /></Link>
-          <Link to="/contacto" className="lp-cta lp-cta--white-outline">Falar connosco</Link>
+          <Link to="/register" className="lp-cta lp-cta--white">{t('price.t1_cta')} <ArrowRight size={14} /></Link>
+          <Link to="/contacto" className="lp-cta lp-cta--white-outline">{t('price.final_talk')}</Link>
         </div>
       </section>
 
