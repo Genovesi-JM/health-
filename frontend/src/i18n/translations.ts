@@ -1711,6 +1711,23 @@ const translations: Record<string, TranslationEntry> = {
   'dpat.st_urgent': { pt: 'Urgente', en: 'Urgent', fr: 'Urgent', es: 'Urgente' },
   'dpat.st_chronic': { pt: 'Crónico', en: 'Chronic', fr: 'Chronique', es: 'Crónico' },
   'dpat.st_stable': { pt: 'Estável', en: 'Stable', fr: 'Stable', es: 'Estable' },
+
+  /* ═══════════════════════════════════════════════════════════
+     DOCTOR — LIVE CONSULTATIONS (teleconsult)
+     ═══════════════════════════════════════════════════════════ */
+  'dlive.title': { pt: 'Consultas Ao Vivo', en: 'Live Consultations', fr: 'Consultations en direct', es: 'Consultas en vivo' },
+  'dlive.subtitle': { pt: 'Sala de teleconsulta segura e encriptada', en: 'Secure, encrypted teleconsultation room', fr: 'Salle de téléconsultation sécurisée et chiffrée', es: 'Sala de teleconsulta segura y cifrada' },
+  'dlive.load_error': { pt: 'Não foi possível carregar a agenda de hoje.', en: 'Could not load today’s agenda.', fr: 'Impossible de charger l’agenda du jour.', es: 'No se pudo cargar la agenda de hoy.' },
+  'dlive.loading': { pt: 'A carregar agenda…', en: 'Loading agenda…', fr: 'Chargement de l’agenda…', es: 'Cargando agenda…' },
+  'dlive.end': { pt: 'Terminar', en: 'End', fr: 'Terminer', es: 'Finalizar' },
+  'dlive.room_note': { pt: 'Sala encriptada. Permita o acesso à câmara e ao microfone quando solicitado pelo navegador.', en: 'Encrypted room. Allow camera and microphone access when your browser asks.', fr: 'Salle chiffrée. Autorisez l’accès à la caméra et au microphone lorsque le navigateur le demande.', es: 'Sala cifrada. Permita el acceso a la cámara y al micrófono cuando el navegador lo solicite.' },
+  'dlive.back_agenda': { pt: 'Voltar à agenda', en: 'Back to agenda', fr: 'Retour à l’agenda', es: 'Volver a la agenda' },
+  'dlive.next_title': { pt: 'Próxima consulta', en: 'Next consultation', fr: 'Prochaine consultation', es: 'Próxima consulta' },
+  'dlive.at': { pt: 'às', en: 'at', fr: 'à', es: 'a las' },
+  'dlive.prepare': { pt: 'Preparar consulta', en: 'Prepare consultation', fr: 'Préparer la consultation', es: 'Preparar consulta' },
+  'dlive.none_title': { pt: 'Sem consultas hoje', en: 'No consultations today', fr: 'Aucune consultation aujourd’hui', es: 'Sin consultas hoy' },
+  'dlive.none_desc': { pt: 'Não há teleconsultas agendadas para hoje.', en: 'There are no teleconsultations scheduled for today.', fr: 'Aucune téléconsultation n’est prévue aujourd’hui.', es: 'No hay teleconsultas programadas para hoy.' },
+  'dlive.today': { pt: 'CONSULTAS DE HOJE', en: 'TODAY’S CONSULTATIONS', fr: 'CONSULTATIONS DU JOUR', es: 'CONSULTAS DE HOY' },
 };
 
 export default translations;

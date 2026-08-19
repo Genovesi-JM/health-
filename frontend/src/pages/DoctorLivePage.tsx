@@ -2,6 +2,7 @@ import { Video, PhoneOff, Loader2, CalendarClock, ChevronRight } from 'lucide-re
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
 import TeleconsultationControl from '../components/TeleconsultationControl';
+import { useT } from '../i18n/LanguageContext';
 
 type AgendaItem = {
   id: string;
@@ -29,6 +30,7 @@ function statusKey(status: string): 'done' | 'next' | 'pending' {
 }
 
 export default function DoctorLivePage() {
+  const { t } = useT();
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -43,13 +45,13 @@ export default function DoctorLivePage() {
         const res = await api.get('/api/v1/doctor/agenda/today');
         if (active) setAgenda(Array.isArray(res.data) ? res.data : []);
       } catch {
-        if (active) setError('Não foi possível carregar a agenda de hoje.');
+        if (active) setError(t('dlive.load_error'));
       } finally {
         if (active) setLoading(false);
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nextConsult = useMemo(
     () => agenda.find(a => statusKey(a.status) !== 'done') ?? agenda[0] ?? null,
@@ -68,19 +70,19 @@ export default function DoctorLivePage() {
             onClick={() => { setRoomUrl(null); setSelected(null); }}
             style={{ padding: '0.55rem 1.2rem', borderRadius: '10px', background: '#dc2626', color: '#fff', border: 'none', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <PhoneOff size={16} /> Terminar
+            <PhoneOff size={16} /> {t('dlive.end')}
           </button>
         </div>
         <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', background: '#1e1e2e', aspectRatio: '16/9' }}>
           <iframe
-            title={`Teleconsulta — ${selected.patient}`}
+            title={`${t('appt.teleconsulta')} — ${selected.patient}`}
             src={roomUrl}
             allow="camera; microphone; fullscreen; display-capture; autoplay"
             style={{ width: '100%', height: '100%', border: 'none' }}
           />
         </div>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '0.75rem', textAlign: 'center' }}>
-          Sala encriptada. Permita o acesso à câmara e ao microfone quando solicitado pelo navegador.
+          {t('dlive.room_note')}
         </p>
       </div>
     );
@@ -94,7 +96,7 @@ export default function DoctorLivePage() {
           onClick={() => setSelected(null)}
           style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer', padding: 0, marginBottom: '1rem' }}
         >
-          ← Voltar à agenda
+          ← {t('dlive.back_agenda')}
         </button>
         <div className="card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
           <div style={{ fontWeight: 800, fontSize: '1rem' }}>{selected.patient}</div>
@@ -115,14 +117,14 @@ export default function DoctorLivePage() {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Video size={20} style={{ color: '#3b82f6' }} /> Consultas Ao Vivo
+        <Video size={20} style={{ color: '#3b82f6' }} /> {t('dlive.title')}
       </h1>
-      <p style={{ color: 'var(--text-secondary)', margin: '0 0 2rem', fontSize: '0.85rem' }}>Sala de teleconsulta segura e encriptada</p>
+      <p style={{ color: 'var(--text-secondary)', margin: '0 0 2rem', fontSize: '0.85rem' }}>{t('dlive.subtitle')}</p>
 
       {loading ? (
         <div className="card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
           <Loader2 size={28} className="spin" style={{ margin: '0 auto 0.75rem', display: 'block' }} />
-          A carregar agenda…
+          {t('dlive.loading')}
         </div>
       ) : error ? (
         <div className="card" style={{ padding: '2rem', textAlign: 'center', color: '#dc2626' }}>{error}</div>
@@ -134,20 +136,20 @@ export default function DoctorLivePage() {
             </div>
             {nextConsult ? (
               <>
-                <h2 style={{ fontWeight: 800, marginBottom: '0.5rem' }}>Próxima consulta</h2>
+                <h2 style={{ fontWeight: 800, marginBottom: '0.5rem' }}>{t('dlive.next_title')}</h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                  <strong>{nextConsult.patient}</strong> às <strong>{nextConsult.time}</strong>
+                  <strong>{nextConsult.patient}</strong> {t('dlive.at')} <strong>{nextConsult.time}</strong>
                   {nextConsult.reason ? ` — ${nextConsult.reason}` : nextConsult.type ? ` — ${nextConsult.type}` : ''}
                 </p>
                 <button onClick={() => setSelected(nextConsult)} style={{ padding: '0.8rem 2rem', borderRadius: '12px', background: '#3b82f6', color: '#fff', border: 'none', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Video size={18} /> Preparar consulta
+                  <Video size={18} /> {t('dlive.prepare')}
                 </button>
               </>
             ) : (
               <>
-                <h2 style={{ fontWeight: 800, marginBottom: '0.5rem' }}>Sem consultas hoje</h2>
+                <h2 style={{ fontWeight: 800, marginBottom: '0.5rem' }}>{t('dlive.none_title')}</h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  Não há teleconsultas agendadas para hoje.
+                  {t('dlive.none_desc')}
                 </p>
               </>
             )}
@@ -156,7 +158,7 @@ export default function DoctorLivePage() {
           {agenda.length > 0 && (
             <div className="card" style={{ padding: '1rem 1.25rem' }}>
               <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <CalendarClock size={15} /> CONSULTAS DE HOJE
+                <CalendarClock size={15} /> {t('dlive.today')}
               </div>
               {agenda.map(c => {
                 const style = STATUS_STYLE[statusKey(c.status)];
