@@ -5,23 +5,12 @@ import {
   AlertCircle, Loader2, Globe, Link2, ExternalLink, PlusCircle, Trash2,
 } from 'lucide-react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 
-const SPECIALTIES = [
-  { value: 'clinica_geral',    label: 'Clínica Geral' },
-  { value: 'pediatria',        label: 'Pediatria' },
-  { value: 'cardiologia',      label: 'Cardiologia' },
-  { value: 'ginecologia',      label: 'Ginecologia' },
-  { value: 'dermatologia',     label: 'Dermatologia' },
-  { value: 'ortopedia',        label: 'Ortopedia' },
-  { value: 'oftalmologia',     label: 'Oftalmologia' },
-  { value: 'neurologia',       label: 'Neurologia' },
-  { value: 'psiquiatria',      label: 'Psiquiatria' },
-  { value: 'psicologia',       label: 'Psicologia' },
-  { value: 'fisioterapia',     label: 'Fisioterapia' },
-  { value: 'odontologia',      label: 'Medicina Dentária' },
-  { value: 'medicina_interna', label: 'Medicina Interna' },
-  { value: 'urgencia',         label: 'Urgência / Emergência' },
-  { value: 'outro',            label: 'Outra especialidade' },
+const SPECIALTY_VALUES = [
+  'clinica_geral', 'pediatria', 'cardiologia', 'ginecologia', 'dermatologia',
+  'ortopedia', 'oftalmologia', 'neurologia', 'psiquiatria', 'psicologia',
+  'fisioterapia', 'odontologia', 'medicina_interna', 'urgencia', 'outro',
 ];
 
 const PROVINCES = [
@@ -35,6 +24,7 @@ const LANG_OPTIONS = ['PT','EN','FR','ES','AR','ZH'];
 type Education = { institution: string; degree: string; year: string };
 
 export default function DoctorProfileEditPage() {
+  const { t } = useT();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -84,7 +74,7 @@ export default function DoctorProfileEditPage() {
         setLanguages(d.languages || ['PT']);
         setEducation((d.education || []).map((e: any) => ({ ...e, year: e.year?.toString() || '' })));
       })
-      .catch(() => setError('Não foi possível carregar o perfil.'))
+      .catch(() => setError(t('dpe.load_error')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -130,7 +120,7 @@ export default function DoctorProfileEditPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao guardar.');
+      setError(err.response?.data?.detail || t('dpe.save_error'));
     } finally {
       setSaving(false);
     }
@@ -139,8 +129,8 @@ export default function DoctorProfileEditPage() {
   const statusColors: Record<string, string> = {
     pending: '#d97706', verified: '#059669', rejected: '#dc2626', suspended: '#6b7280',
   };
-  const statusLabels: Record<string, string> = {
-    pending: '⏳ Verificação pendente', verified: '✅ Perfil verificado', rejected: '❌ Rejeitado', suspended: '⚠️ Suspenso',
+  const statusLabelKeys: Record<string, string> = {
+    pending: 'dpe.st_pending', verified: 'dpe.st_verified', rejected: 'dpe.st_rejected', suspended: 'dpe.st_suspended',
   };
   const publicUrl = slug ? `${window.location.origin}${import.meta.env.BASE_URL}medicos/${slug}` : null;
 
@@ -156,18 +146,18 @@ export default function DoctorProfileEditPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Perfil Público</h1>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>{t('dpe.title')}</h1>
           <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
-            Estas informações são vistas pelos pacientes quando procuram um médico.
+            {t('dpe.subtitle')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: statusColors[verificationStatus] || '#6b7280', background: `${statusColors[verificationStatus]}18`, padding: '0.3rem 0.75rem', borderRadius: 999 }}>
-            {statusLabels[verificationStatus] || verificationStatus}
+            {statusLabelKeys[verificationStatus] ? t(statusLabelKeys[verificationStatus]) : verificationStatus}
           </span>
           {publicUrl && verificationStatus === 'verified' && (
             <a href={publicUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--brand-primary)', display: 'flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none', fontWeight: 600 }}>
-              <ExternalLink size={13} /> Ver perfil público
+              <ExternalLink size={13} /> {t('dpe.view_public')}
             </a>
           )}
         </div>
@@ -177,26 +167,26 @@ export default function DoctorProfileEditPage() {
 
         {/* ── Identidade ── */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 className="card-section-title"><User size={14} /> Identidade</h3>
+          <h3 className="card-section-title"><User size={14} /> {t('dpe.sec_identity')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <div>
-              <label className="form-label">Título</label>
+              <label className="form-label">{t('dpe.title_label')}</label>
               <select className="form-input" value={title} onChange={e => setTitle(e.target.value)}>
                 <option>Dr.</option><option>Dra.</option><option>Prof.</option><option>Prof.ª</option>
               </select>
             </div>
             <div>
-              <label className="form-label">Nome público *</label>
-              <input className="form-input" placeholder="Nome completo visível no perfil" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+              <label className="form-label">{t('dpe.public_name')} *</label>
+              <input className="form-input" placeholder={t('dpe.public_name_ph')} value={displayName} onChange={e => setDisplayName(e.target.value)} />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label"><Phone size={12} /> Telefone de contacto</label>
+              <label className="form-label"><Phone size={12} /> {t('dpe.phone')}</label>
               <input className="form-input" placeholder="+244 9XX XXX XXX" value={phone} onChange={e => setPhone(e.target.value)} />
             </div>
             <div>
-              <label className="form-label">URL da foto <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+              <label className="form-label">{t('dpe.photo_url')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('dpe.optional')}</span></label>
               <input className="form-input" placeholder="https://…" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
             </div>
           </div>
@@ -204,28 +194,28 @@ export default function DoctorProfileEditPage() {
 
         {/* ── Credenciais ── */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 className="card-section-title"><Stethoscope size={14} /> Credenciais</h3>
+          <h3 className="card-section-title"><Stethoscope size={14} /> {t('dpe.sec_credentials')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <div>
-              <label className="form-label">Especialidade *</label>
+              <label className="form-label">{t('dpe.specialty')} *</label>
               <select className="form-input" value={specialty} onChange={e => setSpecialty(e.target.value)}>
-                {SPECIALTIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                {SPECIALTY_VALUES.map(v => <option key={v} value={v}>{t(`spec.${v}`)}</option>)}
               </select>
             </div>
             <div>
-              <label className="form-label">Nº Licença / Cédula <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
+              <label className="form-label">{t('dpe.license')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('dpe.optional')}</span></label>
               <input className="form-input" placeholder="OMEN-12345" value={license} onChange={e => setLicense(e.target.value)} />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label">Anos de experiência</label>
+              <label className="form-label">{t('dpe.years_exp')}</label>
               <input className="form-input" type="number" min="0" max="60" value={years} onChange={e => setYears(e.target.value)} />
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.25rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
                 <input type="checkbox" checked={acceptsNew} onChange={e => setAcceptsNew(e.target.checked)} />
-                <span>Aceita novos pacientes</span>
+                <span>{t('dpe.accepts_new')}</span>
               </label>
             </div>
           </div>
@@ -233,16 +223,16 @@ export default function DoctorProfileEditPage() {
 
         {/* ── Localização ── */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 className="card-section-title"><MapPin size={14} /> Localização</h3>
+          <h3 className="card-section-title"><MapPin size={14} /> {t('dpe.sec_location')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="form-label">Cidade / Município</label>
+              <label className="form-label">{t('dpe.city')}</label>
               <input className="form-input" placeholder="Luanda" value={city} onChange={e => setCity(e.target.value)} />
             </div>
             <div>
-              <label className="form-label">Província</label>
+              <label className="form-label">{t('dpe.province')}</label>
               <select className="form-input" value={province} onChange={e => setProvince(e.target.value)}>
-                <option value="">— Seleccionar —</option>
+                <option value="">{t('dpe.select')}</option>
                 {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
@@ -251,9 +241,9 @@ export default function DoctorProfileEditPage() {
 
         {/* ── Consulta ── */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 className="card-section-title"><Globe size={14} /> Tipo de consulta</h3>
+          <h3 className="card-section-title"><Globe size={14} /> {t('dpe.sec_consult_type')}</h3>
           <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            {[{ key: 'teleconsulta', label: '📹 Teleconsulta' }, { key: 'presencial', label: '🏥 Presencial' }, { key: 'domicilio', label: '🏠 Domicílio' }].map(ct => (
+            {[{ key: 'teleconsulta', label: t('dpe.ct_tele') }, { key: 'presencial', label: t('dpe.ct_presencial') }, { key: 'domicilio', label: t('dpe.ct_domicilio') }].map(ct => (
               <label key={ct.key} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.9rem', borderRadius: 999, cursor: 'pointer', background: consultTypes.includes(ct.key) ? 'var(--brand-light)' : 'var(--bg-card)', border: `1.5px solid ${consultTypes.includes(ct.key) ? 'var(--brand-primary)' : 'var(--border)'}`, color: consultTypes.includes(ct.key) ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: consultTypes.includes(ct.key) ? 600 : 400, fontSize: '0.82rem' }}>
                 <input type="checkbox" checked={consultTypes.includes(ct.key)} onChange={() => toggleConsultType(ct.key)} style={{ display: 'none' }} />
                 {ct.label}
@@ -261,19 +251,19 @@ export default function DoctorProfileEditPage() {
             ))}
           </div>
 
-          <h4 style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>Preço por consulta (Kz) — opcional</h4>
+          <h4 style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>{t('dpe.price_title')}</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
             <div>
-              <label className="form-label">Mínimo</label>
+              <label className="form-label">{t('dpe.min')}</label>
               <input className="form-input" type="number" min="0" placeholder="ex: 5000" value={priceMin} onChange={e => setPriceMin(e.target.value)} />
             </div>
             <div>
-              <label className="form-label">Máximo</label>
+              <label className="form-label">{t('dpe.max')}</label>
               <input className="form-input" type="number" min="0" placeholder="ex: 15000" value={priceMax} onChange={e => setPriceMax(e.target.value)} />
             </div>
           </div>
 
-          <h4 style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>Idiomas</h4>
+          <h4 style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>{t('dpe.languages')}</h4>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {LANG_OPTIONS.map(l => (
               <label key={l} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.35rem 0.75rem', borderRadius: 999, cursor: 'pointer', background: languages.includes(l) ? 'var(--brand-light)' : 'var(--bg-card)', border: `1.5px solid ${languages.includes(l) ? 'var(--brand-primary)' : 'var(--border)'}`, color: languages.includes(l) ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: languages.includes(l) ? 600 : 400, fontSize: '0.8rem' }}>
@@ -286,24 +276,24 @@ export default function DoctorProfileEditPage() {
 
         {/* ── Bio ── */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 className="card-section-title"><BookOpen size={14} /> Bio / Apresentação</h3>
-          <textarea className="form-input" rows={4} placeholder="Apresente-se aos pacientes de forma clara e humana…" value={bio} onChange={e => setBio(e.target.value)} style={{ resize: 'vertical' }} />
+          <h3 className="card-section-title"><BookOpen size={14} /> {t('dpe.sec_bio')}</h3>
+          <textarea className="form-input" rows={4} placeholder={t('dpe.bio_ph')} value={bio} onChange={e => setBio(e.target.value)} style={{ resize: 'vertical' }} />
         </div>
 
         {/* ── Formação ── */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 className="card-section-title" style={{ margin: 0 }}><Link2 size={14} /> Formação académica</h3>
+            <h3 className="card-section-title" style={{ margin: 0 }}><Link2 size={14} /> {t('dpe.sec_education')}</h3>
             <button type="button" onClick={addEducation} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--brand-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-              <PlusCircle size={15} /> Adicionar
+              <PlusCircle size={15} /> {t('dpe.add')}
             </button>
           </div>
-          {education.length === 0 && <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Nenhuma formação adicionada ainda.</p>}
+          {education.length === 0 && <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{t('dpe.no_education')}</p>}
           {education.map((edu, idx) => (
             <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 36px', gap: '0.5rem', marginBottom: '0.6rem', alignItems: 'center' }}>
-              <input className="form-input" placeholder="Instituição" value={edu.institution} onChange={e => updateEdu(idx, 'institution', e.target.value)} />
-              <input className="form-input" placeholder="Grau / Curso" value={edu.degree} onChange={e => updateEdu(idx, 'degree', e.target.value)} />
-              <input className="form-input" placeholder="Ano" type="number" min="1960" max="2030" value={edu.year} onChange={e => updateEdu(idx, 'year', e.target.value)} />
+              <input className="form-input" placeholder={t('dpe.institution')} value={edu.institution} onChange={e => updateEdu(idx, 'institution', e.target.value)} />
+              <input className="form-input" placeholder={t('dpe.degree')} value={edu.degree} onChange={e => updateEdu(idx, 'degree', e.target.value)} />
+              <input className="form-input" placeholder={t('dpe.year')} type="number" min="1960" max="2030" value={edu.year} onChange={e => updateEdu(idx, 'year', e.target.value)} />
               <button type="button" onClick={() => removeEdu(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Trash2 size={16} />
               </button>
@@ -319,12 +309,12 @@ export default function DoctorProfileEditPage() {
 
         {saved && (
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', color: '#059669', fontSize: '0.85rem' }}>
-            <CheckCircle2 size={16} /> Perfil guardado com sucesso.
+            <CheckCircle2 size={16} /> {t('dpe.saved')}
           </div>
         )}
 
         <button type="submit" disabled={saving} className="btn btn-primary" style={{ padding: '0.9rem', fontSize: '0.95rem', fontWeight: 700 }}>
-          {saving ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> A guardar…</> : <><Save size={16} /> Guardar perfil</>}
+          {saving ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t('common.saving')}</> : <><Save size={16} /> {t('dpe.save')}</>}
         </button>
       </form>
     </div>
