@@ -10,125 +10,73 @@ import {
   TrendingUp, Lock, Smartphone, MonitorSmartphone,
   Baby, Brain, Eye, Bone, Apple, Wind,
 } from 'lucide-react';
-
-const SPECIALTIES = [
-  { icon: Stethoscope, label: 'Clínica Geral',   color: '#0d9488' },
-  { icon: Baby,        label: 'Pediatria',        color: '#0891b2' },
-  { icon: Heart,       label: 'Ginecologia',      color: '#db2777' },
-  { icon: HeartPulse,  label: 'Cardiologia',      color: '#dc2626' },
-  { icon: Activity,    label: 'Dermatologia',     color: '#ea580c' },
-  { icon: Brain,       label: 'Psicologia',       color: '#7c3aed' },
-  { icon: Brain,       label: 'Psiquiatria',      color: '#6d28d9' },
-  { icon: Eye,         label: 'Oftalmologia',     color: '#0369a1' },
-  { icon: Stethoscope, label: 'Dentária',         color: '#0891b2' },
-  { icon: Wind,        label: 'Fisioterapia',     color: '#059669' },
-  { icon: Activity,    label: 'Neurologia',       color: '#4f46e5' },
-  { icon: Bone,        label: 'Ortopedia',        color: '#b45309' },
-  { icon: Apple,       label: 'Nutrição',         color: '#16a34a' },
-];
-
-const HOW_STEPS = [
-  { num: '01', icon: Search,     title: 'Escolhe o serviço',       desc: 'Marcação, teleconsulta, renovação de receita ou triagem — tudo num só lugar.', color: '#0d9488' },
-  { num: '02', icon: Video,      title: 'Recebe orientação médica', desc: 'Um médico real analisa a sua situação. Nenhuma decisão clínica é tomada por software.', color: '#0891b2' },
-  { num: '03', icon: HeartPulse, title: 'Continua o cuidado',      desc: 'O seu historial, medicação e próximas consultas ficam acessíveis a qualquer momento.', color: '#7c3aed' },
-];
-
-const PREMIUM_PLANS = [
-  { icon: Users,     label: 'Plano Família',     color: '#0d9488', desc: 'Cobertura total para toda a família num único portal.', features: ['Perfis ilimitados', 'Consultas partilhadas', 'Alertas familiares', 'Historial integrado'], cta: 'Plano Família', featured: false },
-  { icon: Heart,     label: 'Cuidado Crónico',    color: '#dc2626', desc: 'Acompanhamento contínuo para condições crónicas.', features: ['Monitorização de vitais', 'Renovação automática', 'Coach de aderência', 'Alertas de risco'], cta: 'Cuidado Crónico', featured: true },
-  { icon: Building2, label: 'Empresas',       color: '#7c3aed', desc: 'Saúde ocupacional para equipas sem burocracia.', features: ['Painel RH anónimo', 'Teleconsulta staff', 'Check-ups anuais', 'Gestão absentismo'], cta: 'Empresas', featured: false },
-  { icon: Zap,       label: 'Acesso Prioritário', color: '#b45309', desc: 'Acesso prioritário e chegada pre-alerta em hospitais.', features: ['Fila prioritária', 'Pre-alerta hospitalar', 'Médico dedicado', 'Teleconsulta imediata'], cta: 'Prioritário', featured: false },
-];
-
-const PARTNERSHIP_TYPES = [
-  {
-    icon: Stethoscope,
-    color: '#0d9488',
-    title: 'Médico individual / independente',
-    desc: 'Consulta presencial ou teleconsulta. Integração simples, sem mensalidades de entrada. O portal trata das marcações e do historial do paciente.',
-    cta: 'Candidatar-me como médico',
-  },
-  {
-    icon: Building2,
-    color: '#2563eb',
-    title: 'Clínica ou centro de saúde',
-    desc: 'Gestão de agenda, triagem digital pré-consulta e acesso ao histórico do paciente. Painel próprio para a equipa clínica.',
-    cta: 'Candidatar a minha clínica',
-  },
-  {
-    icon: HeartPulse,
-    color: '#7c3aed',
-    title: 'Hospital ou instituição',
-    desc: 'Integração de fluxos de urgência, pré-alertas e continuidade de cuidados pós-alta. Fale connosco para uma proposta à medida.',
-    cta: 'Falar com a equipa',
-  },
-];
-
-const TRUST_POINTS = [
-  { icon: Shield,       label: 'Médico real valida tudo',  desc: 'Nenhuma decisão clínica é tomada por IA ou software.' },
-  { icon: Lock,         label: 'Dados protegidos',         desc: 'Historial clínico encriptado. Só você e o seu médico acedem.' },
-  { icon: CheckCircle2, label: 'Transparente',             desc: 'Mostramos o que fazemos e o que não fazemos. Sempre.' },
-  { icon: TrendingUp,   label: 'Continuidade real',        desc: 'O cuidado não termina com a consulta. Acompanhamos.' },
-];
+import { useT } from '../i18n/LanguageContext';
 
 const AUDIENCES = [
-  {
-    key: 'pacientes',
-    label: 'Pacientes',
-    icon: '🧑‍⚕️',
-    color: '#0d9488',
-    imgColor: '#f0fdf9',
-  },
-  {
-    key: 'medicos',
-    label: 'Médicos',
-    icon: '👨‍⚕️',
-    color: '#2563eb',
-    imgColor: '#eff6ff',
-  },
-  {
-    key: 'especialistas',
-    label: 'Especialistas',
-    icon: '🔬',
-    color: '#7c3aed',
-    imgColor: '#f5f3ff',
-  },
-  {
-    key: 'clinicas',
-    label: 'Clínicas',
-    icon: '🏥',
-    color: '#0891b2',
-    imgColor: '#ecfeff',
-  },
-  {
-    key: 'dispositivos',
-    label: 'Dispositivos',
-    icon: '📱',
-    color: '#ea580c',
-    imgColor: '#fff7ed',
-  },
-];
-
-const TRIAGE_OUTCOMES = [
-  { icon: AlertTriangle,    color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',   label: '🔴 Urgência',          sub: 'Dirige-se imediatamente. Hospital pré-alertado.' },
-  { icon: MonitorSmartphone,color: '#0891b2', bg: 'rgba(8,145,178,0.08)',   border: 'rgba(8,145,178,0.2)',   label: '🟠 Teleconsulta',       sub: 'Médico disponível em minutos.' },
-  { icon: Calendar,         color: '#16a34a', bg: 'rgba(22,163,74,0.08)',   border: 'rgba(22,163,74,0.2)',   label: '🟢 Consulta Agendada',  sub: 'Marcação na clínica mais próxima.' },
+  { key: 'pacientes',     labelKey: 'lp.aud_patients',    icon: '🧑‍⚕️', color: '#0d9488', imgColor: '#f0fdf9' },
+  { key: 'medicos',       labelKey: 'lp.aud_doctors',     icon: '👨‍⚕️', color: '#2563eb', imgColor: '#eff6ff' },
+  { key: 'especialistas', labelKey: 'lp.aud_specialists', icon: '🔬',   color: '#7c3aed', imgColor: '#f5f3ff' },
+  { key: 'clinicas',      labelKey: 'lp.aud_clinics',     icon: '🏥',   color: '#0891b2', imgColor: '#ecfeff' },
+  { key: 'dispositivos',  labelKey: 'lp.aud_devices',     icon: '📱',   color: '#ea580c', imgColor: '#fff7ed' },
 ];
 
 export default function LandingPage() {
+  const { t } = useT();
+  const SPECIALTIES = [
+    { icon: Stethoscope, label: t('spec.clinica_geral'), color: '#0d9488' },
+    { icon: Baby,        label: t('spec.pediatria'),     color: '#0891b2' },
+    { icon: Heart,       label: t('spec.ginecologia'),   color: '#db2777' },
+    { icon: HeartPulse,  label: t('spec.cardiologia'),   color: '#dc2626' },
+    { icon: Activity,    label: t('spec.dermatologia'),  color: '#ea580c' },
+    { icon: Brain,       label: t('spec.psicologia'),    color: '#7c3aed' },
+    { icon: Brain,       label: t('spec.psiquiatria'),   color: '#6d28d9' },
+    { icon: Eye,         label: t('spec.oftalmologia'),  color: '#0369a1' },
+    { icon: Stethoscope, label: t('esp.dentaria'),       color: '#0891b2' },
+    { icon: Wind,        label: t('spec.fisioterapia'),  color: '#059669' },
+    { icon: Activity,    label: t('spec.neurologia'),    color: '#4f46e5' },
+    { icon: Bone,        label: t('spec.ortopedia'),     color: '#b45309' },
+    { icon: Apple,       label: t('spec.nutricao'),      color: '#16a34a' },
+  ];
+  const HOW_STEPS = [
+    { num: '01', icon: Search,     title: t('lp.h1_title'), desc: t('lp.h1_desc'), color: '#0d9488' },
+    { num: '02', icon: Video,      title: t('lp.h2_title'), desc: t('lp.h2_desc'), color: '#0891b2' },
+    { num: '03', icon: HeartPulse, title: t('lp.h3_title'), desc: t('lp.h3_desc'), color: '#7c3aed' },
+  ];
+  const PREMIUM_PLANS = [
+    { icon: Users,     label: t('lp.pp1_label'), color: '#0d9488', desc: t('lp.pp1_desc'), features: [t('lp.pp1_f1'), t('lp.pp1_f2'), t('lp.pp1_f3'), t('lp.pp1_f4')], cta: t('lp.pp1_cta'), featured: false },
+    { icon: Heart,     label: t('lp.pp2_label'), color: '#dc2626', desc: t('lp.pp2_desc'), features: [t('lp.pp2_f1'), t('lp.pp2_f2'), t('lp.pp2_f3'), t('lp.pp2_f4')], cta: t('lp.pp2_cta'), featured: true },
+    { icon: Building2, label: t('lp.pp3_label'), color: '#7c3aed', desc: t('lp.pp3_desc'), features: [t('lp.pp3_f1'), t('lp.pp3_f2'), t('lp.pp3_f3'), t('lp.pp3_f4')], cta: t('lp.pp3_cta'), featured: false },
+    { icon: Zap,       label: t('lp.pp4_label'), color: '#b45309', desc: t('lp.pp4_desc'), features: [t('lp.pp4_f1'), t('lp.pp4_f2'), t('lp.pp4_f3'), t('lp.pp4_f4')], cta: t('lp.pp4_cta'), featured: false },
+  ];
+  const PARTNERSHIP_TYPES = [
+    { icon: Stethoscope, color: '#0d9488', title: t('lp.ptn1_title'), desc: t('lp.ptn1_desc'), cta: t('lp.ptn1_cta') },
+    { icon: Building2,   color: '#2563eb', title: t('lp.ptn2_title'), desc: t('lp.ptn2_desc'), cta: t('lp.ptn2_cta') },
+    { icon: HeartPulse,  color: '#7c3aed', title: t('lp.ptn3_title'), desc: t('lp.ptn3_desc'), cta: t('lp.ptn3_cta') },
+  ];
+  const TRUST_POINTS = [
+    { icon: Shield,       label: t('lp.tp1_label'), desc: t('lp.tp1_desc') },
+    { icon: Lock,         label: t('lp.tp2_label'), desc: t('lp.tp2_desc') },
+    { icon: CheckCircle2, label: t('lp.tp3_label'), desc: t('lp.tp3_desc') },
+    { icon: TrendingUp,   label: t('lp.tp4_label'), desc: t('lp.tp4_desc') },
+  ];
+  const TRIAGE_OUTCOMES = [
+    { icon: AlertTriangle,     color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', label: t('lp.tri1_label'), sub: t('lp.tri1_sub') },
+    { icon: MonitorSmartphone, color: '#0891b2', bg: 'rgba(8,145,178,0.08)', border: 'rgba(8,145,178,0.2)', label: t('lp.tri2_label'), sub: t('lp.tri2_sub') },
+    { icon: Calendar,          color: '#16a34a', bg: 'rgba(22,163,74,0.08)', border: 'rgba(22,163,74,0.2)', label: t('lp.tri3_label'), sub: t('lp.tri3_sub') },
+  ];
   const [activeAudience, setActiveAudience] = useState(0);
   const [animating, setAnimating] = useState(false);
 
   // Auto-rotate every 4 seconds
   useEffect(() => {
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       setAnimating(true);
       setTimeout(() => {
         setActiveAudience(a => (a + 1) % AUDIENCES.length);
         setAnimating(false);
       }, 200);
     }, 4000);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, []);
 
   const switchAudience = (idx: number) => {
@@ -148,26 +96,25 @@ export default function LandingPage() {
         {/* LEFT — text */}
         <div className="kaya-hero__left">
           <div className="lp-hero__badge">
-            <HeartPulse size={13} /> Plataforma de saúde digital — Angola, África
+            <HeartPulse size={13} /> {t('lp.hero_badge')}
           </div>
           <h1 className="kaya-hero__title">
-            Saúde na sua mão.<br />
+            {t('lp.hero_title')}<br />
             <span className="lp-hero__accent">KAYA.</span>
           </h1>
           <p className="kaya-hero__sub">
-            Triagem, teleconsulta, receitas digitais e acompanhamento crónico —
-            construído para que a tua saúde comece em casa.
+            {t('lp.hero_sub')}
           </p>
           <div className="kaya-hero__ctas">
-            <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> Criar conta grátis</Link>
-            <Link to="/login" className="lp-cta lp-cta--secondary"><ArrowRight size={17} /> Entrar no Portal</Link>
+            <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> {t('lp.cta_register')}</Link>
+            <Link to="/login" className="lp-cta lp-cta--secondary"><ArrowRight size={17} /> {t('lp.cta_login')}</Link>
           </div>
           <div className="lp-hero__stats" style={{ justifyContent: 'flex-start', marginTop: '2rem' }}>
             {[
-              { value: '13', label: 'Especialidades' },
-              { value: '24/7', label: 'Suporte digital' },
-              { value: '100%', label: 'Médico real' },
-              { value: 'Grátis', label: 'Registo' },
+              { value: '13', label: t('lp.stat_specialties') },
+              { value: '24/7', label: t('lp.stat_support') },
+              { value: '100%', label: t('lp.stat_realdoctor') },
+              { value: t('lp.stat_free'), label: t('lp.stat_registration') },
             ].map(s => (
               <div key={s.label} className="lp-stat">
                 <span className="lp-stat__val">{s.value}</span>
@@ -182,7 +129,7 @@ export default function LandingPage() {
           {/* Panel header with status */}
           <div className="kaya-panel__header">
             <span className="kaya-panel__title">Portal KAYA</span>
-            <span className="kaya-panel__status">● ATIVO</span>
+            <span className="kaya-panel__status">● {t('lp.panel_status')}</span>
           </div>
 
           {/* Audience buttons */}
@@ -194,7 +141,7 @@ export default function LandingPage() {
                 style={i === activeAudience ? { borderColor: a.color, color: a.color } : {}}
                 onClick={() => switchAudience(i)}
               >
-                {a.icon} {a.label}
+                {a.icon} {t(a.labelKey)}
               </button>
             ))}
           </div>
@@ -204,7 +151,7 @@ export default function LandingPage() {
                style={{ background: aud.imgColor }}>
             <img
               src={`/kaya-panel-${aud.key}.png`}
-              alt={aud.label}
+              alt={t(aud.labelKey)}
               className="kaya-panel__img"
               onError={(e) => { (e.target as HTMLImageElement).src = `/kaya-panel-${aud.key}.svg`; }}
             />
@@ -215,9 +162,9 @@ export default function LandingPage() {
       {/* ══ COMO FUNCIONA ════════════════════════════════ */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">Como funciona</div>
-          <h2>Três passos para cuidado completo.</h2>
-          <p>De qualquer sintoma a um plano de saúde claro — simples, seguro e sempre acompanhado por um médico.</p>
+          <div className="lp-tag">{t('lp.how_tag')}</div>
+          <h2>{t('lp.how_title')}</h2>
+          <p>{t('lp.how_desc')}</p>
         </div>
         <div className="lp-steps">
           {HOW_STEPS.map(s => (
@@ -234,9 +181,9 @@ export default function LandingPage() {
       {/* ══ VERIFICAÇÃO PRÉ-CONSULTA ══════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Verificação Pré-Consulta</div>
-          <h2>Envie as suas leituras antes de chegar.</h2>
-          <p>Tensão arterial, glicemia, temperatura — o médico recebe os seus dados e a consulta começa com contexto completo. <strong>Médico real interpreta. Sempre.</strong></p>
+          <div className="lp-tag">{t('lp.pre_tag')}</div>
+          <h2>{t('lp.pre_title')}</h2>
+          <p>{t('lp.pre_desc')} <strong>{t('lp.pre_desc_bold')}</strong></p>
         </div>
         <div className="lp-triage-outcomes">
           {TRIAGE_OUTCOMES.map(o => (
@@ -250,25 +197,25 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex' }}><Activity size={16} /> Começar verificação pré-consulta</Link>
+          <Link to="/register" className="lp-cta lp-cta--primary" style={{ display: 'inline-flex' }}><Activity size={16} /> {t('lp.pre_cta')}</Link>
         </div>
       </section>
 
       {/* ══ ECOSYSTEM ══════════════════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Ecossistema KAYA</div>
-          <h2>Um sistema de saúde completo.</h2>
-          <p>Do paciente à clínica, do device ao médico — tudo conectado numa só plataforma.</p>
+          <div className="lp-tag">{t('lp.eco_tag')}</div>
+          <h2>{t('lp.eco_title')}</h2>
+          <p>{t('lp.eco_desc')}</p>
         </div>
         <div className="ecosystem-grid">
           {[
-            { icon: Users,     color: '#0d9488', to: '/patients',    label: 'Para Pacientes',    desc: 'Marcações, vitals, teleconsulta, família.' },
-            { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Parceiros',     desc: 'Médicos particulares, clínicas e hospitais.' },
-            { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: 'Cuidado Crónico',   desc: 'Hipertensão, diabetes, asma — contínuos.' },
-            { icon: Activity,  color: '#d97706', to: '/devices',     label: 'Smart Devices',     desc: 'Tensiómetros, glicómetros, oxímetros.' },
-            { icon: TrendingUp,color: '#7c3aed', to: '/pricing',     label: 'Preços Simples',    desc: 'Grátis para começar, premium ao crescer.' },
-            { icon: Phone,     color: '#059669', to: '/contacto',    label: 'Contacto',          desc: 'Fale com a equipa KAYA.' },
+            { icon: Users,     color: '#0d9488', to: '/patients',    label: t('lp.eco1_label'), desc: t('lp.eco1_desc') },
+            { icon: Building2, color: '#0891b2', to: '/clinics',     label: t('lp.eco2_label'), desc: t('lp.eco2_desc') },
+            { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: t('lp.eco3_label'), desc: t('lp.eco3_desc') },
+            { icon: Activity,  color: '#d97706', to: '/devices',     label: t('lp.eco4_label'), desc: t('lp.eco4_desc') },
+            { icon: TrendingUp,color: '#7c3aed', to: '/pricing',     label: t('lp.eco5_label'), desc: t('lp.eco5_desc') },
+            { icon: Phone,     color: '#059669', to: '/contacto',    label: t('lp.eco6_label'), desc: t('lp.eco6_desc') },
           ].map(item => (
             <Link key={item.to} to={item.to} className="ecosystem-card">
               <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}15`, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
@@ -277,7 +224,7 @@ export default function LandingPage() {
               <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.3rem' }}>{item.label}</div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</div>
               <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', color: item.color, fontWeight: 600 }}>
-                Saber mais <ArrowRight size={13} />
+                {t('lp.learn_more')} <ArrowRight size={13} />
               </div>
             </Link>
           ))}
@@ -287,9 +234,9 @@ export default function LandingPage() {
       {/* ══ ESPECIALIDADES ══════════════════════════════ */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">Especialidades</div>
-          <h2>O especialista certo, no momento certo.</h2>
-          <p>Presencial, teleconsulta ou segunda opinião — encontre o médico de que precisa.</p>
+          <div className="lp-tag">{t('lp.spec_tag')}</div>
+          <h2>{t('lp.spec_title')}</h2>
+          <p>{t('lp.spec_desc')}</p>
         </div>
         <div className="lp-specialties">
           {SPECIALTIES.map(sp => (
@@ -301,16 +248,16 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <Link to="/especialistas" className="lp-link-more">Ver todos os especialistas <ArrowRight size={15} /></Link>
+          <Link to="/especialistas" className="lp-link-more">{t('lp.spec_all')} <ArrowRight size={15} /></Link>
         </div>
       </section>
 
       {/* ══ SOLUÇÕES PREMIUM ════════════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Soluções Premium</div>
-          <h2>Saúde contínua, para cada necessidade.</h2>
-          <p>Planos pensados para famílias, doentes crónicos e empresas que levam a saúde a sério.</p>
+          <div className="lp-tag">{t('lp.prem_tag')}</div>
+          <h2>{t('lp.prem_title')}</h2>
+          <p>{t('lp.prem_desc')}</p>
         </div>
         <div className="lp-plans">
           {PREMIUM_PLANS.map(plan => (
@@ -318,7 +265,7 @@ export default function LandingPage() {
               <div className="lp-plan-card__head">
                 <div className="lp-plan-icon" style={{ background: `${plan.color}18`, color: plan.color }}><plan.icon size={20} /></div>
                 <h3>{plan.label}</h3>
-                {plan.featured && <span className="lp-plan-badge">Mais popular</span>}
+                {plan.featured && <span className="lp-plan-badge">{t('lp.most_popular')}</span>}
               </div>
               <p>{plan.desc}</p>
               <ul>{plan.features.map(f => (<li key={f}><CheckCircle2 size={14} style={{ color: plan.featured ? 'rgba(255,255,255,0.8)' : plan.color }} /> {f}</li>))}</ul>
@@ -333,8 +280,8 @@ export default function LandingPage() {
       {/* ══ PORQUÊ CAREFAST+ ════════════════════════════ */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">Porque nos escolher</div>
-          <h2>Cuidados de saúde simplificados. Sem atalhos.</h2>
+          <div className="lp-tag">{t('lp.why_tag')}</div>
+          <h2>{t('lp.why_title')}</h2>
         </div>
         <div className="lp-trust-grid">
           {TRUST_POINTS.map(tp => (
@@ -350,11 +297,10 @@ export default function LandingPage() {
       {/* ══ PARCEIROS ════════════════════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Parcerias abertas</div>
-          <h2>Trabalhe connosco — seja quem for.</h2>
+          <div className="lp-tag">{t('lp.part_tag')}</div>
+          <h2>{t('lp.part_title')}</h2>
           <p>
-            Estamos a construir a rede. Se é médico independente, tem uma clínica ou dirige uma instituição,
-            há um lugar para si no KAYA.
+            {t('lp.part_desc')}
           </p>
         </div>
         <div className="feat-grid" style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -375,19 +321,19 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          Contacto de parcerias: <a href="mailto:parcerias@kaya.ao" style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>parcerias@kaya.ao</a>
+          {t('lp.part_contact')} <a href="mailto:parcerias@kaya.ao" style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>parcerias@kaya.ao</a>
         </div>
       </section>
 
       {/* ══ URGÊNCIA ════════════════════════════════════ */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>Urgência</div>
-          <h2>Vou para a urgência. O hospital já sabe.</h2>
-          <p>Envie os seus sintomas e dados vitais antes de chegar. O hospital parceiro recebe um pré-alerta.</p>
+          <div className="lp-tag" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>{t('lp.urg_tag')}</div>
+          <h2>{t('lp.urg_title')}</h2>
+          <p>{t('lp.urg_desc')}</p>
         </div>
         <div className="lp-urgency-flow">
-          {[{ icon: Smartphone, label: 'Envia sintomas e ETA' }, { icon: AlertTriangle, label: 'Gera pré-alerta' }, { icon: Building2, label: 'Hospital prepara' }, { icon: CheckCircle2, label: 'Chegada rápida' }].map((s, i, arr) => (
+          {[{ icon: Smartphone, label: t('lp.uf1') }, { icon: AlertTriangle, label: t('lp.uf2') }, { icon: Building2, label: t('lp.uf3') }, { icon: CheckCircle2, label: t('lp.uf4') }].map((s, i, arr) => (
             <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div className="lp-urgency-step"><s.icon size={20} style={{ color: '#ef4444' }} /><span>{s.label}</span></div>
               {i < arr.length - 1 && <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
@@ -395,25 +341,25 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <Link to="/urgencia" className="lp-cta lp-cta--danger" style={{ display: 'inline-flex' }}><AlertTriangle size={16} /> Saber mais</Link>
+          <Link to="/urgencia" className="lp-cta lp-cta--danger" style={{ display: 'inline-flex' }}><AlertTriangle size={16} /> {t('lp.urg_cta')}</Link>
         </div>
       </section>
 
       {/* ══ B2B ══════════════════════════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Para Empresas</div>
-          <h2>A saúde da sua equipa, organizada.</h2>
-          <p>Reduza absentismo. Melhore produtividade. Ofereça um benefício real.</p>
+          <div className="lp-tag">{t('lp.b2b_tag')}</div>
+          <h2>{t('lp.b2b_title')}</h2>
+          <p>{t('lp.b2b_desc')}</p>
         </div>
         <div className="lp-b2b-grid">
           {[
-            { icon: Users,     label: 'Teleconsulta para staff',    desc: 'Acesso médico imediato, sem deslocações.' },
-            { icon: TrendingUp,label: 'Painel RH anónimo',       desc: 'Tendências de saúde sem violar privacidade.' },
-            { icon: RefreshCw, label: 'Check-ups anuais',           desc: 'Agenda organizada para toda a equipa.' },
-            { icon: Pill,      label: 'Gestão de crónicos',         desc: 'Acompanhamento de colaboradores com condições crónicas.' },
-            { icon: Shield,    label: 'Compliance saúde ocupac.',   desc: 'Relatórios e certificados para auditoria.' },
-            { icon: Clock,     label: 'Resposta rápida',            desc: 'SLA de resposta médica garantida.' },
+            { icon: Users,     label: t('lp.b1_label'), desc: t('lp.b1_desc') },
+            { icon: TrendingUp,label: t('lp.b2_label'), desc: t('lp.b2_desc') },
+            { icon: RefreshCw, label: t('lp.b3_label'), desc: t('lp.b3_desc') },
+            { icon: Pill,      label: t('lp.b4_label'), desc: t('lp.b4_desc') },
+            { icon: Shield,    label: t('lp.b5_label'), desc: t('lp.b5_desc') },
+            { icon: Clock,     label: t('lp.b6_label'), desc: t('lp.b6_desc') },
           ].map(item => (
             <div key={item.label} className="lp-b2b-card">
               <item.icon size={20} style={{ color: '#7c3aed' }} />
@@ -425,19 +371,19 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <Link to="/empresas" className="lp-cta lp-cta--secondary" style={{ display: 'inline-flex' }}><Building2 size={16} /> Soluções para Empresas</Link>
+          <Link to="/empresas" className="lp-cta lp-cta--secondary" style={{ display: 'inline-flex' }}><Building2 size={16} /> {t('lp.b2b_cta')}</Link>
         </div>
       </section>
 
       {/* ══ DEVICES ══════════════════════════════════════ */}
       <section className="lp-section lp-section--alt">
         <div className="lp-section__header">
-          <div className="lp-tag">Smart Devices</div>
-          <h2>Os seus sinais vitais chegam ao médico.</h2>
-          <p>Não vendemos gadgets. Os dados chegam ao médico. Ele interpreta e orienta. Sempre.</p>
+          <div className="lp-tag">{t('lp.dev_tag')}</div>
+          <h2>{t('lp.dev_title')}</h2>
+          <p>{t('lp.dev_desc')}</p>
         </div>
         <div className="lp-devices-row">
-          {[{ icon: Activity, label: 'Tensiómetro smart', sub: 'Tensão arterial em tempo real' }, { icon: Wind, label: 'Oxímetro', sub: 'SpO₂ e frequência cardíaca' }, { icon: TrendingUp, label: 'Balança smart', sub: 'Peso e IMC com tendências' }, { icon: Zap, label: 'Termómetro', sub: 'Temperatura corporal' }, { icon: HeartPulse, label: 'Glicómetro', sub: 'Glicemia em jejum e pós-prandial' }].map(d => (
+          {[{ icon: Activity, label: t('lp.dv1_label'), sub: t('lp.dv1_sub') }, { icon: Wind, label: t('lp.dv2_label'), sub: t('lp.dv2_sub') }, { icon: TrendingUp, label: t('lp.dv3_label'), sub: t('lp.dv3_sub') }, { icon: Zap, label: t('lp.dv4_label'), sub: t('lp.dv4_sub') }, { icon: HeartPulse, label: t('lp.dv5_label'), sub: t('lp.dv5_sub') }].map(d => (
             <div key={d.label} className="lp-device-card">
               <d.icon size={24} style={{ color: '#0d9488' }} />
               <div style={{ fontWeight: 600, fontSize: '0.85rem', marginTop: '0.5rem' }}>{d.label}</div>
@@ -446,21 +392,21 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <Link to="/devices" className="lp-link-more">Ver integração de devices <ArrowRight size={15} /></Link>
+          <Link to="/devices" className="lp-link-more">{t('lp.dev_more')} <ArrowRight size={15} /></Link>
         </div>
       </section>
 
       {/* ══ PRICING ══════════════════════════════════════ */}
       <section className="lp-section">
         <div className="lp-section__header">
-          <div className="lp-tag">Preços simples</div>
-          <h2>Comece grátis. Evolua quando precisar.</h2>
+          <div className="lp-tag">{t('lp.price_tag')}</div>
+          <h2>{t('lp.price_title')}</h2>
         </div>
         <div className="lp-pricing">
           {[
-            { label: 'Basic',   price: 'Gratuito',      sub: 'Para começar',      features: ['Triagem básica', 'Historial limitado', 'Marcação de consulta', '1 perfil'],                                                                    cta: 'Começar Grátis',    featured: false },
-            { label: 'Premium', price: '3.500 Kz/mês',  sub: 'Dia-a-dia',         features: ['Tudo do Basic', 'Teleconsulta incluída', 'Renovação de medicação', 'Lembretes', 'Registo de sinais vitais', '3 perfis'],                    cta: 'Experimentar',      featured: true  },
-            { label: 'Família', price: '7.500 Kz/mês',  sub: 'Para a família',    features: ['Tudo do Premium', 'Até 6 perfis', 'Painel familiar', 'Perfis pediátricos', 'Prioridade no suporte'],                                          cta: 'Plano Família',     featured: false },
+            { label: 'Basic',   price: t('lp.stat_free'), sub: t('lp.pr1_sub'), features: [t('lp.pr1_f1'), t('lp.pr1_f2'), t('lp.pr1_f3'), t('lp.pr1_f4')], cta: t('lp.pr1_cta'), featured: false },
+            { label: 'Premium', price: '3.500 Kz/mês',    sub: t('lp.pr2_sub'), features: [t('lp.pr2_f1'), t('lp.pr2_f2'), t('lp.pr2_f3'), t('lp.pr2_f4'), t('lp.pr2_f5'), t('lp.pr2_f6')], cta: t('lp.pr2_cta'), featured: true  },
+            { label: 'Família', price: '7.500 Kz/mês',    sub: t('lp.pr3_sub'), features: [t('lp.pr3_f1'), t('lp.pr3_f2'), t('lp.pr3_f3'), t('lp.pr3_f4'), t('lp.pr3_f5')], cta: t('lp.pr3_cta'), featured: false },
           ].map(p => (
             <div key={p.label} className={`lp-price-card${p.featured ? ' lp-price-card--featured' : ''}`}>
               <div className="lp-price-label">{p.label}</div>
@@ -475,17 +421,17 @@ export default function LandingPage() {
 
       {/* ══ FINAL CTA ════════════════════════════════════ */}
       <section className="lp-final-cta">
-        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>KAYA — O seu sistema de saúde</div>
-        <h2>Acesso rápido à saúde começa aqui.</h2>
-        <p>Junte-se a um ecossistema de saúde digital construído para Angola — e para o mundo.</p>
+        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>{t('lp.final_tag')}</div>
+        <h2>{t('lp.final_title')}</h2>
+        <p>{t('lp.final_desc')}</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--white">Criar conta gratuita</Link>
-          <Link to="/contacto" className="lp-cta lp-cta--white-outline"><Phone size={15} /> Falar connosco</Link>
+          <Link to="/register" className="lp-cta lp-cta--white">{t('lp.final_cta1')}</Link>
+          <Link to="/contacto" className="lp-cta lp-cta--white-outline"><Phone size={15} /> {t('lp.final_cta2')}</Link>
         </div>
         <div style={{ marginTop: '2rem', display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {['Sem diagnóstico por IA', 'Médico real valida tudo', 'Dados encriptados', 'Transparente'].map(t => (
-            <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.83rem', color: 'rgba(255,255,255,0.7)' }}>
-              <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)' }} /> {t}
+          {[t('lp.chip1'), t('lp.chip2'), t('lp.chip3'), t('lp.chip4')].map(item => (
+            <span key={item} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.83rem', color: 'rgba(255,255,255,0.7)' }}>
+              <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)' }} /> {item}
             </span>
           ))}
         </div>
