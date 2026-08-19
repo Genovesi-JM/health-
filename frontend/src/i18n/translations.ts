@@ -1610,6 +1610,44 @@ const translations: Record<string, TranslationEntry> = {
   'notif.empty_desc': { pt: 'As suas notificações aparecerão aqui.', en: 'Your notifications will appear here.', fr: 'Vos notifications apparaîtront ici.', es: 'Sus notificaciones aparecerán aquí.' },
   'notif.empty_unread_title': { pt: 'Está tudo em dia!', en: 'All caught up!', fr: 'Tout est à jour !', es: '¡Todo al día!' },
   'notif.empty_unread_desc': { pt: 'Não tem notificações por ler.', en: 'You have no unread notifications.', fr: 'Vous n’avez aucune notification non lue.', es: 'No tiene notificaciones sin leer.' },
+
+  /* ═══════════════════════════════════════════════════════════
+     PWA INSTALL PROMPT
+     ═══════════════════════════════════════════════════════════ */
+  'install.title': { pt: 'Instalar KAYA', en: 'Install KAYA', fr: 'Installer KAYA', es: 'Instalar KAYA' },
+  'install.ios_tip': { pt: 'Toque no botão Partilhar e depois em “Adicionar ao ecrã principal”', en: 'Tap the Share button, then “Add to Home Screen”', fr: 'Appuyez sur le bouton Partager, puis « Sur l’écran d’accueil »', es: 'Toque el botón Compartir y luego “Añadir a pantalla de inicio”' },
+  'install.desc': { pt: 'Adicione ao ecrã principal para uma experiência mais rápida, tipo aplicação.', en: 'Add to your home screen for a faster, app-like experience.', fr: 'Ajoutez à votre écran d’accueil pour une expérience plus rapide, comme une application.', es: 'Añádalo a la pantalla de inicio para una experiencia más rápida, tipo aplicación.' },
+  'install.action': { pt: 'Instalar', en: 'Install', fr: 'Installer', es: 'Instalar' },
+  'install.dismiss': { pt: 'Dispensar', en: 'Dismiss', fr: 'Ignorer', es: 'Descartar' },
+
+  /* ═══════════════════════════════════════════════════════════
+     ADMIN — PARTNER APPLICATIONS
+     ═══════════════════════════════════════════════════════════ */
+  'aap.title': { pt: 'Candidaturas de Parceiros', en: 'Partner Applications', fr: 'Candidatures de partenaires', es: 'Solicitudes de socios' },
+  'aap.subtitle': { pt: 'Médicos e clínicas que se candidataram a aderir à KAYA. Reveja e envie um convite.', en: 'Doctors and clinics that applied to join KAYA. Review and send an invite.', fr: 'Médecins et cliniques ayant postulé pour rejoindre KAYA. Examinez et envoyez une invitation.', es: 'Médicos y clínicas que solicitaron unirse a KAYA. Revise y envíe una invitación.' },
+  'aap.filter_new': { pt: 'Novas', en: 'New', fr: 'Nouvelles', es: 'Nuevas' },
+  'aap.filter_invited': { pt: 'Convidados', en: 'Invited', fr: 'Invités', es: 'Invitados' },
+  'aap.filter_rejected': { pt: 'Rejeitadas', en: 'Rejected', fr: 'Rejetées', es: 'Rechazadas' },
+  'aap.empty_title': { pt: 'Sem candidaturas', en: 'No applications', fr: 'Aucune candidature', es: 'Sin solicitudes' },
+  'aap.empty_desc': { pt: 'As candidaturas submetidas no site aparecem aqui.', en: 'Applications submitted on the website appear here.', fr: 'Les candidatures soumises sur le site apparaissent ici.', es: 'Las solicitudes enviadas en el sitio aparecen aquí.' },
+  'aap.col_name': { pt: 'Nome', en: 'Name', fr: 'Nom', es: 'Nombre' },
+  'aap.col_type': { pt: 'Tipo', en: 'Type', fr: 'Type', es: 'Tipo' },
+  'aap.col_specialty': { pt: 'Especialidade', en: 'Specialty', fr: 'Spécialité', es: 'Especialidad' },
+  'aap.col_contact': { pt: 'Contacto', en: 'Contact', fr: 'Contact', es: 'Contacto' },
+  'aap.col_location': { pt: 'Local', en: 'Location', fr: 'Lieu', es: 'Ubicación' },
+  'aap.col_status': { pt: 'Estado', en: 'Status', fr: 'Statut', es: 'Estado' },
+  'aap.col_date': { pt: 'Data', en: 'Date', fr: 'Date', es: 'Fecha' },
+  'aap.col_actions': { pt: 'Ações', en: 'Actions', fr: 'Actions', es: 'Acciones' },
+  'aap.licence': { pt: 'Cédula', en: 'Licence', fr: 'Licence', es: 'Cédula' },
+  'aap.status_new': { pt: 'Nova', en: 'New', fr: 'Nouvelle', es: 'Nueva' },
+  'aap.status_reviewing': { pt: 'Em análise', en: 'Under review', fr: 'En cours d’examen', es: 'En análisis' },
+  'aap.status_invited': { pt: 'Convidado', en: 'Invited', fr: 'Invité', es: 'Invitado' },
+  'aap.status_rejected': { pt: 'Rejeitada', en: 'Rejected', fr: 'Rejetée', es: 'Rechazada' },
+  'aap.type_medico': { pt: 'Médico', en: 'Doctor', fr: 'Médecin', es: 'Médico' },
+  'aap.type_especialista': { pt: 'Especialista', en: 'Specialist', fr: 'Spécialiste', es: 'Especialista' },
+  'aap.type_clinica': { pt: 'Clínica', en: 'Clinic', fr: 'Clinique', es: 'Clínica' },
+  'aap.act_invite': { pt: 'Marcar como convidado', en: 'Mark as invited', fr: 'Marquer comme invité', es: 'Marcar como invitado' },
+  'aap.act_reject': { pt: 'Rejeitar', en: 'Reject', fr: 'Rejeter', es: 'Rechazar' },
 };
 
 export default translations;
