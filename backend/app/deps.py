@@ -8,6 +8,7 @@ import json
 from app.database import get_db
 from app.oauth2 import verify_access_token
 from app.models import User, AccountMember, Account
+from app.services.mfa import assert_mfa_session
 
 bearer = HTTPBearer()
 optional_bearer = HTTPBearer(auto_error=False)
@@ -43,6 +44,7 @@ def get_current_user(
 
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User inv\u00e1lido/inativo")
+    assert_mfa_session(user, payload, db)
     return user
 
 
@@ -65,6 +67,10 @@ def get_optional_user(
     if not user and sub:
         user = db.query(User).filter(User.email == sub).first()
     if not user or not user.is_active:
+        return None
+    try:
+        assert_mfa_session(user, payload, db)
+    except HTTPException:
         return None
     return user
 

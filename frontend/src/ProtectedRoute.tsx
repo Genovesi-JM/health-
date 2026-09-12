@@ -24,18 +24,20 @@ export function ProtectedRoute() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // null = checking, true = OK, false = needs consent
   const [consentOk, setConsentOk] = useState<boolean | null>(null);
+  const [consentError, setConsentError] = useState(false);
+  const [consentAttempt, setConsentAttempt] = useState(0);
+  const [checkedConsentFor, setCheckedConsentFor] = useState('');
+  const consentIdentity = `${user?.id ?? ''}:${user?.role ?? ''}:${location.pathname}`;
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+    setConsentOk(null);
+    setConsentError(false);
+    setCheckedConsentFor(consentIdentity);
 
     // Doctors and admins are exempt from the patient consent gate
     if (user.role === 'doctor' || user.role === 'admin') {
-      setConsentOk(true);
-      return;
-    }
-
-    // Skip API call if already confirmed in this session
-    if (sessionStorage.getItem('consents_accepted') === 'true') {
       setConsentOk(true);
       return;
     }
@@ -48,16 +50,18 @@ export function ProtectedRoute() {
 
     api.get('/api/v1/compliance/consents')
       .then(r => {
+        if (cancelled) return;
         const types: string[] = r.data.map((c: { consent_type: string }) => c.consent_type);
         const allAccepted = REQUIRED_CONSENTS.every(ct => types.includes(ct));
-        if (allAccepted) sessionStorage.setItem('consents_accepted', 'true');
         setConsentOk(allAccepted);
       })
       .catch(() => {
-        // If the check fails (network error, non-patient), let through
-        setConsentOk(true);
+        if (cancelled) return;
+        setConsentOk(false);
+        setConsentError(true);
       });
-  }, [user, location.pathname]);
+    return () => { cancelled = true; };
+  }, [user, location.pathname, consentIdentity, consentAttempt]);
 
   if (loading) {
     return (
@@ -72,10 +76,21 @@ export function ProtectedRoute() {
   }
 
   // Still checking consents — show spinner
-  if (consentOk === null) {
+  if (consentOk === null || checkedConsentFor !== consentIdentity) {
     return (
       <div className="page-loading">
         <div className="spinner" />
+      </div>
+    );
+  }
+
+  if (consentError) {
+    return (
+      <div className="page-loading consent-check-error" role="alert">
+        <p>{t('consent.check_error')}</p>
+        <button className="btn btn-primary" type="button" onClick={() => setConsentAttempt(value => value + 1)}>
+          {t('common.retry')}
+        </button>
       </div>
     );
   }

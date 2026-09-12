@@ -610,7 +610,8 @@ class FileDownloadResponse(BaseModel):
     file_id: str
     download_url: str
     filename: str
-    expires_in_seconds: int = 3600
+    # Required: the selected storage provider determines the actual URL lifetime.
+    expires_in_seconds: int
 
 
 # ── Prescription Requests (renewal / pre-consult) ──

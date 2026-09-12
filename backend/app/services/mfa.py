@@ -108,3 +108,28 @@ MFA_MANDATORY_ROLES = frozenset({
 
 def mfa_is_mandatory(role: str) -> bool:
     return role in MFA_MANDATORY_ROLES
+
+
+def assert_mfa_session(user, claims: dict, db) -> None:
+    """Fail closed for partial tokens and sessions without required MFA.
+
+    Check the persisted role and enrollment on every request, so changing a
+    role or removing enrollment cannot leave an older bearer token privileged.
+    """
+    from fastapi import HTTPException
+    from app.health_models import MfaCredential
+
+    if claims.get("mfa_challenge"):
+        raise HTTPException(401, "MFA verification incomplete")
+    credential = db.query(MfaCredential).filter(MfaCredential.user_id == user.id).first()
+    enrolled = bool(credential and credential.enabled)
+    if mfa_is_mandatory(user.role) and not enrolled:
+        raise HTTPException(
+            403, detail="MFA enrollment is required before privileged access. Contact the administrator for secure enrollment.",
+            headers={"X-Kaya-Error-Code": "mfa_enrollment_required"},
+        )
+    if (mfa_is_mandatory(user.role) or enrolled) and claims.get("mfa_verified") is not True:
+        raise HTTPException(
+            401, detail="Sign in again and complete MFA.",
+            headers={"X-Kaya-Error-Code": "mfa_verification_required"},
+        )

@@ -215,6 +215,7 @@ def download_file(
             file_id=file_id,
             download_url=url,
             filename=f"receita_{prescription.id}.pdf",
+            expires_in_seconds=storage.get_signed_url_expiry_seconds(),
         )
 
     # Check referrals
@@ -235,6 +236,7 @@ def download_file(
             file_id=file_id,
             download_url=url,
             filename=f"referencia_{referral.id}.pdf",
+            expires_in_seconds=storage.get_signed_url_expiry_seconds(),
         )
 
     raise HTTPException(status_code=404, detail="Documento não encontrado.")

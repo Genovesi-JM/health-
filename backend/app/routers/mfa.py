@@ -163,12 +163,12 @@ def mfa_disable(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Turn MFA off. Requires a current TOTP or recovery code (re-auth).
-
-    Mandatory-MFA roles are warned but not blocked here — the frontend
-    should re-prompt enrollment; blocking disable outright would trap a
-    user with a broken authenticator.
-    """
+    """Optional MFA can be disabled; privileged recovery needs audited support."""
+    if mfa_is_mandatory(user.role):
+        raise HTTPException(
+            403, detail="MFA cannot be disabled for this role. Use the secure recovery process.",
+            headers={"X-Kaya-Error-Code": "mfa_required_for_role"},
+        )
     cred = _get_cred(db, user.id)
     if not cred or not cred.enabled:
         raise HTTPException(400, "MFA não está ativo.")
@@ -216,7 +216,7 @@ def mfa_challenge(
         raise HTTPException(401, "Sessão de verificação inválida ou expirada.")
     user_id = payload.get("uid")
     user = db.query(User).filter(User.id == user_id).first()
-    if not user:
+    if not user or not user.is_active:
         raise HTTPException(401, "Utilizador não encontrado.")
 
     cred = _get_cred(db, user.id)
@@ -230,7 +230,7 @@ def mfa_challenge(
 
     # Import here to avoid a circular import at module load.
     from app.routers.auth import _build_auth_response
-    resp = _build_auth_response(db, user)
+    resp = _build_auth_response(db, user, mfa_verified=True)
     db.commit()
     log_audit(db, "login_mfa_success", user_id=user.id, user_email=user.email, request=request)
     return resp

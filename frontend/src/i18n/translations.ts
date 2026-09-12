@@ -549,6 +549,12 @@ const translations: Record<string, TranslationEntry> = {
   'common.close': { pt: 'Fechar', en: 'Close', fr: 'Fermer', es: 'Cerrar' },
   'common.saving': { pt: 'A guardar…', en: 'Saving…', fr: 'Enregistrement…', es: 'Guardando…' },
   'common.retry': { pt: 'Tentar novamente', en: 'Retry', fr: 'Réessayer', es: 'Reintentar' },
+  'consent.check_error': {
+    pt: 'Não foi possível confirmar os consentimentos. O acesso permanece bloqueado.',
+    en: 'We could not confirm your consent settings. Access remains blocked.',
+    fr: 'Impossible de confirmer vos consentements. L’accès reste bloqué.',
+    es: 'No se pudieron confirmar los consentimientos. El acceso sigue bloqueado.',
+  },
   'common.optional': { pt: 'Opcional', en: 'Optional', fr: 'Facultatif', es: 'Opcional' },
   'common.required': { pt: 'Obrigatório', en: 'Required', fr: 'Obligatoire', es: 'Obligatorio' },
   'common.continue': { pt: 'Continuar', en: 'Continue', fr: 'Continuer', es: 'Continuar' },
