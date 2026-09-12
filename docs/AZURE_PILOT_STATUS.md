@@ -26,12 +26,18 @@ isolated tests. No existing encrypted data or storage objects were transferred.
 
 - 116 isolated backend regressions passed with the actual pinned Azure SDKs
   installed in disposable test dependencies, with network/token calls mocked.
+- The expanded host suite passed 118 tests, including exact-file Docker context
+  policy guards. An actual synthetic-context Docker rebuild excluded all 8
+  invented private/unreviewed canaries and contained exactly 127 runtime files.
+  The non-root production image is
+  `sha256:dd12b25030141964a882a8dd94e91b97f87bf4499cb6fa51f75f0f72ad7259e9`;
+  it has not been launched against Azure databases or real patient data.
 - 9 focused frontend consent/translation regressions passed, and the frontend
   TypeScript build check passed.
 - Browser/mobile screenshot QA is pending: Chrome control failed during this
   session. A source layout change is not proof of mobile visual correctness.
-- Container packaging and live Azure managed-identity/RBAC checks are separate
-  release gates. Successful unit tests do not prove live cloud connectivity.
+- Live Azure managed-identity/RBAC checks remain a separate release gate.
+  Successful packaging/unit tests do not prove live cloud connectivity.
 
 ## Explicit remaining blockers
 
