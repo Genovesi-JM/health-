@@ -97,6 +97,18 @@ class CompiledFoundationTests(unittest.TestCase):
         self.assertIn("require_secure_transport", tls["name"])
         self.assertEqual(tls["properties"]["value"], "on")
 
+    def test_postgres_child_writes_are_serialized(self):
+        tls = self.one("Microsoft.DBforPostgreSQL/flexibleServers/configurations")
+        databases = self.all("Microsoft.DBforPostgreSQL/flexibleServers/databases")
+        primary = next(db for db in databases if "variables('databaseName')" in db["name"])
+        accounts = next(db for db in databases if "variables('accountsDatabaseName')" in db["name"])
+        server_id = "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresName'))]"
+        tls_id = "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/configurations', variables('postgresName'), 'require_secure_transport')]"
+        primary_id = "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/databases', variables('postgresName'), variables('databaseName'))]"
+        self.assertIn(server_id, tls["dependsOn"])
+        self.assertIn(tls_id, primary["dependsOn"])
+        self.assertIn(primary_id, accounts["dependsOn"])
+
     def test_network_delegations_and_postgres_restriction(self):
         vnet = self.one("Microsoft.Network/virtualNetworks")
         subnets = vnet["properties"]["subnets"]

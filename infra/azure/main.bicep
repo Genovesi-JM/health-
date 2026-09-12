@@ -160,18 +160,24 @@ resource primaryDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@20
   parent: postgres
   name: databaseName
   properties: { charset: 'UTF8', collation: 'en_US.utf8' }
+  // PostgreSQL child writes are serialized to avoid transient ServerIsBusy.
+  dependsOn: [requireTls]
 }
 
 resource accountsDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
   parent: postgres
   name: accountsDatabaseName
   properties: { charset: 'UTF8', collation: 'en_US.utf8' }
+  dependsOn: [primaryDatabase]
 }
 
 resource requireTls 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
   parent: postgres
   name: 'require_secure_transport'
   properties: { source: 'user-override', value: 'on' }
+  // Keep the complete server -> TLS -> primary -> accounts chain explicit.
+  #disable-next-line no-unnecessary-dependson
+  dependsOn: [postgres]
 }
 
 resource registry 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
