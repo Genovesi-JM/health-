@@ -1,3 +1,5 @@
+> **CLINICAL LAUNCH HOLD — synthetic development only.** The default API returns 503 for all requests and does not initialize application databases. Public deployment is disabled in the Pages workflow. Existing remote deployments have not been changed or verified. See [execution status](docs/KAYA_EXECUTION_STATUS.md).
+
 # KAYA — Saúde digital, triagem e teleconsulta
 
 Plataforma full-stack KAYA: website/PWA em React, API FastAPI e uma app Expo para iOS e Android.

@@ -1,0 +1,6 @@
+{
+  "script": "/Users/genovesimaria/Documents/kaya-web/scripts/kaya_phase0_clients.py",
+  "script_sha256": "6a50ceae6cd92ec2d7a8c88fa7ced56bc3395006b06f7d77b909752940faec7c",
+  "network_guard_sha256": "399cc7b85e0f4e25abdb035d6ecc672b412b1a7c2973a1c9f8583fdfc35d225e",
+  "network_guard_source": "'use strict';\nconst net = require('node:net');\nconst http = require('node:http');\nconst https = require('node:https');\nconst dgram = require('node:dgram');\nfunction denied() { throw new Error('PHASE0_CLIENT_NETWORK_DENIED'); }\nnet.Socket.prototype.connect = denied;\nnet.connect = denied;\nnet.createConnection = denied;\nhttp.request = denied; http.get = denied;\nhttps.request = denied; https.get = denied;\ndgram.createSocket = denied;\nglobalThis.fetch = denied;\n"
+}

@@ -47,6 +47,8 @@ jobs:
           path: frontend/dist
 
   deploy:
+    # Phase 0 launch hold. Removal requires a reviewed release decision.
+    if: ${{ false }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

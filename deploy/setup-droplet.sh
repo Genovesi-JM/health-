@@ -14,6 +14,10 @@
 # ═══════════════════════════════════════════════════════════════
 set -euo pipefail
 
+# Phase 0: stop before any SSH, remote checkout or container mutation.
+echo "HOLD: Kaya deployment is disabled pending a reviewed release decision." >&2
+exit 1
+
 # ── Config ──
 DROPLET_IP="${1:?Usage: $0 <DROPLET_IP>}"
 REPO_URL="https://github.com/Genovesi-JM/health-.git"

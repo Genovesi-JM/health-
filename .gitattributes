@@ -1,0 +1,2 @@
+# Retain verbatim command evidence, including final blank lines.
+docs/evidence/**/*.log whitespace=-blank-at-eof

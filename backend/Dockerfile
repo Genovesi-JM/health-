@@ -1,7 +1,8 @@
 FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    KAYA_EXECUTION_MODE=hold
 
 # System deps for psycopg2 (PostgreSQL) and reportlab (PDF)
 RUN apt-get update && \
@@ -32,9 +33,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# Run migrations (fail loudly if they fail — do NOT suppress errors in production)
-# Then start gunicorn with uvicorn workers
-CMD ["sh", "-c", "python -m alembic upgrade head && gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
+# Phase 0: start only the held API. No migration or schema repair at startup.
+CMD ["gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
 
 # Run only explicit isolated regressions: no app startup, real database, mail,
 # provider calls or inherited host environment. Not part of the production image.

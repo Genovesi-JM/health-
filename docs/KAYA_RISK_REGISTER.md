@@ -1,0 +1,19 @@
+# Kaya risk register
+
+Evidence date 14 September 2026. Owners below are accountable roles awaiting named assignment; none has accepted or approved a risk. Every open release blocker is due before any clinical pilot. Review at the next Phase 0 run.
+
+| ID | Severity and reachability | Risk and evidence | Owner needed | Mitigation and closure evidence |
+| --- | --- | --- | --- | --- |
+| R01 | P0 in original runtime; default entry held | Empty triage returns LOW SELF_CARE; postchecks.json | Clinical safety lead and backend lead | Hold retained; require input completeness, red-flag negative tests and independent clinical validation |
+| R02 | P0 public copy; existing remote reach unknown | translations.ts urg.subtitle_post asserts hospital pre-alert, less waiting and more safety | Product and clinical lead | Remove unsupported claims in Phase 3; verify all languages and deployed assets |
+| R03 | High; provider routes available in synthetic runtime | chatbot.py supports external AI; utils/video.ts defaults to public Jitsi; payment adapters read environment directly | Privacy and integration leads | Default API held; require disabled provider boundaries, egress tests and dated provider approval |
+| R04 | High; deployment dependent | startup performs schema drift repair and can seed; separate accounts DB | Backend and database leads | No startup in hold mode; reviewed migration ownership, upgrade and restore evidence required |
+| R05 | Critical/High dependency findings; exploitability unassessed | frontend-audit.json, mobile-audit.json and backend-direct-audit.json | Security and frontend/mobile leads | No public promotion; triage reachable paths and patch with regression evidence |
+| R06 | High; engineering assurance gap | Locked original/current suites have identical 62 failures and 0 errors; frontend has 3 preserved-test failures and 115 lint errors | Engineering lead | Preserve baseline; isolate suite and fix in toolchain/baseline phases |
+| R07 | High; deployment state unknown | Existing Pages/Render/manual channels and historical Azure notes | Infrastructure owner | Local Pages/Render auto deployment disabled and manual release scripts held; independently inventory existing runtime and verify hold without assuming this checkout changes live traffic |
+| R08 | High; authorization reachability unverified | Prior playbook reports role/credential bypasses; focused security coverage is not a full authorization proof | Security and credentialing leads | Retest role mutation, cross-tenant scope and separation of duties before enabling runtime |
+| R09 | High; missing independent evidence | No named clinic, jurisdiction choice, clinical/legal/privacy sign-offs provided | Product owner and release board | Maintain OPEN human gates; synthetic-only development |
+| R10 | Medium; secret coverage incomplete | CLOSED for scanned source: comprehensive redacted Gitleaks run has zero findings; earlier AWS-shaped value is an explicit documentation placeholder | Security lead | Keep operational secrets and remote-only history in external security scope; re-scan changed source before later checkpoints |
+| R11 | High; bypass possible by operator action | Synthetic selector and original module are intentionally retained; manual deployment scripts exist | Engineering and infrastructure leads | Never expose synthetic runtime; Phase 0 hold is default entry-point control, not a tamper-proof platform policy |
+
+Phase 0 completion update: clean installation, complete locked dependency coverage, namespace-isolated full suites and source/history scanning are now measured. Collection/tooling gaps are closed for this audit; existing defects and vulnerability remediation remain OPEN before clinical release. See execution status and completion evidence. No human has accepted residual clinical or security risk.

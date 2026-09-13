@@ -1,3 +1,5 @@
+> **CLINICAL LAUNCH HOLD — synthetic development only.** This guide is retained as reference. Deployment, provider activation and live database operations require a separate release decision. Follow [Phase 0 execution status](docs/KAYA_EXECUTION_STATUS.md) before using these instructions.
+
 # 🚀 Health Platform — Deploy to DigitalOcean
 
 Guia completo para colocar a plataforma em produção num Droplet DigitalOcean.

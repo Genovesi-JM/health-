@@ -1,0 +1,14 @@
+{
+  "backend-full-post": {
+    "exit_code": 124,
+    "tail": "Timeout at 180 seconds"
+  },
+  "backend-focused-post": {
+    "exit_code": 0,
+    "tail": "........................................................................ [ 61%]\n..............................................                           [100%]\n=============================== warnings summary ===============================\nsecurity_tests/test_azure_health_storage.py::test_authorized_document_download_reports_actual_azure_ttl[60-prescription]\n  /Users/genovesimaria/opt/anaconda3/lib/python3.8/site-packages/pydantic/_internal/_config.py:284: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.7/migration/\n    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)\n\n-- Docs: https://docs.pytest.org/en/stable/warnings.html\n118 passed, 1 skipped, 1 warning in 13.38s\n"
+  },
+  "triage-empty": {
+    "exit_code": 0,
+    "tail": "LOW SELF_CARE\n"
+  }
+}

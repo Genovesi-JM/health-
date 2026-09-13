@@ -1,0 +1,4 @@
+
+> frontend@0.0.0 lint
+> eslint . --format=json --output-file=/Users/genovesimaria/Documents/kaya-web/docs/evidence/phase0-completion-2026-09-14/client-frontend-lint.json
+
