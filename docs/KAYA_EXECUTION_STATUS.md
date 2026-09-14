@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -249,3 +249,13 @@ Tests: 17 new consent tests plus the phase safety suites (383 passed, 1 skipped)
 HUMAN GATE (BLOCKED_EXTERNAL): counsel and the clinical owner must approve the consent catalog, lawful-basis mapping, minor/capacity rules, and retention effects.
 
 **Phase 15 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 16 (invitation-based onboarding and lifecycle-safe deep links). Checkpoint: commit `Add Kaya versioned consent ledger and representative authority`.
+
+## Phase 16 — Invitation-based onboarding and lifecycle-safe deep links
+
+Onboarding is a separate-state model ([`backend/app/onboarding_tokens.py`](../backend/app/onboarding_tokens.py)) where state never grants authority: application → invitation → identity → profile → credentialing → membership → privilege → consent → activation, with no step-skipping into an authority-granting state. Invitation tokens are hashed (constant-time compare), single-use, expiring, and bound to an exact recipient and purpose with server-side revocation and replay detection; every failure (tampering, replay, wrong recipient/purpose, revoked, expired, unknown) returns one generic reason so nothing reveals account state. A completed UI wizard can never set a privileged role, verified credential, active membership, or clinical privilege, and a professional account stays restricted until identity/MFA/credential/org/privilege gates all complete. Deep links bind to a typed destination, keep tokens out of referrer-exposed URLs, and redirect only within an allowlist. See [onboarding](KAYA_ONBOARDING.md).
+
+Fourteen tests (`backend/phase16_tests`) prove token accept + every fail-closed path sharing one reason (no oracle), no-authority-from-state, wizard-cannot-grant, no step-skipping, professional-restricted-until-gates, and deep-link safety.
+
+Tests: 14 new onboarding tests plus the phase safety suites (397 passed, 1 skipped) green, no regression. Domain-pure model + docs; web/mobile rendering of the canonical state end-to-end is a harness/UI adoption task.
+
+**Phase 16 gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 17 (clinician credential verification and privileging lifecycle). Checkpoint: commit `Add Kaya invitation onboarding and deep-link safety`.
