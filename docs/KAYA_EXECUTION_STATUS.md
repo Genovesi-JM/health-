@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -169,3 +169,15 @@ Eight tests (`backend/phase8_tests`) enforce coverage of the required data categ
 Tests: 8 new threat-model tests plus the phase safety suites (301 passed, 1 skipped) green, no regression. Documentation and tests only; no runtime, schema, provider or data change.
 
 **Phase 8 engineering gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 9 (data classification, minimization, retention, and transfer controls). Checkpoint: commit `Map Kaya threat model and end-to-end data flows`.
+
+## Phase 9 — Data classification, minimization, retention, and transfer controls
+
+[The data inventory](KAYA_DATA_INVENTORY.md) classifies every field category (identity, contact, demographic, health, triage, image, device, credential, employment, payment, support, audit, telemetry) with purpose, a lawful-basis question reserved for counsel, retention/deletion trigger, export rule, access scope and logging rule, and it records processor/residency/transfer gates that keep every third-party and cross-border flow disabled until an approved processor record exists. Minimization is stated for the invited-adult pilot; employers and unrelated support never receive individual clinical data.
+
+A code control ([`backend/app/redaction.py`](../backend/app/redaction.py)) redacts secrets, tokens, MFA seeds, recovery codes, private keys, full card numbers, IBANs, signed URLs, provider payloads and raw clinical text — by pattern and by key name — for safe serialization and structured logging; a `RedactingFilter` applies it to a logger. Nine tests (`backend/phase9_tests`) prove every prohibited category is redacted (bearer/JWT, provider keys, private key, PAN, signed URL, sensitive/clinical keys, recursively) and that the inventory covers all categories, carries the required attributes, marks lawful basis for counsel, keeps transfers disabled, and forbids individual clinical data to employers.
+
+Tests: 9 new data-control tests plus the phase safety suites (310 passed, 1 skipped) green, no regression. This phase adds a redaction utility, an inventory, and tests; no field was removed from a live record (the app is held) and no runtime, schema, provider or data change was made.
+
+HUMAN GATE (BLOCKED_EXTERNAL): a qualified privacy/legal owner must approve lawful bases, retention periods, controller/processor roles and transfer mechanisms for the chosen jurisdiction before any real data is processed.
+
+**Phase 9 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 10 (jurisdictional legal and regulatory classification). Checkpoint: commit `Classify Kaya data and enforce redaction and transfer controls`.
