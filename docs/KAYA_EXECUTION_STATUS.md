@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake; never auto-acts). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing; human-in-the-loop, no auto-dispatch). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -588,3 +588,11 @@ Incident intake is fail-closed and never auto-acts ([`backend/app/response_intak
 Seven tests (`backend/phaseR2_tests`) prove accepted-when-active/permitted, rejected-when-inactive, unapproved-jurisdiction rejection, consent/empty-text rejection, always-computed emergency redirect + notice, never-auto-actionable, and dedup.
 
 **Phase R2 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response incident intake and red-flag detection`.
+
+## Phase R3 — Response escalation routing to authorized humans
+
+An accepted incident is routed to an authorized on-call human, human-in-the-loop, with no auto-dispatch ([`backend/app/response_routing.py`](../backend/app/response_routing.py)). `responder_eligible` requires on-shift, credential-current, an authorized profession, and jurisdiction coverage; `route` delivers to the first eligible responder but delivery is not acknowledgement — `acknowledge` (assigned responder only) is the explicit human-in-the-loop step and nothing acts before it. With no eligible responder, routing fails closed to the fallback path (`to_fallback=True`), never a silent drop; `auto_dispatch_possible()` is always False; `escalation_open` stays true until a human acknowledges or the fallback takes ownership. See [Response routing](KAYA_RESPONSE_ROUTING.md).
+
+Seven tests (`backend/phaseR3_tests`) prove eligibility rules, route-to-eligible, delivery≠acknowledgement, only-assigned-may-ack, no-responder-fails-closed-to-fallback, no-auto-dispatch, and first-eligible selection.
+
+**Phase R3 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response escalation routing to authorized humans`.
