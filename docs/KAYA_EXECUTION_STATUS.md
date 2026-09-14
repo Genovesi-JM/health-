@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Phase 20 COMPLETE_WITH_EXTERNAL_GATES. Phase 21 COMPLETE_WITH_EXTERNAL_GATES. Phase 22 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Phase 20 COMPLETE_WITH_EXTERNAL_GATES. Phase 21 COMPLETE_WITH_EXTERNAL_GATES. Phase 22 COMPLETE. Phase 23 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -327,3 +327,15 @@ Eight tests (`backend/phase22_tests`) prove authority-gated exposure, UTC/DST co
 Tests: 8 new scheduling tests plus the phase safety suites (468 passed, 1 skipped) green, no regression.
 
 **Phase 22 gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 23 (transactional booking, concurrency, and idempotency). Checkpoint: commit `Add Kaya authority-gated schedule model with UTC/DST correctness`.
+
+## Phase 23 — Transactional booking, concurrency, and idempotency
+
+Booking prevents double booking, false confirmation and duplicate side effects ([`backend/app/booking.py`](../backend/app/booking.py)): a hold-to-confirm workflow with a 10-minute expiry, idempotency keys, ownership and quoted terms; single-owner capacity where a simultaneous second request raises CapacityConflict (production enforcement is a database unique constraint, not a process lock); an idempotency store where a lost-response retry returns the original result with no duplicate appointment/payment/notification/audit; confirmation that revalidates credentials, privilege, org authority, consent, service, age/capacity and jurisdiction and requires an unexpired hold; a UI that never shows confirmed before the server transaction commits; reconcile-before-replay for uncertain writes; and bounded audited transitions. See [booking](KAYA_BOOKING.md).
+
+Ten tests (`backend/phase23_tests`) prove single-owner capacity, idempotent-retry-no-duplicate, full confirmation revalidation, expired-hold denial, bounded transitions, confirmed-only-after-commit, reconcile-before-replay, and DB-level conflict enforcement.
+
+Tests: 10 new booking tests plus the phase safety suites (478 passed, 1 skipped) green, no regression.
+
+EXTERNAL GATE (BLOCKED_EXTERNAL): the release gate requires PostgreSQL concurrency evidence (same-slot/adjacent/multi-resource/stale-hold/idempotent-retry/suspension races under replicas); SQLite-only tests are not accepted. That live PG run needs a running Postgres and is OPEN — the domain logic and DB-constraint design are complete.
+
+**Phase 23 gate PASS (logic) / COMPLETE_WITH_EXTERNAL_GATES (PG concurrency proof OPEN). Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 24 (care episode, queue, and clinician handoff state machine). Checkpoint: commit `Add Kaya transactional booking, idempotency, and single-owner capacity`.
