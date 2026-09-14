@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated, not repaired). Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -149,3 +149,13 @@ Delivered: a single verification entry point ([`scripts/kaya_verify.py`](../scri
 HONEST RESIDUAL (not repaired, isolated as owner-bound debt): DBT-01 MFA/settings test-isolation and the other legacy failures are not fixed — repair requires the disposable harness to iterate and is scheduled before the relevant capability phases enable those features. Frontend lint debt (115 errors) is documented as concentrated in legacy/non-pilot code; the supported-pilot-path lint-clean assertion is not yet re-verified by a run in this phase. No assertion was weakened, no security test skipped, no timeout increased.
 
 **Phase 6 gate: pilot gate GREEN and legacy debt EXPLICITLY ISOLATED (COMPLETE_WITH_EXTERNAL_GATES). Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 7 (capability inventory and modular-monolith boundaries); later phases inherit a trustworthy pilot gate and an explicit debt ledger. Checkpoint: commit `Isolate Kaya baseline debt and add trustworthy release checks`.
+
+## Phase 7 — Capability inventory and modular-monolith boundaries
+
+[The domain map](KAYA_DOMAINS.md) assigns every active router and service to one of the modular-monolith domains (identity, organizations, credentialing, consent, patients, triage, scheduling, care-episodes, clinical-records, communications, billing, integrations, operations), lists the GeoVision-legacy removal-candidate routers, sets dependency rules, records that the canonical identity is the main-product `User` (the accounts base is compatibility-only, with convergence deferred to Phase 12/32 without merging or deleting data here), and gives a convergence plan for the overlapping account/payment/consultation/doctor/verification paths. Each active surface has one owning domain and one truthful capability state; under the hold every clinical capability is DISABLED_PENDING_GATE and unreachable by default.
+
+Five architecture tests (`backend/phase7_tests`) enforce the boundaries by static import scan: provider adapters never import routers (currently clean), the domain-pure modules `governance`/`phase1_policy` import no app config/database/routers (so new domain code is testable without the whole app or a provider), the held `main.py` imports no clinical routers at module level, and no NEW cross-router shortcut may be introduced — the seven legacy cross-router imports are baselined exactly (the test fails on any new pair and on a stale baseline), allowing incremental extraction without silently permitting new coupling.
+
+Tests: 5 new boundary tests plus the phase safety suites (293 passed, 1 skipped) green, no regression. Additive documentation and tests only; no code moved, no route enabled, no data merged or deleted.
+
+**Phase 7 engineering gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 8 (threat model and end-to-end data-flow map). Checkpoint: commit `Define Kaya modular-monolith domains and boundary tests`.
