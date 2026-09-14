@@ -38,3 +38,7 @@ The following rows refine the existing gates for the [draft pilot scope](KAYA_PI
 | P1-G08 | Exact perimeter and pilot release — OPEN / BLOCKED_EXTERNAL | Independent security reviewer and release board | Matching canonical/mirrored policy, direct-route and failure-path evidence, approved scope/caps/dates/rota, exact artifact/environment, remaining release gates and signed residual-risk decision |
 
 Every gate is due before real participation, live provider activation or scope expansion. An unset required value or absent/expired/rejected evidence must deny admission. A policy flag, successful synthetic test, public metadata endpoint, informational client screen or selected market cannot change a human approval state. Phase 1 validation and completion status will be recorded in [execution status](KAYA_EXECUTION_STATUS.md); this gate update makes no pass claim.
+
+## Phase 2 — accountability model
+
+The [governance model](KAYA_GOVERNANCE_MODEL.md) adds a twelve-function RACI, preparer/reviewer/approver/operator separation, and a machine-checkable release board over the gates above. The coding agent is `engineering_preparer` with `approval_prohibited = true`; no code path lets it close a gate, accept risk, or self-sign readiness. Every gate here remains OPEN / BLOCKED_EXTERNAL pending named human owners and dated signed evidence. The accountability roles are proposed, not assigned.

@@ -42,3 +42,7 @@ Phase 0 audit gate PASS with external gates OPEN. Remaining unchecked items abov
 The [Phase 1 human gates](KAYA_HUMAN_GATES.md#phase-1-planning-decision-and-specific-gates) remain launch-blocking even after engineering checks pass. No Phase 2 implementation is included in this checkpoint.
 
 Phase 1 engineering gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste Phase 2: YES for isolated governance/evidence work only.
+
+## Phase 2 — release board
+
+The pilot release board returns **GO / LIMITED_GO / HOLD / STOP** and is defined and enforced in code: [governance model](KAYA_GOVERNANCE_MODEL.md#5-release-board), policy [`backend/app/kaya_governance.json`](../backend/app/kaya_governance.json), evaluator `backend/app/governance.py::release_decision`, tests `backend/governance_tests/`. It **defaults to HOLD**, returns STOP on an open P0, and fails closed on any missing, expired, contradictory, environment-mismatched, unknown, wrong-authority, or commit-only gate. A GO requires all eleven gates APPROVED (or NOT_APPLICABLE) by the correct named human owner with unexpired, non-commit, environment-matched evidence. No gate is approved by any local checkpoint; all remain OPEN / BLOCKED_EXTERNAL.

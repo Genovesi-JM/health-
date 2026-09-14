@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -94,3 +94,17 @@ Restoration must preserve the Phase 0 backend/deployment hold. Restore reviewed 
 
 
 **Phase 1 engineering gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 2 accountable governance, risk ownership and evidence-system work in isolation. Phase 2 has not started. Formal adoption and all P1-G01–P1-G08 gates remain OPEN / BLOCKED_EXTERNAL; no gate is approved by the local checkpoint. The checkpoint is identified by commit message `Define Kaya Phase 1 Angola Luanda pilot perimeter` and its hash in the completion report.
+
+## Phase 2 — Accountable governance, risk ownership and evidence system
+
+The starting Phase 2 checkpoint is the Phase 1 commit on the same branch and canonical origin. No fetch, pull, push, branch switch, merge, deployment or external communication occurred in Phase 2. The four original dirty files (email log and three untracked frontend tests) remain excluded.
+
+Phase 2 adds a machine-checkable governance and evidence system in isolation. [The governance policy](../backend/app/kaya_governance.json) encodes a twelve-function RACI, thirteen roles, the risk and hazard taxonomy with P0 stop conditions, residual-risk acceptance fields, a seven-category change-control map, and the eleven release-board gates and owners. [The governance module](../backend/app/governance.py) enforces it and fails closed: the release board defaults to HOLD and returns STOP on an open P0, HOLD on a missing/expired/contradictory/environment-mismatched/unknown gate, a wrong-authority approval, a rejected gate, or an approval evidenced only by a commit hash; risk acceptance requires explicit, unexpired, attributable fields, forbids P0 acceptance, and forbids high-impact self-approval and any approval by the coding agent; change control fails closed on an unknown category; and the evidence index is append-only with immutable, superseded-not-rewritten records that reject secret or health-data content. See [the governance model](KAYA_GOVERNANCE_MODEL.md) and [the append-only decision & evidence index](KAYA_DECISION_EVIDENCE_INDEX.md).
+
+The coding agent is defined as `engineering_preparer` with `approval_prohibited = true`; no code path lets it approve evidence, accept risk, or self-sign readiness. No human owner is named, no launch gate is closed, and no release is approved by this phase; those remain external and BLOCKED_EXTERNAL. The governance system imports no clinical settings, database, request context, secrets or health data, and does not touch the Phase 0/1 held entry points.
+
+Final engineering checks pass: 35 new governance tests plus the 38 Phase 0 hold tests and 74 Phase 1 tests (147 total in the phase safety suites) green with no regression. The legacy `tests/` suite retains its pre-existing failures and is out of scope for this phase; no full-suite or dependency-audit result is claimed fresh here.
+
+Restoration must preserve the Phase 0 backend/deployment hold and the Phase 1 perimeter. The governance files are additive and side-effect-free; removing them does not reopen any capability. No data or schema migration was executed.
+
+**Phase 2 engineering gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 3 (quarantine of unsupported emergency and outcome claims) in isolation. Phase 3 has not started. Named accountable humans and all launch gates remain OPEN / BLOCKED_EXTERNAL; no gate is approved by the local checkpoint. The checkpoint is identified by commit message `Build Kaya Phase 2 governance and evidence system` and its hash in the completion report.

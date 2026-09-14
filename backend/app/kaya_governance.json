@@ -1,0 +1,132 @@
+{
+  "governance_version": 1,
+  "evidence_date": "2026-09-14",
+  "scope_note": "Machine-checkable governance model for Kaya's safety-led transformation. Contains no secrets and no health data. Role assignments are proposed accountability only; no person is named or has accepted authority. A code commit alone can never represent a clinical, legal, privacy, security, accessibility, or operational approval.",
+  "roles": {
+    "product_owner": {"name": "Product owner", "authority_source": "external_appointment"},
+    "clinical_safety_lead": {"name": "Independent clinical safety lead", "authority_source": "external_appointment"},
+    "medical_director": {"name": "Medical direction / accountable clinical owner", "authority_source": "external_appointment"},
+    "privacy_dpo": {"name": "Privacy lead / DPO with qualified local counsel", "authority_source": "external_appointment"},
+    "security_lead": {"name": "Independent information-security reviewer", "authority_source": "external_appointment"},
+    "credentialing_authority": {"name": "Authorized credentialing decision maker", "authority_source": "external_appointment"},
+    "operations_owner": {"name": "Operations owner", "authority_source": "external_appointment"},
+    "support_owner": {"name": "Support owner", "authority_source": "external_appointment"},
+    "accessibility_reviewer": {"name": "Accessibility reviewer", "authority_source": "external_appointment"},
+    "finance_owner": {"name": "Commercial / finance owner", "authority_source": "external_appointment"},
+    "incident_commander": {"name": "Incident command", "authority_source": "external_appointment"},
+    "release_board": {"name": "Independent release board", "authority_source": "external_appointment"},
+    "engineering_preparer": {"name": "Coding agent / engineering preparer", "authority_source": "engineering", "approval_prohibited": true, "prepares_only": true}
+  },
+  "raci": [
+    {"function": "Product perimeter and pilot scope", "responsible": ["product_owner"], "accountable": "product_owner", "consulted": ["clinical_safety_lead", "privacy_dpo"], "informed": ["release_board"]},
+    {"function": "Clinical safety (rules, hazards, escalation)", "responsible": ["clinical_safety_lead"], "accountable": "clinical_safety_lead", "consulted": ["medical_director"], "informed": ["release_board"]},
+    {"function": "Medical direction / clinical ownership", "responsible": ["medical_director"], "accountable": "medical_director", "consulted": ["clinical_safety_lead"], "informed": ["release_board"]},
+    {"function": "Privacy, lawful basis, consent, transfers", "responsible": ["privacy_dpo"], "accountable": "privacy_dpo", "consulted": ["security_lead"], "informed": ["release_board"]},
+    {"function": "Information security and authorization", "responsible": ["security_lead"], "accountable": "security_lead", "consulted": ["privacy_dpo", "credentialing_authority"], "informed": ["release_board"]},
+    {"function": "Credentialing and clinical privileges", "responsible": ["credentialing_authority"], "accountable": "credentialing_authority", "consulted": ["security_lead", "medical_director"], "informed": ["release_board"]},
+    {"function": "Operations and monitoring", "responsible": ["operations_owner"], "accountable": "operations_owner", "consulted": ["incident_commander"], "informed": ["release_board"]},
+    {"function": "Support and complaints", "responsible": ["support_owner"], "accountable": "support_owner", "consulted": ["operations_owner"], "informed": ["release_board"]},
+    {"function": "Accessibility", "responsible": ["accessibility_reviewer"], "accountable": "accessibility_reviewer", "consulted": ["product_owner"], "informed": ["release_board"]},
+    {"function": "Commercial and finance", "responsible": ["finance_owner"], "accountable": "finance_owner", "consulted": ["product_owner"], "informed": ["release_board"]},
+    {"function": "Incident command", "responsible": ["incident_commander"], "accountable": "incident_commander", "consulted": ["operations_owner", "clinical_safety_lead"], "informed": ["release_board"]},
+    {"function": "Release authority", "responsible": ["release_board"], "accountable": "release_board", "consulted": ["clinical_safety_lead", "privacy_dpo", "security_lead"], "informed": ["product_owner"]}
+  ],
+  "separation_of_duties": {
+    "self_approval_prohibited": true,
+    "coding_agent_role": "engineering_preparer",
+    "coding_agent_may_approve": false,
+    "high_impact_requires_independent_approver": true,
+    "high_impact_severities": ["P0", "P1"],
+    "preparer_reviewer_approver_operator_distinct": true
+  },
+  "risk_taxonomy": {
+    "severity_scale": {
+      "P0": "Catastrophic: can cause death, serious harm, unlawful health-data exposure, or false clinical reassurance. Fails closed and stops release.",
+      "P1": "Critical: major clinical, privacy, security, or availability harm; blocks release until closed or independently accepted with expiry.",
+      "P2": "Moderate: bounded harm or degraded service; may proceed only with a recorded, expiring acceptance.",
+      "P3": "Low: minor or cosmetic; tracked without blocking."
+    },
+    "likelihood_scale": {
+      "L4": "Expected in normal operation",
+      "L3": "Likely under common conditions",
+      "L2": "Possible under specific conditions",
+      "L1": "Rare / requires unusual conditions"
+    },
+    "p0_stop_conditions": [
+      "Any triage or clinical path can return LOW or SELF_CARE from missing, malformed, contradictory, stale, or incomplete input",
+      "Any public copy claims dispatch, hospital pre-alert, reduced waiting time, guaranteed safety, diagnosis, or clinician replacement without verified evidence",
+      "Any real patient or clinician data present in code, tests, fixtures, logs, prompts, seeds, or demos",
+      "Any external processor (AI, video, payments, credentials, messaging, device ingestion) reachable without an explicit disabled boundary and dated human approval",
+      "Any public user path can self-assign a clinical or administrative privilege",
+      "Any emergency instruction is fabricated or non-functional for the released jurisdiction"
+    ],
+    "acceptance_required_fields": [
+      "risk_id",
+      "residual_severity",
+      "accepted_by_role",
+      "accepted_by_person",
+      "rationale",
+      "decision_date",
+      "expiry_date",
+      "evidence_link",
+      "change_author"
+    ],
+    "p0_acceptance_prohibited": true
+  },
+  "change_control": {
+    "note": "Every category requires a distinct human approver who is neither the preparer nor a party prohibited from approving. A code commit is preparation, never approval.",
+    "categories": {
+      "clinical_rules": {"required_reviewers": ["clinical_safety_lead"], "required_approver": "medical_director"},
+      "legal_copy": {"required_reviewers": ["privacy_dpo"], "required_approver": "product_owner"},
+      "consent_documents": {"required_reviewers": ["privacy_dpo", "clinical_safety_lead"], "required_approver": "privacy_dpo"},
+      "authorization_policy": {"required_reviewers": ["security_lead"], "required_approver": "security_lead"},
+      "providers": {"required_reviewers": ["security_lead", "privacy_dpo"], "required_approver": "operations_owner"},
+      "infrastructure": {"required_reviewers": ["security_lead"], "required_approver": "operations_owner"},
+      "emergency_information": {"required_reviewers": ["clinical_safety_lead", "privacy_dpo"], "required_approver": "medical_director"}
+    }
+  },
+  "release_board": {
+    "verdicts": ["GO", "LIMITED_GO", "HOLD", "STOP"],
+    "default_verdict": "HOLD",
+    "fail_closed_verdict": "HOLD",
+    "stop_verdict": "STOP",
+    "gate_ids": [
+      "jurisdiction_and_intended_use",
+      "clinical_safety",
+      "licensed_operation",
+      "privacy_and_legal",
+      "security",
+      "credentialing",
+      "accessibility",
+      "operations_and_support",
+      "infrastructure_and_recovery",
+      "commercial",
+      "pilot_release"
+    ],
+    "gate_owner": {
+      "jurisdiction_and_intended_use": "product_owner",
+      "clinical_safety": "clinical_safety_lead",
+      "licensed_operation": "medical_director",
+      "privacy_and_legal": "privacy_dpo",
+      "security": "security_lead",
+      "credentialing": "credentialing_authority",
+      "accessibility": "accessibility_reviewer",
+      "operations_and_support": "operations_owner",
+      "infrastructure_and_recovery": "operations_owner",
+      "commercial": "finance_owner",
+      "pilot_release": "release_board"
+    },
+    "approved_status": "APPROVED",
+    "allowed_gate_status": ["OPEN", "APPROVED", "REJECTED", "NOT_APPLICABLE"],
+    "fail_closed_conditions": [
+      "missing_gate",
+      "missing_evidence",
+      "expired_evidence",
+      "contradictory_evidence",
+      "environment_mismatch",
+      "unknown_status",
+      "commit_only_approval",
+      "open_p0"
+    ]
+  }
+}
