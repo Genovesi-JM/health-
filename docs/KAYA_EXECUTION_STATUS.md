@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster). Phase R6 COMPLETE (communication boundary). Phase R7 COMPLETE (geographic coverage). Phase R8 COMPLETE (SLA timing governance; internal targets, never a promise). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster). Phase R6 COMPLETE (communication boundary). Phase R7 COMPLETE (geographic coverage). Phase R8 COMPLETE (SLA timing governance). Phase R9 COMPLETE (tamper-evident incident audit; boundary events tracked). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -636,3 +636,11 @@ Response timing targets are internal governance thresholds, never promises ([`ba
 Six tests (`backend/phaseR8_tests`) prove targets-require-signature+values, SLA-never-a-promise, reporter-no-time-promise, ack/resolution within-target with pending→None, and internal breach detection.
 
 **Phase R8 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response SLA and timing governance`.
+
+## Phase R9 — Response audit & incident record
+
+Every Response incident lifecycle step is recorded on an append-only tamper-evident hash chain ([`backend/app/response_audit.py`](../backend/app/response_audit.py), reusing the Phase 36 AuditChain). `ResponseIncidentLog` records intake/route/acknowledge/fallback/boundary-event/resolution/kill; `verify()` detects tampering; unknown event kinds are rejected; `boundary_events()` surfaces the R15 zero-tolerance metric; `incident_events(id)` queries one trail; `can_read_response_audit` restricts reads to auditor/security/compliance or a response supervisor with `audit_read`; `delete_prohibited` raises. See [Response audit](KAYA_RESPONSE_AUDIT.md).
+
+Seven tests (`backend/phaseR9_tests`) prove record+verify, unknown-event rejection, boundary-event tracking, tamper-breaks-verify, per-incident query, access control, and delete-prohibited.
+
+**Phase R9 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response tamper-evident incident audit`.
