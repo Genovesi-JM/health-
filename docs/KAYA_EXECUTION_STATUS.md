@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster). Phase R6 COMPLETE (communication boundary). Phase R7 COMPLETE (geographic coverage; out-of-area is info-only, location never inferred). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster). Phase R6 COMPLETE (communication boundary). Phase R7 COMPLETE (geographic coverage). Phase R8 COMPLETE (SLA timing governance; internal targets, never a promise). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -628,3 +628,11 @@ Response operates only inside explicitly approved coverage areas ([`backend/app/
 Five tests (`backend/phaseR7_tests`) prove covered-confirmed→capabilities, out-of-area→info-only+notice, inferred/coarse-not-trusted, unknown-location info-only, and unsigned-map-covers-nothing.
 
 **Phase R7 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response geographic coverage limits`.
+
+## Phase R8 — Response SLA & timing governance
+
+Response timing targets are internal governance thresholds, never promises ([`backend/app/response_sla.py`](../backend/app/response_sla.py)). `targets_approved` requires a named signer and positive ack/resolution targets so Response cannot operate against unsigned/unset targets; `sla_target_is_a_promise()` is always False and `reporter_message_makes_no_time_promise` reuses the Phase 21 guard; `ack_within_target`/`resolution_within_target`/`is_breach` compute internal governance signals (None when pending) for a named owner, never a reporter-facing event. See [Response SLA](KAYA_RESPONSE_SLA.md).
+
+Six tests (`backend/phaseR8_tests`) prove targets-require-signature+values, SLA-never-a-promise, reporter-no-time-promise, ack/resolution within-target with pending→None, and internal breach detection.
+
+**Phase R8 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response SLA and timing governance`.
