@@ -1,0 +1,78 @@
+name: kaya-ci
+
+# Reproducible, isolated checks. This workflow can never contact a live
+# clinical provider, charge money, send real mail, or use production data:
+# it references no secrets and forces synthetic/test mode with empty provider
+# keys. It does not deploy.
+
+on:
+  push:
+    branches-ignore: []
+  pull_request:
+
+# Least privilege: read-only, no write scopes.
+permissions:
+  contents: read
+
+concurrency:
+  group: kaya-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Force isolated synthetic mode regardless of runner environment.
+  ENV: test
+  KAYA_EXECUTION_MODE: synthetic
+  KAYA_DISABLE_RATE_LIMIT: "1"
+  # Providers are disabled and fail closed: no live email, AI, payments,
+  # video, credential, or storage calls. Empty on purpose.
+  OPENAI_API_KEY: ""
+  STRIPE_SECRET_KEY: ""
+  STRIPE_WEBHOOK_SECRET: ""
+  PAYSTACK_SECRET_KEY: ""
+  FLUTTERWAVE_SECRET_KEY: ""
+  MULTICAIXA_API_KEY: ""
+  SUMSUB_SECRET_KEY: ""
+  SMTP_HOST: ""
+  DO_SPACES_KEY: ""
+  DO_SPACES_SECRET: ""
+
+jobs:
+  backend-safety-suites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+          cache: pip
+      - name: Install backend (pinned)
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Phase safety suites (bounded)
+        working-directory: backend
+        run: |
+          timeout 600 python -m pytest \
+            phase0_tests phase1_tests governance_tests phase3_tests phase4_tests phase5_tests \
+            -q --junitxml=../ci-artifacts/backend-safety.xml
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-safety-results
+          path: ci-artifacts/
+          if-no-files-found: ignore
+
+  secret-and-data-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks (secret scan, no allowlist bypass)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"

@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -129,3 +129,13 @@ Hygiene actions: the runtime email log `backend/email_log.txt` is no longer trac
 Tests: 6 new repository-hygiene tests plus the phase safety suites (156 total) green, no regression. This phase changes only repository hygiene, CI defaults, ignore rules, and documentation; no runtime, schema, provider, or data change, and no history was deleted.
 
 **Phase 4 engineering gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 5 (reproducible toolchain, isolated test configuration, CI bootstrap). Checkpoint: commit `Establish Kaya repository identity, hygiene, and source-of-truth boundaries`.
+
+## Phase 5 — Reproducible toolchain, isolated test configuration, and CI bootstrap
+
+Toolchain pins are explicit: Python 3.12 (`.python-version`, and CI `python-version-file`), Node 20 LTS (`.nvmrc`), the hash-locked backend audit environment (`backend/requirements.phase0.lock`), and committed frontend/mobile lockfiles used with `npm ci`. [The toolchain doc](KAYA_TOOLCHAIN.md) records versions, upgrade ownership, deterministic install rules, and bounded test commands with per-suite timeouts.
+
+A new CI workflow ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs the phase-safety suites and a Gitleaks secret scan under least privilege (`permissions: contents: read`, no write scopes), references no repository secrets, forces `ENV=test` and `KAYA_EXECUTION_MODE=synthetic` with empty provider keys, bounds every job with `timeout-minutes`, cancels superseded runs, and uploads test-result artifacts. It cannot contact a live provider, charge money, send real mail, or use production data, and it performs no deployment. Eight contract tests (`backend/phase5_tests`) lock these guarantees (least privilege, no secrets, synthetic/provider-disabled env, bounded/cancelling, no deploy mechanism, phase-safety coverage, secret scan). Deeper backend test isolation (inherited-config clearing and Python network denial before app import) is the Phase 0 harness, referenced here.
+
+Tests: 8 new toolchain/CI contract tests plus the phase safety suites (164 total) green, no regression. This phase adds configuration, CI, and docs only; no runtime, schema, provider, or data change.
+
+**Phase 5 engineering gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 6 (repair the red baseline and establish trustworthy release checks). Checkpoint: commit `Bootstrap Kaya reproducible toolchain and isolated CI`.
