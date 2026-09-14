@@ -557,4 +557,18 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. Clinical release HOLD (NO-GO by design).** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate; Response DISABLED by default). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+
+---
+
+# KAYA Response track (R0–R14) — synthetic & DISABLED
+
+The KAYA Response subsystem is the emergency-adjacent capability. Per risk-register R15 it is excluded/deferred and stays synthetic and DISABLED behind a two-person activation gate. These phases build fail-closed governance and refusing scaffolding only — NO emergency dispatch, hospital contact, or auto-escalation is implemented, and none may be without a named human release board and a separate two-person activation ceremony.
+
+## Phase R0 — Response activation gate & kill-switch
+
+Response is disabled by default and stays disabled unless a two-person ceremony arms it for a bounded window against an approved scope ([`backend/app/response_activation.py`](../backend/app/response_activation.py)). `can_activate` requires two distinct named humans (never the agent), an approved signed scope, an approved jurisdiction, and a bounded window (≤ 12h); `activate` raises otherwise. `is_active` is fail-closed and window-expiring; `kill` is a single-actor immediate kill-switch (off is the safe direction); `auto_activation_possible()` is always False. See [Response activation](KAYA_RESPONSE_ACTIVATION.md).
+
+Ten tests (`backend/phaseR0_tests`) prove disabled-by-default, valid two-person activation, agent-cannot-approve, distinct-approvers, scope+jurisdiction required, bounded window, activate-raises, expiry, single-actor kill-switch, and no-auto-activation.
+
+**Phase R0 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response activation gate and kill-switch`.
