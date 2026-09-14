@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -215,3 +215,15 @@ Nine tests (`backend/phase12_tests`) prove the guard (privileged requests normal
 Tests: 9 new identity tests plus the phase safety suites (334 passed, 1 skipped) green, no regression. The auth.py change is additive defense-in-depth on held code (not reachable while the app is held; end-to-end registration behavior is re-verified in the disposable harness alongside the MFA suite, DBT-01).
 
 **Phase 12 gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 13 (MFA, OAuth step-up, session families, browser security). Checkpoint: commit `Establish Kaya canonical identity and no-self-promotion guard`.
+
+## Phase 13 — MFA, OAuth step-up, session families, and browser security
+
+The runtime already carries strong controls (verified by contract tests): MFA is mandatory for all high-impact roles; `assert_mfa_session` rejects partial/`mfa_challenge` tokens so a challenge token never reaches protected work; OAuth and password logins share `_build_auth_response`/`assert_mfa_session` so OAuth cannot bypass MFA; recovery codes are hashed and single-use; and refresh-token families rotate on refresh with reuse of a rotated token revoking the whole family.
+
+Phase 13 adds the canonical, domain-pure assurance policy ([`backend/app/authsecurity.py`](../backend/app/authsecurity.py)): `requires_step_up`/`is_auth_fresh`/`assert_step_up` require a fresh MFA step-up (5 min; 2 min for break-glass) for credential decisions, prescriptions, exports, payments, privilege changes and recovery-code regeneration, failing closed when MFA is missing or stale; and `detect_family_reuse` is the pure reuse rule (already-revoked or non-current token ⇒ family reuse). [Session & browser security](KAYA_SESSION_SECURITY.md) documents these, the session-revocation propagation requirements, auth-error hygiene, and the KNOWN browser-storage risk R18 (script-accessible `localStorage` bearer) with the launch-blocking target design (HttpOnly/SameSite cookies + BFF + CSRF).
+
+Twelve tests (`backend/phase13_tests`) prove the step-up and reuse rules and statically verify the runtime fails closed on partial tokens, hashes single-use recovery codes, revokes reused refresh families, and enforces MFA for OAuth logins.
+
+Tests: 12 new auth-security tests plus the phase safety suites (346 passed, 1 skipped) green, no regression. New code is a domain-pure policy plus docs; no held-runtime behavior changed. End-to-end auth flows (stolen refresh, concurrent refresh, MFA replay, OAuth callback tampering, CSRF) are re-verified in the disposable harness alongside the MFA suite (DBT-01); the browser cookie/BFF migration and OAuth PKCE/nonce hardening remain engineering gates (R18).
+
+**Phase 13 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 14 (tenant, episode, purpose, and separation-of-duties authorization). Checkpoint: commit `Add Kaya step-up assurance and session-family reuse rules`.

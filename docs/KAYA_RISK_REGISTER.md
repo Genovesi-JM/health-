@@ -37,3 +37,9 @@ Phase 1 limits local exposure by defining informational client routes and one pu
 ## Phase 8 — threat model
 
 The [threat model](KAYA_THREAT_MODEL.md) maps every sensitive data category (source/purpose/destination/processor/retention/authorized-actor), names a threat plus a preventive and a detective control for each internet-facing and cross-tenant boundary, and ties high-risk threats (account takeover, privilege escalation, cross-tenant/IDOR, consent bypass, webhook forgery/replay, AI egress, malicious file) to the capability phase that adds their negative tests, or to a time-bound risk row here. Diagrams alone are not accepted as mitigation. A change to any processor, data category, role, jurisdiction, or trust boundary requires the model to be revised (release-blocking if skipped).
+
+## Phase 13 — session security
+
+| ID | Severity and reachability | Risk and evidence | Owner needed | Mitigation and closure evidence |
+| --- | --- | --- | --- | --- |
+| R18 | High; web-only, held | The web client stores a bearer/user object in script-accessible `localStorage`; any XSS could exfiltrate it. Target: HttpOnly/Secure/SameSite cookies + BFF + CSRF + redirect allowlist + short access-token lifetimes ([session security](KAYA_SESSION_SECURITY.md)). | Security and frontend leads | Held (no web exposure); migrate before any web exposure; add CSRF and no-long-lived-bearer browser tests |
