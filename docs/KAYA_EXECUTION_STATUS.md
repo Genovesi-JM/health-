@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary; dispatch permanently excluded). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake; never auto-acts). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -580,3 +580,11 @@ Defines what Response is not ([`backend/app/response_scope.py`](../backend/app/r
 Ten tests (`backend/phaseR1_tests`) prove scope validity, scope-cannot-approve-excluded, unsigned-scope rejection, excluded-capability-never-permitted, active+jurisdiction+allowlist gating, information-only unknown jurisdiction, boundary notice, and no-external-action copy.
 
 **Phase R1 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response scope and exclusion boundary`.
+
+## Phase R2 — Response incident intake & red-flag detection
+
+Incident intake is fail-closed and never auto-acts ([`backend/app/response_intake.py`](../backend/app/response_intake.py), composing Phase 28 red-flags and the R0/R1 gates). `intake` accepts a report only when Response is active, the `symptom_intake` capability is permitted for the jurisdiction/scope, the report is consented, and the text is non-empty; the emergency redirect and boundary notice are computed on every intake regardless. `incident_auto_actionable` is always False — an accepted report is routed for human review, never a command that dispatches or contacts anyone; `IncidentLedger` dedupes retried submissions. See [Response intake](KAYA_RESPONSE_INTAKE.md).
+
+Seven tests (`backend/phaseR2_tests`) prove accepted-when-active/permitted, rejected-when-inactive, unapproved-jurisdiction rejection, consent/empty-text rejection, always-computed emergency redirect + notice, never-auto-actionable, and dedup.
+
+**Phase R2 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response incident intake and red-flag detection`.
