@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback; safe-and-loud, boundary event). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster; no coverage gap fails closed). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -604,3 +604,11 @@ When an escalation cannot reach or be acknowledged, the system fails safe and lo
 Five tests (`backend/phaseR4_tests`) prove ack-deadline detection, failed-escalation classification, boundary-event marking, the safe-and-loud fallback, and the reporter-always-informed invariant.
 
 **Phase R4 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response failed-escalation fallback`.
+
+## Phase R5 — Responder identity, on-call roster & authority
+
+A responder holds Response authority only within a signed on-call shift, credential-current and Response-privileged, for an approved jurisdiction ([`backend/app/response_roster.py`](../backend/app/response_roster.py)). `responder_authorized` enforces shift/credentials/privilege/profession/jurisdiction/not-revoked; `coverage_ok` samples the window and requires at least one eligible responder at every instant with a signed roster, so any coverage gap fails closed (`coverage_gaps` lists the uncovered instants); `substitute_available` returns the next eligible responder. See [Response roster](KAYA_RESPONSE_ROSTER.md).
+
+Six tests (`backend/phaseR5_tests`) prove authority rules, unsigned-roster-no-coverage, full coverage, coverage-gap-fails-closed with gap listing, overlapping-slots-close-the-gap, and substitute selection.
+
+**Phase R5 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response on-call roster and responder authority`.
