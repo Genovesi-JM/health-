@@ -162,7 +162,7 @@ export default function PatientPrescriptionRequestPage() {
           {/* Safety notice */}
           <div style={{ display: 'flex', gap: '0.6rem', padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#3b82f6' }}>
             <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>{t('ppr.safety_pre')} <strong>112</strong> {t('ppr.safety_post')}</span>
+            <span>{t('ppr.safety_pre')} {t('ppr.safety_post')}</span>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

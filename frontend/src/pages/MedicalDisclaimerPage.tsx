@@ -46,7 +46,7 @@ export default function MedicalDisclaimerPage() {
           <p style={{ margin: 0, color: '#7f1d1d', fontSize: '0.9rem', lineHeight: 1.6 }}>
             If you or someone you know is experiencing a medical emergency — including chest pain,
             difficulty breathing, loss of consciousness, severe bleeding, or any other life-threatening
-            condition — <strong>call 112 (EU) or your local emergency number immediately</strong>{' '}
+            condition — <strong>call your local emergency number immediately</strong>{' '}
             and go to your nearest emergency department.{' '}
             <strong>Do not use this platform in an emergency.</strong>
           </p>

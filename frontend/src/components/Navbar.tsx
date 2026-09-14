@@ -34,7 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { to: '/devices',   label: 'Devices & Kits',   sub: 'Tensiómetros, glicómetros e mais' },
       { to: '/pricing',   label: 'Preços',            sub: 'Planos para pacientes e clínicas' },
-      { to: '/urgencia',  label: 'Urgência',          sub: 'Pré-alerta hospitalar' },
+      { to: '/urgencia',  label: 'Urgência',          sub: 'Orientação de emergência' },
       { to: '/faq',       label: 'FAQ',               sub: 'Perguntas frequentes' },
     ],
   },

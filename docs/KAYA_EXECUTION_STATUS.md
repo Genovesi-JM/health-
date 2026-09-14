@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -108,3 +108,14 @@ Final engineering checks pass: 35 new governance tests plus the 38 Phase 0 hold 
 Restoration must preserve the Phase 0 backend/deployment hold and the Phase 1 perimeter. The governance files are additive and side-effect-free; removing them does not reopen any capability. No data or schema migration was executed.
 
 **Phase 2 engineering gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 3 (quarantine of unsupported emergency and outcome claims) in isolation. Phase 3 has not started. Named accountable humans and all launch gates remain OPEN / BLOCKED_EXTERNAL; no gate is approved by the local checkpoint. The checkpoint is identified by commit message `Build Kaya Phase 2 governance and evidence system` and its hash in the completion report.
+
+
+## Phase 3 — Quarantine of unsupported emergency and outcome claims
+
+Kaya has no hospital-notification, pre-alert, dispatch, or ambulance integration. Phase 3 removed the false emergency/outcome claims (hospital pre-alert, pre-arrival preparation, reduced waiting, greater safety, priority access, ETA, guaranteed medical-response SLA) from `frontend/src/i18n/translations.ts` and the component tree across Portuguese, English, French and Spanish, and replaced them with truthful, non-promissory emergency guidance: Kaya is not an emergency service; in an emergency contact local emergency services directly. No jurisdiction is assumed, so no emergency number is hardcoded (the prior 112 in shared copy, the prescription-request banner, the disclaimer page and the navbar were removed or made jurisdiction-neutral).
+
+A repository copy-contract test ([`backend/phase3_tests/test_copy_contract.py`](../backend/phase3_tests/test_copy_contract.py)) scans all locales in the translation table and the component sources on every run and fails if any forbidden claim or hardcoded emergency number reappears. Reachability is further bounded by the Phase 1 hold and server-owned flags, so a stale client build cannot re-activate a removed capability. KAYA Response is recorded as a separate, deferred product with no live routes, navigation, pricing, API, dispatch or hospital integration, and the evidence bar for any future emergency/hospital claim is documented ([record](KAYA_EMERGENCY_CLAIMS_AND_RESPONSE_DEFERRAL.md)). Risk R02 source is CLOSED and test-guarded; independent verification of already-deployed/remote assets remains OPEN.
+
+Final engineering checks pass: 3 copy-contract tests plus the phase safety suites (Phase 0 hold, Phase 1, Phase 2 governance) green with no regression. This phase changes only user-facing copy and adds tests; no runtime, schema, provider or data change.
+
+**Phase 3 engineering gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 4 (repository identity, hygiene, and source-of-truth boundaries) in isolation. Any future emergency or hospital claim requires written partner and clinical authority plus runtime evidence, which remain OPEN / BLOCKED_EXTERNAL. Checkpoint: commit `Quarantine Kaya unsupported emergency and outcome claims`.
