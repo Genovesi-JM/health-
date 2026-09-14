@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -237,3 +237,15 @@ Twenty negative tests (`backend/phase14_tests`) prove default deny, cross-tenant
 Tests: 20 new authorization tests plus the phase safety suites (366 passed, 1 skipped) green, no regression. The policy is the canonical domain-pure boundary; wiring every route/job/signed-URL/export/mobile endpoint to it and the end-to-end IDOR/cross-tenant suite against the running app is an engineering adoption task (harness-verified). Until then the held 503 default is operative.
 
 **Phase 14 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 15 (versioned consent ledger and representative authority). Checkpoint: commit `Enforce Kaya default-deny authorization policy boundary`.
+
+## Phase 15 — Versioned consent ledger and representative authority
+
+Consent is now a server-owned, append-only, versioned model ([`backend/app/consent.py`](../backend/app/consent.py)): a document catalog with immutable content hash, jurisdiction, language, purpose, kind, required/optional, effective dates, supersession and an approved source; and a ledger that records subject, representative, exact document/version/hash, language, notice evidence, action and capability state. `has_effective_consent` fails closed on missing, refused, withdrawn, stale, mismatched, untranslated, unapproved or expired consent; necessary and optional kinds are never bundled; withdrawal stops future optional processing without deleting legally-required records (kept under legal hold); and representative authority is an explicit bounded record (relationship/scope/verification/expiry/revocation) never inferred from shared contact details. See [the consent model](KAYA_CONSENT_MODEL.md).
+
+Seventeen tests (`backend/phase15_tests`) prove version/hash/language fail-closed, refusal-is-not-acceptance, withdrawal effects (future optional stopped, required records retained), optional-not-bundled-with-care, append-only retention, and representative denial when unverified/expired/revoked/out-of-scope.
+
+Tests: 17 new consent tests plus the phase safety suites (383 passed, 1 skipped) green, no regression. Domain-pure model + docs; wiring server operations to it end-to-end is a harness-verified adoption task.
+
+HUMAN GATE (BLOCKED_EXTERNAL): counsel and the clinical owner must approve the consent catalog, lawful-basis mapping, minor/capacity rules, and retention effects.
+
+**Phase 15 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 16 (invitation-based onboarding and lifecycle-safe deep links). Checkpoint: commit `Add Kaya versioned consent ledger and representative authority`.
