@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -193,3 +193,15 @@ Tests: 8 new legal-classification tests plus the phase safety suites (318 passed
 HUMAN GATE (BLOCKED_EXTERNAL): local healthcare and privacy counsel, the licensed care provider, and any required regulator must provide the actual determinations for every row.
 
 **Phase 10 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 11 (clinical safety case, intended use, and hazard controls). Checkpoint: commit `Classify Kaya Angola legal and regulatory issues for counsel`.
+
+## Phase 11 — Clinical safety case, intended use, and hazard controls
+
+[The clinical safety case](KAYA_CLINICAL_SAFETY_CASE.md) is a skeleton and hazard analysis, explicitly HOLD and not approved: it defines intended users (invited adults, Luanda, bounded hours, one licensed clinic), intended use (coordinate non-urgent primary care; Kaya does not diagnose, provide emergency care, dispatch, notify hospitals, or replace a clinician), tester-actionable inclusion/exclusion, assumptions/contraindications/human-oversight, and a hazard analysis for all sixteen required hazards (delayed care, false reassurance, incorrect urgency, unavailable clinician, bad handoff, wrong patient/clinician, missing record, duplicate booking, message failure, credential expiry, data corruption, translation error, AI output, device error, emergency-copy misunderstanding) with severity, prevention, detection, response, owner and residual status. It states the fail-closed triage principle (incomplete input never LOW/SELF_CARE — R01), a mitigation hierarchy, safe-degraded behavior that never presents a false reassurance or false confirmation (API/DB/video/notification/clinician-coverage/provider), and post-incident/post-launch surveillance that authorizes nothing.
+
+[The clinical content registry](KAYA_CLINICAL_CONTENT_REGISTRY.md) registers every rule set, questionnaire, threshold, instruction, disclaimer, translation, protocol and recommendation with version/author/approver/effective-dates/rollback; all items are DRAFT/unapproved and cannot change without a versioned review and a linked validation set (a governed clinical-content change; the coding agent may prepare drafts, never approve). Seven tests (`backend/phase11_tests`) enforce HOLD-until-named-owner, specific intended use/exclusions, all-hazard coverage with the required columns, safe-degraded non-confirmation, and a versioned unapproved registry.
+
+Tests: 7 new clinical-safety tests plus the phase safety suites (325 passed, 1 skipped) green, no regression. Documentation and tests only; no clinical content approved, no runtime/schema/provider/data change.
+
+HUMAN GATE (BLOCKED_EXTERNAL): only the accountable clinical safety owner and licensed care organization can approve intended use, protocols, residual clinical risk, and patient-facing clinical copy.
+
+**Phase 11 gate PASS / COMPLETE_WITH_EXTERNAL_GATES; safety case remains HOLD. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 12 (canonical account and identity model). Checkpoint: commit `Draft Kaya clinical safety case and hazard controls`.
