@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
-import { openVideoRoom } from '../utils/video';
+import { openServerVideoRoom } from '../utils/video';
 import { Calendar, Video, MapPin, ChevronLeft, ChevronRight, Check, X, Plus } from 'lucide-react';
 import { useT, type Lang } from '../i18n/LanguageContext';
 
@@ -72,6 +72,19 @@ export default function DoctorAgendaPage() {
 
   const updateStatus = (id: string, status: Appointment['status']) =>
     setAppts(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+
+  // Phase 25: video entry is server-authoritative. The backend join endpoint
+  // fails closed (503) unless an approved provider is enabled server-side, and
+  // only then returns a room_url built from an unguessable, server-issued key.
+  // The client never derives a room from an appointment/consultation id.
+  const enterTeleconsult = async (consultationId: string) => {
+    try {
+      const { data } = await api.post(`/api/v1/teleconsultations/${consultationId}/join`);
+      openServerVideoRoom(data.room_url);
+    } catch {
+      alert(t('teleconsult.unavailable') || 'Teleconsulta indisponível.');
+    }
+  };
 
   const confirmed = shownAppts.filter(a => a.status === 'confirmed' || a.status === 'in_progress').length;
   const pending   = shownAppts.filter(a => a.status === 'pending').length;
@@ -175,7 +188,7 @@ export default function DoctorAgendaPage() {
                   </div>
                 )}
                 {(a.status === 'confirmed' || a.status === 'in_progress') && (
-                  <button onClick={() => openVideoRoom(a.id)} style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1.5px solid rgba(59,130,246,0.3)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <button onClick={() => enterTeleconsult(a.id)} style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1.5px solid rgba(59,130,246,0.3)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <Video size={13} /> {t('common.enter')}
                   </button>
                 )}

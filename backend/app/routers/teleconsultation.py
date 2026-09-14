@@ -317,7 +317,14 @@ def join_session(
         raise HTTPException(status_code=409, detail="Câmara e microfone devem estar prontos.")
     participant.joined_at = datetime.utcnow()
     db.commit()
-    video_base = os.getenv("VIDEO_BASE_URL", "https://meet.jit.si").rstrip("/")
+    # Phase 25: no public-room fallback. Video is disabled unless an approved
+    # provider is configured server-side; there is no meet.jit.si default and no
+    # consultation-id-derived public room.
+    if os.getenv("VIDEO_ENABLED", "false").strip().lower() != "true":
+        raise HTTPException(status_code=503, detail="Teleconsulta indisponível: fornecedor de vídeo não aprovado.")
+    video_base = os.getenv("VIDEO_BASE_URL", "").rstrip("/")
+    if not video_base:
+        raise HTTPException(status_code=503, detail="Teleconsulta indisponível: fornecedor de vídeo não configurado.")
     log_health_audit(db, "teleconsultation.joined", user.id, "teleconsultation_session", session.id, {"role": participant.role}, request)
     return {
         "room_url": f"{video_base}/{session.room_key}",
