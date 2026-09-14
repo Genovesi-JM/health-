@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Phase 20 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Phase 20 COMPLETE_WITH_EXTERNAL_GATES. Phase 21 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -305,3 +305,15 @@ Tests: 11 new triage-validation tests plus the phase safety suites (450 passed, 
 HUMAN GATE (BLOCKED_EXTERNAL): clinical validation, risk thresholds, protocol approval, and residual-risk acceptance require qualified clinicians for the selected service and jurisdiction; the coding agent reports technical evidence only.
 
 **Phase 20 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 21 (emergency escalation and unavailable-service experience). Checkpoint: commit `Add Kaya clinician-governed triage validation framework`.
+
+## Phase 21 — Emergency escalation and unavailable-service experience
+
+Truthful escalation without representing Kaya as the responder ([`backend/app/emergency.py`](../backend/app/emergency.py)): a server-owned versioned emergency registry (jurisdiction/region/language, source URL, verification date, owner, expiry) where unknown, expired, or untranslated jurisdiction information fails to generic local-emergency guidance with no guessed number; guidance always reachable without auth/payment/account/consent/AI/video and during any outage; deterministic escalation triggers (red flags, mental-health crisis, safeguarding, failed assessment, no clinician coverage, provider outage, dangerous wait) route to approved guidance with no unverified hospital alert; copy makes no dispatch/notify/prepare/reserve/prioritize claim or wait/ETA promise (the user is never led to believe Kaya contacted an external service); and escalation telemetry keeps nonclinical operational fields only. See [emergency escalation](KAYA_EMERGENCY_ESCALATION.md).
+
+Ten tests (`backend/phase21_tests`) prove unknown/expired/language-mismatch→generic-no-number, reachability during all outages, no-external-action-claims, deterministic triggers, and telemetry health-detail stripping.
+
+Tests: 10 new emergency tests plus the phase safety suites (460 passed, 1 skipped) green, no regression.
+
+HUMAN GATE (BLOCKED_EXTERNAL): emergency numbers, pathways, translations, and service claims require dated verification by the jurisdictional clinical/operational owner.
+
+**Phase 21 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 22 (clinician availability and schedule ownership). Checkpoint: commit `Add Kaya truthful emergency escalation and outage guidance`.
