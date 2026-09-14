@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing; human-in-the-loop, no auto-dispatch). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback; safe-and-loud, boundary event). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -596,3 +596,11 @@ An accepted incident is routed to an authorized on-call human, human-in-the-loop
 Seven tests (`backend/phaseR3_tests`) prove eligibility rules, route-to-eligible, delivery≠acknowledgement, only-assigned-may-ack, no-responder-fails-closed-to-fallback, no-auto-dispatch, and first-eligible selection.
 
 **Phase R3 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response escalation routing to authorized humans`.
+
+## Phase R4 — Response failed-escalation handling & fallback
+
+When an escalation cannot reach or be acknowledged, the system fails safe and loud ([`backend/app/response_fallback.py`](../backend/app/response_fallback.py)). `ack_deadline_exceeded` and `is_failed_escalation` classify a not-delivered or delivered-but-unacknowledged-past-deadline escalation as failed; `is_boundary_event` marks a failed escalation as a zero-tolerance boundary event (R15). `handle_failure` always re-shows the reporter the emergency redirect (Phase 21) and boundary notice, escalates to a supervisor tier, records a boundary event, and never drops the incident (`silently_dropped=False`); `reporter_always_informed` is the invariant. See [Response fallback](KAYA_RESPONSE_FALLBACK.md).
+
+Five tests (`backend/phaseR4_tests`) prove ack-deadline detection, failed-escalation classification, boundary-event marking, the safe-and-loud fallback, and the reporter-always-informed invariant.
+
+**Phase R4 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response failed-escalation fallback`.
