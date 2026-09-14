@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -159,3 +159,13 @@ Five architecture tests (`backend/phase7_tests`) enforce the boundaries by stati
 Tests: 5 new boundary tests plus the phase safety suites (293 passed, 1 skipped) green, no regression. Additive documentation and tests only; no code moved, no route enabled, no data merged or deleted.
 
 **Phase 7 engineering gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 8 (threat model and end-to-end data-flow map). Checkpoint: commit `Define Kaya modular-monolith domains and boundary tests`.
+
+## Phase 8 — Threat model and end-to-end data-flow map
+
+[The threat model](KAYA_THREAT_MODEL.md) makes Kaya's trust boundaries, sensitive flows, abuse cases and processor exposure explicit. Every sensitive data category (16, from account identity to data-rights requests) has a source, purpose, destination, processor, retention rule and authorized-actor path; each internet-facing and cross-tenant boundary has a named threat with a preventive and a detective control, an owner, and a residual/phase link; the model spans mobile devices, browser storage, email, video, AI, object storage, backups, administrators and provider webhooks. Abuse cases cover minors/representatives, caregivers, employers (aggregate-only), support, reviewers, clinicians, suspended users and compromised providers. A change trigger requires revision whenever a processor, data category, role, jurisdiction or trust boundary changes, and high-risk threats are bound to negative tests in later phases or to time-bound risk rows — a diagram alone never closes a threat.
+
+Eight tests (`backend/phase8_tests`) enforce coverage of the required data categories, category attributes, threat classes and components, the presence of preventive/detective controls and the change trigger, and that the artifact carries no secret or patient data. The artifacts contain no real secrets, credentialed endpoints, patient examples or production identifiers.
+
+Tests: 8 new threat-model tests plus the phase safety suites (301 passed, 1 skipped) green, no regression. Documentation and tests only; no runtime, schema, provider or data change.
+
+**Phase 8 engineering gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 9 (data classification, minimization, retention, and transfer controls). Checkpoint: commit `Map Kaya threat model and end-to-end data flows`.
