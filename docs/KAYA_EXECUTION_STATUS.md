@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -181,3 +181,15 @@ Tests: 9 new data-control tests plus the phase safety suites (310 passed, 1 skip
 HUMAN GATE (BLOCKED_EXTERNAL): a qualified privacy/legal owner must approve lawful bases, retention periods, controller/processor roles and transfer mechanisms for the chosen jurisdiction before any real data is processed.
 
 **Phase 9 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 10 (jurisdictional legal and regulatory classification). Checkpoint: commit `Classify Kaya data and enforce redaction and transfer controls`.
+
+## Phase 10 — Jurisdictional legal and regulatory classification (Angola)
+
+[The legal issue matrix](KAYA_LEGAL_ISSUE_MATRIX.md) converts regulatory uncertainty into a bounded, counsel-owned evidence plan for Angola/Luanda. It states prominently that it is engineering issue-spotting, NOT legal advice or approval; cites the primary official sources (APD and Lei 22/11, MINSA and the Lei de Bases do SNS, ARMED and Decreto 136/21, Decreto 202/11, the professional Order, INACOM) with a requirement to re-verify currency at execution time; and enumerates fourteen launch-relevant issues (L01–L14: operating entity/controller, licensed provider, medical director/record custodian, professional regulation, health-service authorization, telemedicine, prescribing, medical-software classification, AI obligations, APD privacy, consumer rules, incident authority, insurance, emergency information), each with a scoped counsel question, an evidence requirement, and the affected feature flag. Clinical informed consent is kept distinct from the lawful basis for data processing (a consent checkbox is not the default answer). Legal documents (terms, privacy, disclaimer, consent, prescribing, emergency copy) are marked draft and launch-blocking and cannot be presented as approved; a second jurisdiction stays disabled and cannot inherit Angola approvals.
+
+Eight tests (`backend/phase10_tests`) enforce the disclaimer, official-source citations, issue-area coverage, per-issue evidence+flag, consent/lawful-basis separation, draft/launch-blocking legal copy, second-jurisdiction disablement, and — scanning the product copy — that Kaya claims no GDPR certification, medical-device status, or regulator approval it does not have.
+
+Tests: 8 new legal-classification tests plus the phase safety suites (318 passed, 1 skipped) green, no regression. Documentation and tests only; no legal text was authored or approved, and no runtime/schema/provider/data change was made.
+
+HUMAN GATE (BLOCKED_EXTERNAL): local healthcare and privacy counsel, the licensed care provider, and any required regulator must provide the actual determinations for every row.
+
+**Phase 10 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 11 (clinical safety case, intended use, and hazard controls). Checkpoint: commit `Classify Kaya Angola legal and regulatory issues for counsel`.
