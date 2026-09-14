@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -259,3 +259,15 @@ Fourteen tests (`backend/phase16_tests`) prove token accept + every fail-closed 
 Tests: 14 new onboarding tests plus the phase safety suites (397 passed, 1 skipped) green, no regression. Domain-pure model + docs; web/mobile rendering of the canonical state end-to-end is a harness/UI adoption task.
 
 **Phase 16 gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 17 (clinician credential verification and privileging lifecycle). Checkpoint: commit `Add Kaya invitation onboarding and deep-link safety`.
+
+## Phase 17 — Clinician credential verification and privileging lifecycle
+
+Privileging is a human-governed, primary-source, expiring gate ([`backend/app/privileging.py`](../backend/app/privileging.py)) with a bounded lifecycle (draft→pending_review→verified→suspended/expired/revoked; review cannot be skipped, revoked is terminal; only verified permits clinical work). Automated checks (document extraction, identity vendors, background checks, digital credentials) are evidence only — mock/sandbox/not-configured/stale/inconclusive/failed/pending/non-live can never approve. Activation requires four-eyes: an authorized MFA-verified reviewer who is neither the applicant nor support, a distinct second approver, primary-source live malware-clean unexpired good-standing evidence with insurance where required, and jurisdiction/profession/org/scope/effective dates; the status change and immutable audit commit atomically (audit failure fails the decision). Status loss propagates promptly to sessions, caches, queue, prescribing, records, video and appointments. See [privileging](KAYA_PRIVILEGING.md).
+
+Fourteen tests (`backend/phase17_tests`) prove provider-checks-are-evidence-only, mock/self/support/no-MFA/no-four-eyes/missing-scope/audit-failure/incomplete-evidence all block activation, only-verified-permits-clinical, bounded transitions, revocation propagation, and that the webhook router verifies signatures.
+
+Tests: 14 new privileging tests plus the phase safety suites (411 passed, 1 skipped) green, no regression. Domain-pure policy + docs; end-to-end credential flow + webhook replay/idempotency re-verified in the harness.
+
+HUMAN GATE (BLOCKED_EXTERNAL): a designated credentialing authority and licensed care organization must perform the primary-source review and privileging.
+
+**Phase 17 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 18 (organization, facility, and clinical operating authority). Checkpoint: commit `Add Kaya human-governed privileging lifecycle`.
