@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Phase 20 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -293,3 +293,15 @@ Fifteen tests (`backend/phase19_tests`) prove empty/partial→INCOMPLETE (never 
 Tests: 15 new triage-safety tests plus the phase safety suites (439 passed, 1 skipped) green, no regression.
 
 **Phase 19 gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 20 (clinician-governed triage validation and multilingual safety corpus). The validated rule set / corpus and web-mobile contract parity are Phase 20 + adoption work. Checkpoint: commit `Close Kaya fail-closed triage input gate (R01)`.
+
+## Phase 20 — Clinician-governed triage validation and multilingual safety corpus
+
+The validation *framework* is in place without the agent claiming clinical validation ([`backend/app/triage_governance.py`](../backend/app/triage_governance.py)): excluded populations (pediatric, pregnancy, mental-health crisis, safeguarding, severe pain, communication-limited) and complaints (chest pain, stroke, suicidal ideation, overdose, severe bleeding, anaphylaxis, obstetric emergency) get a safe redirect, never a low-risk recommendation; every pilot triage output requires a named author, an independent approver, a version, an effective date and validation evidence (self-approval and engineering approval rejected); a locked-corpus metric function reports false-negative/unclassifiable/disagreement rates but returns a pass/fail only against a clinician-supplied threshold (None otherwise — no agent-invented pass mark); and a kill switch plus rule rollback disable triage without blocking emergency guidance and never strand users. See [triage validation](KAYA_TRIAGE_VALIDATION.md).
+
+Eleven tests (`backend/phase20_tests`) prove excluded cohorts never get low-risk, content-unusable-without-approval, no-engineering-approval, corpus metrics, no-agent-threshold, and kill-switch/rollback safety.
+
+Tests: 11 new triage-validation tests plus the phase safety suites (450 passed, 1 skipped) green, no regression.
+
+HUMAN GATE (BLOCKED_EXTERNAL): clinical validation, risk thresholds, protocol approval, and residual-risk acceptance require qualified clinicians for the selected service and jurisdiction; the coding agent reports technical evidence only.
+
+**Phase 20 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 21 (emergency escalation and unavailable-service experience). Checkpoint: commit `Add Kaya clinician-governed triage validation framework`.
