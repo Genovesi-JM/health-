@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Phase 20 COMPLETE_WITH_EXTERNAL_GATES. Phase 21 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Phase 13 COMPLETE_WITH_EXTERNAL_GATES. Phase 14 COMPLETE_WITH_EXTERNAL_GATES. Phase 15 COMPLETE_WITH_EXTERNAL_GATES. Phase 16 COMPLETE. Phase 17 COMPLETE_WITH_EXTERNAL_GATES. Phase 18 COMPLETE_WITH_EXTERNAL_GATES. Phase 19 COMPLETE (R01 input gate closed). Phase 20 COMPLETE_WITH_EXTERNAL_GATES. Phase 21 COMPLETE_WITH_EXTERNAL_GATES. Phase 22 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -317,3 +317,13 @@ Tests: 10 new emergency tests plus the phase safety suites (460 passed, 1 skippe
 HUMAN GATE (BLOCKED_EXTERNAL): emergency numbers, pathways, translations, and service claims require dated verification by the jurisdictional clinical/operational owner.
 
 **Phase 21 gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 22 (clinician availability and schedule ownership). Checkpoint: commit `Add Kaya truthful emergency escalation and outage guidance`.
+
+## Phase 22 — Clinician availability and schedule ownership
+
+A truthful schedule model ([`backend/app/scheduling.py`](../backend/app/scheduling.py)): `slot_exposable` exposes a slot only when the org can operate and the clinician is active, credential-current, privilege-granted, service-approved, covered and in-jurisdiction (fail closed otherwise); the server is authoritative for timezone with UTC storage and DST-aware offsets (verified for Africa/Luanda and a DST-zone transition); capacity states distinguish indicative/held/confirmed and a stale profile never implies live availability; exceptions subtract from recurring windows deterministically and slot generation respects duration/buffers; and a schedule edit releases unconfirmed holds while confirmed appointments require explicit action and are audited. See [scheduling](KAYA_SCHEDULING.md).
+
+Eight tests (`backend/phase22_tests`) prove authority-gated exposure, UTC/DST correctness, no-live-from-stale, deterministic exception resolution, slot generation, and schedule-change effects on confirmed appointments.
+
+Tests: 8 new scheduling tests plus the phase safety suites (468 passed, 1 skipped) green, no regression.
+
+**Phase 22 gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 23 (transactional booking, concurrency, and idempotency). Checkpoint: commit `Add Kaya authority-gated schedule model with UTC/DST correctness`.
