@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate; Response DISABLED by default). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary; dispatch permanently excluded). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -572,3 +572,11 @@ Response is disabled by default and stays disabled unless a two-person ceremony 
 Ten tests (`backend/phaseR0_tests`) prove disabled-by-default, valid two-person activation, agent-cannot-approve, distinct-approvers, scope+jurisdiction required, bounded window, activate-raises, expiry, single-actor kill-switch, and no-auto-activation.
 
 **Phase R0 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response activation gate and kill-switch`.
+
+## Phase R1 — Response scope & exclusion boundary
+
+Defines what Response is not ([`backend/app/response_scope.py`](../backend/app/response_scope.py), composing the Phase 21 emergency guards). `EXCLUDED_CAPABILITIES` (ambulance/emergency/police dispatch, hospital admission/contact, guaranteed response time, overriding emergency services, triage override) can never be enabled by any scope, flag, or approval; `scope_is_valid` rejects a scope that tries. `capability_permitted` is fail-closed — a capability is granted only when Response is active, explicitly allowlisted for the scope, in an approved jurisdiction, and not excluded. `exposure_for_jurisdiction` returns information-only for any unsupported jurisdiction. `boundary_notice` always states Response does not substitute emergency services, dispatch, contact hospitals, or guarantee timing; `content_within_boundary` reuses the emergency no-external-action guard. See [Response scope](KAYA_RESPONSE_SCOPE.md).
+
+Ten tests (`backend/phaseR1_tests`) prove scope validity, scope-cannot-approve-excluded, unsigned-scope rejection, excluded-capability-never-permitted, active+jurisdiction+allowlist gating, information-only unknown jurisdiction, boundary notice, and no-external-action copy.
+
+**Phase R1 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response scope and exclusion boundary`.
