@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Phase 5 COMPLETE. Phase 6 COMPLETE_WITH_EXTERNAL_GATES (pilot gate green; legacy debt isolated). Phase 7 COMPLETE. Phase 8 COMPLETE. Phase 9 COMPLETE_WITH_EXTERNAL_GATES. Phase 10 COMPLETE_WITH_EXTERNAL_GATES. Phase 11 COMPLETE_WITH_EXTERNAL_GATES (safety case HOLD). Phase 12 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -205,3 +205,13 @@ Tests: 7 new clinical-safety tests plus the phase safety suites (325 passed, 1 s
 HUMAN GATE (BLOCKED_EXTERNAL): only the accountable clinical safety owner and licensed care organization can approve intended use, protocols, residual clinical risk, and patient-facing clinical copy.
 
 **Phase 11 gate PASS / COMPLETE_WITH_EXTERNAL_GATES; safety case remains HOLD. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 12 (canonical account and identity model). Checkpoint: commit `Draft Kaya clinical safety case and hazard controls`.
+
+## Phase 12 — Canonical account and identity model
+
+Finding: public registration allowed a requested role in {patient, doctor, nurse}; clinical/admin roles are MFA-mandatory and are refused (403) before any account is created, so only patients self-register. Phase 12 formalizes this as a canonical, domain-pure guard ([`backend/app/identity.py`](../backend/app/identity.py)) that keeps immutable subject identity distinct from profile, requested persona, organization membership, platform role, clinical profession, credential status and granted privilege; `canonical_account_role` returns a non-privileged role for any privileged request, `assert_not_self_privileged` fails closed, and mutable fields (email/phone/provider id/licence number/name/slug) are explicitly not authorization authority. Registration is hardened with defense-in-depth so the persisted `User.role` can never be privileged from public registration, independent of the MFA gate. Account disablement/deletion/merge effects (sessions, memberships, credentials, records, legal hold, audit) are defined; legacy account surfaces stay compatibility-only with convergence deferred to Phase 32 (no data merged or deleted). See [the identity model](KAYA_IDENTITY_MODEL.md).
+
+Nine tests (`backend/phase12_tests`) prove the guard (privileged requests normalize to patient, self-promotion raises, only granted role is authority) and statically verify the real registration code bounds the requested role, blocks clinical roles via the MFA gate (with every privileged role confirmed MFA-mandatory), and creates the User with the canonical non-privileged role.
+
+Tests: 9 new identity tests plus the phase safety suites (334 passed, 1 skipped) green, no regression. The auth.py change is additive defense-in-depth on held code (not reachable while the app is held; end-to-end registration behavior is re-verified in the disposable harness alongside the MFA suite, DBT-01).
+
+**Phase 12 gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 13 (MFA, OAuth step-up, session families, browser security). Checkpoint: commit `Establish Kaya canonical identity and no-self-promotion guard`.

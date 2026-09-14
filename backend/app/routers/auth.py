@@ -46,6 +46,7 @@ from ..oauth2 import create_access_token, verify_access_token
 from ..schemas import AuthResponse, LoginRequest, RegisterRequest
 from ..utils import hash_password, verify_password
 from ..services.mfa import assert_mfa_session, mfa_is_mandatory
+from ..identity import canonical_account_role
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -372,7 +373,11 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
             "status": "draft",
         }
 
-    user = User(email=email, password_hash=hash_password(payload.password), role=role, is_active=True)
+    # Canonical identity (Phase 12): public registration never persists a
+    # privileged role. Clinical/admin roles hit the MFA gate above; this is
+    # defense-in-depth so the created User is non-privileged regardless.
+    user = User(email=email, password_hash=hash_password(payload.password),
+                role=canonical_account_role(role), is_active=True)
     db.add(user)
     db.flush()
 
