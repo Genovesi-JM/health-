@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster; no coverage gap fails closed). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster). Phase R6 COMPLETE (communication boundary; notice always present, no promises). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -612,3 +612,11 @@ A responder holds Response authority only within a signed on-call shift, credent
 Six tests (`backend/phaseR5_tests`) prove authority rules, unsigned-roster-no-coverage, full coverage, coverage-gap-fails-closed with gap listing, overlapping-slots-close-the-gap, and substitute selection.
 
 **Phase R5 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response on-call roster and responder authority`.
+
+## Phase R6 — Response communication boundary
+
+Every outbound Response communication carries the boundary notice, makes no external-action or timing promise, and leaks no PHI/secret to an unintended channel ([`backend/app/response_comms.py`](../backend/app/response_comms.py), composing Phase 21 guards, Phase R1 scope, and the Phase 30 PHI guard). `message_within_boundary` reuses the emergency no-external-action guard; `compose_reporter_message` refuses a boundary-violating body and always appends the boundary notice; `responder_message_ok` keeps responder messages in boundary and blocks PHI/secret from reaching an external channel. See [Response comms](KAYA_RESPONSE_COMMS.md).
+
+Five tests (`backend/phaseR6_tests`) prove within-boundary detection, reporter-notice-appended, compose-refuses-violation, responder message boundary, and PHI-blocked-to-external-channel.
+
+**Phase R6 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response communication boundary`.
