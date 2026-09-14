@@ -557,7 +557,7 @@ Verification: all backend phase suites pass (`pytest backend/phase*_tests`); the
 
 RELEASE STATUS: **NOT READY / NO-GO** — 0 of 20 external gates signed READY; pre-flight returns NO-GO; the governance release board defaults to HOLD. A named human release board must clear the gates with dated evidence and record the six role sign-offs before clinical release moves off HOLD.
 
-**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster). Phase R6 COMPLETE (communication boundary). Phase R7 COMPLETE (geographic coverage). Phase R8 COMPLETE (SLA timing governance). Phase R9 COMPLETE (tamper-evident incident audit). Phase R10 COMPLETE (incident consent & data minimization). Phase R11 COMPLETE (drills readiness). Phase R12 COMPLETE (metrics; zero-boundary gate + R16 comprehension). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
+**Phase 42 gate PASS / COMPLETE. Playbook 0–42 COMPLETE. KAYA Response track: Phase R0 COMPLETE (activation gate). Phase R1 COMPLETE (scope & exclusion boundary). Phase R2 COMPLETE (incident intake). Phase R3 COMPLETE (escalation routing). Phase R4 COMPLETE (failed-escalation fallback). Phase R5 COMPLETE (on-call roster). Phase R6 COMPLETE (communication boundary). Phase R7 COMPLETE (geographic coverage). Phase R8 COMPLETE (SLA timing governance). Phase R9 COMPLETE (tamper-evident incident audit). Phase R10 COMPLETE (incident consent & data minimization). Phase R11 COMPLETE (drills readiness). Phase R12 COMPLETE (metrics). Phase R13 COMPLETE (two-person activation ceremony; all gates green + separation of duties). Clinical release HOLD (NO-GO by design). Response DISABLED.** Checkpoint: commit `Add Kaya final consolidation and handoff`.
 
 ---
 
@@ -668,3 +668,11 @@ PHI-free operational metrics with a hard gate ([`backend/app/response_metrics.py
 Eight tests (`backend/phaseR12_tests`) prove rates (None on zero), gate-holds-when-clean, any-boundary/failed-escalation trips the gate, comprehension ready/below-target/small-sample/failed-critical, and PHI-free metrics.
 
 **Phase R12 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response metrics and zero-boundary-event gate`.
+
+## Phase R13 — Response activation two-person ceremony & governance
+
+The single choke point that can arm Response ([`backend/app/response_ceremony.py`](../backend/app/response_ceremony.py)). `gates_all_green` requires every R-track readiness flag (R1–R12) signed-off True; `ceremony_ok` additionally requires two valid, distinct, non-agent human approvers in different governance roles (separation of duties) and composes the Phase R0 activation preconditions (approved scope + jurisdiction + bounded window). `run_ceremony` is fail-closed — it raises unless everything holds and then returns a bounded, killable Phase R0 activation state. The agent can never be an approver or run the ceremony on its own. See [Response ceremony](KAYA_RESPONSE_CEREMONY.md).
+
+Seven tests (`backend/phaseR13_tests`) prove gates-all-green, valid-ceremony-arms-a-killable-state, missing-gate blocks, agent-cannot-approve, distinct+different-role approvers, R0 preconditions composed, and run-raises-when-not-ready.
+
+**Phase R13 gate PASS / COMPLETE. Response DISABLED. Clinical release HOLD.** Checkpoint: commit `Add KAYA Response two-person activation ceremony`.
