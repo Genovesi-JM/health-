@@ -6,6 +6,7 @@
  */
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { assertOperationalAccess } from '../phase1/policy';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
 
@@ -18,6 +19,7 @@ let refreshPromise: Promise<string> | null = null;
 
 // Attach JWT on every request
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  assertOperationalAccess();
   const token = await SecureStore.getItemAsync('access_token');
   if (token && config.headers) {
     config.headers['Authorization'] = `Bearer ${token}`;
@@ -37,6 +39,7 @@ api.interceptors.response.use(
     }
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
     if (error.response?.status === 401 && original && !original._retry) {
+      assertOperationalAccess();
       original._retry = true;
       try {
         if (!refreshPromise) {

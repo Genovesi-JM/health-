@@ -44,6 +44,8 @@
 !app/init_db.py
 !app/mail.py
 !app/main.py
+!app/phase1_policy.py
+!app/kaya_policy.json
 !app/middleware/__init__.py
 !app/models.py
 !app/oauth2.py

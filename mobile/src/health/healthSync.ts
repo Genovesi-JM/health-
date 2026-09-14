@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { assertOperationalAccess } from '../phase1/policy';
 import api from '../services/api';
 import platformHealth from './platformHealth';
 import type { HealthCursors } from './types';
@@ -31,6 +32,7 @@ export async function getHealthConnectionOwner() {
 }
 
 export async function connectHealth(userId: string | number) {
+  assertOperationalAccess();
   if (!(await platformHealth.isAvailable())) return false;
   const granted = await platformHealth.requestAuthorization();
   if (!granted) return false;
@@ -54,6 +56,7 @@ export async function getLastHealthSync() {
 }
 
 export async function syncHealth(userId: string | number): Promise<HealthSyncResult> {
+  assertOperationalAccess();
   if (!(await isHealthConnected(userId))) {
     throw new Error('health_not_connected');
   }
@@ -80,6 +83,7 @@ export async function syncHealth(userId: string | number): Promise<HealthSyncRes
 }
 
 export async function subscribeToHealthChanges(onChange: () => void) {
+  assertOperationalAccess();
   return platformHealth.subscribe(onChange);
 }
 
@@ -88,5 +92,6 @@ export function healthPlatformName() {
 }
 
 export function openHealthSettings() {
+  assertOperationalAccess();
   platformHealth.openSettings();
 }

@@ -1,3 +1,5 @@
+import { assertOperationalAccess } from '../phase1/policy';
+
 /**
  * Video teleconsult room.
  *
@@ -14,5 +16,6 @@ export function videoRoomUrl(consultationId: string): string {
 }
 
 export function openVideoRoom(consultationId: string): void {
+  assertOperationalAccess();
   window.open(videoRoomUrl(consultationId), '_blank', 'noopener,noreferrer');
 }

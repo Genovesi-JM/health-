@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { assertOperationalAccess } from './phase1/policy';
 
 /*
  * In dev the Vite proxy forwards /auth, /api, etc. to localhost:8000.
@@ -14,6 +15,7 @@ const api = axios.create({
 
 // Attach JWT to every request
 api.interceptors.request.use((config) => {
+  assertOperationalAccess();
   const token = localStorage.getItem('ht_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

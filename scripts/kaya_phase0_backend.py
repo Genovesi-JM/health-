@@ -145,12 +145,12 @@ def main():
     for name in args.checks:
         localenv = env.copy()
         cwd = source / 'backend'
-        if name in {'backend-full', 'backend-focused', 'launch-hold'}:
-            path = {'backend-full': 'tests', 'backend-focused': 'security_tests', 'launch-hold': 'phase0_tests'}[name]
+        if name in {'backend-full', 'backend-focused', 'launch-hold', 'phase1-policy'}:
+            path = {'backend-full': 'tests', 'backend-focused': 'security_tests', 'launch-hold': 'phase0_tests', 'phase1-policy': 'phase1_tests'}[name]
             if not (cwd / path).exists():
                 results[name] = {'status': 'NOT_APPLICABLE', 'reason': 'Surface absent at selected source revision'}
                 continue
-            if name == 'launch-hold':
+            if name in {'launch-hold', 'phase1-policy'}:
                 localenv.pop('KAYA_EXECUTION_MODE', None)
             command = [str(python), str(wrapper), path, '-q', '--tb=short', '-p', 'pytest_timeout', '--timeout=45', '--junitxml=' + str(results_dir / (name + '.xml'))]
             seconds = 900 if name == 'backend-full' else 240

@@ -1,15 +1,14 @@
 {
   "name": "KAYA",
   "short_name": "KAYA",
-  "description": "KAYA — Saúde na sua mão. Triagem, teleconsulta e gestão de cuidados.",
+  "description": "KAYA planning information. No participants or clinical services are available in this version.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0F766E",
   "theme_color": "#0F766E",
-  "lang": "pt",
-  "categories": ["health", "medical"],
+  "lang": "en",
   "icons": [
     {
       "src": "/favicon-32.png",
@@ -38,22 +37,6 @@
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "description": "Go to your health dashboard",
-      "url": "/dashboard",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "New Triage",
-      "short_name": "Triage",
-      "description": "Start a health triage",
-      "url": "/triage",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

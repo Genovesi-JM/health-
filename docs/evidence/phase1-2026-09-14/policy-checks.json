@@ -1,0 +1,31 @@
+{
+  "recorded_at": "2026-09-14T00:16:38.811296+00:00",
+  "checks": {
+    "policy-mirrors": {
+      "command": [
+        "/Users/genovesimaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "scripts/generate_kaya_policy.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "log": "policy-mirrors.log",
+      "sha256": "6ef7ff681c6143eafbe96f9f87ee6c74dde5993b9a2260a749147bb8cd9b6043"
+    },
+    "scope-inventory-tests": {
+      "command": [
+        "/Users/genovesimaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_kaya_phase1*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "scope-inventory-tests.log",
+      "sha256": "a839851494d9a6d227600235afa24b81c216002a71e9fde2cdfb002e22c8420b"
+    }
+  }
+}

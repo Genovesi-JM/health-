@@ -12,19 +12,19 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kayahealth.app",
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "fetch"
-        ]
-      }
+      "bundleIdentifier": "com.kayahealth.app"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0d9488"
       },
       "package": "com.kayahealth.app",
-      "permissions": [
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.health.READ_WEIGHT",
         "android.permission.health.READ_BODY_FAT",
         "android.permission.health.READ_LEAN_BODY_MASS",
@@ -32,24 +32,18 @@
         "android.permission.health.READ_BODY_WATER_MASS",
         "android.permission.health.READ_BONE_MASS",
         "android.permission.health.READ_BASAL_METABOLIC_RATE",
-        "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+        "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "apiBaseUrl": "http://localhost:8000"
-    },
     "plugins": [
       "expo-secure-store",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "A KAYA usa as fotografias selecionadas apenas para revisão clínica na sua triagem.",
-          "cameraPermission": "A KAYA usa a câmara para adicionar fotografias privadas à sua triagem."
-        }
-      ],
       [
         "expo-build-properties",
         {
@@ -60,17 +54,9 @@
           }
         }
       ],
-      [
-        "@kingstinct/react-native-healthkit",
-        {
-          "NSHealthShareUsageDescription": "A KAYA lê as medições autorizadas para manter o seu histórico de saúde atualizado.",
-          "NSHealthUpdateUsageDescription": false,
-          "background": true
-        }
-      ],
-      "react-native-health-connect",
       "expo-font"
     ],
-    "scheme": "kayahealth"
+    "scheme": "kayahealth",
+    "description": "KAYA planning information. No participants or clinical services are available in this version."
   }
 }

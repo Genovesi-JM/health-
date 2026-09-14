@@ -34,7 +34,10 @@ SOURCE_NAMES = {'Dockerfile', 'Makefile', 'Procfile', 'LICENSE', 'README', '.git
 EXCLUDED_DIRS = {'.git', '.venv', 'venv', 'node_modules', '__pycache__',
                  '.pytest_cache', '.mypy_cache', 'dist', 'build', 'coverage',
                  'logs', 'uploads', 'backups', 'data'}
-GENERATED_EVIDENCE = PurePosixPath('docs/evidence/phase0-completion-2026-09-14')
+GENERATED_EVIDENCE_DIRS = {
+    PurePosixPath('docs/evidence/phase0-completion-2026-09-14'),
+    PurePosixPath('docs/evidence/phase1-2026-09-14'),
+}
 
 
 def exclusion(name, tracked_dotenv=False):
@@ -46,7 +49,7 @@ def exclusion(name, tracked_dotenv=False):
         return 'data or generated directory'
     if lower.startswith('.env') and not lower.endswith(('.example', '.sample', '.template')):
         return None if tracked_dotenv else 'local/untracked dotenv secret file (not read)'
-    if path.parent == GENERATED_EVIDENCE and path.suffix == '.log':
+    if path.parent in GENERATED_EVIDENCE_DIRS and path.suffix == '.log':
         return None  # Reviewed synthetic check logs, never operational/health logs.
     if lower.endswith(('.db', '.db-wal', '.db-shm', '.sqlite', '.sqlite3', '.log')) or re.search(r'(^|_)log\.(txt|json|jsonl|csv)$', lower):
         return 'database or log (not read)'
@@ -156,11 +159,12 @@ def main():
     working_names = names(git(root, env, 'ls-files', '--cached', '--others', '--exclude-standard', '-z'))
     # These known generated artifacts can be gitignored before checkpoint staging;
     # include them explicitly so retained evidence is not a scanner blind spot.
-    evidence_dir = root / str(GENERATED_EVIDENCE)
-    if evidence_dir.is_dir():
-        working_names = sorted(set(working_names) | {
-            str(path.relative_to(root)) for path in evidence_dir.iterdir() if path.is_file()
-        })
+    for relative_dir in GENERATED_EVIDENCE_DIRS:
+        evidence_dir = root / str(relative_dir)
+        if evidence_dir.is_dir():
+            working_names = sorted(set(working_names) | {
+                str(path.relative_to(root)) for path in evidence_dir.iterdir() if path.is_file()
+            })
     tracked_names = set(names(git(root, env, 'ls-files', '--cached', '-z')))
     historical_names = names(git(root, env, 'log', '--all', '--format=', '--name-only', '-z'))
     excluded_current, excluded_history, source_current, source_history = [], [], [], []
@@ -213,7 +217,7 @@ def main():
         'scope': {'current_candidate_paths': len(working_names),
                   'current_source_files': len(source_current), 'current_source_bytes': source_bytes,
                   'current_source_manifest_sha256': manifest.hexdigest(),
-                  'generated_evidence_logs_included': [name for name in source_current if PurePosixPath(name).parent == GENERATED_EVIDENCE and PurePosixPath(name).suffix == '.log'],
+                  'generated_evidence_logs_included': [name for name in source_current if PurePosixPath(name).parent in GENERATED_EVIDENCE_DIRS and PurePosixPath(name).suffix == '.log'],
                   'tracked_dotenv_included': [name for name in source_current if PurePosixPath(name).name.lower().startswith('.env')],
                   'historical_candidate_paths': len(historical_names),
                   'historical_source_paths': len(source_history),

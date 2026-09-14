@@ -29,7 +29,17 @@ def create_application() -> FastAPI:
 
     @application.middleware("http")
     async def launch_hold(request: Request, call_next):
-        # Apply to every path and method, including auth, webhooks, and health.
+        # One read-only informational exception; it never selects a jurisdiction
+        # from request data or enables clinical routes. Invalid policy stays held.
+        if request.method == "GET" and request.url.path == "/api/v1/public/pilot-scope":
+            try:
+                from .phase1_policy import public_pilot_scope
+                metadata = public_pilot_scope()
+            except (ImportError, OSError, ValueError, TypeError):
+                pass
+            else:
+                return JSONResponse(content=metadata, headers={"Cache-Control": "no-store"})
+        # Hold every clinical path and method, including auth, webhooks, health.
         # Readiness must not report a clinical runtime as available.
         return JSONResponse(
             status_code=503,
