@@ -34,9 +34,9 @@ jobs:
         working-directory: frontend
         env:
           # Set VITE_API_URL in GitHub → Settings → Secrets and variables → Actions → Variables
-          # For GitHub Pages + DO backend: https://health.geovisionops.com
+          # Set repository/environment variable VITE_API_URL to the approved Kaya API origin. No default is assumed (fails closed).
           # For Docker-only deployment:    (leave empty — nginx proxies /api/ → backend)
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://health.geovisionops.com' }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/health-/' }}
           VITE_DEVICE_GATEWAY_URL: ${{ vars.VITE_DEVICE_GATEWAY_URL || '' }}
         run: npm run build

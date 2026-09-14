@@ -1,6 +1,6 @@
 # Kaya execution status
 
-**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
+**Phase 0 COMPLETE_WITH_EXTERNAL_GATES. Phase 1 COMPLETE_WITH_EXTERNAL_GATES. Phase 2 COMPLETE_WITH_EXTERNAL_GATES. Phase 3 COMPLETE_WITH_EXTERNAL_GATES. Phase 4 COMPLETE. Clinical release HOLD.** Updated 14 September 2026. The user selected Angola — Luanda for planning only. No operator, clinic, clinical owner, data controller or formal jurisdiction adoption is approved. The Phase 0 baseline remains historical evidence; Phase 1 and Phase 2 records below govern the current local source.
 
 ## Repository and preservation
 
@@ -119,3 +119,13 @@ A repository copy-contract test ([`backend/phase3_tests/test_copy_contract.py`](
 Final engineering checks pass: 3 copy-contract tests plus the phase safety suites (Phase 0 hold, Phase 1, Phase 2 governance) green with no regression. This phase changes only user-facing copy and adds tests; no runtime, schema, provider or data change.
 
 **Phase 3 engineering gate PASS / COMPLETE_WITH_EXTERNAL_GATES. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 4 (repository identity, hygiene, and source-of-truth boundaries) in isolation. Any future emergency or hospital claim requires written partner and clinical authority plus runtime evidence, which remain OPEN / BLOCKED_EXTERNAL. Checkpoint: commit `Quarantine Kaya unsupported emergency and outcome claims`.
+
+## Phase 4 — Repository identity, hygiene, and source-of-truth boundaries
+
+Canonical repository is `Genovesi-JM/health-`; the product source of truth is `PRODUCT_AND_LAUNCH_PLAN.md`. [The architecture index](KAYA_ARCHITECTURE_INDEX.md) labels every surface (supported API/web/PWA/Expo/infra/migrations, reference-only native iOS, disabled-but-preserved LegacyApp, dev-only synthetic runtime, generated evidence and build outputs) and records edit boundaries and generated-file rules.
+
+Hygiene actions: the runtime email log `backend/email_log.txt` is no longer tracked (`git rm --cached`, local file preserved) and is added to `.gitignore` alongside `*.sqlite`; the deploy workflow no longer defaults `VITE_API_URL` to the GeoVision domain and now fails closed if the variable is unset; env templates (`.env.production`, `backend/.env.example`) are retained as placeholder-only templates with no filled secrets (test-guarded; the authoritative secret scan remains the Phase 0 Gitleaks zero-findings run). Retained GeoVision-legacy backend strings are documented as intentionally preserved history on no reachable Kaya path; a scoped removal belongs to later capability/migration phases with rollback evidence. Three pre-existing untracked frontend tests remain preserved but not adopted (unverified authorship, ambiguous/failing selectors).
+
+Tests: 6 new repository-hygiene tests plus the phase safety suites (156 total) green, no regression. This phase changes only repository hygiene, CI defaults, ignore rules, and documentation; no runtime, schema, provider, or data change, and no history was deleted.
+
+**Phase 4 engineering gate PASS / COMPLETE. Clinical release HOLD. Safe to paste next prompt: YES**, for Phase 5 (reproducible toolchain, isolated test configuration, CI bootstrap). Checkpoint: commit `Establish Kaya repository identity, hygiene, and source-of-truth boundaries`.
