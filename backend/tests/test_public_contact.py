@@ -32,8 +32,8 @@ def test_admin_can_list_contact_messages(client):
         "name": "Bravo", "email": "bravo@example.com",
         "subject": "Parceria", "message": "Queremos ser parceiros.",
     })
-    admin = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"}).json()
-    r = client.get("/api/v1/contact/admin", headers={"Authorization": f"Bearer {admin['access_token']}"})
+    from _authutil import auth_headers
+    r = client.get("/api/v1/contact/admin", headers=auth_headers(client, "teste@admin.com", "123456"))
     assert r.status_code == 200, r.text
     msgs = r.json()
     assert any(m["email"] == "bravo@example.com" for m in msgs)

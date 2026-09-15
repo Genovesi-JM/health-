@@ -27,7 +27,7 @@ def test_google_flow_monkeypatch(monkeypatch, tmp_path):
     # Import application and DB artifacts here (after conftest has set the
     # test database URL). Importing at module level can cause engines to be
     # created with the default DB before the test fixture overrides it.
-    from app.main import create_application
+    from app.factory import create_app as create_application
     from app.database import SessionLocal
     from app.models import OAuthState, User
 
