@@ -13,9 +13,13 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT to every request
+// Attach JWT to every request. Never override an Authorization header that the
+// caller set explicitly (e.g. a short-lived MFA enrollment token during login).
 api.interceptors.request.use((config) => {
   assertOperationalAccess();
+  if (config.headers.Authorization) {
+    return config;
+  }
   const token = localStorage.getItem('ht_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

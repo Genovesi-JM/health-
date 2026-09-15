@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../AuthContext';
-import api from '../api';
+import api, { clearSession } from '../api';
 import { useT } from '../i18n/LanguageContext';
 import kayaLogo from '/kaya-logo.svg';
 import LanguageSelector from '../components/LanguageSelector';
@@ -30,6 +30,16 @@ export default function LoginPage() {
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
 
+  // MFA enrollment state — set when /auth/login returns mfa_enrollment_required
+  // (a mandatory-MFA role signing in for the first time).
+  const [enrollToken, setEnrollToken] = useState<string | null>(null);
+  const [enrollSecret, setEnrollSecret] = useState('');
+  const [enrollCode, setEnrollCode] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const [pendingSession, setPendingSession] = useState<any>(null);
+
+  const enrollAuth = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
+
   const finishLogin = (data: any) => {
     login(data);
     const role = data.user?.role;
@@ -41,6 +51,9 @@ export default function LoginPage() {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess(''); setLoading(true);
+    // A fresh sign-in must not carry a stale session (its token would otherwise
+    // shadow the MFA enrollment/challenge flow).
+    clearSession();
     try {
       const res = await api.post('/auth/login', { email, password });
       // MFA gate: password alone did not yield tokens.
@@ -49,9 +62,32 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
+      // First-time MFA enrollment for a mandatory-MFA role: begin setup with the
+      // short-lived enrollment token and show the enrollment view.
+      if (res.data.mfa_enrollment_required) {
+        const token = res.data.enrollment_token as string;
+        const setup = await api.post('/auth/mfa/setup', {}, enrollAuth(token));
+        setEnrollToken(token);
+        setEnrollSecret(setup.data.secret);
+        setLoading(false);
+        return;
+      }
       finishLogin(res.data);
     } catch (err: any) {
       setError(apiErrorMessage(err, t('login.invalid')));
+    } finally { setLoading(false); }
+  };
+
+  const handleEnrollVerify = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      const res = await api.post('/auth/mfa/verify', { code: enrollCode.trim() }, enrollAuth(enrollToken!));
+      // Show the one-time recovery codes, then complete login with the returned session.
+      setRecoveryCodes(res.data.recovery_codes || []);
+      setPendingSession(res.data.session);
+    } catch (err: any) {
+      setError(apiErrorMessage(err, t('mfa.invalid_code')));
     } finally { setLoading(false); }
   };
 
@@ -96,11 +132,66 @@ export default function LoginPage() {
           <span className="auth-brand-text">KAYA</span>
         </div>
 
-        <h1 className="auth-title">{mfaToken ? t('mfa.challenge_title') : t('login.title')}</h1>
-        <p className="auth-subtitle">{mfaToken ? t('mfa.challenge_subtitle') : t('login.subtitle')}</p>
+        <h1 className="auth-title">{
+          recoveryCodes ? 'Guarde os seus códigos' :
+          enrollToken ? 'Configurar MFA' :
+          mfaToken ? t('mfa.challenge_title') : t('login.title')
+        }</h1>
+        <p className="auth-subtitle">{
+          recoveryCodes ? 'Guarde estes códigos de recuperação num local seguro. São mostrados uma única vez.' :
+          enrollToken ? 'A sua função exige autenticação em dois passos. Configure-a uma vez para entrar.' :
+          mfaToken ? t('mfa.challenge_subtitle') : t('login.subtitle')
+        }</p>
 
-        {/* MFA challenge step — shown after a correct password when MFA is on */}
-        {mfaToken ? (
+        {/* One-time recovery codes, shown after successful enrollment */}
+        {recoveryCodes ? (
+          <div>
+            <div style={{ background: 'var(--surface-2, #f1f5f9)', borderRadius: 8, padding: '0.9rem', margin: '0.5rem 0',
+                          fontFamily: 'monospace', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {recoveryCodes.map(c => <span key={c}>{c}</span>)}
+            </div>
+            <button type="button" className="btn btn-primary auth-submit"
+                    onClick={() => { if (pendingSession) finishLogin(pendingSession); }}>
+              Guardei os códigos — Entrar
+            </button>
+          </div>
+        ) : enrollToken ? (
+          /* MFA enrollment step — first sign-in for a mandatory-MFA role */
+          <form onSubmit={handleEnrollVerify}>
+            <div className="form-group">
+              <label className="form-label">1. Adicione esta chave à sua app de autenticação (Google Authenticator, Authy…)</label>
+              <div style={{ background: 'var(--surface-2, #f1f5f9)', borderRadius: 8, padding: '0.7rem',
+                            fontFamily: 'monospace', fontSize: '1rem', letterSpacing: '0.15em', wordBreak: 'break-all', textAlign: 'center' }}>
+                {enrollSecret}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">2. {t('mfa.code_label')}</label>
+              <input
+                className="form-input"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                value={enrollCode}
+                onChange={e => setEnrollCode(e.target.value)}
+                placeholder="123456"
+                style={{ letterSpacing: '0.3em', fontSize: '1.1rem', textAlign: 'center' }}
+              />
+            </div>
+            {error && <div className="auth-error">{error}</div>}
+            <button type="submit" className="btn btn-primary auth-submit" disabled={loading || enrollCode.trim().length < 6}>
+              {loading ? '…' : 'Ativar e entrar'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ width: '100%', marginTop: 8 }}
+              onClick={() => { setEnrollToken(null); setEnrollSecret(''); setEnrollCode(''); setError(''); }}
+            >
+              {t('mfa.back_to_login')}
+            </button>
+          </form>
+        ) : mfaToken ? (
           <form onSubmit={handleMfaChallenge}>
             <div className="form-group">
               <label className="form-label">{t('mfa.code_label')}</label>
@@ -163,7 +254,7 @@ export default function LoginPage() {
         </form>
         )}
 
-        {!mfaToken && (
+        {!mfaToken && !enrollToken && !recoveryCodes && (
         <>
         {/* OAuth */}
         <button type="button" className="auth-oauth-btn" onClick={() => handleOAuth('google')}

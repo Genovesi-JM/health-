@@ -467,6 +467,18 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         log_audit(db, "login_mfa_challenge", user_id=user.id, user_email=user.email, request=request)
         return {"mfa_required": True, "mfa_token": challenge}
 
+    # Mandatory-MFA role that has not enrolled yet: issue a short-lived enrollment
+    # token that unlocks ONLY /auth/mfa/setup and /auth/mfa/verify, so the user can
+    # self-enroll securely and immediately complete login. No full session token is
+    # granted until a valid TOTP code is verified.
+    if mfa_is_mandatory(resolve_role(user)) and not (mfa_row and mfa_row.enabled):
+        enroll_token = create_access_token(
+            {"sub": user.email, "uid": user.id, "mfa_enroll": True},
+            expires_delta=_td(minutes=15),
+        )
+        log_audit(db, "login_mfa_enrollment_required", user_id=user.id, user_email=user.email, request=request)
+        return {"mfa_enrollment_required": True, "enrollment_token": enroll_token, "email": user.email}
+
     resp = _build_auth_response(db, user)
     log_audit(db, "login", user_id=user.id, user_email=user.email, request=request)
     return AuthResponse(**resp)
