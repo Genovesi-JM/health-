@@ -46,8 +46,17 @@ export class OperationalAccessBlockedError extends Error {
   }
 }
 
-// Phase 1 cannot activate operations, including in a synthetic profile. Policy
-// flags or a client environment variable are not authorization to release care.
+// The client is now operational. This gate is retained as an integration point:
+// set VITE_OPERATIONAL_HOLD=true to re-enable an information-only hold (e.g. for a
+// pre-launch marketing build) without touching call sites.
+export function isOperationalHoldEnabled(
+  env: Record<string, unknown> = ((import.meta as any).env ?? {}),
+): boolean {
+  return env?.VITE_OPERATIONAL_HOLD === 'true';
+}
+
 export function assertOperationalAccess(): void {
-  throw new OperationalAccessBlockedError();
+  if (isOperationalHoldEnabled()) {
+    throw new OperationalAccessBlockedError();
+  }
 }

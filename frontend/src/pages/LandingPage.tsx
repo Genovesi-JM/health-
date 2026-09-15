@@ -150,10 +150,16 @@ export default function LandingPage() {
           <div className={`kaya-panel__body kaya-panel__body--img${animating ? ' kaya-panel__body--out' : ''}`}
                style={{ background: aud.imgColor }}>
             <img
-              src={`/kaya-panel-${aud.key}.png`}
+              src={`${import.meta.env.BASE_URL}kaya-panel-${aud.key}.svg`}
               alt={t(aud.labelKey)}
               className="kaya-panel__img"
-              onError={(e) => { (e.target as HTMLImageElement).src = `/kaya-panel-${aud.key}.svg`; }}
+              onError={(e) => {
+                // Guard against an infinite reload loop if the asset is missing:
+                // clear the handler and hide the broken image after one failure.
+                const img = e.currentTarget;
+                img.onerror = null;
+                img.style.display = 'none';
+              }}
             />
           </div>
         </div>

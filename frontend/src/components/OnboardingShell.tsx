@@ -263,6 +263,7 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
           <button
             type="button"
             className="btn btn-primary"
+            data-testid="onboarding-primary"
             onClick={advance}
             disabled={submitting}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
