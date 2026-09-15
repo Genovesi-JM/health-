@@ -301,7 +301,7 @@ def _build_auth_response(db: Session, user: User, *, mfa_verified: bool = False)
 # Auth Endpoints
 # ═══════════════════════════════════════════════════════════════
 
-@router.post("/register", response_model=AuthResponse, status_code=201)
+@router.post("/register", status_code=201)
 def register(payload: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     email = (payload.email or "").strip().lower()
 
@@ -319,13 +319,10 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     if requested_role not in {"patient", "doctor", "nurse"}:
         raise HTTPException(status_code=400, detail="Tipo de conta inválido.")
     role = requested_role
-    # A secure pre-authentication MFA enrollment flow is not yet available.
-    # Do not create a privileged account with an unrestricted bootstrap token.
-    if mfa_is_mandatory(role):
-        raise HTTPException(
-            403, detail="Professional registration requires secure MFA onboarding. Contact the administrator.",
-            headers={"X-Kaya-Error-Code": "mfa_enrollment_required"},
-        )
+    # Mandatory-MFA (professional) roles may register, but never receive an
+    # unrestricted bootstrap token: the account is created and the caller gets a
+    # short-lived enrollment token (handled after account creation below), so they
+    # must complete MFA before any session is issued.
 
     credential_data = None
     if role in {"doctor", "nurse"}:
@@ -413,14 +410,25 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     db.refresh(user)
     db.refresh(account)
 
+    log_audit(db, "register", user_id=user.id, user_email=user.email,
+              resource_type="user", resource_id=user.id, request=request)
+
+    # Professional (mandatory-MFA) roles get an enrollment token, not a session:
+    # they must complete MFA at /auth/mfa/setup + /verify before any access.
+    if mfa_is_mandatory(user.role):
+        from datetime import timedelta as _td
+        enroll_token = create_access_token(
+            {"sub": user.email, "uid": user.id, "mfa_enroll": True},
+            expires_delta=_td(minutes=15),
+        )
+        return {"mfa_enrollment_required": True, "enrollment_token": enroll_token,
+                "email": user.email}
+
     access_token = create_access_token({
         "sub": user.email, "email": user.email,
         "role": user.role, "uid": user.id,
     })
     refresh_token = _create_refresh_token(db, user.id)
-
-    log_audit(db, "register", user_id=user.id, user_email=user.email,
-              resource_type="user", resource_id=user.id, request=request)
 
     return AuthResponse(access_token=access_token, user=user, account=account,
                         refresh_token=refresh_token,

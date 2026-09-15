@@ -32,7 +32,8 @@ def _register(client, role="doctor", diploma_country="PT"):
         "graduation_year": 2020,
     })
     assert response.status_code == 201, response.text
-    return response.json()
+    from _authutil import complete_enrollment
+    return complete_enrollment(client, response.json())
 
 
 def _headers(auth):
@@ -52,10 +53,11 @@ def _verify_clinician(client, auth):
     assert _upload(client, auth, "diploma").status_code == 200
     submitted = client.post("/api/v1/credentials/me/submit", headers=_headers(auth))
     assert submitted.status_code == 200
-    admin = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
+    from _authutil import login_with_mfa
+    admin_sess = login_with_mfa(client, "teste@admin.com", "123456")
     approved = client.post(
         f"/api/v1/credentials/admin/{submitted.json()['id']}/decision",
-        headers=_headers(admin.json()),
+        headers=_headers(admin_sess),
         json={"action": "approve"},
     )
     assert approved.status_code == 200
@@ -94,11 +96,12 @@ def test_foreign_diploma_requires_recognition_and_human_approval(client):
     blocked = client.get("/api/v1/doctor/dashboard", headers=_headers(auth))
     assert blocked.status_code == 403
 
-    admin_login = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
+    from _authutil import login_with_mfa as _lwm
+    admin_login_sess = _lwm(client, "teste@admin.com", "123456")
     assert admin_login.status_code == 200
     approved = client.post(
         f"/api/v1/credentials/admin/{submitted.json()['id']}/decision",
-        headers=_headers(admin_login.json()),
+        headers=_headers(admin_login_sess),
         json={"action": "approve"},
     )
     assert approved.status_code == 200
@@ -410,8 +413,11 @@ def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db
         f"/api/v1/teleconsultations/{consultation.id}/join",
         headers=_headers(doctor_auth),
     )
-    assert joined.status_code == 200, joined.text
-    assert joined.json()["room_url"].startswith("https://meet.jit.si/KAYA-")
+    # Phase 25: video is disabled by default and fails closed. No public
+    # meet.jit.si room is ever emitted; join returns 503 until an approved
+    # provider is enabled server-side (VIDEO_ENABLED + VIDEO_BASE_URL).
+    assert joined.status_code == 503, joined.text
+    assert "jit.si" not in joined.text
 
 
 def test_registration_rejects_incomplete_clinician_profile(client):
@@ -427,10 +433,11 @@ def test_registration_rejects_incomplete_clinician_profile(client):
 
 
 def test_nurse_invite_creates_nurse_dossier(client):
-    admin_login = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
+    from _authutil import login_with_mfa as _lwm
+    admin_login_sess = _lwm(client, "teste@admin.com", "123456")
     invite = client.post(
         "/admin/doctor-invites",
-        headers=_headers(admin_login.json()),
+        headers=_headers(admin_login_sess),
         json={"role": "nurse", "expires_days": 7},
     )
     assert invite.status_code == 201, invite.text

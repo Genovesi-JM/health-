@@ -46,8 +46,27 @@ def _make_user(db, email: str, role: str = "patient") -> User:
 
 
 def _token(user: User) -> dict:
-    """Return Authorization header dict for a user."""
-    t = create_access_token({"sub": user.email, "uid": user.id})
+    """Return Authorization header dict for a user.
+
+    For mandatory-MFA roles this ensures an enrolled MFA credential and mints an
+    mfa_verified token, so the session passes assert_mfa_session (the app requires
+    completed MFA for clinicians/admins)."""
+    from app.services.mfa import mfa_is_mandatory, generate_secret
+    from app.health_models import MfaCredential
+    import app.database as _db
+    if mfa_is_mandatory(getattr(user, "role", "")):
+        s = _db.SessionLocal()
+        try:
+            cred = s.query(MfaCredential).filter(MfaCredential.user_id == user.id).first()
+            if not cred:
+                s.add(MfaCredential(user_id=user.id, secret=generate_secret(), enabled=True))
+            else:
+                cred.enabled = True
+            s.commit()
+        finally:
+            s.close()
+    t = create_access_token({"sub": user.email, "uid": user.id,
+                             "role": getattr(user, "role", None), "mfa_verified": True})
     return {"Authorization": f"Bearer {t}"}
 
 
