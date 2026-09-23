@@ -42,3 +42,6 @@ dialog{padding:54px 22px 25px}
 .section-title>.small{display:none}
 .panel{padding:17px}
 }
+
+/* Keep every desktop-style menu item reachable on landscape phones. */
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
