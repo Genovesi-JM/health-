@@ -23,4 +23,9 @@ test('ambulance simulation never promises dispatch',()=>{view('ambulance');submi
 test('manual ambulance zone changes map bounds',()=>{d.querySelector('#modal').close();const z=d.querySelector('#pickup-zone');const old=d.querySelector('iframe').src;z.value='Talatona';z.dispatchEvent(new w.Event('change'));assert.notEqual(d.querySelector('iframe').src,old)});
 test('reset restores the presentation examples',()=>{view('profile');click('[data-action="reset"]');click('[data-action="confirm-reset"]');view('appointments');assert.equal(d.querySelectorAll('[data-action="cancel-booking"]').length,1);assert(d.body.textContent.includes('Dra. Ana'))});
 test('no persistent health data or outbound writes',()=>{assert(!/localStorage|indexedDB|sendBeacon|getUserMedia/.test(js));assert(!/method\s*:\s*['"]POST/.test(js));assert(!/password|type="email"/.test(html))});
+
+test('mobile menu exposes every customer section',()=>{view('home');click('[data-action="menu"]');assert.equal(d.querySelectorAll('#modal [data-page]').length,7);assert.equal(d.querySelector('#modal').getAttribute('aria-labelledby'),'dialog-title');d.querySelector('#modal').close()});
+test('general care shortcut does not force pharmacy filter',()=>{view('home');click('.hero [data-page="discover"]');view('discover');assert.equal(d.querySelectorAll('.provider').length,4);view('home');click('.service[data-page="discover"]');view('discover');assert.equal(d.querySelectorAll('.provider').length,2)});
+test('ambulance confirmation preserves transport and pickup selections',()=>{view('ambulance');d.querySelector('#pickup').selectedIndex=1;d.querySelector('#transport').selectedIndex=1;submit('ambulance-form');assert(d.querySelector('#modal-content').textContent.includes('Recepção da clínica'));assert(d.querySelector('#modal-content').textContent.includes('Transferência entre unidades'));d.querySelector('#modal').close()});
+
 console.log(`${count} prototype checks passed.`);w.close();
