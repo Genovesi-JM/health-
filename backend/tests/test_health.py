@@ -208,6 +208,8 @@ class TestTriageFlow:
         user = _make_user(db_session, "triage_vitals@test.com", "patient")
         patient = _make_patient(db_session, user)
         _accept_consents(db_session, patient)
+        grant_all(db_session, patient, purposes=("devices",))
+        db_session.commit()
         response = client.post(
             "/api/v1/triage/start",
             json={
@@ -239,6 +241,7 @@ class TestTriageFlow:
         assert readings[0].systolic == 122
         assert readings[0].diastolic == 79
         assert readings[0].pulse == 68
+        assert all(reading.country == "AO" and reading.consent_language == "pt" for reading in readings)
         assert readings[0].source == "bluetooth"
         assert readings[0].device_model == "Validated BLE monitor"
         assert response.json()["session_id"] in readings[0].notes
@@ -261,6 +264,9 @@ class TestTriageFlow:
     def test_patient_imports_renpho_csv_without_duplicates(self, client: TestClient, db_session):
         user = _make_user(db_session, "renpho_import@test.com", "patient")
         patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
+        grant_all(db_session, patient, purposes=("devices",))
+        db_session.commit()
         headers = _token(user)
         csv_data = (
             "Time of Measurement,Weight(kg),BMI,Body Fat(%),Muscle Mass(kg)\n"
@@ -269,6 +275,7 @@ class TestTriageFlow:
         )
         first = client.post(
             "/api/v1/readings/import",
+            data={"country": "AO", "consent_language": "pt"},
             files={"file": ("Renpho Health.csv", csv_data, "text/csv")},
             headers=headers,
         )
@@ -278,6 +285,7 @@ class TestTriageFlow:
 
         second = client.post(
             "/api/v1/readings/import",
+            data={"country": "AO", "consent_language": "pt"},
             files={"file": ("Renpho Health.csv", csv_data, "text/csv")},
             headers=headers,
         )
@@ -297,6 +305,9 @@ class TestTriageFlow:
     def test_patient_syncs_health_platform_records_idempotently(self, client: TestClient, db_session):
         user = _make_user(db_session, "health_sync@test.com", "patient")
         patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
+        grant_all(db_session, patient, purposes=("devices",))
+        db_session.commit()
         headers = _token(user)
         record = {
             "external_id": "renpho-weight-2026-07-30",
@@ -310,16 +321,16 @@ class TestTriageFlow:
             "device_model": "Smart Scale",
         }
 
-        first = client.post("/api/v1/readings/sync", json={"records": [record]}, headers=headers)
+        first = client.post("/api/v1/readings/sync", json={"country": "AO", "consent_language": "pt", "records": [record]}, headers=headers)
         assert first.status_code == 200, first.text
         assert first.json() == {"imported": 1, "updated": 0, "skipped": 0}
 
-        retry = client.post("/api/v1/readings/sync", json={"records": [record]}, headers=headers)
+        retry = client.post("/api/v1/readings/sync", json={"country": "AO", "consent_language": "pt", "records": [record]}, headers=headers)
         assert retry.status_code == 200
         assert retry.json() == {"imported": 0, "updated": 0, "skipped": 1}
 
         corrected = {**record, "value": 71.6}
-        update = client.post("/api/v1/readings/sync", json={"records": [corrected]}, headers=headers)
+        update = client.post("/api/v1/readings/sync", json={"country": "AO", "consent_language": "pt", "records": [corrected]}, headers=headers)
         assert update.status_code == 200
         assert update.json() == {"imported": 0, "updated": 1, "skipped": 0}
 
@@ -334,7 +345,10 @@ class TestTriageFlow:
         self, client: TestClient, db_session
     ):
         user = _make_user(db_session, "health_sync_validation@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
+        grant_all(db_session, patient, purposes=("devices",))
+        db_session.commit()
         base = {
             "external_id": "invalid-weight",
             "reading_type": "weight",
@@ -344,14 +358,14 @@ class TestTriageFlow:
             "source": "health_connect",
         }
         skipped = client.post(
-            "/api/v1/readings/sync", json={"records": [base]}, headers=_token(user)
+            "/api/v1/readings/sync", json={"country": "AO", "consent_language": "pt", "records": [base]}, headers=_token(user)
         )
         assert skipped.status_code == 200
         assert skipped.json()["skipped"] == 1
 
         invalid_source = client.post(
             "/api/v1/readings/sync",
-            json={"records": [{**base, "source": "untrusted_cloud"}]},
+            json={"country": "AO", "consent_language": "pt", "records": [{**base, "source": "untrusted_cloud"}]},
             headers=_token(user),
         )
         assert invalid_source.status_code == 422

@@ -13,9 +13,9 @@ import csv
 import io
 import json
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -34,6 +34,8 @@ from app.health_schemas import (
 )
 from app.rbac import get_patient_for_user, require_roles, assert_doctor_can_access_patient
 from app.services.clinician_access import require_current_clinician
+from app.services.appointments import lock_resources
+from app.services.consent_runtime import REQUIRED_PURPOSES, require_effective
 
 logger = logging.getLogger(__name__)
 
@@ -73,11 +75,11 @@ def _first_value(row: dict[str, str], aliases: tuple[str, ...]) -> Optional[str]
 
 def _parse_import_datetime(value: Optional[str]) -> datetime:
     if not value:
-        return datetime.utcnow()
+        raise ValueError('measurement date is required')
     cleaned = value.strip().replace("Z", "+00:00")
     try:
         parsed = datetime.fromisoformat(cleaned)
-        return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None) if parsed.tzinfo else parsed
     except ValueError:
         pass
     for fmt in (
@@ -98,13 +100,16 @@ def _build_reading(patient_id: str, body: DeviceReadingCreate) -> DeviceReading:
     """Map schema → model, defaulting measured_at to now."""
     return DeviceReading(
         patient_id=patient_id,
+        country=body.country,
+        consent_language=body.consent_language,
         reading_type=body.reading_type,
         value=body.value,
         unit=body.unit,
         systolic=body.systolic,
         diastolic=body.diastolic,
         pulse=body.pulse,
-        measured_at=body.measured_at or datetime.utcnow(),
+        measured_at=(body.measured_at.astimezone(timezone.utc).replace(tzinfo=None)
+                     if body.measured_at and body.measured_at.tzinfo else body.measured_at or datetime.utcnow()),
         source=body.source or "manual",
         device_brand=body.device_brand,
         device_model=body.device_model,
@@ -126,6 +131,19 @@ def _validate_reading(body: DeviceReadingCreate) -> None:
                 status_code=422,
                 detail=f"{body.reading_type} readings require a value.",
             )
+
+
+def _authorize_write(db, patient_id, country, language, *, devices):
+    # The same lock serializes consent withdrawal with every persisted batch.
+    lock_resources(db, None, patient_id)
+    require_effective(db, patient_id, country, language,
+                      purposes=REQUIRED_PURPOSES + (('devices',) if devices else ()))
+
+
+def _assert_same_scope(existing, country, language):
+    if existing.country != country or existing.consent_language != language:
+        raise HTTPException(409, {'code': 'reading_scope_conflict',
+            'message': 'Esta medição já existe noutro âmbito ou sem país confirmado. Nenhuma medição do pedido foi guardada.'})
 
 
 # ── endpoints ─────────────────────────────────────────────────────────────────
@@ -193,6 +211,8 @@ def summarize_my_readings(
         if latest.value is not None and oldest.value is not None and latest.id != oldest.id:
             change = round(float(latest.value) - float(oldest.value), 4)
         items.append(ReadingSummaryItem(
+            country=latest.country,
+            consent_language=latest.consent_language,
             reading_type=reading_type,
             value=float(latest.value) if latest.value is not None else None,
             unit=latest.unit,
@@ -229,6 +249,7 @@ def create_reading(
 ):
     """Create a new device reading for the authenticated patient."""
     _validate_reading(body)
+    _authorize_write(db, patient.id, body.country, body.consent_language, devices=(body.source or 'manual') != 'manual')
     reading = _build_reading(patient.id, body)
     db.add(reading)
     db.commit()
@@ -249,6 +270,7 @@ def sync_health_readings(
     updated in place, while malformed or physiologically impossible values are
     ignored rather than entering the clinical measurement history.
     """
+    _authorize_write(db, patient.id, body.country, body.consent_language, devices=True)
     imported = 0
     updated = 0
     skipped = 0
@@ -278,8 +300,13 @@ def sync_health_readings(
             DeviceReading.external_id == item.external_id,
         ).first()
         if existing:
+            _assert_same_scope(existing, body.country, body.consent_language)
             changed = (
-                float(existing.value or 0) != item.value
+                existing.reading_type != item.reading_type
+                or existing.device_brand != item.device_brand
+                or existing.device_model != item.device_model
+                or existing.notes != metadata
+                or float(existing.value or 0) != item.value
                 or existing.unit != item.unit
                 or existing.measured_at != measured_at
             )
@@ -299,6 +326,8 @@ def sync_health_readings(
 
         db.add(DeviceReading(
             patient_id=patient.id,
+            country=body.country,
+            consent_language=body.consent_language,
             reading_type=item.reading_type,
             value=item.value,
             unit=item.unit,
@@ -309,6 +338,7 @@ def sync_health_readings(
             device_model=item.device_model,
             notes=metadata,
         ))
+        db.flush()  # Make repeated identities in this batch visible with autoflush disabled.
         imported += 1
 
     db.commit()
@@ -322,6 +352,8 @@ def sync_health_readings(
 @router.post("/import")
 async def import_readings_csv(
     file: UploadFile = File(...),
+    country: Literal['AO', 'PT'] = Form(...),
+    consent_language: str = Form('pt', pattern=r'^[a-z]{2}(-[A-Z]{2})?$', max_length=10),
     patient: Patient = Depends(get_patient_for_user),
     db: Session = Depends(get_db),
 ):
@@ -337,6 +369,7 @@ async def import_readings_csv(
     content = await file.read(MAX_IMPORT_BYTES + 1)
     if len(content) > MAX_IMPORT_BYTES:
         raise HTTPException(status_code=413, detail="O CSV excede o limite de 2 MB.")
+    _authorize_write(db, patient.id, country, consent_language, devices=True)
     try:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -353,21 +386,23 @@ async def import_readings_csv(
     if not rows:
         raise HTTPException(status_code=422, detail="O CSV não contém medições.")
 
+    if len(rows) > 2000:
+        raise HTTPException(413, 'O CSV excede o limite de 2000 medições. Divida o ficheiro antes de importar.')
     imported = 0
     skipped = 0
     errors: list[str] = []
-    for index, row in enumerate(rows[:2000], start=2):
+    for index, row in enumerate(rows, start=2):
         weight_value = _first_value(row, (
             "Weight(kg)", "Weight (kg)", "Weight/kg", "Weight",
             "Peso(kg)", "Peso (kg)", "Peso",
         ))
         weight_lb = _first_value(row, ("Weight(lb)", "Weight (lb)", "Weight/lb", "Peso(lb)"))
-        if not weight_value and weight_lb:
-            weight_value = str(float(weight_lb.replace(",", ".")) * 0.45359237)
-        if not weight_value:
+        if not weight_value and not weight_lb:
             skipped += 1
             continue
         try:
+            if not weight_value:
+                weight_value = str(float(weight_lb.replace(",", ".")) * 0.45359237)
             weight = round(float(weight_value.replace(",", ".")), 3)
             if not 2 <= weight <= 500:
                 raise ValueError("weight outside supported range")
@@ -375,17 +410,20 @@ async def import_readings_csv(
                 "Time of Measurement", "Measurement Time", "Date", "Time",
                 "Data da medição", "Data", "Hora",
             )))
+            if measured_at > datetime.utcnow():
+                raise ValueError("measurement date cannot be in the future")
         except (TypeError, ValueError) as exc:
             errors.append(f"Linha {index}: {exc}")
             continue
 
-        duplicate = db.query(DeviceReading.id).filter(
+        duplicate = db.query(DeviceReading).filter(
             DeviceReading.patient_id == patient.id,
             DeviceReading.reading_type == "weight",
             DeviceReading.measured_at == measured_at,
             DeviceReading.source == "renpho_csv",
         ).first()
         if duplicate:
+            _assert_same_scope(duplicate, country, consent_language)
             skipped += 1
             continue
 
@@ -409,6 +447,8 @@ async def import_readings_csv(
 
         db.add(DeviceReading(
             patient_id=patient.id,
+            country=country,
+            consent_language=consent_language,
             reading_type="weight",
             value=weight,
             unit="kg",
@@ -418,6 +458,7 @@ async def import_readings_csv(
             device_model="RENPHO Health CSV",
             notes=json.dumps({"body_composition": composition}, ensure_ascii=False),
         ))
+        db.flush()  # Make repeated identities in this batch visible with autoflush disabled.
         imported += 1
 
     db.commit()

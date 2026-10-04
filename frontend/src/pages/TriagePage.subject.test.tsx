@@ -6,7 +6,7 @@ import { I18nProvider } from '../i18n/LanguageContext';
 import FamilyPage from './FamilyPage';
 import TriagePage from './TriagePage';
 
-vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }));
+vi.mock('../api', () => ({ getSession: () => ({ userId: 'owner-A', token: 'token-A' }), default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }));
 vi.mock('../components/TriagePhotoGuide', () => ({ default: () => null }));
 beforeEach(() => { vi.resetAllMocks(); vi.mocked(api.get).mockResolvedValue({ data: [] }); });
 function show(state?: unknown) {
@@ -34,7 +34,7 @@ it.each(['AO', 'PT'])('allows explicit adult self intake for %s without family o
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/triage/start', {
     chief_complaint: 'Sintomas do próprio titular', country, consent_language: 'pt', age_group: 'adult', category: 'general', answered_by_guardian: false,
     vital_signs: undefined,
-  }));
+  }, { headers: { Authorization: 'Bearer token-A' } }));
   expect(vi.mocked(api.get).mock.calls.some(([path]) => path === '/api/v1/family/me')).toBe(false);
 });
 

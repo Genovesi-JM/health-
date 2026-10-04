@@ -54,13 +54,14 @@ def _private_photo_response(response: Response) -> None:
     response.headers.update(PHOTO_RESPONSE_HEADERS)
 
 
-def _device_readings_from_triage(patient_id: str, triage_id: str, vital_signs) -> list[DeviceReading]:
+def _device_readings_from_triage(patient_id: str, triage_id: str, vital_signs, *, country: str, consent_language: str) -> list[DeviceReading]:
     """Convert one multi-vital device payload into the canonical readings store."""
     if not vital_signs:
         return []
 
     common = {
         "patient_id": patient_id,
+        "country": country, "consent_language": consent_language,
         "measured_at": vital_signs.read_at or datetime.utcnow(),
         "source": vital_signs.source,
         "device_model": vital_signs.device_name,
@@ -172,6 +173,19 @@ def _assert_photo_access(triage_id: str, user: User, db: Session) -> TriageSessi
     raise HTTPException(status_code=403, detail="Sem acesso às fotografias desta triagem.")
 
 
+def _locked_owned_triage(db: Session, patient: Patient, triage_id: str) -> TriageSession:
+    # A request may wait behind completion/withdrawal. Read mutable session
+    # state only after the shared patient lock, replacing any ORM identity cache.
+    from app.services.appointments import lock_resources
+    lock_resources(db, None, patient.id)
+    session = db.query(TriageSession).filter(
+        TriageSession.id == triage_id, TriageSession.patient_id == patient.id,
+    ).populate_existing().first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+    return session
+
+
 @router.post("/start", response_model=TriageStartResponse)
 def start_triage(
     body: TriageStartRequest,
@@ -189,6 +203,8 @@ def start_triage(
     from app.services.consent_runtime import require_effective
     lock_resources(db, None, patient.id)
     require_effective(db, patient.id, body.country, body.consent_language)
+    if body.vital_signs and body.vital_signs.source not in (None, "manual"):
+        require_effective(db, patient.id, body.country, body.consent_language, purposes=("devices",))
     session = TriageSession(
         patient_id=patient.id,
         country=body.country, consent_language=body.consent_language,
@@ -201,6 +217,7 @@ def start_triage(
         patient.id,
         session.id,
         body.vital_signs,
+        country=body.country, consent_language=body.consent_language,
     ):
         db.add(reading)
     db.commit()
@@ -225,15 +242,8 @@ async def upload_triage_photo(
     db: Session = Depends(get_db),
 ):
     """Attach a private, non-diagnostic photograph for later clinician review."""
-    session = db.query(TriageSession).filter(
-        TriageSession.id == triage_id,
-        TriageSession.patient_id == patient.id,
-    ).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
-    from app.services.appointments import lock_resources
+    session = _locked_owned_triage(db, patient, triage_id)
     from app.services.consent_runtime import require_effective
-    lock_resources(db, None, patient.id)
     from app.services.consent_runtime import REQUIRED_PURPOSES
     require_effective(db, patient.id, session.country, session.consent_language, purposes=(*REQUIRED_PURPOSES, 'images'))
     pending_request = db.query(TriagePhotoRequest).filter(
@@ -614,15 +624,8 @@ def submit_answers(
     db: Session = Depends(get_db),
 ):
     """Submit answers for a triage session."""
-    session = db.query(TriageSession).filter(
-        TriageSession.id == triage_id,
-        TriageSession.patient_id == patient.id,
-    ).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
-    from app.services.appointments import lock_resources
+    session = _locked_owned_triage(db, patient, triage_id)
     from app.services.consent_runtime import require_effective
-    lock_resources(db, None, patient.id)
     require_effective(db, patient.id, session.country, session.consent_language)
     if session.status != "in_progress":
         raise HTTPException(status_code=400, detail="Sessão já completada ou expirada.")
@@ -655,15 +658,8 @@ def complete_triage(
     db: Session = Depends(get_db),
 ):
     """Complete a triage session and get the risk assessment result."""
-    session = db.query(TriageSession).filter(
-        TriageSession.id == triage_id,
-        TriageSession.patient_id == patient.id,
-    ).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
-    from app.services.appointments import lock_resources
+    session = _locked_owned_triage(db, patient, triage_id)
     from app.services.consent_runtime import require_effective
-    lock_resources(db, None, patient.id)
     require_effective(db, patient.id, session.country, session.consent_language)
     if session.status != "in_progress":
         raise HTTPException(status_code=400, detail="Sessão já completada.")
@@ -680,8 +676,12 @@ def complete_triage(
         except (json.JSONDecodeError, TypeError):
             answers_dict[a.question_key] = a.answer_value
 
-    # Evaluate
-    evaluation = evaluate_triage(answers_dict)
+    # Empty intake is not a clinical result, and must not become an HTTP500.
+    from app.triage_safety import TriageIncompleteError
+    try:
+        evaluation = evaluate_triage(answers_dict)
+    except TriageIncompleteError:
+        raise HTTPException(422, "A triagem está incompleta. Responda às perguntas antes de concluir.") from None
 
     # Store result
     result = TriageResult(

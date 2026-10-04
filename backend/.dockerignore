@@ -185,3 +185,4 @@
 !app/services/consent_runtime.py
 !app/services/consent_retention.py
 !alembic/versions/consent_runtime_v1.py
+!alembic/versions/reading_consent_scope_v1.py

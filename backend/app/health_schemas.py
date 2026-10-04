@@ -765,6 +765,8 @@ _reading_type_pattern = "^(" + "|".join(READING_TYPES) + ")$"
 
 
 class DeviceReadingCreate(BaseModel):
+    country: Literal['AO', 'PT']
+    consent_language: str = Field(default='pt', pattern=r'^[a-z]{2}(-[A-Z]{2})?$', max_length=10)
     reading_type: str = Field(..., pattern=_reading_type_pattern)
     # Generic scalar (glucose, temperature, oxygen_saturation, weight, heart_rate)
     value: Optional[float] = None
@@ -794,6 +796,8 @@ class HealthSyncReading(BaseModel):
 
 
 class HealthSyncRequest(BaseModel):
+    country: Literal['AO', 'PT']
+    consent_language: str = Field(default='pt', pattern=r'^[a-z]{2}(-[A-Z]{2})?$', max_length=10)
     records: List[HealthSyncReading] = Field(..., min_length=1, max_length=500)
 
 
@@ -804,6 +808,8 @@ class HealthSyncResponse(BaseModel):
 
 
 class ReadingSummaryItem(BaseModel):
+    country: Optional[str] = None
+    consent_language: Optional[str] = None
     reading_type: str
     value: Optional[float] = None
     unit: Optional[str] = None
@@ -839,6 +845,8 @@ class DeviceReadingUpdate(BaseModel):
 
 
 class DeviceReadingOut(BaseModel):
+    country: Optional[str] = None
+    consent_language: Optional[str] = None
     id: str
     patient_id: str
     reading_type: str

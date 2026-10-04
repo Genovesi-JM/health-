@@ -34,16 +34,17 @@ storage never provide server authority.
 The five currently required purposes are `privacy_policy`,
 `telemedicine_consent`, `terms_of_service`, `health_data_processing` and
 `medical_disclaimer`. Optional purposes remain separate; uploading a triage
-photo additionally requires `images`. Counsel and clinical owners must approve
+photo additionally requires `images`; device acquisition, synchronization and CSV
+imports additionally require `devices`. Counsel and clinical owners must approve
 whether these purposes/kinds and their lawful-basis mapping are appropriate.
 
 ## Operational coverage
 
 Fresh onboarding completion records the displayed five exact references and
 profile changes in one transaction. Booking, rescheduling, acceptance/start,
-triage start/answers/completion, private document upload/processing/review and
-fresh consultation checkout validate the applicable server state. New bookings,
-triage and document uploads explicitly select AO or PT; no historical market is
+triage start/answers/completion, manual/device measurement writes, private
+document upload/processing/review and fresh consultation checkout validate the applicable server state. New bookings,
+triage, measurement writes and document uploads explicitly select AO or PT; no historical market is
 inferred from a current profile. The language of the evidence is distinct from a
 user's communication preference.
 
@@ -58,7 +59,9 @@ to the user's normal ownership/session checks after withdrawal.
 This is coverage of the listed operational routes. It does not certify all legacy
 features, third-party delivery, device bridges, AI/OCR, recording or vendor
 transfer, nor does it enable any of them. The default API entrypoint is still
-HOLD and the native entrypoint informational.
+HOLD and the native entrypoint informational. See the [measurement contract](KAYA_READINGS.md)
+for device preflight, immutable import scope and retained personal history. Legacy
+renewal and prescription generation still require separate runtime adoption.
 
 ## Web and native behavior
 

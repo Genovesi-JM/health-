@@ -1099,6 +1099,9 @@ class DeviceReading(Base):
         String(36), ForeignKey("patients.id", ondelete="CASCADE"),
         nullable=False, index=True,
     )
+    # Historical readings remain unclassified; only fresh authorized writes set scope.
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     # one of READING_TYPES
     reading_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
 

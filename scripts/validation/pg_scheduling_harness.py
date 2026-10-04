@@ -35,7 +35,7 @@ from app.health_models import (Patient, Doctor, ClinicianCredential, PatientCons
                               ClinicalCareTask, HealthAuditLog, HealthPayment, Notification,
                               TeleconsultationSession, TeleconsultationParticipant)
 from app.oauth2 import create_access_token
-from app.routers import appointments, consultations, notifications, teleconsultation, compliance
+from app.routers import appointments, consultations, notifications, teleconsultation, compliance, readings, triage
 from app.services.consultation_lifecycle import transition
 from app.services.mfa import generate_secret
 
@@ -45,6 +45,8 @@ application.include_router(consultations.router)
 application.include_router(notifications.router)
 application.include_router(teleconsultation.router)
 application.include_router(compliance.router)
+application.include_router(readings.router)
+application.include_router(triage.router)
 sys.path.insert(0, str(pathlib.Path.cwd()/"tests"))
 from consent_fixtures import grant_all, references, seed_episode
 client = TestClient(application)
@@ -1137,6 +1139,123 @@ def consent_retention_and_migration():
             'sql_immutability_and_retention': True, 'retained_history_downgrade_refused': True}
 
 
+
+def reading_payload(external_id=None, country='AO'):
+    return {'country': country, 'consent_language': 'pt', 'records': [{'external_id': external_id or str(uuid4()),
+        'reading_type': 'weight', 'value': 72.5, 'unit': 'kg', 'source': 'apple_health',
+        'measured_at': (datetime.utcnow() - timedelta(hours=1)).isoformat() + 'Z'}]}
+
+
+def reading_grants(patient, country='AO'):
+    with Session(engine) as db:
+        profile = db.get(Patient, patient['id'])
+        if country != 'AO': grant_all(db, profile, country=country)
+        grant_all(db, profile, country=country, purposes=('devices',)); db.commit()
+
+
+def reading_same_identity_and_cross_market():
+    from app.health_models import DeviceReading
+    for cross_market in (False, True):
+        for _ in range(4):
+            p = person('patient'); reading_grants(p)
+            if cross_market: reading_grants(p, 'PT')
+            first = reading_payload(); second = dict(first, country='PT') if cross_market else first
+            results = together([
+                lambda: client.post('/api/v1/readings/sync', headers=p['headers'], json=first),
+                lambda: client.post('/api/v1/readings/sync', headers=p['headers'], json=second)], table='patients')
+            statuses(results, (200, 409) if cross_market else (200, 200))
+            with Session(engine) as db:
+                row = db.query(DeviceReading).filter_by(patient_id=p['id']).one()
+                assert row.country in ('AO', 'PT') and row.consent_language == 'pt'
+            if not cross_market:
+                assert sum(r.json()['imported'] for r in results) == 1
+                assert sum(r.json()['skipped'] for r in results) == 1
+    return {'forced_races': 8, 'one_platform_identity_per_owner': True, 'market_rebinding_is_rejected': True}
+
+
+def reading_withdrawal_vs_ingestion():
+    from app.health_models import DeviceReading
+    from app.services import consent_runtime
+    for mode in ('manual', 'sync', 'import'):
+        for _ in range(3):
+            p = person('patient'); reading_grants(p)
+            with Session(engine) as db:
+                reference = references(db, purposes=('privacy_policy' if mode == 'manual' else 'devices',))[0]
+                body = reference | {'action': 'withdraw', 'expected_revision': consent_runtime.revision(db, p['id'])}
+            def write():
+                if mode == 'sync':
+                    return client.post('/api/v1/readings/sync', headers=p['headers'], json=reading_payload())
+                if mode == 'import':
+                    return client.post('/api/v1/readings/import', headers=p['headers'], data={'country': 'AO'},
+                        files={'file': ('synthetic.csv', b'Date,Weight(kg)\n2026-01-01,72.5\n', 'text/csv')})
+                return client.post('/api/v1/readings', headers=p['headers'], json={'country': 'AO', 'reading_type': 'weight', 'value': 72.5})
+            result, denial = together([write, lambda: decide(p, body)], table='patients')
+            assert denial.status_code == 200 and result.status_code in (200, 201, 403), [(r.status_code,r.text) for r in (result,denial)]
+            with Session(engine) as db:
+                rows = db.query(DeviceReading).filter_by(patient_id=p['id']).all()
+                assert len(rows) == (0 if result.status_code == 403 else 1)
+                assert all(row.country == 'AO' and row.consent_language == 'pt' for row in rows)
+            assert write().status_code == 403
+            assert client.get('/api/v1/readings/me', headers=p['headers']).status_code == 200
+    return {'forced_races': 9, 'withdrawal_serializes_manual_device_and_csv_writes': True, 'personal_history_remains_available': True}
+
+
+def reading_scope_migration():
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    spec = importlib.util.spec_from_file_location('pg_reading_scope', pathlib.Path('alembic/versions/reading_consent_scope_v1.py'))
+    migration = importlib.util.module_from_spec(spec); spec.loader.exec_module(migration)
+    with engine.begin() as conn, Operations.context(MigrationContext.configure(conn)):
+        migration.upgrade()
+    schema = 'synthetic_readings_' + uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}'); conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        conn.exec_driver_sql('CREATE TABLE device_readings (id VARCHAR(36) PRIMARY KEY)')
+        conn.exec_driver_sql("INSERT INTO device_readings VALUES ('legacy')")
+        with Operations.context(MigrationContext.configure(conn)):
+            migration.upgrade(); migration.upgrade()
+            assert tuple(conn.execute(text('SELECT country,consent_language FROM device_readings')).one()) == (None,None)
+            conn.exec_driver_sql("INSERT INTO device_readings VALUES ('new','AO','pt')")
+            try:
+                migration.downgrade(); raise AssertionError('Reading jurisdiction must be retained')
+            except RuntimeError as error: assert 'Retained reading jurisdiction' in str(error)
+            conn.exec_driver_sql("DELETE FROM device_readings WHERE id='new'")
+            migration.downgrade()
+            assert conn.execute(text('SELECT id FROM device_readings')).scalar() == 'legacy'
+        conn.exec_driver_sql('SET LOCAL search_path TO public'); conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'migration_adoption_and_unknown_legacy_scope': True, 'destructive_downgrade_refused': True}
+
+
+def triage_answer_and_completion_races():
+    from app.health_models import TriageSession, TriageResult, TriageAnswer
+    from app.services.triage_engine import evaluate_triage
+    for duplicate_completion in (False, True):
+        for _ in range(5):
+            p = person('patient')
+            started = client.post('/api/v1/triage/start', headers=p['headers'], json={'country': 'AO'})
+            assert started.status_code == 200, started.text
+            identifier = started.json()['triage_id']
+            baseline = {'mild_headache': True}
+            assert client.post(f'/api/v1/triage/{identifier}/answers', headers=p['headers'], json={'answers': baseline}).status_code == 200
+            def complete(): return client.post(f'/api/v1/triage/{identifier}/complete', headers=p['headers'])
+            def answer(): return client.post(f'/api/v1/triage/{identifier}/answers', headers=p['headers'], json={'answers': {'chest_pain': True}})
+            results = together([complete, complete if duplicate_completion else answer], table='patients')
+            if duplicate_completion: statuses(results, (200, 400))
+            else:
+                assert results[0].status_code == 200 and results[1].status_code in (200,400), [(r.status_code,r.text) for r in results]
+            with Session(engine) as db:
+                session = db.get(TriageSession, identifier)
+                result = db.query(TriageResult).filter_by(triage_session_id=identifier).one()
+                answers = db.query(TriageAnswer).filter_by(triage_session_id=identifier).all()
+                assert session.status == 'completed'
+                assert len(answers) == (1 if duplicate_completion or results[1].status_code == 400 else 2)
+                expected = evaluate_triage(baseline | ({'chest_pain': True} if len(answers) == 2 else {}))
+                assert result.risk_level == expected.risk_level and float(result.score) == expected.score
+            assert answer().status_code == 400
+    return {'forced_races': 10, 'completed_triage_rejects_late_answers': True, 'concurrent_completion_preserves_one_consistent_result': True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
@@ -1162,7 +1281,11 @@ for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_differ
                 ('consent_withdrawal_vs_booking', consent_withdrawal_vs_booking),
                 ('consent_withdrawal_vs_start', consent_withdrawal_vs_start),
                 ('consent_retention_and_migration', consent_retention_and_migration),
-                ('consent_state_revision_prefix', consent_state_revision_prefix)]:
+                ('consent_state_revision_prefix', consent_state_revision_prefix),
+                ('reading_same_identity_and_cross_market', reading_same_identity_and_cross_market),
+                ('reading_withdrawal_vs_ingestion', reading_withdrawal_vs_ingestion),
+                ('reading_scope_migration', reading_scope_migration),
+                ('triage_answer_and_completion_races', triage_answer_and_completion_races)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}

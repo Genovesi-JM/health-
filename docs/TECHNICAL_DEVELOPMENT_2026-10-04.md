@@ -756,3 +756,32 @@ Policy contains 288 routes with all activation flags false and HOLD. These count
 exclude subsequent readings/triage changes. The review also identified legacy
 measurement ingestion and prescription/renewal routes needing separate consent
 adoption before activation; they are not silently certified by this checkpoint.
+
+
+## Measurement consent and triage serialization checkpoint
+
+Implemented explicit AO/PT scope on manual, device and CSV measurement writes,
+with current five-purpose consent and separate optional device authorization.
+Shared patient locking serializes withdrawal with persisted batches. Existing
+source identities cannot migrate markets; conflicts roll back whole batches.
+CSV errors cannot invent measurement times or silently truncate oversized files.
+Web/native acquisition uses captured owner/scope preflight, preserves retained
+history and shows uncertain manual outcomes without claiming duplicate safety.
+CSV partial errors remain visible with the file available for correction.
+
+Triage answers/completion/photos now read owned session status after the shared
+lock. Late requests cannot alter a completed result; empty completion returns
+422. This is lifecycle validation, not approval of the clinical algorithm.
+
+Frozen validation: **1,816 backend tests**, **456 web tests in 61 files**, whole
+lint/TypeScript/build, 15 prototype checks and emitted PWA graph; **214 native
+tests**, TypeScript and four Hermes exports. Local PostgreSQL: **43 scenarios,
+167 forced races**, cluster stopped. Repository checks: **29 plus 43 subtests**.
+Built Chrome UI: **9 synthetic-response scenarios**, external traffic blocked;
+390px readings screenshot visually checked. No live backend/provider E2E claim.
+See [source-hashed evidence](evidence/readings-consent-2026-10-04/validation.json)
+and [measurement contract](KAYA_READINGS.md). Policy remains 288 routes, all
+activation flags false. Default API is HOLD; web requires explicit operational
+hold configuration; native entry remains informational. No new APK, migration,
+provider activation or deployment. Prescription/renewal repair is a separate
+subsequent checkpoint and is not included in these results.

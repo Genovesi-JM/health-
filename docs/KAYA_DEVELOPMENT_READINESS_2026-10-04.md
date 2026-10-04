@@ -14,6 +14,7 @@ priority, followed by standalone Kaya apps for Android and iOS.
 | Consent | Durable exact-text AO/PT catalog, append-only decisions and withdrawal, retained episode authority, web/native review and recovery | [Consent runtime](KAYA_CONSENT_MODEL.md); no approved texts seeded, no human release approval |
 | Accounts | Patient onboarding, professional enrollment/review and privileged MFA checks; session restoration uses server identity | Account changes invalidate old clinical views and pending identity responses |
 | Documents | Private PDF/JPEG/PNG upload, exact retry identity, scanner gate, local text-PDF extraction, separate patient review, paginated metadata, lazy details and clinician read-only web view | [Document runtime](KAYA_FILE_SAFETY.md); image/scanned-PDF OCR and production scanning are not validated |
+| Measurements | Explicit AO/PT writes, separate device consent, import scope conflicts, native preflight and retained personal history | [Measurement contract](KAYA_READINGS.md); real health-device bridges remain unverified |
 | Scheduling | Published dated slots, pending clinician acceptance, atomic capacity checks, cancellation release, rescheduling with renewed acceptance and persisted request expiry | [Scheduling](KAYA_SCHEDULING.md), [booking](KAYA_BOOKING.md); real local PostgreSQL races; expiry worker is implemented but not activated |
 | Consultation history | Patient and assigned-clinician cursor pages on web/native, with all/upcoming/past filters and direct access to older completed records | Loaded counts are not total counts; clinician historical closeout is read-only; current authorization is required |
 | Consultation record | Attributed finalized closeout, explicit patient summary, linked follow-up and verified readers | [Retained corrections](KAYA_CLINICAL_AMENDMENTS.md); original note retained with separate, explicitly published amendments |
@@ -51,6 +52,8 @@ These are explicit outstanding items, not hidden behind passing test counts:
   clinical record or measurement is created. The draft pilot's invitation,
   adult eligibility, named-clinic admission limits and staffed coverage still
   require operational enforcement against the eventually approved scope.
+- Finish exact-consent and retained-episode adoption for legacy prescription and
+  renewal routes, including atomic decisions, recovery and matching clients.
 - Choose and provision approved video, email/SMS/push, private storage/scanning
   and recovery infrastructure. Complete provider adapters, durable external
   delivery, failure handling and real sandbox integration tests. Existing

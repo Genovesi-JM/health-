@@ -43,11 +43,15 @@ let lostConsentResponse = true;
 let paymentKey = null;
 let paymentPosts = 0;
 let consultationReads = 0;
-const documents = country => purposes.map(purpose => {
+let readingPosts = 0;
+let importPosts = 0;
+const readings = [{ id: 'synthetic-old-reading', reading_type: 'weight', value: 70, unit: 'kg',
+  measured_at: '2026-10-01T10:00:00Z', source: 'manual', notes: 'Medição sintética anterior', country: null, consent_language: null }];
+const documents = country => [...purposes, ...(mode.startsWith('readings') ? ['devices'] : [])].map(purpose => {
   const content = `SYNTHETIC BROWSER TEST ONLY: ${country} ${purpose}. <img src=x onerror=alert(1)>`;
   return { id: `${country}-${purpose}`, document_key: `${country}:pt:${purpose}`, version: 1,
     content_hash: createHash('sha256').update(content).digest('hex'), country, language: 'pt', purpose,
-    kind: 'clinical_informed_consent', required: true, title: `Synthetic ${purpose}`, content,
+    kind: purpose === 'devices' ? 'optional' : 'clinical_informed_consent', required: purpose !== 'devices', title: `Synthetic ${purpose}`, content,
     approved_source: 'synthetic-fixture://browser-only', effective_from: '2026-01-01T00:00:00+00:00', effective_to: null };
 });
 function state(country) {
@@ -59,6 +63,12 @@ function state(country) {
       return { purpose: document.purpose, status: !available ? 'unavailable' : !event ? 'missing' : effective ? 'granted' : 'withdrawn',
         effective: !!effective, document: available ? document : null, latest_event: event };
     }) };
+}
+function grantSynthetic(country, purpose) {
+  const document = documents(country).find(item => item.purpose === purpose);
+  events.push({ id: randomUUID(), request_key: randomUUID(), sequence: events.length + 1, purpose,
+    document_id: document.id, version: document.version, content_hash: document.content_hash,
+    country, language: 'pt', action: 'grant', created_at: new Date().toISOString() });
 }
 const receipt = event => ({ event, revision: events.length, state: state(event.country) });
 const consultation = () => ({ id: 'synthetic-visit', patient_id: 'synthetic-patient', specialty: 'clinica_geral', status: mode === 'closed-payment' ? 'cancelled' : 'scheduled',
@@ -107,6 +117,19 @@ try {
         events.push(event);
         if (lostConsentResponse) { lostConsentResponse = false; return route.abort('failed'); }
         return respond(receipt(event));
+      }
+      if (path === '/api/v1/readings/me') return respond({ total: readings.length, readings });
+      if (path === '/api/v1/readings' && request.method() === 'POST') {
+        ++readingPosts;
+        const body = request.postDataJSON();
+        assert.equal(body.country, 'PT'); assert.equal(body.consent_language, 'pt'); assert.equal(body.source, 'manual');
+        const row = { ...body, id: randomUUID() }; readings.push(row); return respond(row, 201);
+      }
+      if (path === '/api/v1/readings/import') {
+        ++importPosts;
+        assert.match(request.postData(), /name="country"\r\n\r\nPT/);
+        assert.match(request.postData(), /name="consent_language"\r\n\r\npt/);
+        return respond({ imported: 0, skipped: 0, errors: ['Linha 2: measurement date is required'], source: 'renpho_csv' });
       }
       if (path === '/api/v1/consultations/me/page') { ++consultationReads; return respond({ items: [consultation()], next_cursor: null }); }
       if (path === '/api/v1/dashboard/patient-state') return respond({ current_state: 'triage_completed', last_triage_risk: 'LOW' });
@@ -181,6 +204,37 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
   await page.screenshot({ path: resolve(output, 'consent-mobile-viewport.png'), fullPage: true, animations: 'disabled' });
   results.push('Consent and withdrawal history render at a 390px viewport without horizontal page overflow.');
+  mode = 'readings';
+  for (const country of ['AO', 'PT']) for (const purpose of purposes) grantSynthetic(country, purpose);
+  await visit('/patient/readings'); await visible('Medição sintética anterior');
+  await page.getByLabel('País das novas medições').selectOption('PT');
+  await page.getByRole('button', { name: 'Nova Medição', exact: true }).click();
+  await page.getByLabel('Tipo de Medição *', { exact: true }).selectOption('weight');
+  await page.getByLabel('Valor *', { exact: true }).fill('71');
+  await page.getByRole('button', { name: 'Guardar Medição', exact: true }).click();
+  await visible('71 kg'); assert.equal(readingPosts, 1);
+  results.push('Manual measurements carry the chosen Portugal scope and need no optional device grant; legacy history stays visible.');
+
+  await page.getByLabel('Ficheiro CSV', { exact: true }).setInputFiles({ name: 'synthetic.csv', mimeType: 'text/csv', buffer: Buffer.from('Date,Weight\n,70') });
+  await page.getByRole('button', { name: 'Importar ficheiro selecionado', exact: true }).click();
+  await visible('Reveja os consentimentos deste país, incluindo a decisão separada para dispositivos');
+  assert.equal(importPosts, 0); await visible('Ficheiro selecionado: synthetic.csv');
+  grantSynthetic('PT', 'devices');
+  await page.getByRole('button', { name: 'Importar ficheiro selecionado', exact: true }).click();
+  await visible('Linha 2: measurement date is required'); assert.equal(importPosts, 1);
+  await visible('Ficheiro selecionado: synthetic.csv');
+  results.push('CSV acquisition requires the optional device grant; an invalid-row reply stays visible and retains the selected file.');
+
+  events.push({ ...events.findLast(item => item.country === 'PT' && item.purpose === 'privacy_policy'), id: randomUUID(), request_key: randomUUID(), sequence: events.length + 1, action: 'withdraw' });
+  await page.getByRole('button', { name: 'Nova Medição', exact: true }).click();
+  await page.getByLabel('Tipo de Medição *', { exact: true }).selectOption('weight');
+  await page.getByLabel('Valor *', { exact: true }).fill('72');
+  await page.getByRole('button', { name: 'Guardar Medição', exact: true }).click();
+  await visible('Reveja os consentimentos deste país antes de guardar novas medições. O histórico continua disponível.');
+  assert.equal(readingPosts, 1); await visible('Medição sintética anterior');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
+  await page.screenshot({ path: resolve(output, 'readings-mobile-viewport.png'), fullPage: true, animations: 'disabled' });
+  results.push('Withdrawal blocks fresh measurements while retained history remains accessible at a 390px viewport.');
   assert.deepEqual(pageErrors, []); assert.deepEqual(denied, []);
   await writeFile(resolve(output, 'browser-ui-smoke.json'), JSON.stringify({ kind: 'synthetic-built-ui-only', browser: browser.version(),
     tests: results.length, results, pageErrors, denied, blockedExternal, apiCalls, source: 'Built frontend/dist, all API replies synthetic; external traffic denied; no live provider or backend tested.' }, null, 2));

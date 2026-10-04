@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api from '../api';
+import api, { getSession } from '../api';
+import { checkReadingConsent, readingScope } from '../utils/readingConsent';
 import { useT } from '../i18n/LanguageContext';
 import type { TriageQuestion, TriageResult, TriageHistoryItem } from '../types';
 import {
@@ -93,12 +94,23 @@ export default function TriagePage() {
   if (location.state && Object.prototype.hasOwnProperty.call(location.state, 'dependent')) {
     return <p role="alert">A triagem de menores ou em nome de outra pessoa não está disponível. Não envie esses dados na sua conta.</p>;
   }
-  return <TriageSession key={location.key} />;
+  const session = getSession();
+  return <TriageSession key={`${location.key}:${session?.userId}:${session?.token}`} />;
 }
 
 function TriageSession() {
   const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
+  const [ownerSession] = useState(getSession);
+  const mounted = useRef(false);
+  const deviceSequence = useRef(0);
+  const advanceDevices = useCallback(() => ++deviceSequence.current, []);
+  const actionBusy = useRef(false);
+  const deviceBusy = useRef(false);
+  const current = useCallback(() => mounted.current && !!ownerSession?.userId && !!ownerSession.token
+    && getSession()?.userId === ownerSession.userId && getSession()?.token === ownerSession.token, [ownerSession]);
+  const config = useCallback(() => ({ headers: { Authorization: `Bearer ${ownerSession?.token ?? ''}` } }), [ownerSession]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; advanceDevices(); }; }, [advanceDevices]);
   const [step, setStep] = useState<Step>('history');
   const [country, setCountry] = useState<'AO' | 'PT'>('AO');
   const [category, setCategory] = useState<TriageCategory>('general');
@@ -123,6 +135,8 @@ function TriageSession() {
   const [deviceReading, setDeviceReading] = useState(false);
   const [wifiIp, setWifiIp] = useState('');
   const [btError, setBtError] = useState('');
+  const [deviceReady, setDeviceReady] = useState(false);
+  const [deviceNotice, setDeviceNotice] = useState('');
 
   const deviceErrorMessage = (error: unknown) => {
     if (error instanceof DeviceIntegrationError) {
@@ -146,66 +160,80 @@ function TriageSession() {
     return '#22c55e';
   };
 
+  const resetDeviceContext = () => {
+    ++deviceSequence.current; deviceBusy.current = false; setBtScanning(false); setDeviceReading(false);
+    setDeviceReady(false); setConnectedDevice(null); setBtDevices([]); setBtError('');
+    if (vitals.source && vitals.source !== 'manual') {
+      setVitals({}); setDeviceNotice('As medições do dispositivo foram removidas. Recolha novamente no país e modo escolhidos.');
+    }
+  };
+  // Bluetooth's chooser needs a fresh click after the asynchronous server check.
+  const prepareDeviceChooser = async () => {
+    if (!current() || deviceBusy.current || actionBusy.current) return;
+    const sequence = ++deviceSequence.current;
+    const active = () => current() && sequence === deviceSequence.current;
+    deviceBusy.current = true; setBtScanning(true); setBtError(''); setDeviceReady(false);
+    try {
+      await checkReadingConsent(readingScope(country), { device: true, current: active, ...config() });
+      if (active()) setDeviceReady(true);
+    } catch (failure) { if (active()) setBtError(failure instanceof Error ? failure.message : apiErrorMessage(failure, t('vitals.connection_failed'))); }
+    finally { if (active()) { deviceBusy.current = false; setBtScanning(false); } }
+  };
   const handleBtScan = async () => {
-    setBtError('');
+    if (!current() || !deviceReady || deviceBusy.current || actionBusy.current) return;
     if (!isBluetoothAvailable()) { setBtError(t('vitals.not_supported')); return; }
-    setBtScanning(true);
+    const sequence = ++deviceSequence.current;
+    const active = () => current() && sequence === deviceSequence.current;
+    deviceBusy.current = true; setDeviceReady(false); setBtError(''); setBtScanning(true);
     try {
       const devices = await scanBluetooth();
-      setBtDevices(devices);
-    } catch (e) { setBtError(deviceErrorMessage(e)); }
-    setBtScanning(false);
+      if (active()) setBtDevices(devices);
+    } catch (failure) { if (active()) setBtError(deviceErrorMessage(failure)); }
+    finally { if (active()) { deviceBusy.current = false; setBtScanning(false); } }
   };
-
-  const handleBtConnect = async (device: DeviceInfo) => {
-    setBtError('');
+  const withDeviceConsent = async (action: () => Promise<void>) => {
+    if (!current() || deviceBusy.current || actionBusy.current) return;
+    const sequence = ++deviceSequence.current;
+    const active = () => current() && sequence === deviceSequence.current;
+    deviceBusy.current = true; setDeviceReading(true); setBtError('');
     try {
-      const connected = await connectBluetooth(device.id);
-      setConnectedDevice(connected);
-    } catch (e) {
-      setBtError(deviceErrorMessage(e));
-    }
+      await checkReadingConsent(readingScope(country), { device: true, current: active, ...config() });
+      if (!active()) return;
+      await action();
+    } catch (failure) { if (active()) setBtError(failure instanceof Error ? deviceErrorMessage(failure) : apiErrorMessage(failure, t('vitals.connection_failed'))); }
+    finally { if (active()) { deviceBusy.current = false; setDeviceReading(false); } }
   };
-
-  const handleReadDevice = async () => {
-    setDeviceReading(true);
-    try {
-      let readings: VitalReadings;
-      if (connectedDevice?.type === 'wifi') {
-        readings = await readWifiVitals(wifiIp);
-      } else {
-        readings = await readBluetoothVitals(connectedDevice!.id);
-      }
-      setVitals(v => ({ ...v, ...readings }));
-      setBtError('');
-    } catch (e) {
-      setBtError(deviceErrorMessage(e));
-    }
-    setDeviceReading(false);
-  };
-
-  const handleWifiConnect = async () => {
+  const handleBtConnect = (device: DeviceInfo) => withDeviceConsent(async () => {
+    const sequence = deviceSequence.current;
+    const connected = await connectBluetooth(device.id);
+    if (current() && sequence === deviceSequence.current) setConnectedDevice(connected);
+  });
+  const handleReadDevice = () => withDeviceConsent(async () => {
+    if (!connectedDevice) return;
+    const sequence = deviceSequence.current;
+    const readings = connectedDevice.type === 'wifi' ? await readWifiVitals(wifiIp) : await readBluetoothVitals(connectedDevice.id);
+    if (current() && sequence === deviceSequence.current) { setVitals(readings); setDeviceNotice(''); }
+  });
+  const handleWifiConnect = () => withDeviceConsent(async () => {
     if (!wifiIp.trim()) return;
-    setBtError('');
-    try {
-      const device = await connectWifi(wifiIp.trim());
-      setConnectedDevice(device);
-    } catch (e) {
-      setBtError(deviceErrorMessage(e));
-    }
-  };
+    const sequence = deviceSequence.current;
+    const device = await connectWifi(wifiIp.trim());
+    if (current() && sequence === deviceSequence.current) setConnectedDevice(device);
+  });
 
   const loadHistory = useCallback(() => {
-    return api.get<TriageHistoryItem[]>('/api/v1/triage/history')
-      .then(response => setHistory(response.data))
+    if (!current()) return Promise.resolve();
+    return api.get<TriageHistoryItem[]>('/api/v1/triage/history', config())
+      .then(response => { if (current()) setHistory(response.data); })
       .catch(() => {});
-  }, []);
+  }, [config, current]);
 
   const loadPhotoRequests = useCallback(() => {
-    return api.get<PhotoRequest[]>('/api/v1/triage/photo-requests/pending')
-      .then(response => setPendingPhotoRequests(response.data))
-      .catch(() => setPendingPhotoRequests([]));
-  }, []);
+    if (!current()) return Promise.resolve();
+    return api.get<PhotoRequest[]>('/api/v1/triage/photo-requests/pending', config())
+      .then(response => { if (current()) setPendingPhotoRequests(response.data); })
+      .catch(() => { if (current()) setPendingPhotoRequests([]); });
+  }, [config, current]);
 
   useEffect(() => {
     loadHistory();
@@ -214,18 +242,22 @@ function TriageSession() {
   }, [loadHistory, loadPhotoRequests]);
 
   const deleteTriage = async (id: string) => {
+    if (!current() || actionBusy.current) return;
+    actionBusy.current = true;
     try {
-      await api.delete(`/api/v1/triage/${id}`);
+      await api.delete(`/api/v1/triage/${id}`, config());
+      if (!current()) return;
       setHistory(prev => prev.filter(h => h.id !== id));
     } catch (err) {
-      setError(apiErrorMessage(err, 'Erro ao eliminar triagem.'));
+      if (current()) setError(apiErrorMessage(err, 'Erro ao eliminar triagem.'));
     }
-    setDeleteConfirm(null);
+    if (current()) { actionBusy.current = false; setDeleteConfirm(null); }
   };
 
   const startTriage = async (e: FormEvent) => {
     e.preventDefault();
-    if (!complaint.trim()) return;
+    if (!complaint.trim() || !current() || actionBusy.current || deviceBusy.current) return;
+    actionBusy.current = true;
     setLoading(true); setError('');
     try {
       const hasVitals = ['systolic', 'diastolic', 'spo2', 'temperature', 'glucose', 'heartRate']
@@ -240,25 +272,29 @@ function TriageSession() {
           source: vitals.source || 'manual',
           readAt: vitals.readAt || new Date().toISOString(),
         } : undefined,
-      });
+      }, config());
+      if (!current()) return;
       setSessionId(r.data.triage_id ?? r.data.session_id);
       setQuestions(r.data.questions || []);
       setAnswers({});
       setStep('questions');
     } catch (err) {
-      setError(apiErrorMessage(err, 'Erro ao iniciar triagem.'));
+      if (current()) setError(apiErrorMessage(err, 'Erro ao iniciar triagem.'));
     }
-    setLoading(false);
+    if (current()) { actionBusy.current = false; setLoading(false); }
   };
 
   const submitAnswers = async () => {
+    if (!current() || actionBusy.current) return;
+    actionBusy.current = true;
     setLoading(true); setError('');
     try {
       // Backend expects a list of {question_key, answer}
       const answerList = Object.entries(answers).map(([question_key, answer]) => ({ question_key, answer }));
-      await api.post(`/api/v1/triage/${sessionId}/answers`, { answers: answerList });
-
-      const r2 = await api.post(`/api/v1/triage/${sessionId}/complete`, {});
+      await api.post(`/api/v1/triage/${sessionId}/answers`, { answers: answerList }, config());
+      if (!current()) return;
+      const r2 = await api.post(`/api/v1/triage/${sessionId}/complete`, {}, config());
+      if (!current()) return;
       setResult({
         id: r2.data.triage_id,
         triage_session_id: r2.data.triage_id,
@@ -271,9 +307,9 @@ function TriageSession() {
       setStep('result');
       loadHistory();
     } catch (err) {
-      setError(apiErrorMessage(err, 'Erro ao submeter respostas.'));
+      if (current()) setError(apiErrorMessage(err, 'Erro ao submeter respostas.'));
     }
-    setLoading(false);
+    if (current()) { actionBusy.current = false; setLoading(false); }
   };
 
   const riskData = (level?: string) => {
@@ -311,14 +347,14 @@ function TriageSession() {
 
       {/* Tab nav */}
       <div className="tab-nav">
-        <button className={step === 'history' ? 'active' : ''} onClick={() => setStep('history')}>{t('triage.history_tab')}</button>
-        <button className={step === 'start' || step === 'questions' || step === 'result' ? 'active' : ''}
+        <button disabled={loading || deviceReading || btScanning} className={step === 'history' ? 'active' : ''} onClick={() => setStep('history')}>{t('triage.history_tab')}</button>
+        <button disabled={loading || deviceReading || btScanning} className={step === 'start' || step === 'questions' || step === 'result' ? 'active' : ''}
           onClick={() => { setStep('start'); setResult(null); setError(''); }}>
           {t('triage.new_tab')}
         </button>
       </div>
 
-      {error && <div className="toast error" style={{ position: 'relative', top: 0, right: 0, marginBottom: '1rem' }}>{error}</div>}
+      {error && <div role="alert" className="toast error" style={{ position: 'relative', top: 0, right: 0, marginBottom: '1rem' }}>{error}</div>}
 
       {/* ─── History ─── */}
       {step === 'history' && (
@@ -441,7 +477,7 @@ function TriageSession() {
           <form onSubmit={startTriage} style={{ padding: '1.25rem' }}>
 
             <label htmlFor="triage-country">País deste novo pedido</label>{' '}
-            <select id="triage-country" value={country} disabled={loading} onChange={event => setCountry(event.target.value === 'PT' ? 'PT' : 'AO')}><option value="AO">Angola</option><option value="PT">Portugal</option></select>
+            <select id="triage-country" value={country} disabled={loading} onChange={event => { resetDeviceContext(); setCountry(event.target.value === 'PT' ? 'PT' : 'AO'); }}><option value="AO">Angola</option><option value="PT">Portugal</option></select>
             <p><Link to={`/consents?country=${country}`}>Rever consentimentos para este país</Link>. As decisões atuais são verificadas antes de iniciar.</p>
 
             <p role="note">Esta triagem destina-se apenas ao próprio titular adulto da conta. A triagem de menores ou em nome de outra pessoa não está disponível.</p>
@@ -483,11 +519,9 @@ function TriageSession() {
                 {(['manual', 'bluetooth', 'wifi'] as const).map(tab => (
                   <button key={tab} type="button"
                     className={`btn btn-sm ${deviceTab === tab ? 'btn-primary' : 'btn-outline'}`}
-                    style={{ fontSize: '0.75rem' }}
+                    style={{ fontSize: '0.75rem' }} disabled={loading}
                     onClick={() => {
-                      setDeviceTab(tab);
-                      setConnectedDevice(null);
-                      setBtError('');
+                      resetDeviceContext(); setDeviceTab(tab);
                     }}>
                     {tab === 'manual' && <>{t('vitals.manual')}</>}
                     {tab === 'bluetooth' && <><Bluetooth size={12} /> Bluetooth</>}
@@ -496,6 +530,8 @@ function TriageSession() {
                 ))}
               </div>
 
+              {deviceNotice && <p role="status">{deviceNotice}</p>}
+              {deviceTab !== 'manual' && <p>É necessária a decisão separada para dispositivos neste país. <Link to={`/consents?country=${country}`}>Rever consentimentos de dispositivos</Link>.</p>}
               {/* Manual entry */}
               {deviceTab === 'manual' && (
                 <div className="vitals-manual-grid">
@@ -518,7 +554,7 @@ function TriageSession() {
                             placeholder="—"
                             value={val ?? ''}
                             onChange={e => setVitals((v) => ({
-                              ...v,
+                              ...(v.source && v.source !== 'manual' ? {} : v),
                               [key]: e.target.value ? Number(e.target.value) : undefined,
                               source: 'manual',
                               readAt: new Date().toISOString(),
@@ -541,15 +577,15 @@ function TriageSession() {
                   {btError && <p style={{ fontSize: '0.78rem', color: '#ef4444', marginBottom: '0.5rem' }}>{btError}</p>}
                   {!connectedDevice ? (
                     <>
-                      <button type="button" className="btn btn-sm btn-outline" onClick={handleBtScan} disabled={btScanning}
+                      <button type="button" className="btn btn-sm btn-outline" onClick={deviceReady ? handleBtScan : prepareDeviceChooser} disabled={btScanning || deviceReading || loading}
                         style={{ marginBottom: '0.75rem' }}>
-                        <Bluetooth size={13} /> {btScanning ? t('vitals.bt_scanning') : t('vitals.bt_scan')}
+                        <Bluetooth size={13} /> {btScanning ? 'A verificar…' : deviceReady ? t('vitals.bt_scan') : 'Verificar consentimentos para Bluetooth'}
                       </button>
                       {btDevices.map(d => (
                         <div key={d.id} className="device-row">
                           <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>{d.name}</span>
                           <button type="button" className="btn btn-sm btn-primary" style={{ fontSize: '0.75rem' }}
-                            onClick={() => handleBtConnect(d)}>
+                            disabled={deviceReading || btScanning || loading} onClick={() => handleBtConnect(d)}>
                             {t('vitals.connect')}
                           </button>
                         </div>
@@ -558,7 +594,7 @@ function TriageSession() {
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span style={{ fontSize: '0.82rem', color: '#22c55e', fontWeight: 600 }}>✓ {t('vitals.connected')}: {connectedDevice.name}</span>
-                      <button type="button" className="btn btn-sm btn-primary" onClick={handleReadDevice} disabled={deviceReading}>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={handleReadDevice} disabled={deviceReading || loading}>
                         {deviceReading ? '…' : t('vitals.read')}
                       </button>
                     </div>
@@ -579,14 +615,14 @@ function TriageSession() {
                         <input className="form-input" style={{ fontSize: '0.85rem' }} type="text" placeholder="192.168.1.50"
                           value={wifiIp} onChange={e => setWifiIp(e.target.value)} />
                       </div>
-                      <button type="button" className="btn btn-sm btn-outline" onClick={handleWifiConnect}>
+                      <button type="button" className="btn btn-sm btn-outline" onClick={handleWifiConnect} disabled={deviceReading || loading}>
                         <Wifi size={13} /> {t('vitals.connect')}
                       </button>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span style={{ fontSize: '0.82rem', color: '#22c55e', fontWeight: 600 }}>✓ {t('vitals.connected')}: {connectedDevice.name}</span>
-                      <button type="button" className="btn btn-sm btn-primary" onClick={handleReadDevice} disabled={deviceReading}>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={handleReadDevice} disabled={deviceReading || loading}>
                         {deviceReading ? '…' : t('vitals.read')}
                       </button>
                     </div>
@@ -619,7 +655,7 @@ function TriageSession() {
               )}
             </div>
 
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button type="submit" className="btn btn-primary" disabled={loading || deviceReading || btScanning}>
               {loading ? t('triage.starting') : <><ChevronRight size={16} /> {t('triage.start_btn')}</>}
             </button>
           </form>
