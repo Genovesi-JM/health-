@@ -37,6 +37,7 @@ from .routers import (
     doctors,
     triage,
     consultations,
+    appointments,
     prescriptions,
     prescription_requests,
     messages,
@@ -70,7 +71,7 @@ from .seed_data import seed_all
 
 _ALL_ROUTERS = [
     auth, mfa, admin, me,
-    patients, patient_documents, doctors, triage, consultations, prescriptions, prescription_requests,
+    patients, patient_documents, doctors, triage, consultations, appointments, prescriptions, prescription_requests,
     messages, nurse, shop_devices, doctor_portal, corporate, health_billing,
     compliance, health_dashboard, chatbot, readings, medications, family,
     notifications, credentials, clinician_workspace, clinical_operations,

@@ -19,7 +19,7 @@ import logging
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
@@ -81,6 +81,7 @@ def book_consultation(
     patient: Patient = Depends(require_consents),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
     """Book a consultation. Requires all consents to be accepted."""
     # Validate triage reference if provided
@@ -92,47 +93,11 @@ def book_consultation(
         if not triage:
             raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
 
-    specialty = normalize_specialty(body.specialty)
-    scheduled_at = body.scheduled_at
-    if scheduled_at:
-        if scheduled_at.tzinfo is None or scheduled_at.utcoffset() is None:
-            raise HTTPException(status_code=422, detail="Indique o fuso horário da marcação.")
-        scheduled_at = scheduled_at.astimezone(timezone.utc).replace(tzinfo=None)
-        if scheduled_at <= datetime.utcnow():
-            raise HTTPException(status_code=422, detail="Escolha uma data e hora futuras.")
-    if bool(body.doctor_id) != bool(scheduled_at) or (body.next_available and scheduled_at):
-        raise HTTPException(status_code=422, detail="Escolha o próximo médico disponível ou um médico e horário em conjunto.")
-
-    # A preferred doctor/time is a request until that doctor explicitly accepts.
-    assigned_doctor_id = None
-    if body.doctor_id:
-        doc = db.query(Doctor).filter(Doctor.id == body.doctor_id).first()
-        if not doc:
-            raise HTTPException(status_code=404, detail="Médico não encontrado.")
-        doctor_user = db.get(User, doc.user_id)
-        if not doctor_user:
-            raise HTTPException(status_code=400, detail="Este médico não está disponível para marcação.")
-        try:
-            require_current_clinician(doctor_user, db)
-        except HTTPException:
-            raise HTTPException(status_code=400, detail="Este médico não está autorizado para receber marcações.")
-        if normalize_specialty(doc.specialization) != specialty:
-            raise HTTPException(status_code=422, detail="O médico não corresponde à especialidade escolhida.")
-        assigned_doctor_id = doc.id
-
-    consultation = Consultation(
-        patient_id=patient.id,
-        triage_session_id=body.triage_session_id,
-        specialty=specialty,
-        doctor_id=assigned_doctor_id,
-        status="requested",
-        scheduled_at=scheduled_at,
-    )
-    db.add(consultation)
-    db.flush()
-    record_event(db, consultation, user.id, "consultation_booked", None, "requested")
-    db.commit()
-    db.refresh(consultation)
+    from app.services.appointment_booking import create_booking
+    consultation, created = create_booking(db, body, patient, user, idempotency_key)
+    if not created:
+        return consultation
+    assigned_doctor_id = consultation.doctor_id
 
     try:
         create_notification(
@@ -189,12 +154,14 @@ def doctor_queue(
 ):
     """Get eligible shared requests and this doctor's own requests/active cases."""
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+    credential = require_current_clinician(user, db)
     q = db.query(Consultation).filter(
         or_(
             and_(
                 Consultation.doctor_id.is_(None),
                 Consultation.status == "requested",
                 Consultation.specialty.in_((normalize_specialty(doctor.specialization), "clinica_geral")),
+                or_(Consultation.country == credential.practice_country, Consultation.country.is_(None)),
             ),
             and_(
                 Consultation.doctor_id == doctor.id,
@@ -443,7 +410,8 @@ def cancel_consultation(
 
     transition(
         db, consultation, actor_id=user.id, action="consultation_cancelled",
-        allowed_from=("requested", "scheduled", "in_progress"), status="cancelled",
+        allowed_from=(("requested", "scheduled") if user.role in (RoleEnum.PATIENT, "cliente")
+                      else ("requested", "scheduled", "in_progress")), status="cancelled",
         cancellation_reason=body.reason,
     )
     end_video(db, consultation, user.id, datetime.utcnow())

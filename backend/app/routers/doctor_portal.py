@@ -12,10 +12,11 @@ Endpoints:
 """
 import json
 import logging
-from datetime import datetime, date, timedelta
-from typing import Any, List, Optional
+from datetime import datetime, date, timedelta, timezone as utc_timezone
+from typing import Any, List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -23,11 +24,12 @@ from app.deps import get_current_user
 from app.models import User, UserProfile
 from app.health_models import (
     Doctor, Patient, PatientDocument, Consultation, ConsultationNotes,
-    PrescriptionRequest, DeviceReading, PatientMedication, HealthPayment,
+    PrescriptionRequest, DeviceReading, PatientMedication, HealthPayment, HealthAuditLog,
 )
 from app.rbac import log_health_audit, assert_doctor_can_access_patient
 from app.services.clinician_access import require_current_clinician
 from app.services.patient_documents import doctor_has_document_relationship
+from app.services.appointments import valid_zone
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["doctor-portal"])
@@ -169,19 +171,28 @@ def doctor_dashboard(
 
 @router.get("/api/v1/doctor/agenda/today")
 def doctor_agenda_today(
+    response: Response,
+    day: Optional[date] = Query(None, alias="date"),
+    country: Literal["AO", "PT"] = "AO",
+    timezone: Optional[str] = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return today's consultations for the doctor sorted by scheduled time."""
+    """Return one clinic-local day; the historical path also accepts a date."""
     doctor = _require_doctor(user, db)
 
-    today_start = datetime.combine(date.today(), datetime.min.time())
-    today_end = today_start + timedelta(days=1)
+    zone_name = timezone or ("Africa/Luanda" if country == "AO" else None)
+    zone = valid_zone(country, zone_name or "")
+    selected_day = day or datetime.now(utc_timezone.utc).astimezone(zone).date()
+    local_start = datetime.combine(selected_day, datetime.min.time(), tzinfo=zone)
+    today_start = local_start.astimezone(utc_timezone.utc).replace(tzinfo=None)
+    today_end = (local_start + timedelta(days=1)).astimezone(utc_timezone.utc).replace(tzinfo=None)
 
     consultations = (
         db.query(Consultation)
         .filter(
             Consultation.doctor_id == doctor.id,
+            or_(Consultation.country == country, Consultation.country.is_(None)),
             Consultation.scheduled_at >= today_start,
             Consultation.scheduled_at < today_end,
         )
@@ -195,10 +206,18 @@ def doctor_agenda_today(
         if c.patient:
             patient_name = _get_patient_name(c.patient, db)
         initials = "".join(p[0].upper() for p in patient_name.split()[:2]) or "P"
-        time_str = c.scheduled_at.strftime("%H:%M") if c.scheduled_at else "--:--"
+        instant = c.scheduled_at.replace(tzinfo=utc_timezone.utc)
+        end_instant = c.scheduled_end_at.replace(tzinfo=utc_timezone.utc) if c.scheduled_end_at else None
+        duration = int((end_instant - instant).total_seconds() / 60) if end_instant and end_instant > instant else None
         result.append({
             "id": c.id,
-            "time": time_str,
+            "time": instant.astimezone(zone).strftime("%H:%M"),
+            "scheduled_at": instant.isoformat(),
+            "scheduled_end_at": end_instant.isoformat() if end_instant else None,
+            "duration": duration,
+            "country": c.country,
+            "timezone": zone_name,
+            "slot_timezone": c.timezone,
             "patient": patient_name,
             "patient_id": c.patient_id,
             "type": _consultation_type_label(c),
@@ -208,6 +227,18 @@ def doctor_agenda_today(
             "avatar": initials,
         })
 
+    db.add(HealthAuditLog(
+        actor_user_id=user.id, action="doctor_agenda_read", resource_type="doctor",
+        resource_id=doctor.id,
+        metadata_json=json.dumps({"date": selected_day.isoformat(), "country": country, "timezone": zone_name}),
+    ))
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível carregar a agenda. Tente novamente.") from None
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
     return result
 
 

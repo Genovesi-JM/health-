@@ -289,6 +289,25 @@ class DoctorAvailability(Base):
     doctor = relationship("Doctor", back_populates="availability_slots")
 
 
+class AppointmentSlot(Base):
+    """One published, dated interval; weekly profile hours are not bookable."""
+    __tablename__ = "appointment_slots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    timezone: Mapped[str] = mapped_column(String(50), nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    withdrawn: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Logical reference avoids a circular FK with Consultation.slot_id. Only the
+    # matching consultation can release its claim, in the same transaction.
+    reserved_consultation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (Index("ix_appointment_slots_doctor_start", "doctor_id", "starts_at"),)
+
+
 # ── Triage ──
 
 class TriageSession(Base):
@@ -427,6 +446,12 @@ class Consultation(Base):
         String(20), nullable=False, default="requested",
     )  # requested, scheduled, in_progress, completed, cancelled, no_show
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    scheduled_end_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    slot_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("appointment_slots.id"), nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    booking_request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    booking_request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     cancellation_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -444,6 +469,7 @@ class Consultation(Base):
     __table_args__ = (
         Index("ix_consultations_patient_scheduled", "patient_id", "scheduled_at"),
         Index("ix_consultations_doctor_scheduled", "doctor_id", "scheduled_at"),
+        Index("ix_consultations_patient_booking_key", "patient_id", "booking_request_key", unique=True),
     )
 
 

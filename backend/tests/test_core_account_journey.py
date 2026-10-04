@@ -50,9 +50,19 @@ def test_angola_registration_onboarding_review_booking_and_record_access(client,
     assert clinician_auth['user']['role'] == 'doctor'
     doctor = db_session.query(Doctor).filter_by(user_id=applicant['user']['id']).one()
 
-    booked = client.post('/api/v1/consultations/book', headers=patient_headers, json={
-        'doctor_id': doctor.id, 'specialty': 'clinica_geral',
-        'scheduled_at': (datetime.now(timezone(timedelta(hours=1))) + timedelta(days=2)).isoformat(),
+    start = datetime.now(timezone(timedelta(hours=1))) + timedelta(days=2)
+    published = client.post('/api/v1/doctor/appointment-slots', headers=clinician_headers, json={
+        'country': 'AO', 'timezone': 'Africa/Luanda',
+        'starts_at': start.isoformat(), 'ends_at': (start + timedelta(minutes=30)).isoformat(),
+    })
+    assert published.status_code == 201, published.text
+    available = client.get('/api/v1/appointments/slots', headers=patient_headers,
+                           params={'country': 'AO', 'doctor_id': doctor.id})
+    assert available.status_code == 200, available.text
+    assert published.json()['id'] in {slot['id'] for slot in available.json()}
+    booked = client.post('/api/v1/consultations/book',
+                         headers=patient_headers | {'Idempotency-Key': str(uuid4())}, json={
+        'slot_id': published.json()['id'], 'specialty': 'clinica_geral', 'country': 'AO',
     })
     assert booked.status_code == 200, booked.text
     consultation = booked.json()

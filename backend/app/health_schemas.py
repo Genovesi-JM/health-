@@ -5,7 +5,7 @@ Covers: Patient, Doctor, Triage, Consultation, Prescription, Referral,
 Corporate, Billing, Compliance, and Dashboard KPIs.
 """
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, StrictBool, field_serializer
 
@@ -331,6 +331,8 @@ class ConsultationBookRequest(BaseModel):
     scheduled_at: Optional[datetime] = None
     next_available: bool = False
     doctor_id: Optional[str] = None   # preferred doctor; remains requested until accepted
+    slot_id: Optional[str] = None
+    country: Literal["AO", "PT"] = "AO"
 
 
 class ConsultationOut(BaseModel):
@@ -341,6 +343,10 @@ class ConsultationOut(BaseModel):
     specialty: str
     status: str
     scheduled_at: Optional[datetime] = None
+    scheduled_end_at: Optional[datetime] = None
+    slot_id: Optional[str] = None
+    country: Optional[str] = None
+    timezone: Optional[str] = None
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None
     payment_status: str
@@ -348,7 +354,7 @@ class ConsultationOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("scheduled_at", "started_at", "ended_at")
+    @field_serializer("scheduled_at", "scheduled_end_at", "started_at", "ended_at")
     def serialize_utc(self, value: Optional[datetime]):
         # The existing SQL columns store naive UTC. Keep the offset on the wire
         # so browsers/mobile clients do not interpret it as their local time.

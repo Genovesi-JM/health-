@@ -37,6 +37,7 @@ from .routers import (
     doctors,
     triage,
     consultations,
+    appointments,
     prescriptions,
     prescription_requests,
     messages,
@@ -162,6 +163,7 @@ def create_application() -> FastAPI:
     application.include_router(patients.router)           # /api/v1/patients/*
     application.include_router(doctors.router)            # /api/v1/doctors/*
     application.include_router(triage.router)             # /api/v1/triage/*
+    application.include_router(appointments.router)
     application.include_router(consultations.router)      # /api/v1/consultations/*, /api/v1/doctor/*
     application.include_router(prescriptions.router)      # /api/v1/consultations/*/prescription|referral, /api/v1/files/*
     application.include_router(prescription_requests.router)  # /api/v1/prescription-requests, /api/v1/doctor/prescription-requests

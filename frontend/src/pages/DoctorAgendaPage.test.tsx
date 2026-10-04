@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { I18nProvider } from '../i18n/LanguageContext';
@@ -21,6 +21,24 @@ function renderAgenda() {
 }
 
 describe('doctor agenda persistence', () => {
+  it('loads the selected future date in the explicit clinic timezone', async () => {
+    renderAgenda(); await screen.findByTitle('Confirmar');
+    fireEvent.change(screen.getByLabelText('Data da agenda'), { target: { value: '2026-12-01' } });
+    await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/api/v1/doctor/agenda/today', { params: { date: '2026-12-01', country: 'AO', timezone: 'Africa/Luanda' } }));
+    expect(await screen.findByText('Paciente de teste')).toBeInTheDocument();
+  });
+  it('reloads Portugal with the selected clinic timezone', async () => {
+    renderAgenda(); await screen.findByTitle('Confirmar');
+    await userEvent.selectOptions(screen.getByLabelText('País do atendimento'), 'PT');
+    await userEvent.selectOptions(screen.getByLabelText('Fuso horário da agenda'), 'Atlantic/Azores');
+    await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/api/v1/doctor/agenda/today', { params: { date: expect.any(String), country: 'PT', timezone: 'Atlantic/Azores' } }));
+  });
+  it('does not show a false empty agenda on failure', async () => {
+    vi.mocked(api.get).mockRejectedValue(new Error('Offline'));
+    renderAgenda(); expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar');
+    expect(screen.queryByText('Sem consultas neste dia')).not.toBeInTheDocument();
+  });
+
   it('uses explicit backend acceptance and its returned state', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { status: 'scheduled' } });
     renderAgenda();

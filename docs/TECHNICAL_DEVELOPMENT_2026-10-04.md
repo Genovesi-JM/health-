@@ -411,3 +411,75 @@ The final backend source matches the tested disposable snapshot. The auxiliary
 database-integrity suite initially lacked its referenced documentation in the
 test snapshot; after copying that reference into the isolated harness, all 151
 checks passed. No application change was needed for that harness omission.
+
+## Published availability and conflict-safe booking
+
+The next development increment replaces free-form appointment selection with
+dated slots published by the clinician. Web clinicians can publish and withdraw
+their own slots; web and native patients browse the same availability, by
+country, specialty and doctor, through the 180-day publication horizon. An
+explicit separate option submits a request without a promised appointment time.
+The request remains pending until the clinician accepts it.
+
+Slot reservation, consultation creation and audit now commit together. The API
+serializes clinician and patient capacity checks, rejects overlapping commitments
+and releases only the matching reservation on cancellation. Queue acceptance and
+video/consultation start use the same capacity guard. A late start checks the
+actual current interval, and ongoing care continues to block conflicting starts.
+A UUID request key recovers the same consultation after a lost response; changed
+content cannot reuse that identity. Web stores the minimal pending request in
+account-scoped session storage and native uses SecureStore before submission.
+Both retain uncertain requests for exact retry.
+
+Angola uses Africa/Luanda. Portugal supports Lisbon, Madeira and the Azores;
+clinicians choose the clinic zone explicitly. Date conversion rejects gaps and
+requires disambiguation for repeated clock times. Patient displays include the
+slot's zone and offset. The clinician agenda supports a selected local date and
+uses the correct UTC bounds for 23-hour and 25-hour days. Historical appointments
+with no country remain unclassified; the migration does not assign them to
+Angola. Unknown historical duration is not presented as a known 30 minutes.
+
+The `appointment_slots_v1` migration and five new API declarations are recorded
+in the canonical inventory. Existing weekly profile hours remain stored but do
+not publish dated capacity. Runtime credential and practice-country checks are
+not a substitute for live organization/service approval. Release remains HOLD,
+with all activation flags false. No deployment, live provider transmission or
+user database migration was performed.
+
+See [scheduling](KAYA_SCHEDULING.md) and [booking](KAYA_BOOKING.md) for the runtime
+contract and its distinction from earlier policy-only mechanisms. Reliable
+in-app workflow notifications are the next implementation stage. Request expiry,
+recurring availability and rescheduling remain separate scheduling work.
+
+Final local validation for the scheduling checkpoint:
+
+| Check | Result |
+| --- | --- |
+| Full backend application suite, exact staged snapshot | 518 passed |
+| Policy, scheduling, booking, care-episode, video and database suites (Phases 1, 22–25, 32) | 169 passed |
+| Scope and route inventory checks | 23 passed; 43 subtests passed |
+| Web interaction and policy suite | 197 passed |
+| Native helper and API-contract suite | 70 passed |
+| Presentation prototype checks | 15 passed |
+| Web production build and web/native TypeScript | Passed |
+| Generated policy consistency | 4 artifacts verified; 274 API declarations; release HOLD |
+| Disposable PostgreSQL 18.1 API concurrency | 9 scenarios passed, including 30 forced races |
+| Git whitespace/error check | Passed |
+
+The full backend suite initially identified an older journey that submitted an
+unpublished timestamp and an expiry test affected by a deliberately expired
+credential left by another test. The journey now publishes a slot through the
+real clinician API, and the authority test restores its fixture. Patient
+cancellation is now limited to pending/scheduled care at the server as well as
+the clients; cancellation of already active care requires the professional
+workflow. The final exact staged backend snapshot passes all 518 tests.
+
+The PostgreSQL harness uses synthetic identities, independent database sessions
+and barriers before SQL resource locks. It passed against the exact staged
+application source at READ COMMITTED; its private socket-only cluster was stopped
+afterwards. The source-hashed report is retained in
+[`evidence/scheduling-2026-10-04/postgresql.json`](evidence/scheduling-2026-10-04/postgresql.json).
+This establishes local PostgreSQL behavior for the covered races, not deployment
+topology, production configuration, native-device behavior or clinical launch
+approval. No existing database was contacted or migrated. Existing deprecation,
+bundle-size, Browserslist and Node module-type warnings remain.

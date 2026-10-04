@@ -97,6 +97,8 @@ def _lock_active(db: Session, consultation: Consultation) -> None:
     retained transaction lock prevents cancellation/finalization from racing a
     session update after the active-state check.
     """
+    from app.services.appointments import lock_resources
+    lock_resources(db, consultation.doctor_id, consultation.patient_id)
     if consultation.status not in ("scheduled", "in_progress") or not consultation.doctor_id:
         raise HTTPException(409, "A consulta não está aceite e ativa.")
     table = Consultation.__table__

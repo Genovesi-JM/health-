@@ -24,3 +24,56 @@ clinician can deliver a specific service. Enforced by
 Web and mobile render the same UTC instant and availability state. Real
 credential/privilege/org state is supplied by Phases 17/18; end-to-end slot
 exposure against the running app is a harness/UI adoption task.
+
+## Application integration — 4 October 2026
+
+The running development application now has dated, clinician-owned appointment
+slots, implemented by `app/services/appointments.py`,
+`app/services/appointment_booking.py` and `app/routers/appointments.py`. This
+integration is distinct from the Phase 22 policy model above. Current credential
+authority and the clinician's practice country are enforced; this does not
+certify organization, facility, service or on-call approval for a live launch.
+The public release remains HOLD.
+
+Clinicians publish future slots lasting 15–120 minutes, up to 180 days ahead.
+Angola uses Africa/Luanda. Portugal supports Europe/Lisbon, Atlantic/Madeira and
+Atlantic/Azores. Inputs must include an offset that matches the selected zone;
+nonexistent clock times are rejected and repeated hours require an explicit
+offset. Read windows cover at most 31 days. The web editor publishes individual
+dated slots; older weekly availability remains stored but does not create
+bookable capacity.
+
+Patients choose a server-published slot or explicitly submit an unscheduled
+request. Reserving a slot creates a `requested` consultation; it is not a
+confirmed appointment until the doctor accepts. Arbitrary doctor/time inputs
+cannot bypass published capacity. The database transaction reserves the slot,
+creates the consultation and writes the audit event together. Clinician and
+patient row locks precede conflict checks; a conditional slot update supplies
+another guard against competing claims. Both resources are checked for overlaps,
+including legacy timed appointments and active care. Adjacent slots may coexist.
+Cancelling releases only the matching reservation; a reserved slot cannot be
+withdrawn by the availability editor.
+
+An owner-scoped UUID idempotency key recovers an identical booking after a lost
+response. Changed content with the same key is rejected. Web keeps uncertain
+requests unchanged while retrying; native persists the exact request and key in
+SecureStore before submission and restores them after restart. A request in the
+unscheduled queue does not promise a response time or appointment time.
+
+The clinician agenda accepts an explicit date, country and timezone. Its UTC
+query bounds follow the selected local day, including Portugal's 23-hour and
+25-hour days. Responses include explicit UTC instants and known duration. Legacy
+records with an unknown country remain unclassified and visible to their owning
+doctor; the selected agenda zone controls display, without assigning a country
+to those records. Patient lists use the recorded slot zone; historical records
+without one show an explicit UTC fallback.
+
+`appointment_slots_v1` adds slots and consultation booking metadata. Existing
+consultations retain a null country and timezone unless they already have that
+information. Tests use disposable databases; no user database has been migrated.
+
+Remaining scheduling work includes recurring publication, leave/blackout editing,
+rescheduling, expiry of unaccepted requests, pagination of broader consultation
+history, deployment-specific PostgreSQL concurrency evidence and device verification.
+Local PostgreSQL API concurrency checks are recorded in [booking](KAYA_BOOKING.md).
+Published slots alone do not establish a clinical service's launch eligibility.

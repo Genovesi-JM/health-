@@ -3,6 +3,10 @@ export type PatientConsultation = {
   specialty: string;
   status: string;
   scheduled_at?: string | null;
+  scheduled_end_at?: string | null;
+  slot_id?: string | null;
+  country?: 'AO' | 'PT' | null;
+  timezone?: string | null;
   started_at?: string | null;
   ended_at?: string | null;
 };

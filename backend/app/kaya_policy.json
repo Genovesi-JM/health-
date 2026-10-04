@@ -351,6 +351,26 @@
       "synthetic_test_state": "PRESERVED_SOURCE",
       "api_bindings": [
         {
+          "method": "GET",
+          "path": "/api/v1/appointments/capabilities"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/appointments/slots"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/appointment-slots"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctor/appointment-slots"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/doctor/appointment-slots/{slot_id}"
+        },
+        {
           "method": "POST",
           "path": "/api/v1/consultations/book"
         },
@@ -1763,8 +1783,8 @@
   },
   "route_inventory": {
     "method": "AST declarations of mounted preserved backend; exact method/path binding, no imports",
-    "mounted_router_count": 36,
-    "mounted_route_count": 269,
+    "mounted_router_count": 37,
+    "mounted_route_count": 274,
     "legacy_unmounted_prefixes": [
       "/chat",
       "/status",

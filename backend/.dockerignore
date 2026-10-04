@@ -151,3 +151,8 @@
 !app/services/consultation_closeout.py
 !app/video_boundary.py
 !alembic/versions/consultation_closeout_v1.py
+
+!app/routers/appointments.py
+!app/services/appointments.py
+!alembic/versions/appointment_slots_v1.py
+!app/services/appointment_booking.py

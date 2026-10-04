@@ -210,7 +210,7 @@ def test_terminal_clinical_change_closes_video_and_prevents_new_mutations(api, p
     if action == "complete":
         assert complete(api, item, people).status_code == 200
     else:
-        assert api.patch(f"/api/v1/consultations/{item.id}", json={}, headers=people["patient"]["headers"]).status_code == 200
+        assert api.patch(f"/api/v1/consultations/{item.id}", json={}, headers=people["doctor"]["headers"]).status_code == 200
     db_session.refresh(room)
     assert room.status == "completed" and room.ended_at is not None
     assert db_session.query(TeleconsultationParticipant).filter_by(session_id=room.id, left_at=None).count() == 0

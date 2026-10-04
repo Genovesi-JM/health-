@@ -34,14 +34,17 @@ def transition(db: Session, consultation: Consultation, *, actor_id: str,
     both SQLite and PostgreSQL; no reliance on SQLite's ignored FOR UPDATE.
     """
     previous_status = consultation.status
+    previous_doctor_id = consultation.doctor_id
     if previous_status not in allowed_from:
         raise HTTPException(status_code=409, detail="O estado da consulta não permite esta ação. Atualize a lista.")
+    from app.services.appointments import guard_transition, release_cancelled_slot
+    guard_transition(db, consultation, status, changes.get("doctor_id", previous_doctor_id))
     table = Consultation.__table__
     result = db.execute(
         update(table).where(
             table.c.id == consultation.id,
             table.c.status == previous_status,
-            table.c.doctor_id == consultation.doctor_id,
+            table.c.doctor_id == previous_doctor_id,
         ).values(status=status, updated_at=datetime.utcnow(), **changes)
     )
     if result.rowcount != 1:
@@ -49,3 +52,5 @@ def transition(db: Session, consultation: Consultation, *, actor_id: str,
         raise HTTPException(status_code=409, detail="A consulta foi alterada por outro utilizador. Atualize a lista.")
     record_event(db, consultation, actor_id, action, previous_status, status)
     db.refresh(consultation)
+    if status == "cancelled":
+        release_cancelled_slot(db, consultation)

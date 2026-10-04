@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.database import engine
 from app.health_models import (
-    ClinicianCredential, Consultation, ConsultationNotes, Doctor, HealthAuditLog,
+    AppointmentSlot, ClinicianCredential, Consultation, ConsultationNotes, Doctor, HealthAuditLog,
     MfaCredential, Patient, PatientConsent, TeleconsultationParticipant, TeleconsultationSession,
 )
 from app.models import User
@@ -102,6 +102,10 @@ def seed_consultation(db, people, status="requested", assigned=True, **values):
 
 def test_directed_request_requires_acceptance_before_start_and_record_access(api, people, db_session):
     payload = scheduled_payload(people)
+    start = datetime.fromisoformat(payload["scheduled_at"]).astimezone(timezone.utc).replace(tzinfo=None)
+    db_session.add(AppointmentSlot(doctor_id=payload["doctor_id"], country="AO", timezone="Africa/Luanda",
+                                   starts_at=start, ends_at=start + timedelta(minutes=30)))
+    db_session.commit()
     response = api.post("/api/v1/consultations/book", json=payload, headers=people["patient"]["headers"])
     assert response.status_code == 200, response.text
     item = response.json()
@@ -192,7 +196,7 @@ def test_only_in_progress_consultations_can_complete(api, people, db_session, st
 
 
 def test_patient_isolation_and_terminal_cancellation(api, people, db_session):
-    item = seed_consultation(db_session, people, "in_progress")
+    item = seed_consultation(db_session, people, "scheduled")
     url = f"/api/v1/consultations/{item.id}"
     assert api.patch(url, json={}, headers=people["other_patient"]["headers"]).status_code == 403
     assert api.post(url + "/complete", json={}, headers=people["other_doctor"]["headers"]).status_code == 404

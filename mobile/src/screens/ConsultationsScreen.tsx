@@ -7,7 +7,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
 import api from '../services/api';
-import { CONSULTATION_STATUS, canCancelConsultation, consultationDate, type PatientConsultation } from './consultations';
+import { CONSULTATION_STATUS, canCancelConsultation, type PatientConsultation } from './consultations';
+import { APPOINTMENT_MARKETS, appointmentDate } from './appointmentAvailability';
 
 export default function ConsultationsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
@@ -72,10 +73,15 @@ export default function ConsultationsScreen() {
         <View key={item.id} style={styles.card}>
           <Text style={styles.title}>{item.specialty.replace(/_/g, ' ')}</Text>
           <Text style={styles.status}>{CONSULTATION_STATUS[item.status] || 'Estado por confirmar'}</Text>
+          {item.country && <Text style={styles.intro}>País de atendimento: {APPOINTMENT_MARKETS[item.country]}</Text>}
           {!!item.scheduled_at && <Text style={styles.intro}>
             {item.status === 'requested' ? 'Horário pedido: ' : 'Horário: '}
-            {consultationDate(item.scheduled_at)}
+            {appointmentDate(item.scheduled_at, item.timezone)}
+            {item.scheduled_end_at ? ` — ${appointmentDate(item.scheduled_end_at, item.timezone)}` : ''}
           </Text>}
+          {item.status === 'requested' && <Text style={styles.intro}>{item.slot_id
+            ? 'Horário reservado enquanto aguarda aceitação do médico.'
+            : !item.scheduled_at ? 'Pedido sem horário. Aguarda aceitação do médico.' : 'O horário ainda não foi confirmado.'}</Text>}
           <TouchableOpacity accessibilityRole="button"
             onPress={() => navigation.navigate('ConsultationDetail', { consultationId: item.id })}>
             <Text style={styles.link}>Ver consulta e orientações</Text>

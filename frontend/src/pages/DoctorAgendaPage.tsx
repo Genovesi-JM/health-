@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { openServerVideoRoom } from '../utils/video';
 import { Calendar, Video, MapPin, ChevronLeft, ChevronRight, Check, X, Plus } from 'lucide-react';
 import { useT, type Lang } from '../i18n/LanguageContext';
+import { APPOINTMENT_MARKETS, isAppointmentConflict, marketName, marketZones } from '../utils/appointments';
 
 interface Appointment {
   id: string;
   time: string;
-  duration: number;
+  duration: number | null;
+  scheduled_at?: string;
+  country?: string | null;
   patient: string;
   type: 'teleconsulta' | 'presencial';
   reason: string;
@@ -37,21 +40,33 @@ function buildWeek(anchor: Date): Date[] {
 export default function DoctorAgendaPage() {
   const { t, lang } = useT();
   const locale = LOCALES[lang] || 'pt-PT';
-  const today = new Date();
+  const [country, setCountry] = useState('AO');
+  const [timezone, setTimezone] = useState('Africa/Luanda');
+  const todayFields = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).map(part => [part.type, part.value]));
+  const today = new Date(Number(todayFields.year), Number(todayFields.month) - 1, Number(todayFields.day));
   const [anchor, setAnchor] = useState(new Date(today));
   const [selected, setSelected] = useState(new Date(today));
   const [appts, setAppts] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [revision, setRevision] = useState(0);
+  const actionBusy = useRef(false);
+  const selectedDate = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
-    api.get('/api/v1/doctor/agenda/today')
+    let active = true;
+    setLoading(true); setLoadError(''); setAppts([]);
+    api.get('/api/v1/doctor/agenda/today', { params: { date: selectedDate, timezone, country } })
       .then(r => {
+        if (!active) return;
         const mapped: Appointment[] = (r.data || []).map((a: any) => ({
           id: a.id,
-          time: a.time,
-          duration: a.duration ?? 30,
+          time: a.scheduled_at ? new Intl.DateTimeFormat(locale, { timeZone: timezone, hour: '2-digit', minute: '2-digit', timeZoneName: 'shortOffset' }).format(new Date(a.scheduled_at)) : a.time,
+          duration: a.duration ?? null,
+          scheduled_at: a.scheduled_at,
+          country: a.country,
           patient: a.patient,
           type: a.type,
           reason: a.reason || '—',
@@ -59,9 +74,10 @@ export default function DoctorAgendaPage() {
         }));
         setAppts(mapped);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => { if (active) setLoadError('Não foi possível carregar a agenda desta data.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [selectedDate, timezone, country, revision, locale]);
 
   const week = buildWeek(anchor);
 
@@ -70,9 +86,11 @@ export default function DoctorAgendaPage() {
   const isToday = (d: Date) => d.toDateString() === today.toDateString();
   const isSelected = (d: Date) => d.toDateString() === selected.toDateString();
 
-  const shownAppts = isToday(selected) ? appts : [];
+  const shownAppts = appts;
 
   const updateStatus = async (id: string, status: 'confirmed' | 'cancelled') => {
+    if (actionBusy.current) return;
+    actionBusy.current = true;
     setPendingAction(id);
     setActionError('');
     try {
@@ -81,9 +99,11 @@ export default function DoctorAgendaPage() {
         : await api.patch(`/api/v1/consultations/${id}`, {});
       const serverStatus = response.data.status === 'scheduled' ? 'confirmed' : response.data.status;
       setAppts(prev => prev.map(a => a.id === id ? { ...a, status: serverStatus } : a));
-    } catch {
-      setActionError(t('queue.action_error'));
+    } catch (error) {
+      setActionError(isAppointmentConflict(error) ? 'O pedido mudou ou o horário já não está disponível. A agenda foi atualizada.' : t('queue.action_error'));
+      if (isAppointmentConflict(error)) setRevision(value => value + 1);
     } finally {
+      actionBusy.current = false;
       setPendingAction(null);
     }
   };
@@ -124,6 +144,14 @@ export default function DoctorAgendaPage() {
         </Link>
       </div>
 
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: '1rem' }}>
+        <label>País do atendimento<select className="form-input" value={country} onChange={e => { setCountry(e.target.value); setTimezone(marketZones(e.target.value)[0] ?? ''); }}>{APPOINTMENT_MARKETS.map(code => <option key={code} value={code}>{marketName(code)}</option>)}</select></label>
+        <label>Fuso horário da agenda<select className="form-input" value={timezone} onChange={e => setTimezone(e.target.value)}>{marketZones(country).map(zone => <option key={zone} value={zone}>{zone}</option>)}</select></label>
+        <label>Data da agenda<input className="form-input" type="date" value={selectedDate} onChange={e => { if (!e.target.value) return; const [year, month, day] = e.target.value.split('-').map(Number); const next = new Date(year, month - 1, day); setSelected(next); setAnchor(next); }} /></label>
+      </div>
+      <p>Horas apresentadas em {timezone}. Os pedidos pendentes precisam da sua aceitação.</p>
+      {loadError && <p role="alert">{loadError} <button className="btn btn-secondary" onClick={() => setRevision(value => value + 1)}>Tentar novamente</button></p>}
+
       {/* Week selector */}
       <div className="card" style={{ padding: '1rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
@@ -147,7 +175,7 @@ export default function DoctorAgendaPage() {
       </div>
 
       {/* Stats row */}
-      {isToday(selected) && (
+      {!loading && !loadError && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
           {[
             { label: t('dag.confirmed'), val: confirmed, color: '#059669' },
@@ -163,9 +191,9 @@ export default function DoctorAgendaPage() {
       )}
 
       {/* Appointment list */}
-      {loading && isToday(selected) ? (
+      {loading ? (
         <div className="page-loading"><div className="spinner" /></div>
-      ) : shownAppts.length === 0 ? (
+      ) : loadError ? null : shownAppts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
           <Calendar size={36} style={{ display: 'block', margin: '0 auto 0.75rem', color: 'var(--text-muted)' }} />
           <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>{t('dag.empty_title')}</div>
@@ -181,7 +209,7 @@ export default function DoctorAgendaPage() {
                 {/* Time */}
                 <div style={{ textAlign: 'center', flexShrink: 0, minWidth: 48 }}>
                   <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{a.time}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{a.duration} min</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{a.duration !== null ? `${a.duration} min` : 'Duração por definir'}</div>
                 </div>
                 {/* Divider */}
                 <div style={{ width: 3, height: 40, borderRadius: 99, background: a.type === 'teleconsulta' ? '#3b82f6' : '#10b981', flexShrink: 0 }} />
@@ -191,6 +219,7 @@ export default function DoctorAgendaPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
                     {a.type === 'teleconsulta' ? <Video size={12} style={{ color: '#3b82f6' }} /> : <MapPin size={12} style={{ color: '#10b981' }} />}
                     <span style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{a.type === 'teleconsulta' ? t('appt.teleconsulta') : t('appt.presencial')}</span>
+                    {!a.country && <span style={{ fontSize: '.75rem' }}>País não registado</span>}
                     <span style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>· {a.reason}</span>
                   </div>
                 </div>

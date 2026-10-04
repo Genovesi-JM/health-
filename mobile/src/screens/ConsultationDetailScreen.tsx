@@ -11,6 +11,7 @@ import {
   canCancelConsultation, canRetainConsultationAfterError, consultationDate, consultationError, consultationNextStep,
   loadPatientConsultation, videoAvailabilityMessage, type PatientConsultationDetail,
 } from './consultations';
+import { APPOINTMENT_MARKETS, appointmentDate } from './appointmentAvailability';
 
 const TEAL = '#0d9488';
 
@@ -116,13 +117,17 @@ export default function ConsultationDetailScreen() {
           <Text style={styles.title}>{detail.consultation?.specialty.replace(/_/g, ' ') || 'Consulta'}</Text>
           <Text style={styles.status}>{CONSULTATION_STATUS[detail.result.status] || 'Estado por confirmar'}</Text>
           <Text style={styles.body}>{consultationNextStep(detail.result.status)}</Text>
+          {detail.consultation?.country && <Text style={styles.body}>País de atendimento: {APPOINTMENT_MARKETS[detail.consultation.country]}</Text>}
           {detail.consultation?.scheduled_at && <Text style={styles.body}>
-            {status === 'requested' ? 'Horário pedido: ' : 'Horário: '}{consultationDate(detail.consultation.scheduled_at)}
+            {status === 'requested' ? 'Horário pedido: ' : 'Horário: '}{appointmentDate(detail.consultation.scheduled_at, detail.consultation.timezone)}
+            {detail.consultation.scheduled_end_at ? ` — ${appointmentDate(detail.consultation.scheduled_end_at, detail.consultation.timezone)}` : ''}
           </Text>}
+          {status === 'requested' && detail.consultation?.slot_id && <Text style={styles.hint}>Este horário está reservado para o seu pedido enquanto aguarda aceitação do médico. O cancelamento liberta o horário.</Text>}
+          {status === 'requested' && detail.consultation && !detail.consultation.scheduled_at && <Text style={styles.hint}>Pedido sem horário; não garante atendimento imediato.</Text>}
           {detail.consultation?.started_at && <Text style={styles.body}>Início: {consultationDate(detail.consultation.started_at)}</Text>}
           {detail.consultation?.ended_at && <Text style={styles.body}>Fim: {consultationDate(detail.consultation.ended_at)}</Text>}
           {detail.metadataUnavailable && <Text style={styles.hint}>Não foi possível atualizar os horários. O estado e o resumo foram atualizados.</Text>}
-          <Text style={styles.hint}>Os horários são apresentados no fuso horário do seu dispositivo.</Text>
+          <Text style={styles.hint}>A marcação indica o fuso do local de atendimento. Os restantes eventos são apresentados no fuso do seu dispositivo.</Text>
           {canCancelConsultation(detail.result.status) && <TouchableOpacity accessibilityRole="button"
             disabled={loading || cancelling || !!error}
             onPress={() => Alert.alert('Cancelar consulta?', 'O cancelamento será registado no seu pedido.', [

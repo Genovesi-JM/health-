@@ -22,7 +22,7 @@ States: NOT_BUILT, MOCK, SYNTHETIC_ONLY, DISABLED_PENDING_GATE, PILOT, LIVE. No 
 | Accounts and invited access (`account_access=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 26 | `/login`, `/register`, `/choose-account-type`, `/auth/callback`, `/settings`, `/security/mfa`, `/security`, `/doctor/security` |
 | Identity, onboarding and consent (`onboarding=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 12 | `/register/doctor`, `/candidatura`, `/consent-gate`, `/data-consent`, `/onboarding/patient`, `/onboarding/professional`, `/onboarding/organisation`, `/consents` |
 | Public clinic and professional directory (`provider_directory=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 12 | `/especialistas`, `/mapa`, `/clinics`, `/medicos`, `/medicos/:slug` |
-| Human-confirmed appointment coordination (`appointment_coordination=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 10 | `/consultations`, `/doctor/queue`, `/doctor/agenda`, `/doctor/disponibilidade` |
+| Human-confirmed appointment coordination (`appointment_coordination=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 15 | `/consultations`, `/doctor/queue`, `/doctor/agenda`, `/doctor/disponibilidade` |
 | Symptom triage and self-care advice (`triage=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 13 | `/triage`, `/self-care` |
 | Video consultations (`teleconsultation=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 8 | `/telemedicina`, `/doctor/consultas` |
 | Prescriptions and referrals (`prescribing_referrals=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/prescricoes/pedido`, `/doctor/prescricoes` |
@@ -100,6 +100,11 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | POST | `/api/v1/doctors/{doctor_id}/verify` | `provider_directory=false` |
 | POST | `/api/v1/doctors/apply` | `provider_directory=false` |
 | GET | `/api/v1/public/facilities` | `provider_directory=false` |
+| GET | `/api/v1/appointments/capabilities` | `appointment_coordination=false` |
+| GET | `/api/v1/appointments/slots` | `appointment_coordination=false` |
+| GET | `/api/v1/doctor/appointment-slots` | `appointment_coordination=false` |
+| POST | `/api/v1/doctor/appointment-slots` | `appointment_coordination=false` |
+| DELETE | `/api/v1/doctor/appointment-slots/{slot_id}` | `appointment_coordination=false` |
 | POST | `/api/v1/consultations/book` | `appointment_coordination=false` |
 | GET | `/api/v1/consultations/me` | `appointment_coordination=false` |
 | GET | `/api/v1/doctor/queue` | `appointment_coordination=false` |

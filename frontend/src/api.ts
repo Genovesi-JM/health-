@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearPendingAppointments } from './utils/pendingAppointment';
 import { assertOperationalAccess } from './phase1/policy';
 
 /*
@@ -41,7 +42,7 @@ api.interceptors.response.use(
     const url = err.config?.url || '';
     const errorCode = err.response?.headers?.['x-kaya-error-code'];
     if (requiresReauthentication(err.response?.status, errorCode, url)) {
-      clearSession();
+      clearSession({ preservePendingAppointments: true });
       const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       if (!window.location.pathname.endsWith('/login')) {
         window.location.href = `${base}/login`;
@@ -58,7 +59,8 @@ const SESSION_KEYS = [
   'ht_name', 'ht_role', 'ht_user_id',
 ] as const;
 
-export function clearSession() {
+export function clearSession(options: { preservePendingAppointments?: boolean } = {}) {
+  if (!options.preservePendingAppointments) clearPendingAppointments();
   SESSION_KEYS.forEach(k => localStorage.removeItem(k));
 }
 

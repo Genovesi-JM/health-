@@ -82,6 +82,10 @@ export interface Consultation {
   specialty: string;
   status: 'requested' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
   scheduled_at?: string;
+  scheduled_end_at?: string;
+  slot_id?: string;
+  timezone?: string;
+  country?: string;
   started_at?: string;
   ended_at?: string;
   cancellation_reason?: string;

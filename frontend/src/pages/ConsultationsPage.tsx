@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { appointmentError, formatAppointmentTime, isAppointmentConflict } from '../utils/appointments';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import type { Consultation, PatientState } from '../types';
@@ -29,6 +30,40 @@ export default function ConsultationsPage() {
   const [videoFor, setVideoFor] = useState<Consultation | null>(null);
   const [summaryFor, setSummaryFor] = useState<Consultation | null>(null);
   const [loadError, setLoadError] = useState('');
+  const [cancelFor, setCancelFor] = useState<Consultation | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  const [cancelNotice, setCancelNotice] = useState('');
+  const cancellationBusy = useRef(false);
+
+  const cancelConsultation = async () => {
+    if (!cancelFor || cancellationBusy.current || !['requested', 'scheduled'].includes(cancelFor.status)) return;
+    const target = cancelFor;
+    cancellationBusy.current = true; setCancelling(true); setCancelError(''); setCancelNotice('');
+    try {
+      const response = await api.patch(`/api/v1/consultations/${target.id}`, {});
+      const saved: Consultation = response.data;
+      setConsultations(previous => previous.map(item => item.id === target.id ? { ...item, ...saved } : item));
+      setCancelFor(null);
+      setCancelNotice(saved.status === 'cancelled' ? 'Consulta cancelada.' : 'O estado da consulta foi atualizado pelo serviço.');
+    } catch (error) {
+      if (isAppointmentConflict(error)) {
+        setCancelFor(null);
+        setCancelError('A consulta mudou antes do cancelamento. Consulte o estado atualizado.');
+        try {
+          const refreshed = await api.get('/api/v1/consultations/me');
+          setConsultations(refreshed.data); setLoadError('');
+        } catch {
+          setCancelError('A consulta mudou, mas não foi possível atualizar a lista. Atualize a página antes de tentar cancelar novamente.');
+          setLoadError('Não foi possível confirmar o estado atual das consultas.');
+        }
+      } else {
+        setCancelError(appointmentError(error, 'Não foi possível confirmar o cancelamento. A consulta mantém o último estado conhecido; tente novamente ou atualize a página.'));
+      }
+    } finally {
+      cancellationBusy.current = false; setCancelling(false);
+    }
+  };
 
   useEffect(() => {
     Promise.allSettled([
@@ -84,6 +119,8 @@ export default function ConsultationsPage() {
       </div>
 
       {loadError && <p role="alert" className="alert alert-danger">{loadError}</p>}
+      {!cancelFor && cancelError && <p role="alert">{cancelError}</p>}
+      {cancelNotice && <p role="status">{cancelNotice}</p>}
       <div className="tab-nav">
         <button className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>{t('consult.tab_all')}</button>
         <button className={tab === 'upcoming' ? 'active' : ''} onClick={() => setTab('upcoming')}>{t('consult.tab_upcoming')}</button>
@@ -161,6 +198,7 @@ export default function ConsultationsPage() {
                     <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
                       <div>{specialtyLabel(c.specialty, t)}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+                        {['requested', 'scheduled'].includes(c.status) && <button className="btn btn-sm" disabled={cancelling} onClick={() => { setCancelFor(c); setCancelError(''); setCancelNotice(''); }}>Cancelar consulta</button>}
                         {['scheduled', 'in_progress', 'completed'].includes(c.status) && (
                           <button
                             onClick={() => setChatFor(c)}
@@ -193,7 +231,7 @@ export default function ConsultationsPage() {
                         {statusIcon(c.status)} {statusLabel(c.status)}
                       </span>
                     </td>
-                    <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleString(locale) : '—'}</td>
+                    <td>{c.scheduled_at ? formatAppointmentTime(c.scheduled_at, c.timezone || 'UTC', locale) : '—'}</td>
                     <td>
                       {c.payment_status === 'paid' ? (
                         <span className="badge badge-success">{t('pay.status_paid')}</span>
@@ -215,6 +253,20 @@ export default function ConsultationsPage() {
           </div>
         )}
       </div>
+
+      {cancelFor && <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cancel-consultation-title">
+        <section className="modal" style={{ padding: '1.5rem', maxWidth: 480 }}>
+          <h2 id="cancel-consultation-title">Cancelar esta consulta?</h2>
+          <p>{specialtyLabel(cancelFor.specialty, t)}</p>
+          <p>{cancelFor.scheduled_at ? formatAppointmentTime(cancelFor.scheduled_at, cancelFor.timezone || 'UTC', locale) : 'Pedido sem hora marcada'}</p>
+          <p>Ao confirmar, o pedido ou a consulta será cancelado e o horário poderá voltar a ficar disponível.</p>
+          {cancelError && <p role="alert">{cancelError}</p>}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-secondary" disabled={cancelling} onClick={() => { setCancelFor(null); setCancelError(''); }}>Manter consulta</button>
+            <button type="button" className="btn btn-primary" disabled={cancelling} onClick={() => void cancelConsultation()}>{cancelling ? 'A cancelar…' : 'Confirmar cancelamento'}</button>
+          </div>
+        </section>
+      </div>}
 
       {/* Book Consultation Modal */}
       <BookConsultationModal
