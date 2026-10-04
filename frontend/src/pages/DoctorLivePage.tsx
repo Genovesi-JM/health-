@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../api';
 import TeleconsultationControl from '../components/TeleconsultationControl';
 import { useT } from '../i18n/LanguageContext';
+import ConsultationCloseout from '../components/ConsultationCloseout';
 
 type AgendaItem = {
   id: string;
@@ -36,6 +37,22 @@ export default function DoctorLivePage() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<AgendaItem | null>(null);
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const [closeoutDirty, setCloseoutDirty] = useState(false);
+  const [closeoutBusy, setCloseoutBusy] = useState(false);
+  const [endingVideo, setEndingVideo] = useState(false);
+  const [videoError, setVideoError] = useState('');
+  const leaveSelection = () => {
+    if (!closeoutDirty || window.confirm('Sair e perder o rascunho de conclusão desta sessão?')) {
+      setSelected(null); setRoomUrl(null); setCloseoutDirty(false);
+    }
+  };
+  const endVideo = async () => {
+    if (!selected || endingVideo) return;
+    setEndingVideo(true); setVideoError('');
+    try { await api.post(`/api/v1/teleconsultations/${selected.id}/complete`); setRoomUrl(null); }
+    catch { setVideoError('Não foi possível confirmar o encerramento do vídeo. Tente novamente.'); }
+    finally { setEndingVideo(false); }
+  };
 
   useEffect(() => {
     let active = true;
@@ -54,63 +71,28 @@ export default function DoctorLivePage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nextConsult = useMemo(
-    () => agenda.find(a => statusKey(a.status) !== 'done') ?? agenda[0] ?? null,
+    () => agenda.find(a => ['scheduled', 'confirmed', 'in_progress'].includes(a.status)) ?? null,
     [agenda],
   );
 
-  // ── In an embedded call ──────────────────────────────────────────────────
-  if (roomUrl && selected) {
-    return (
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div style={{ fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: '#dc2626' }}>●</span> {selected.patient} · {selected.time}
-          </div>
-          <button
-            onClick={() => { setRoomUrl(null); setSelected(null); }}
-            style={{ padding: '0.55rem 1.2rem', borderRadius: '10px', background: '#dc2626', color: '#fff', border: 'none', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-          >
-            <PhoneOff size={16} /> {t('dlive.end')}
-          </button>
-        </div>
-        <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', background: '#1e1e2e', aspectRatio: '16/9' }}>
-          <iframe
-            title={`${t('appt.teleconsulta')} — ${selected.patient}`}
-            src={roomUrl}
-            allow="camera; microphone; fullscreen; display-capture; autoplay"
-            style={{ width: '100%', height: '100%', border: 'none' }}
-          />
-        </div>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '0.75rem', textAlign: 'center' }}>
-          {t('dlive.room_note')}
-        </p>
-      </div>
-    );
-  }
-
-  // ── Preparing a selected consultation (device test / check-in / start) ────
   if (selected) {
-    return (
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
-        <button
-          onClick={() => setSelected(null)}
-          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer', padding: 0, marginBottom: '1rem' }}
-        >
-          ← {t('dlive.back_agenda')}
-        </button>
-        <div className="card" style={{ padding: '1.25rem', marginBottom: '1rem' }}>
-          <div style={{ fontWeight: 800, fontSize: '1rem' }}>{selected.patient}</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '0.2rem' }}>
-            {selected.time} · {selected.type}{selected.reason ? ` — ${selected.reason}` : ''}
-          </div>
-        </div>
-        <TeleconsultationControl
-          consultationId={selected.id}
-          role="doctor"
-          onEnterRoom={(url) => setRoomUrl(url)}
-        />
+    return <div style={{ maxWidth: 960, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+      <button className="btn btn-sm" disabled={closeoutBusy || endingVideo} onClick={leaveSelection}>← {t('dlive.back_agenda')}</button>
+      <div className="card" style={{ padding: '1.25rem', margin: '1rem 0' }}>
+        <strong>{selected.patient}</strong><p>{selected.time} · {selected.type}{selected.reason ? ` — ${selected.reason}` : ''}</p>
       </div>
-    );
+      {videoError && <p role="alert">{videoError}</p>}
+      {roomUrl ? <section>
+        <button className="btn" type="button" disabled={endingVideo} onClick={endVideo}><PhoneOff size={16} /> Encerrar vídeo</button>
+        <p>Encerrar o vídeo mantém a consulta aberta para concluir o registo clínico.</p>
+        <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', background: '#1e1e2e', aspectRatio: '16/9' }}>
+          <iframe title={`${t('appt.teleconsulta')} — ${selected.patient}`} src={roomUrl} referrerPolicy="no-referrer" allow="camera; microphone; fullscreen; autoplay" style={{ width: '100%', height: '100%', border: 'none' }} />
+        </div>
+      </section> : <TeleconsultationControl consultationId={selected.id} role="doctor" onEnterRoom={setRoomUrl} />}
+      <ConsultationCloseout consultationId={selected.id} role="doctor" onDirtyChange={setCloseoutDirty} onBusyChange={setCloseoutBusy} onFinalized={() => {
+        setRoomUrl(null); setAgenda(current => current.map(item => item.id === selected.id ? { ...item, status: 'completed' } : item));
+      }} />
+    </div>;
   }
 
   // ── Agenda / lobby ────────────────────────────────────────────────────────

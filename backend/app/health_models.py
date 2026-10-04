@@ -461,6 +461,15 @@ class ConsultationNotes(Base):
     assessment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     plan: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     outcome: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # resolved, follow_up, referral, er
+    # Only this explicitly authored text is disclosed through the patient closeout API.
+    patient_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    follow_up_instructions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    follow_up_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+    follow_up_due_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    follow_up_task_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    finalized_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    finalized_by_user_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    finalization_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     consultation = relationship("Consultation", back_populates="notes")

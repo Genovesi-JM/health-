@@ -7,6 +7,7 @@ import { useT } from '../i18n/LanguageContext';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
 import { specialtyLabel } from '../constants/specialties';
 import TriagePhotoReview from '../components/TriagePhotoReview';
+import ConsultationCloseout from '../components/ConsultationCloseout';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
 
@@ -48,6 +49,12 @@ export default function DoctorQueuePage() {
   const [acceptingEscalation, setAcceptingEscalation] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const [closeoutDirty, setCloseoutDirty] = useState(false);
+  const [closeoutBusy, setCloseoutBusy] = useState(false);
+  const dismissCloseout = () => {
+    if (!closeoutDirty || window.confirm('Sair e perder o rascunho de conclusão desta sessão?')) { setClosingId(null); setCloseoutDirty(false); }
+  };
 
   useEffect(() => { loadQueue(); }, []);
 
@@ -93,20 +100,6 @@ export default function DoctorQueuePage() {
     }
   };
 
-  const completeConsultation = async (id: string) => {
-    setPendingAction(id);
-    setActionError('');
-    try {
-      await api.post(`/api/v1/consultations/${id}/complete`, { outcome: 'resolved' });
-      setSelected(null);
-      loadQueue();
-    } catch {
-      setActionError(t('queue.action_error'));
-      loadQueue();
-    } finally {
-      setPendingAction(null);
-    }
-  };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
 
@@ -216,7 +209,7 @@ export default function DoctorQueuePage() {
                             </button>
                           )}
                           {q.status === 'in_progress' && (
-                            <button className="btn btn-sm" disabled={pendingAction !== null} onClick={() => completeConsultation(q.id)}
+                            <button className="btn btn-sm" disabled={pendingAction !== null} onClick={() => setClosingId(q.id)}
                               style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
                               <CheckCircle2 size={13} /> {t('queue.complete')}
                             </button>
@@ -277,7 +270,7 @@ export default function DoctorQueuePage() {
                   </button>
                 )}
                 {selected.status === 'in_progress' && (
-                  <button className="btn" disabled={pendingAction !== null} style={{ flex: 1, fontSize: '0.82rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }} onClick={() => completeConsultation(selected.id)}>
+                  <button className="btn" disabled={pendingAction !== null} style={{ flex: 1, fontSize: '0.82rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }} onClick={() => setClosingId(selected.id)}>
                     <CheckCircle2 size={14} /> Concluir
                   </button>
                 )}
@@ -304,6 +297,14 @@ export default function DoctorQueuePage() {
           </div>
         )}
       </div>
+      {closingId && <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Concluir consulta">
+        <div className="modal" style={{ width: 'min(760px, 95vw)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="modal-header"><h3>Rever e concluir consulta</h3><button type="button" className="btn btn-sm" onClick={dismissCloseout} disabled={closeoutBusy} aria-label="Fechar conclusão"><X size={20} /></button></div>
+          <div className="modal-body"><ConsultationCloseout consultationId={closingId} role="doctor" onDirtyChange={setCloseoutDirty} onBusyChange={setCloseoutBusy} onFinalized={() => {
+            setQueue(current => current.filter(item => item.id !== closingId)); setSelected(null);
+          }} /></div>
+        </div>
+      </div>}
     </>
   );
 }

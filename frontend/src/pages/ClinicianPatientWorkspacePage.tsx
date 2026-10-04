@@ -8,6 +8,7 @@ import {
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import TeleconsultationControl from '../components/TeleconsultationControl';
+import ConsultationCloseout from '../components/ConsultationCloseout';
 
 type Patient360 = {
   access: {
@@ -256,6 +257,13 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
   const [data, setData] = useState<Patient360 | null>(preview ? PREVIEW_DATA : null);
   const [loading, setLoading] = useState(!preview);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [closeoutDirty, setCloseoutDirty] = useState(false);
+  const [closeoutBusy, setCloseoutBusy] = useState(false);
+  const selectTab = (tab: Tab) => {
+    if (tab === activeTab) return;
+    if (activeTab === 'consultations' && (closeoutBusy || (closeoutDirty && !window.confirm('Mudar de separador e perder o rascunho de conclusão desta sessão?')))) return;
+    setCloseoutDirty(false); setActiveTab(tab);
+  };
   const [showHandoff, setShowHandoff] = useState(false);
   const [escalationUrgency, setEscalationUrgency] = useState('priority');
   const [escalationReason, setEscalationReason] = useState('');
@@ -433,7 +441,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
             </Link>
           )}
           {data.access.capabilities.join_teleconsultation && data.access.role === 'nurse' && (
-            <button className="clinician-action clinician-action--primary" type="button" onClick={() => setActiveTab('consultations')}>
+            <button className="clinician-action clinician-action--primary" type="button" onClick={() => selectTab('consultations')}>
               <Video size={16} /> {c.teleconsult}
             </button>
           )}
@@ -469,7 +477,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
           ['consultations', c.consultations, Video],
           ['coordination', c.coordination, Users],
         ] as const).map(([key, label, Icon]) => (
-          <button key={key} type="button" className={activeTab === key ? 'active' : ''} onClick={() => setActiveTab(key)}>
+          <button key={key} type="button" className={activeTab === key ? 'active' : ''} onClick={() => selectTab(key)}>
             <Icon size={16} /> {label}
             {key === 'triage' && data.latest_triage?.risk_level && <span className="tab-alert" />}
           </button>
@@ -601,6 +609,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
             {data.active_episode && (
               <TeleconsultationControl consultationId={data.active_episode.id} role={data.access.role} preview={preview} />
             )}
+            {data.active_episode && data.access.role === 'doctor' && !preview && <ConsultationCloseout consultationId={data.active_episode.id} role="doctor" onDirtyChange={setCloseoutDirty} onBusyChange={setCloseoutBusy} />}
             <section className="clinician-panel">
               <PanelTitle icon={<Video size={17} />} title={c.consultations} meta={`${data.consultations.length}`} />
               <div className="clinician-consultation-list">

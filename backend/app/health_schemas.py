@@ -7,7 +7,7 @@ Corporate, Billing, Compliance, and Dashboard KPIs.
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, StrictBool, field_serializer
 
 
 # ── Roles ──
@@ -360,11 +360,19 @@ class ConsultationOut(BaseModel):
 
 
 class ConsultationCompleteRequest(BaseModel):
-    subjective: Optional[str] = None
-    objective: Optional[str] = None
-    assessment: Optional[str] = None
-    plan: Optional[str] = None
-    outcome: str = Field(default="resolved", pattern="^(resolved|follow_up|referral|er)$")
+    # Required clinical fields are checked after ownership/status, so callers
+    # cannot discover another patient's state via closeout validation errors.
+    subjective: Optional[str] = Field(default=None, max_length=10000)
+    objective: Optional[str] = Field(default=None, max_length=10000)
+    assessment: Optional[str] = Field(default=None, max_length=10000)
+    plan: Optional[str] = Field(default=None, max_length=10000)
+    patient_summary: Optional[str] = Field(default=None, max_length=10000)
+    follow_up_instructions: Optional[str] = Field(default=None, max_length=10000)
+    follow_up_required: Optional[StrictBool] = None
+    follow_up_due_at: Optional[datetime] = None
+    outcome: Optional[str] = Field(default=None, pattern="^(resolved|follow_up|referral|er)$")
+
+    model_config = {"extra": "forbid"}
 
 
 class ConsultationCancelRequest(BaseModel):

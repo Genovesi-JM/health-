@@ -10,6 +10,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import BookConsultationScreen from '../screens/BookConsultationScreen';
 import ConsultationsScreen from '../screens/ConsultationsScreen';
+import ConsultationDetailScreen from '../screens/ConsultationDetailScreen';
 import PrescriptionRequestScreen from '../screens/PrescriptionRequestScreen';
 import FamilyScreen from '../screens/FamilyScreen';
 import ConsentGateScreen from '../screens/ConsentGateScreen';
@@ -21,6 +22,7 @@ export type AppStackParamList = {
   HomeTabs: undefined;
   BookConsultation: undefined;
   Consultations: undefined;
+  ConsultationDetail: { consultationId: string };
   PrescriptionRequest: undefined;
   Family: undefined;
   ConsentGate: undefined;
@@ -80,6 +82,8 @@ export default function AppStack() {
         options={{ title: 'Marcar Consulta', headerTintColor: TEAL }} />
       <Stack.Screen name="Consultations" component={ConsultationsScreen}
         options={{ title: 'As minhas consultas', headerTintColor: TEAL }} />
+      <Stack.Screen name="ConsultationDetail" component={ConsultationDetailScreen}
+        options={{ title: 'Consulta e orientações', headerTintColor: TEAL }} />
       <Stack.Screen name="PrescriptionRequest" component={PrescriptionRequestScreen}
         options={{ title: 'Pedir Receita', headerTintColor: TEAL }} />
       <Stack.Screen name="Family" component={FamilyScreen}

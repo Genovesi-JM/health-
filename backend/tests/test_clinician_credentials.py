@@ -383,7 +383,7 @@ def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db
         headers=_headers(nurse),
     )
     assert prepared.status_code == 201, prepared.text
-    assert prepared.json()["provider_mode"] == "pilot"
+    assert prepared.json()["provider_mode"] == "disabled"
     assert prepared.json()["recording_enabled"] is False
     patient_prepare = client.post(
         f"/api/v1/teleconsultations/{consultation.id}/prepare",
@@ -444,7 +444,7 @@ def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db
     )
     # Phase 25: video is disabled by default and fails closed. No public
     # meet.jit.si room is ever emitted; join returns 503 until an approved
-    # provider is enabled server-side (VIDEO_ENABLED + VIDEO_BASE_URL).
+    # provider adapter is implemented and reviewed; environment flags are insufficient.
     assert joined.status_code == 503, joined.text
     assert "jit.si" not in joined.text
 

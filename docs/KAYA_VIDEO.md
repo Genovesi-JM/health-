@@ -14,19 +14,43 @@ basis for it.
   (`frontend/src/utils/video.ts`, `backend/app/routers/teleconsultation.py`). A
   scanner test (`phase25_tests` + the `.py` app scan) fails the build if a public
   jitsi URL literal reappears in `backend/app`.
-- **Disabled by default, enforced server-side.** `GET .../join` returns **503**
-  unless `VIDEO_ENABLED=true` **and** `VIDEO_BASE_URL` is configured on the
-  server. No client value, query parameter, or env in the browser can turn video
-  on or choose a room.
-- **Server-authoritative rooms.** The room a participant enters is decided by the
-  backend, which returns a full `room_url` built from an **unguessable,
-  server-issued room key** (`KAYA-` + `secrets.token_urlsafe(24)`). The key is
-  **not** a Kaya consultation, appointment, or patient id, so a guessed or leaked
-  Kaya id can never address a live room. The client (`DoctorAgendaPage`) now calls
-  the join endpoint and opens the returned URL; it never constructs a room from an
-  id, and `openServerVideoRoom` refuses any URL outside the approved base.
+- **Disabled at runtime until an adapter exists.** `POST .../join` returns **503**
+  with the shipped disabled provider, including when `VIDEO_ENABLED=true` and
+  `VIDEO_BASE_URL` are set. Those environment variables are insufficient to
+  establish a secure provider integration. The authenticated capabilities route
+  reports this unavailable state explicitly. No client value can activate video.
+- **Server-authoritative rooms.** Preparation uses an **unguessable,
+  server-issued room key**, independent of consultation, appointment and patient
+  identifiers. A prepared local session does not establish a provider room or
+  mean that a call took place. The shipped join route issues no external URL or
+  participant token. A future provider adapter must satisfy the boundary below
+  before enabling entry.
 - **Recording off by default**, everywhere (`recording_default_enabled()` is
-  `False`; the join response hard-codes `recording_enabled: False`).
+  `False`; runtime capabilities report `recording_enabled: False`).
+
+## Consultation closeout integration — 4 October 2026
+
+Ending a locally tracked video session and finalizing clinical care are separate
+actions. `POST /api/v1/teleconsultations/{consultation_id}/complete` ends that
+session and participant attendance, leaving the consultation in progress.
+`POST /api/v1/consultations/{consultation_id}/complete` requires a current,
+assigned doctor and explicit clinician-authored assessment, plan, outcome,
+patient summary and follow-up decision. Clinical closeout also ends any remaining
+local video session in the same transaction.
+
+The patient sees only the separately published summary and follow-up information;
+the closeout endpoint returns internal SOAP notes only to the assigned authorized
+doctor. Required follow-up creates a task owned by that doctor with a future due
+date. Exact closeout retries recover the saved result without duplicating notes,
+tasks or audit events. Different content cannot replace a finalized closeout.
+This is application attribution and record finalization, not a qualified digital
+signature or proof that an external video call occurred.
+
+Web separates closeout from leaving the call view, and web/native patient views
+show the published summary and follow-up state. Provider unavailability is shown
+explicitly. Native embedded video and a native doctor closeout editor remain
+future work. Local synthetic tests do not verify an external call, media
+permissions, waiting-room admission or reconnection on a real device.
 
 ## Canonical policy — `backend/app/video_boundary.py`
 
@@ -84,10 +108,9 @@ window can open, and `tsc --noEmit` is clean.
   this or set `VIDEO_ENABLED=true` in any shared environment.
 - **Recording lawful basis.** Recording stays OFF; enabling it needs a documented
   lawful basis and patient information/consent decided by a named owner.
-- **Runtime adoption verification.** `video_boundary.py` is canonical policy; a
-  harness-verified task must confirm the held join/prepare endpoints consume it
-  (token preconditions, admission, webhook verification) once a provider is
-  approved. The join endpoint's server-side 503 gate and unguessable key are
-  wired today; the token/admission/webhook flow ships as enforced policy awaiting
-  an approved adapter.
+- **Runtime adoption verification.** The shipped runtime now consumes the
+  disabled provider and refuses room entry even when environment flags are set.
+  A future adapter still requires integration tests for token preconditions,
+  admission, webhook verification, revocation and failure recovery. Domain-only
+  tests of these rules do not establish that a provider enforces them.
 - **Clinical release stays HOLD.**

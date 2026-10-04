@@ -334,3 +334,80 @@ rollback, upload commit/response failures, and migration bootstrap adoption.
 The existing Python deprecation, web bundle size/Browserslist and Node module-type
 warnings remain. These results do not establish production PostgreSQL concurrency,
 scanner operation, real-device UI behavior or deployment readiness.
+
+## Consultation closeout and patient follow-up
+
+Clinical closeout now requires the assigned, currently authorized doctor to
+record an assessment, plan, explicit outcome, separately authored patient summary
+and explicit follow-up decision. Internal SOAP notes are not copied into the
+patient summary. A finalized record retains clinician attribution, time and a
+content digest; there is no API for silently replacing it. This is application
+record finalization, not a qualified digital signature. Historical completed
+consultations without an explicitly published summary remain unpublished.
+
+Required follow-up has instructions and a future date with a timezone. Closeout
+creates a task assigned to the finalizing doctor. Notes, consultation status,
+follow-up task, local video-session ending and their audit events commit together.
+An identical closeout retry recovers the saved result; changed content is rejected.
+Task completion also commits its audit atomically, checks current assignment and
+status in the write, and recovers identical retries. A stale view cannot overwrite
+another completion or a reassignment. Patient views include follow-up owner,
+deadline and current task status, without internal task completion notes.
+
+The web doctor's queue and call view now lead to an explicit closeout editor,
+with a separate confirmation before publishing the summary. Errors and conflicts
+preserve the local draft. Web patients can open the published summary from their
+consultations. Native patients can open consultation details from booking or the
+list, follow request/acceptance status, cancel eligible requests, and read the
+published summary and follow-up details. Native details refresh on focus and
+foreground; active consultations also refresh periodically. Dates carry explicit
+UTC offsets from the API and display in the device's local timezone.
+
+Ending a video session no longer completes clinical care. The shipped video
+provider remains disabled, and the actual join route refuses access even when
+environment flags and a base URL are supplied. Authenticated capability discovery
+reports this honestly to clients. Preparation/check-in records are local workflow
+state and are not proof that an external call occurred. The
+[video record](KAYA_VIDEO.md) explains the adapter boundary and remaining work.
+
+The `consultation_closeout_v1` migration adds disclosure/finalization fields
+without publishing historical notes. The policy inventory includes the closeout
+read and video capabilities endpoints; release remains HOLD, with every activation
+flag false. No live provider call, migration of user data, deployment or payment
+was performed. Actual video-provider integration, native clinician editing,
+device/media testing, production PostgreSQL concurrency and an amendment workflow
+for finalized clinical notes remain further work. Appointment capacity/conflict
+handling and reliable patient notification delivery also remain outstanding.
+Nurse preparation retains the existing verified active-episode access model;
+explicit team/facility assignment is not certified by this milestone.
+
+Local validation uses synthetic identities and disposable SQLite source copies,
+with outbound network access blocked. Tests exercise the real API journey from
+closeout to owned follow-up completion and patient summary refresh, alongside
+rollback, lost responses, stale writes, consent/authority checks, legacy-note
+privacy, migration adoption and video configuration bypass attempts. Web checks
+cover explicit publication, retained conflict drafts, unchanged retries after a
+follow-up deadline, role-specific display and unavailable video. Native tests
+cover the patient detail API contract and failure states; TypeScript checks the
+screen integration. No real media call, mobile device or PostgreSQL server was
+used. Existing Python deprecation, web bundle/Browserslist and Node module-type
+warnings remain.
+
+Final local validation for this consultation milestone:
+
+| Check | Result |
+| --- | --- |
+| Full backend application suite | 465 passed |
+| Policy, care-episode, video-boundary and database-integrity suites (Phases 1, 24, 25, 32) | 151 passed |
+| Scope and route inventory checks | 23 passed; 43 subtests passed |
+| Web interaction and policy suite | 159 passed |
+| Native endpoint, auth, onboarding, document and consultation helper tests | 49 passed |
+| Presentation prototype checks | 15 passed |
+| Web production build and web/native TypeScript | Passed |
+| Generated policy consistency | 4 artifacts verified; 269 API declarations; release HOLD |
+| Git whitespace/error check | Passed |
+
+The final backend source matches the tested disposable snapshot. The auxiliary
+database-integrity suite initially lacked its referenced documentation in the
+test snapshot; after copying that reference into the isolated harness, all 151
+checks passed. No application change was needed for that harness omission.

@@ -132,7 +132,7 @@ def test_directed_request_requires_acceptance_before_start_and_record_access(api
     assert started.status_code == 200
     assert started.json()["status"] == "in_progress"
     completed = api.post(f"/api/v1/consultations/{cid}/complete", headers=people["doctor"]["headers"],
-                         json={"assessment": "Synthetic assessment", "plan": "Synthetic follow-up", "outcome": "follow_up"})
+                         json={"assessment": "Synthetic assessment", "plan": "Synthetic plan", "patient_summary": "Patient-facing summary", "outcome": "resolved", "follow_up_required": False})
     assert completed.status_code == 200, completed.text
     assert completed.json()["status"] == "completed"
     assert db_session.query(ConsultationNotes).filter_by(consultation_id=cid).count() == 1

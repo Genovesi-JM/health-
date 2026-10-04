@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert, ActivityIndicator,
@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
 import api from '../services/api';
+import { consultationError, type PatientConsultation } from './consultations';
 
 // Canonical specialty codes (must match the web + backend doctor.specialization
 // so bookings reach the right doctor's queue) with Portuguese labels.
@@ -27,25 +28,33 @@ export default function BookConsultationScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [specialty, setSpecialty] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const busy = useRef(false);
 
   const handleBook = async () => {
+    if (busy.current) return;
     if (!specialty) { Alert.alert('Selecione uma especialidade', 'Escolha a área da sua consulta.'); return; }
+    busy.current = true;
     setSaving(true);
     try {
-      await api.post('/api/v1/consultations/book', {
+      const response = await api.post<PatientConsultation>('/api/v1/consultations/book', {
         specialty,
         next_available: true,
       });
       Alert.alert(
         'Pedido recebido',
         'O seu pedido aguarda aceitação de um médico. Acompanhe o estado em "As minhas consultas".',
-        [{ text: 'Ver consultas', onPress: () => navigation.navigate('Consultations') }],
+        [{ text: 'Ver consulta', onPress: () => navigation.replace('ConsultationDetail', { consultationId: response.data.id }) }],
       );
       setSpecialty('');
-    } catch (err: any) {
-      Alert.alert('Erro', err.response?.data?.detail ?? 'Não foi possível marcar a consulta.');
+    } catch (err: unknown) {
+      Alert.alert('Pedido não confirmado', consultationError(err, 'Não foi possível confirmar o pedido. Verifique As minhas consultas antes de repetir, pois o pedido pode ter sido recebido.'), [
+        { text: 'Ver consultas', onPress: () => navigation.navigate('Consultations') },
+        { text: 'Fechar', style: 'cancel' },
+      ]);
+    } finally {
+      busy.current = false;
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   return (
@@ -61,6 +70,7 @@ export default function BookConsultationScreen() {
             key={s.code}
             style={[styles.chip, specialty === s.code && styles.chipSelected]}
             onPress={() => setSpecialty(s.code)}
+            disabled={saving}
             activeOpacity={0.8}
           >
             <Text style={[styles.chipText, specialty === s.code && styles.chipTextSelected]}>{s.label}</Text>
@@ -73,7 +83,7 @@ export default function BookConsultationScreen() {
         onPress={handleBook}
         disabled={!specialty || saving}
       >
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Marcar consulta</Text>}
+        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Pedir consulta</Text>}
       </TouchableOpacity>
 
       <Text style={styles.note}>

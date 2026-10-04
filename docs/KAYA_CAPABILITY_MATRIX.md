@@ -22,9 +22,9 @@ States: NOT_BUILT, MOCK, SYNTHETIC_ONLY, DISABLED_PENDING_GATE, PILOT, LIVE. No 
 | Accounts and invited access (`account_access=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 26 | `/login`, `/register`, `/choose-account-type`, `/auth/callback`, `/settings`, `/security/mfa`, `/security`, `/doctor/security` |
 | Identity, onboarding and consent (`onboarding=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 12 | `/register/doctor`, `/candidatura`, `/consent-gate`, `/data-consent`, `/onboarding/patient`, `/onboarding/professional`, `/onboarding/organisation`, `/consents` |
 | Public clinic and professional directory (`provider_directory=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 12 | `/especialistas`, `/mapa`, `/clinics`, `/medicos`, `/medicos/:slug` |
-| Human-confirmed appointment coordination (`appointment_coordination=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 9 | `/consultations`, `/doctor/queue`, `/doctor/agenda`, `/doctor/disponibilidade` |
+| Human-confirmed appointment coordination (`appointment_coordination=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 10 | `/consultations`, `/doctor/queue`, `/doctor/agenda`, `/doctor/disponibilidade` |
 | Symptom triage and self-care advice (`triage=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 13 | `/triage`, `/self-care` |
-| Video consultations (`teleconsultation=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/telemedicina`, `/doctor/consultas` |
+| Video consultations (`teleconsultation=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 8 | `/telemedicina`, `/doctor/consultas` |
 | Prescriptions and referrals (`prescribing_referrals=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/prescricoes/pedido`, `/doctor/prescricoes` |
 | Clinical messaging (`clinical_messaging=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 4 | `/doctor/mensagens` |
 | Clinical workspaces and care delivery (`clinical_operations=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 23 | `/preview/nurse`, `/preview/clinician/patient`, `/clinician/patients/:patientId`, `/chronic-care`, `/nurse`, `/doctor/dashboard`, `/doctor/profile`, `/doctor/pacientes`, `/doctor/avaliacoes`, `/doctor/suporte` |
@@ -107,6 +107,7 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | POST | `/api/v1/doctor/queue/{consultation_id}/accept` | `appointment_coordination=false` |
 | POST | `/api/v1/doctor/queue/{consultation_id}/start` | `appointment_coordination=false` |
 | POST | `/api/v1/consultations/{consultation_id}/complete` | `appointment_coordination=false` |
+| GET | `/api/v1/consultations/{consultation_id}/closeout` | `appointment_coordination=false` |
 | PATCH | `/api/v1/consultations/{consultation_id}` | `appointment_coordination=false` |
 | POST | `/api/v1/consultations/{consultation_id}/review` | `appointment_coordination=false` |
 | POST | `/api/v1/triage/start` | `triage=false` |
@@ -122,6 +123,7 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | POST | `/api/v1/triage/{triage_id}/complete` | `triage=false` |
 | GET | `/api/v1/triage/history` | `triage=false` |
 | DELETE | `/api/v1/triage/{triage_id}` | `triage=false` |
+| GET | `/api/v1/teleconsultations/capabilities` | `teleconsultation=false` |
 | POST | `/api/v1/teleconsultations/{consultation_id}/prepare` | `teleconsultation=false` |
 | GET | `/api/v1/teleconsultations/{consultation_id}` | `teleconsultation=false` |
 | POST | `/api/v1/teleconsultations/{consultation_id}/check-in` | `teleconsultation=false` |

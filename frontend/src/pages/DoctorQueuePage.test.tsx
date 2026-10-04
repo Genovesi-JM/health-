@@ -43,4 +43,11 @@ describe('doctor queue lifecycle actions', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Aceitar pedido' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível atualizar');
   });
+  it('opens clinical review before completion and never submits an invented resolved outcome', async () => {
+    renderQueue('in_progress');
+    await userEvent.click(await screen.findByRole('button', { name: 'Concluir' }));
+    expect(await screen.findByRole('dialog', { name: 'Concluir consulta' })).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.get).toHaveBeenCalledWith('/api/v1/consultations/consult-1/closeout');
+  });
 });

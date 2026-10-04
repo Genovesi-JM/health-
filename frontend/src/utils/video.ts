@@ -14,7 +14,7 @@ import { assertOperationalAccess } from '../phase1/policy';
  * (DPA, data region/transfer, security, accessibility, retention, clinical
  * fallback) is approved.
  */
-const VIDEO_BASE = ((import.meta as any).env?.VITE_VIDEO_BASE || '').replace(/\/$/, '');
+const VIDEO_BASE = (import.meta.env.VITE_VIDEO_BASE || '').replace(/\/$/, '');
 
 export function videoEnabled(): boolean {
   return VIDEO_BASE.length > 0;
@@ -32,14 +32,24 @@ export function isServerRoomKey(key: string): boolean {
  * arbitrary or client-chosen destination.
  */
 export function openServerVideoRoom(roomUrl: string): void {
+  window.open(approvedServerVideoRoom(roomUrl), '_blank', 'noopener,noreferrer');
+}
+
+/** Apply the same boundary to embedded rooms and external windows. */
+export function approvedServerVideoRoom(roomUrl: string): string {
   assertOperationalAccess();
   if (!videoEnabled()) {
     throw new Error('Video is disabled: no approved provider configured.');
   }
-  if (!roomUrl || !roomUrl.startsWith(VIDEO_BASE + '/')) {
+  const base = new URL(VIDEO_BASE);
+  const room = new URL(roomUrl);
+  const basePath = base.pathname.replace(/\/$/, '');
+  if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash
+    || room.protocol !== 'https:' || room.username || room.password
+    || room.origin !== base.origin || !room.pathname.startsWith(basePath + '/') || !roomUrl.startsWith(VIDEO_BASE + '/')) {
     throw new Error('Refusing to open a room outside the approved provider base.');
   }
-  window.open(roomUrl, '_blank', 'noopener,noreferrer');
+  return room.href;
 }
 
 /** Build a room URL from a server-issued key (guarded; no public fallback). */

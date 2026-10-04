@@ -11,6 +11,7 @@ import ReviewModal from '../components/ReviewModal';
 import { specialtyLabel } from '../constants/specialties';
 import { MessageSquare, Star, Video } from 'lucide-react';
 import TeleconsultationControl from '../components/TeleconsultationControl';
+import ConsultationCloseout from '../components/ConsultationCloseout';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -26,6 +27,8 @@ export default function ConsultationsPage() {
   const [chatFor, setChatFor] = useState<Consultation | null>(null);
   const [reviewFor, setReviewFor] = useState<Consultation | null>(null);
   const [videoFor, setVideoFor] = useState<Consultation | null>(null);
+  const [summaryFor, setSummaryFor] = useState<Consultation | null>(null);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     Promise.allSettled([
@@ -33,6 +36,7 @@ export default function ConsultationsPage() {
       api.get('/api/v1/dashboard/patient-state'),
     ]).then(([cRes, sRes]) => {
       if (cRes.status === 'fulfilled') setConsultations(cRes.value.data);
+      else setLoadError('Não foi possível carregar as consultas. Atualize a página para tentar novamente.');
       if (sRes.status === 'fulfilled') setPatientState(sRes.value.data);
     }).finally(() => setLoading(false));
   }, []);
@@ -79,6 +83,7 @@ export default function ConsultationsPage() {
         <p>{t('consult.subtitle')}</p>
       </div>
 
+      {loadError && <p role="alert" className="alert alert-danger">{loadError}</p>}
       <div className="tab-nav">
         <button className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>{t('consult.tab_all')}</button>
         <button className={tab === 'upcoming' ? 'active' : ''} onClick={() => setTab('upcoming')}>{t('consult.tab_upcoming')}</button>
@@ -86,7 +91,7 @@ export default function ConsultationsPage() {
       </div>
 
       <div className="card">
-        {filtered.length === 0 ? (
+        {loadError ? null : filtered.length === 0 ? (
           <div className="empty-state" style={{ padding: '3rem' }}>
             <div className="empty-state-icon"><Calendar size={24} style={{ color: 'var(--accent-teal)' }} /></div>
             <div className="empty-state-title">
@@ -172,6 +177,7 @@ export default function ConsultationsPage() {
                             <Video size={13} /> {t('video.label')}
                           </button>
                         )}
+                        {c.status === 'completed' && <button className="btn btn-sm" onClick={() => setSummaryFor(c)}>Resumo da consulta</button>}
                         {c.status === 'completed' && (
                           <button
                             onClick={() => setReviewFor(c)}
@@ -261,6 +267,12 @@ export default function ConsultationsPage() {
           </div>
         </div>
       )}
+
+      {summaryFor && <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Resumo da consulta">
+        <div className="modal" style={{ maxHeight: '90vh', overflowY: 'auto' }}><div className="modal-header"><h3>{specialtyLabel(summaryFor.specialty, t)}</h3><button className="btn btn-sm" aria-label="Fechar resumo" onClick={() => setSummaryFor(null)}><X size={20} /></button></div>
+          <div className="modal-body"><ConsultationCloseout consultationId={summaryFor.id} role="patient" /></div>
+        </div>
+      </div>}
 
       {/* Review modal */}
       <ReviewModal

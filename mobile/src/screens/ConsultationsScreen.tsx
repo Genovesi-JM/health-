@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet,
   Text, TouchableOpacity, View,
@@ -7,32 +7,21 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
 import api from '../services/api';
-
-type Consultation = {
-  id: string;
-  specialty: string;
-  status: string;
-  scheduled_at?: string | null;
-};
-
-const STATUS: Record<string, string> = {
-  requested: 'A aguardar aceitação', scheduled: 'Horário confirmado',
-  in_progress: 'Em curso', completed: 'Concluída',
-  cancelled: 'Cancelada', no_show: 'Não realizada',
-};
+import { CONSULTATION_STATUS, canCancelConsultation, consultationDate, type PatientConsultation } from './consultations';
 
 export default function ConsultationsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  const [items, setItems] = useState<Consultation[]>([]);
+  const [items, setItems] = useState<PatientConsultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const busy = useRef(false);
 
   useFocusEffect(useCallback(() => {
     let active = true;
     setLoading(true);
     setError('');
-    api.get<Consultation[]>('/api/v1/consultations/me')
+    api.get<PatientConsultation[]>('/api/v1/consultations/me')
       .then(response => { if (active) setItems(response.data); })
       .catch(() => { if (active) setError('Não foi possível atualizar as consultas. Tente novamente.'); })
       .finally(() => { if (active) setLoading(false); });
@@ -40,10 +29,11 @@ export default function ConsultationsScreen() {
   }, []));
 
   const refresh = async () => {
+    if (busy.current) return;
     setLoading(true);
     setError('');
     try {
-      setItems((await api.get<Consultation[]>('/api/v1/consultations/me')).data);
+      setItems((await api.get<PatientConsultation[]>('/api/v1/consultations/me')).data);
     } catch {
       setError('Não foi possível atualizar as consultas. Tente novamente.');
     } finally {
@@ -52,13 +42,16 @@ export default function ConsultationsScreen() {
   };
 
   const cancel = async (id: string) => {
+    if (busy.current) return;
+    busy.current = true;
     setCancelling(id);
     try {
-      const response = await api.patch<Consultation>(`/api/v1/consultations/${id}`, {});
+      const response = await api.patch<PatientConsultation>(`/api/v1/consultations/${encodeURIComponent(id)}`, {});
       setItems(current => current.map(item => item.id === id ? response.data : item));
     } catch {
       Alert.alert('Não foi possível cancelar', 'A consulta pode ter mudado de estado. Atualize a lista e tente novamente.');
     } finally {
+      busy.current = false;
       setCancelling(null);
     }
   };
@@ -78,13 +71,17 @@ export default function ConsultationsScreen() {
       {items.map(item => (
         <View key={item.id} style={styles.card}>
           <Text style={styles.title}>{item.specialty.replace(/_/g, ' ')}</Text>
-          <Text style={styles.status}>{STATUS[item.status] || item.status}</Text>
+          <Text style={styles.status}>{CONSULTATION_STATUS[item.status] || 'Estado por confirmar'}</Text>
           {!!item.scheduled_at && <Text style={styles.intro}>
             {item.status === 'requested' ? 'Horário pedido: ' : 'Horário: '}
-            {new Date(item.scheduled_at).toLocaleString('pt-PT')}
+            {consultationDate(item.scheduled_at)}
           </Text>}
-          {['requested', 'scheduled'].includes(item.status) && (
-            <TouchableOpacity accessibilityRole="button" disabled={cancelling !== null}
+          <TouchableOpacity accessibilityRole="button"
+            onPress={() => navigation.navigate('ConsultationDetail', { consultationId: item.id })}>
+            <Text style={styles.link}>Ver consulta e orientações</Text>
+          </TouchableOpacity>
+          {canCancelConsultation(item.status) && (
+            <TouchableOpacity accessibilityRole="button" disabled={cancelling !== null || loading || !!error}
               onPress={() => Alert.alert('Cancelar consulta?', 'O cancelamento será registado no seu pedido.', [
                 { text: 'Manter', style: 'cancel' },
                 { text: 'Cancelar consulta', style: 'destructive', onPress: () => void cancel(item.id) },

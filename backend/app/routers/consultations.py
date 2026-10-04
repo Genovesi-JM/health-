@@ -19,7 +19,7 @@ import logging
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
@@ -27,7 +27,7 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
 from app.health_models import (
-    Patient, Doctor, Consultation, ConsultationNotes, TriageSession, TriageResult,
+    Patient, Doctor, Consultation, ConsultationNotes, TriageSession, TriageResult, HealthAuditLog,
 )
 from app.health_schemas import (
     ConsultationBookRequest, ConsultationOut, ConsultationCompleteRequest,
@@ -39,6 +39,7 @@ from app.rbac import (
 )
 from app.services.consultation_lifecycle import record_event, transition
 from app.services.clinician_access import require_current_clinician
+from app.services.consultation_closeout import finalize_consultation, closeout_result, end_video
 
 # Canonical specialty codes (match Doctor.specialization). Legacy English UI
 # codes and free-text labels are normalised to these so bookings always reach
@@ -364,27 +365,53 @@ def complete_consultation(
     ).first()
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou não atribuída a si.")
-    transition(
-        db, consultation, actor_id=user.id, action="consultation_completed",
-        allowed_from=("in_progress",), status="completed", ended_at=datetime.utcnow(),
-    )
-
-    # Save notes
-    notes = ConsultationNotes(
-        consultation_id=consultation.id,
-        doctor_id=doctor.id,
-        subjective=body.subjective,
-        objective=body.objective,
-        assessment=body.assessment,
-        plan=body.plan,
-        outcome=body.outcome,
-    )
-    db.add(notes)
-
-    db.commit()
-    db.refresh(consultation)
+    try:
+        finalize_consultation(db, consultation, body, user)
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível confirmar a gravação. Tente novamente com o mesmo conteúdo.") from None
 
     return consultation
+
+
+@router.get("/api/v1/consultations/{consultation_id}/closeout")
+def get_consultation_closeout(
+    consultation_id: str,
+    response: Response,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Read only authored patient disclosures; SOAP belongs to the assigned doctor."""
+    query = db.query(Consultation).filter(Consultation.id == consultation_id)
+    if user.role in ("patient", "cliente"):
+        patient = db.query(Patient).filter(Patient.user_id == user.id).first()
+        if not patient:
+            raise HTTPException(404, "Consulta não encontrada.")
+        query = query.filter(Consultation.patient_id == patient.id)
+    elif user.role == "doctor":
+        require_current_clinician(user, db)
+        doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+        if not doctor:
+            raise HTTPException(404, "Consulta não encontrada.")
+        query = query.filter(Consultation.doctor_id == doctor.id)
+    else:
+        raise HTTPException(403, "Sem acesso ao resumo desta consulta.")
+    consultation = query.first()
+    if not consultation:
+        raise HTTPException(404, "Consulta não encontrada.")
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    result = closeout_result(db, consultation, clinician=user.role == "doctor")
+    db.add(HealthAuditLog(actor_user_id=user.id, action="consultation_closeout_read",
+                          resource_type="consultation", resource_id=consultation.id))
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível abrir o resumo. Tente novamente.") from None
+    return result
 
 
 @router.patch("/api/v1/consultations/{consultation_id}", response_model=ConsultationOut)
@@ -402,11 +429,12 @@ def cancel_consultation(
         raise HTTPException(status_code=404, detail="Consulta não encontrada.")
 
     # Row-level access check
-    if user.role == RoleEnum.PATIENT:
+    if user.role in (RoleEnum.PATIENT, "cliente"):
         patient = db.query(Patient).filter(Patient.user_id == user.id).first()
         if not patient or consultation.patient_id != patient.id:
             raise HTTPException(status_code=403, detail="Sem permissão.")
     elif user.role == RoleEnum.DOCTOR:
+        require_current_clinician(user, db)
         doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
         if not doctor or consultation.doctor_id != doctor.id:
             raise HTTPException(status_code=403, detail="Sem permissão.")
@@ -418,6 +446,7 @@ def cancel_consultation(
         allowed_from=("requested", "scheduled", "in_progress"), status="cancelled",
         cancellation_reason=body.reason,
     )
+    end_video(db, consultation, user.id, datetime.utcnow())
     db.commit()
     db.refresh(consultation)
 

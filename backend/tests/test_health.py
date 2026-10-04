@@ -907,8 +907,10 @@ class TestDoctorFlow:
                 "subjective": "Paciente refere dor abdominal há 2 dias.",
                 "objective": "Abdómen sensível à palpação.",
                 "assessment": "Possível gastrite.",
-                "plan": "Prescrever IBP, dieta leve, reavaliação em 7 dias.",
-                "outcome": "follow_up",
+                "plan": "Plano clínico sintético.",
+                "patient_summary": "Resumo sintético para o paciente.",
+                "follow_up_required": False,
+                "outcome": "resolved",
             },
             headers=_token(d_user),
         )
