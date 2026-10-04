@@ -385,6 +385,19 @@ class ConsultationCancelRequest(BaseModel):
     reason: Optional[str] = None
 
 
+class ConsultationAmendmentRequest(BaseModel):
+    expected_digest: str = Field(pattern="^[a-f0-9]{64}$")
+    reason: str = Field(min_length=1, max_length=2000)
+    publish_to_patient: StrictBool
+    subjective: Optional[str] = Field(default=None, max_length=10000)
+    objective: Optional[str] = Field(default=None, max_length=10000)
+    assessment: str = Field(min_length=1, max_length=10000)
+    plan: str = Field(min_length=1, max_length=10000)
+    patient_summary: str = Field(min_length=1, max_length=10000)
+
+    model_config = {"extra": "forbid"}
+
+
 class ConsultationQueueItem(BaseModel):
     """Eligible shared request, directed request, or doctor's active consultation."""
     id: str

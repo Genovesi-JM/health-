@@ -17,7 +17,9 @@ interface BeforeInstallPromptEvent extends Event {
 export default function InstallPrompt() {
   const { t } = useT();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showIosTip, setShowIosTip] = useState(false);
+  const [showIosTip] = useState(() => !window.matchMedia('(display-mode: standalone)').matches
+    && /iphone|ipad|ipod/i.test(navigator.userAgent)
+    && !(window.navigator as Navigator & { standalone?: boolean }).standalone);
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem('pwa_install_dismissed') === 'true'
   );
@@ -29,12 +31,7 @@ export default function InstallPrompt() {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
 
     // iOS detection — no beforeinstallprompt, needs manual "Add to Home Screen"
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
-      && !(window.navigator as unknown as { standalone?: boolean }).standalone;
-    if (isIos) {
-      setShowIosTip(true);
-      return;
-    }
+    if (showIosTip) return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -42,12 +39,11 @@ export default function InstallPrompt() {
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, [dismissed]);
+  }, [dismissed, showIosTip]);
 
   const dismiss = () => {
     localStorage.setItem('pwa_install_dismissed', 'true');
     setDeferredPrompt(null);
-    setShowIosTip(false);
     setDismissed(true);
   };
 

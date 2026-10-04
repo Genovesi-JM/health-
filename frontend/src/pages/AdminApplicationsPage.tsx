@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../api';
 import { Briefcase, Mail, Check, Eye, X } from 'lucide-react';
 import { useT, type Lang } from '../i18n/LanguageContext';
@@ -38,15 +38,14 @@ export default function AdminApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('');
 
-  const load = () => {
-    setLoading(true);
+  const load = useCallback(() => {
     api.get('/admin/doctor-applications', { params: filter ? { status: filter } : {} })
       .then(r => setApps(r.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, [filter]);
 
-  useEffect(load, [filter]);
+  useEffect(() => { load(); }, [load]);
 
   const setStatus = async (id: string, status: string) => {
     try {
@@ -74,7 +73,7 @@ export default function AdminApplicationsPage() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         {filters.map(([v, label]) => (
-          <button key={v} onClick={() => setFilter(v)} className={`btn btn-sm ${filter === v ? 'btn-primary' : 'btn-outline'}`}>{label}</button>
+          <button key={v} onClick={() => { if (v !== filter) { setLoading(true); setFilter(v); } }} className={`btn btn-sm ${filter === v ? 'btn-primary' : 'btn-outline'}`}>{label}</button>
         ))}
       </div>
 

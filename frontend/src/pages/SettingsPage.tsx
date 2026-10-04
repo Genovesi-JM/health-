@@ -1,12 +1,13 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
-import { Settings, Lock, Bell, Globe, Save } from 'lucide-react';
+import { Settings, Lock, Bell, Save } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
 export default function SettingsPage() {
   const { t } = useT();
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [tab, setTab] = useState<'account' | 'security' | 'notifications'>('account');
 
   // Password change
@@ -25,8 +26,8 @@ export default function SettingsPage() {
       await api.post('/auth/change-password', { old_password: oldPw, new_password: newPw });
       setPwMsg(t('settings.pw_success'));
       setOldPw(''); setNewPw(''); setConfirmPw('');
-    } catch (err: any) {
-      setPwMsg(err.response?.data?.detail || t('settings.pw_error'));
+    } catch (err: unknown) {
+      setPwMsg(apiErrorMessage(err, t('settings.pw_error')));
     }
     setPwLoading(false);
   };

@@ -1,17 +1,6 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import translations, { type Lang, LANG_LABELS, LANG_FLAGS } from './translations';
-
-interface I18nContextValue {
-  lang: Lang;
-  setLang: (lang: Lang) => void;
-  t: (key: string) => string;
-}
-
-const I18nContext = createContext<I18nContextValue>({
-  lang: 'pt',
-  setLang: () => {},
-  t: (k: string) => k,
-});
+import { useState, useCallback, type ReactNode } from 'react';
+import translations, { type Lang } from './translations';
+import { I18nContext } from './languageContextState';
 
 const STORAGE_KEY = 'health_lang';
 
@@ -47,10 +36,3 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     </I18nContext.Provider>
   );
 }
-
-export function useT() {
-  return useContext(I18nContext);
-}
-
-export { LANG_LABELS, LANG_FLAGS };
-export type { Lang };

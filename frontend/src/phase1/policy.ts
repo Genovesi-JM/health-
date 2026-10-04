@@ -72,7 +72,7 @@ export class OperationalAccessBlockedError extends Error {
 // set VITE_OPERATIONAL_HOLD=true to re-enable an information-only hold (e.g. for a
 // pre-launch marketing build) without touching call sites.
 export function isOperationalHoldEnabled(
-  env: Record<string, unknown> = ((import.meta as any).env ?? {}),
+  env: Record<string, unknown> = (import.meta.env ?? {}),
 ): boolean {
   return env?.VITE_OPERATIONAL_HOLD === 'true';
 }

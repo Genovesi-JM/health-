@@ -31,7 +31,8 @@ from sqlalchemy import event
 from sqlalchemy.orm import Session
 from app.models import User
 from app.health_models import (Patient, Doctor, ClinicianCredential, PatientConsent, MfaCredential,
-                              AppointmentSlot, Consultation, HealthAuditLog, Notification)
+                              AppointmentSlot, Consultation, ConsultationNotes, ConsultationAmendment,
+                              ClinicalCareTask, HealthAuditLog, Notification)
 from app.oauth2 import create_access_token
 from app.routers import appointments, consultations, notifications
 from app.services.consultation_lifecycle import transition
@@ -310,12 +311,160 @@ def notification_concurrent_read():
     return {'forced_races': 5, 'first_read_timestamp_and_single_audit_preserved': True}
 
 
+def closed_episode(follow_up=False):
+    p = people()
+    booked = book(p['p1'])
+    assert booked.status_code == 200, booked.text
+    identifier = booked.json()['id']
+    assert accept(p['d1'], identifier).status_code == 200
+    closeout = {
+        'assessment': 'Synthetic assessment', 'plan': 'Synthetic plan',
+        'patient_summary': 'Synthetic original summary', 'outcome': 'follow_up' if follow_up else 'resolved',
+        'follow_up_required': follow_up}
+    if follow_up:
+        closeout.update(follow_up_instructions='Synthetic retained follow-up', follow_up_due_at='2099-01-01T10:00:00Z')
+    closed = client.post(f'/api/v1/consultations/{identifier}/complete', headers=p['d1']['headers'], json=closeout)
+    assert closed.status_code == 200, closed.text
+    view = client.get(f'/api/v1/consultations/{identifier}/closeout', headers=p['d1']['headers'])
+    assert view.status_code == 200, view.text
+    body = {'expected_digest': view.json()['closeout']['current_digest'], 'reason': 'Synthetic private correction',
+            'publish_to_patient': True, 'subjective': 'Synthetic revised history', 'objective': None,
+            'assessment': 'Synthetic revised assessment', 'plan': 'Synthetic revised plan',
+            'patient_summary': 'Synthetic revised summary'}
+    return p, identifier, body
+
+
+def correct(doctor, identifier, body, key):
+    return client.post(f'/api/v1/consultations/{identifier}/closeout/amendments', json=body,
+                       headers=doctor['headers'] | {'Idempotency-Key': key})
+
+
+def amendment_competing_writes():
+    outcomes = []
+    for _ in range(5):
+        p, identifier, body = closed_episode()
+        responses = together([lambda: correct(p['d1'], identifier, body, str(uuid4())),
+                              lambda: correct(p['d1'], identifier, body | {'plan': 'Other synthetic correction'}, str(uuid4()))])
+        outcomes.append(statuses(responses))
+        with Session(engine) as db:
+            note = db.query(ConsultationNotes).filter_by(consultation_id=identifier).one()
+            assert db.query(ConsultationAmendment).filter_by(note_id=note.id).count() == 1
+            assert db.query(HealthAuditLog).filter_by(resource_id=identifier, action='consultation_amended').count() == 1
+        rejected = next(response for response in responses if response.status_code == 409)
+        assert rejected.json()['detail']['code'] == 'amendment_stale_head'
+    return {'forced_races': 5, 'statuses': outcomes, 'single_verified_chain_and_audit': True}
+
+
+def amendment_exact_retry():
+    outcomes = []
+    for _ in range(5):
+        p, identifier, body = closed_episode()
+        key = str(uuid4())
+        responses = together([lambda: correct(p['d1'], identifier, body, key),
+                              lambda: correct(p['d1'], identifier, body, key)])
+        outcomes.append(statuses(responses, (200, 200)))
+        assert responses[0].json() == responses[1].json()
+        amendment_id = responses[0].json()['closeout']['amendments'][0]['id']
+        with Session(engine) as db:
+            row = db.get(ConsultationAmendment, amendment_id)
+            assert db.query(ConsultationAmendment).filter_by(note_id=row.note_id).count() == 1
+            assert db.query(HealthAuditLog).filter_by(resource_id=identifier, action='consultation_amended').count() == 1
+            assert db.query(Notification).filter_by(event_key=f'amendment:{amendment_id}:created').count() == 2
+    return {'forced_races': 5, 'statuses': outcomes, 'same_correction_one_audit_and_notice_per_recipient': True}
+
+
+def clinical_record_retention():
+    from sqlalchemy import delete, update
+    from sqlalchemy.exc import IntegrityError
+    p, identifier, body = closed_episode(follow_up=True)
+    response = correct(p['d1'], identifier, body, str(uuid4()))
+    assert response.status_code == 200, response.text
+    amendment_id = response.json()['closeout']['amendments'][0]['id']
+    with Session(engine) as db:
+        note = db.query(ConsultationNotes).filter_by(consultation_id=identifier).one()
+        note_id, original_digest, task_id = note.id, note.finalization_digest, note.follow_up_task_id
+        assert task_id is not None
+    statements = [
+        delete(ConsultationNotes).where(ConsultationNotes.id == note_id),
+        update(ConsultationNotes).where(ConsultationNotes.id == note_id).values(patient_summary='unauthorized rewrite'),
+        delete(ConsultationAmendment).where(ConsultationAmendment.id == amendment_id),
+        update(ConsultationAmendment).where(ConsultationAmendment.id == amendment_id).values(reason='unauthorized rewrite'),
+        delete(Consultation).where(Consultation.id == identifier),
+        update(Consultation).where(Consultation.id == identifier).values(country='PT'),
+        delete(Patient).where(Patient.id == p['p1']['id']),
+        delete(Doctor).where(Doctor.id == p['d1']['id']),
+        delete(User).where(User.id == p['p1']['uid']),
+        delete(ClinicalCareTask).where(ClinicalCareTask.id == task_id),
+        update(ClinicalCareTask).where(ClinicalCareTask.id == task_id).values(patient_id=p['p2']['id']),
+        update(ClinicalCareTask).where(ClinicalCareTask.id == task_id).values(consultation_id=str(uuid4())),
+        update(ClinicalCareTask).where(ClinicalCareTask.id == task_id).values(id=str(uuid4())),
+    ]
+    for statement in statements:
+        with Session(engine) as db:
+            try:
+                db.execute(statement); db.commit()
+            except IntegrityError:
+                db.rollback()
+            else:
+                raise AssertionError('SQL retention guard did not reject mutation')
+    with Session(engine) as db:
+        db.delete(db.get(Consultation, identifier))
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+        else:
+            raise AssertionError('ORM parent deletion escaped retention')
+        assert db.get(ConsultationNotes, note_id).finalization_digest == original_digest
+        assert db.get(ConsultationAmendment, amendment_id) is not None
+        db.execute(update(ClinicalCareTask).where(ClinicalCareTask.id == task_id).values(
+            status='completed', due_at=datetime(2099, 1, 2), assigned_user_id=p['d2']['uid'],
+            completed_by_user_id=p['d2']['uid'], completed_at=datetime.utcnow()))
+        db.commit()
+    read = client.get(f'/api/v1/consultations/{identifier}/closeout', headers=p['p1']['headers'])
+    assert read.status_code == 200 and read.json()['closeout']['published_revision'] == 1, read.text
+    return {'rejected_sql_mutations': len(statements), 'rejected_orm_parent_delete': True,
+            'original_digest_history_and_patient_read_preserved': True, 'follow_up_operational_updates_allowed': True}
+
+
+def clinical_amendment_migration():
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    spec = importlib.util.spec_from_file_location('pg_amendment_migration', pathlib.Path('alembic/versions/clinical_amendments_v1.py'))
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    schema = 'synthetic_amendment_' + uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}')
+        conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        conn.exec_driver_sql('CREATE TABLE users (id VARCHAR(36) PRIMARY KEY, email TEXT UNIQUE)')
+        conn.exec_driver_sql('CREATE TABLE patients (id VARCHAR(36) PRIMARY KEY, user_id VARCHAR(36))')
+        conn.exec_driver_sql('CREATE TABLE doctors (id VARCHAR(36) PRIMARY KEY, user_id VARCHAR(36), slug VARCHAR(120) UNIQUE)')
+        conn.exec_driver_sql('CREATE TABLE consultations (id VARCHAR(36) PRIMARY KEY, patient_id VARCHAR(36), doctor_id VARCHAR(36), country VARCHAR(2), timezone VARCHAR(50), status VARCHAR(20), booking_request_key VARCHAR(36))')
+        conn.exec_driver_sql('CREATE TABLE consultation_notes (id VARCHAR(36) PRIMARY KEY, consultation_id VARCHAR(36), doctor_id VARCHAR(36), finalized_at TIMESTAMP, finalized_by_user_id VARCHAR(36), finalization_digest VARCHAR(64), patient_summary TEXT)')
+        conn.execute(text("INSERT INTO consultation_notes(id, finalized_at, finalization_digest, patient_summary) VALUES ('historical', '2026-01-01', :digest, 'retained original')"), {'digest': 'a' * 64})
+        with Operations.context(MigrationContext.configure(conn)):
+            module.upgrade(); module.upgrade()
+            assert conn.execute(text("SELECT patient_summary FROM consultation_notes WHERE id='historical'")).scalar() == 'retained original'
+            try:
+                module.downgrade()
+            except RuntimeError as error:
+                assert 'Finalized clinical records' in str(error)
+            else:
+                raise AssertionError('Migration downgrade removed clinical retention')
+        conn.exec_driver_sql('SET LOCAL search_path TO public')
+        conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'upgrade_adoption_preserved_original': True, 'destructive_downgrade_refused': True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
                 ('concurrent_exact_idempotent_retry',exact_retry),('cancellation_rebooking_stale_write',cancellation_rebooking_stale_write),
                 ('late_start_and_overrun',late_start_and_overrun),('current_revocation',current_revocation),('revocation_during_acceptance_wait',revocation_during_acceptance_wait),
-                ('notification_duplicate_delivery', notification_duplicate_delivery), ('notification_concurrent_read', notification_concurrent_read)]:
+                ('notification_duplicate_delivery', notification_duplicate_delivery), ('notification_concurrent_read', notification_concurrent_read),
+                ('amendment_competing_writes', amendment_competing_writes), ('amendment_exact_retry', amendment_exact_retry),
+                ('clinical_record_retention', clinical_record_retention), ('clinical_amendment_migration', clinical_amendment_migration)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}

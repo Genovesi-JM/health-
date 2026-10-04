@@ -18,7 +18,7 @@ export function isClinicalApiPath(path: string): boolean {
 /** PHI/secret must never travel in a URL (query string or fragment). */
 const PHI_URL_MARKERS = [
   /[?&](token|access_token|password|email|phone|dob|mrn|ssn|bi)=/i,
-  /[?&#].*(bearer|eyJ[A-Za-z0-9_\-]{6,}\.)/i,
+  /[?&#].*(bearer|eyJ[A-Za-z0-9_-]{6,}\.)/i,
 ];
 export function urlCarriesSensitiveData(url: string): boolean {
   return PHI_URL_MARKERS.some((re) => re.test(url));

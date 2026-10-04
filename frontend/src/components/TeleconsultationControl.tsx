@@ -4,6 +4,7 @@ import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { useAuth } from '../AuthContext';
 import { approvedServerVideoRoom } from '../utils/video';
+import { apiErrorMessage } from '../utils/apiError';
 
 type Session = {
   id: string;
@@ -149,10 +150,9 @@ export default function TeleconsultationControl({
     if (busyRef.current || !enabled || closed) return;
     busyRef.current = true; setBusy(true); setError('');
     try { await work(); }
-    catch (failure: any) {
+    catch (failure: unknown) {
       if (currentId.current !== consultationId) return;
-      const detail = failure?.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : c.error);
+      setError(apiErrorMessage(failure, c.error));
     } finally { if (currentId.current === consultationId) { busyRef.current = false; setBusy(false); } }
   };
   const applySession = (value: Session) => { if (currentId.current === consultationId) setSession(value); };

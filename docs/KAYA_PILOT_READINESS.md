@@ -57,3 +57,27 @@ signer; the default register is complete and starts with nothing READY;
 fail-closed summary; overall-ready only when all signed; owners-needed listing.
 
 **Clinical release stays HOLD.**
+
+## Implementation evidence added — 4 October 2026
+
+The statuses above are the unsigned policy register, not a current count of
+unfinished code changes. Later local work supplies evidence for several gates:
+
+- G-PG-CONCURRENCY: real disposable PostgreSQL tests now force concurrent booking,
+  notification and clinical-correction transactions. Production replica/topology
+  validation remains open.
+- G-NOTE-ORM and G-BACKUPS-DR: the application persists finalized notes and chained
+  corrections, verifies every summary reader, and adds database retention guards.
+  Live migration, retention ownership and backup/restore evidence remain open.
+- G-MALWARE-SCAN: patient document routes include a ClamAV adapter and fail-closed
+  scan/download/extraction controls. No production scanner/storage was configured
+  or validated.
+- G-SUPPLY-CHAIN: locked backend/web audits, SBOMs and CI Action SHA pins are
+  recorded. Two unpatched native-toolchain advisory IDs remain; no risk was
+  accepted by the agent.
+- G-CLIENT-CSP: web lint and lifecycle checks pass, account changes invalidate
+  stale clinical views, and map popups use text nodes. The remaining storage/CSP
+  and comprehension gate is not cleared by these fixes.
+
+See [current development readiness](KAYA_DEVELOPMENT_READINESS_2026-10-04.md) for
+the evidence and the distinction between local implementation and launch gates.

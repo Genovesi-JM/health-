@@ -553,3 +553,43 @@ and image-build limitation are in
 
 These results establish local engineering behavior. They do not sign the clinical,
 privacy, provider, native-device or production-operations launch gates.
+
+## Retained clinical corrections and client lifecycle
+
+Completed consultations now accept attributed, chained SOAP/summary corrections
+without replacing the original finalized note. Patient publication is explicit;
+patients see only published summary history. Duplicate and concurrent requests
+are checked under database locks, and the correction, audit and generic notice
+commit together. SQLite/PostgreSQL retention guards cover finalized notes,
+amendments, retained parents and the referenced follow-up task. Replacement SQL
+cannot bypass these guards on SQLite's default connection settings. See
+[the clinical correction contract](KAYA_CLINICAL_AMENDMENTS.md).
+
+Web clinicians reopen completed records in the patient workspace, preserve drafts
+on conflict, reconcile uncertain responses using the exact request identity and
+update both record and workspace card after acknowledgment. Session changes clear
+protected views; late identity responses and expired requests from a previous
+account cannot replace or log out a new account. A late document download after
+the owning view unmounts cannot open private bytes, and an old upload cannot start
+another operation. Replacing the selected document requires fresh consent;
+cancelled/invalid selections preserve the previous file and retry identity.
+
+The whole web app now passes lint without suppressing the hook rules. Corrections
+include stable context exports, loader dependencies, stale-response handling,
+preserved profile edits across language changes and map popups built from text
+nodes rather than interpolated HTML. CI now includes the lint check.
+
+Final local validation for this checkpoint: 1,534 expanded backend tests passed
+(176.14 seconds); 29 repository/inventory checks and 43 subtests passed; 256 web tests
+passed; web TypeScript, zero-warning lint, 15 presentation checks and production
+build passed. PostgreSQL 18.1 passed 15 scenarios with 50 forced races and stopped
+its disposable cluster. The final backend matched the tested source snapshot.
+Evidence is in
+[`evidence/clinical-records-2026-10-04`](evidence/clinical-records-2026-10-04/manifest.json).
+
+The initial web recheck used the host Node 25 binary and exposed that runtime's
+localStorage compatibility failures; the pinned Node 24.21.0 run passed. Repository
+checks require portable Git because the host Git is behind an unaccepted Xcode
+license. Neither environment correction changed application behavior. Existing
+Python deprecation and JS bundle-size warnings remain visible. No clinical gate
+was signed or live migration performed.

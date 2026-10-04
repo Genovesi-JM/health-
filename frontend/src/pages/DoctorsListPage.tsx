@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, type ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Video, Building2, Home, Star, Filter, X, Loader2 } from 'lucide-react';
+import { Search, MapPin, Video, Building2, Home, Filter, X, Loader2 } from 'lucide-react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 

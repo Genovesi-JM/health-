@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Shield, CheckCircle2, AlertTriangle, Loader2, Heart } from 'lucide-react';
@@ -86,8 +87,8 @@ export default function ConsentGatePage() {
         }
       }
       navigate(destination, { replace: true });
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t('cgate.save_error'));
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, t('cgate.save_error')));
     } finally {
       setSubmitting(false);
     }

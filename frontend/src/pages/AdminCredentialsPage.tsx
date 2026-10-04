@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, ExternalLink, FileSearch, RefreshCw, XCircle } from 'lucide-react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
@@ -29,16 +29,15 @@ export default function AdminCredentialsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending_review');
 
-  const load = () => {
-    setLoading(true);
+  const load = useCallback(() => {
     api.get('/api/v1/credentials/admin', { params: filter ? { status: filter } : {} })
       .then(r => {
         setItems(r.data);
         setSelected(current => r.data.find((item: Dossier) => item.id === current?.id) || r.data[0] || null);
       })
       .finally(() => setLoading(false));
-  };
-  useEffect(load, [filter]);
+  }, [filter]);
+  useEffect(() => { load(); }, [load]);
 
   const decide = async (action: string) => {
     if (!selected) return;
@@ -70,9 +69,9 @@ export default function AdminCredentialsPage() {
           ['pending_review', t('acr.tab_pending')], ['needs_info', t('acr.tab_needs_info')], ['verified', t('acr.tab_verified')],
           ['rejected', t('acr.tab_rejected')], ['', t('acr.tab_all')],
         ].map(([value, label]) => (
-          <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}</button>
+          <button key={value} className={filter === value ? 'active' : ''} onClick={() => { if (value !== filter) { setLoading(true); setFilter(value); } }}>{label}</button>
         ))}
-        <button onClick={load}><RefreshCw size={13} /> {t('common.refresh')}</button>
+        <button onClick={() => { setLoading(true); load(); }}><RefreshCw size={13} /> {t('common.refresh')}</button>
       </div>
 
       {loading ? <div className="page-loading"><div className="spinner" /></div> : (

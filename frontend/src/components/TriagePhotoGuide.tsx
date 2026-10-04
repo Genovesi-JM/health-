@@ -149,7 +149,7 @@ export default function TriagePhotoGuide({
       });
       setWarnings(current => ({ ...current, [slot.viewType]: prepared.technicalCheck.issues }));
       onPhotoUploaded?.(slot.viewType);
-    } catch (uploadError: any) {
+    } catch (uploadError: unknown) {
       setError(apiErrorMessage(uploadError, t('triage.photo_upload_error')));
     } finally {
       setUploading(null);
@@ -180,7 +180,7 @@ export default function TriagePhotoGuide({
         delete next[viewType];
         return next;
       });
-    } catch (deleteError: any) {
+    } catch (deleteError: unknown) {
       setError(apiErrorMessage(deleteError, t('triage.photo_delete_error')));
     } finally {
       setDeleting(null);
@@ -209,7 +209,7 @@ export default function TriagePhotoGuide({
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-    } catch (exportError: any) {
+    } catch (exportError: unknown) {
       setError(apiErrorMessage(exportError, t('triage.photo_export_error')));
     } finally {
       setExporting(false);

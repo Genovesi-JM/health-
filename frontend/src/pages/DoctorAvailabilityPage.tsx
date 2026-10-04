@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import api from '../api';
 import { Clock, Plus, Trash2 } from 'lucide-react';
 import { APPOINTMENT_MARKETS, appointmentError, appointmentWindow, appointmentWindowLabel, clinicOffsetTimestamp, clinicTimeCandidates, formatAppointmentTime, isAppointmentConflict, marketName, marketZones, type AppointmentCapabilities, type AppointmentSlot } from '../utils/appointments';
@@ -25,7 +25,7 @@ export default function DoctorAvailabilityPage() {
   const candidates = useMemo(() => clinicTimeCandidates(local, timezone), [local, timezone]);
   const validDuration = Number.isFinite(duration) && duration >= (capabilities?.slot_duration_minutes.min ?? 15) && duration <= (capabilities?.slot_duration_minutes.max ?? 120);
   const instant = candidates.length === 1 ? candidates[0] : candidates.includes(occurrence) ? occurrence : '';
-  const load = async () => {
+  const load = useCallback(async () => {
     const generation = ++loadGeneration.current;
     setLoading(true); setLoadError('');
     const results = await Promise.allSettled([api.get('/api/v1/doctor/appointment-slots', { params: appointmentWindow(windowIndex, windowAnchor.current, windowDays) }), api.get('/api/v1/appointments/capabilities')]);
@@ -35,8 +35,8 @@ export default function DoctorAvailabilityPage() {
     if (results[1].status === 'fulfilled') setCapabilities(results[1].value.data);
     else { setCapabilities(null); setLoadError('Não foi possível verificar a disponibilidade do agendamento.'); }
     setLoading(false);
-  };
-  useEffect(() => { void load(); }, [windowIndex]);
+  }, [windowIndex, windowDays]);
+  useEffect(() => { void load(); }, [load]);
 
   const add = async (event: FormEvent) => {
     event.preventDefault();

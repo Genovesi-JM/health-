@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
-  FileText, AlertTriangle, CheckCircle2, X, ChevronDown, ChevronUp,
+  FileText, CheckCircle2, X, ChevronDown, ChevronUp,
   Activity, Calendar, Stethoscope, AlertCircle, RefreshCw,
   Search, Loader2, SidebarOpen, Pill, Heart,
   ShieldCheck,
 } from 'lucide-react';
 import api from '../api';
+import { apiErrorMessage } from '../utils/apiError';
 import { useT, type Lang } from '../i18n/LanguageContext';
 
 const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
@@ -88,19 +89,19 @@ export default function DoctorPrescriptionsPage() {
   const [clinicalLoading, setClinicalLoading] = useState(false);
   const [pemStatus, setPemStatus] = useState<PemStatus | null>(null);
 
-  const load = async () => {
-    setLoading(true); setError('');
+  const load = useCallback(async () => {
     try {
       const params = filter === 'all' ? { status: 'all' } : { status: 'pending' };
       const { data } = await api.get<RxRequest[]>('/api/v1/doctor/prescription-requests', { params });
+      setError('');
       setRequests(data);
       if (data.length > 0) setExpanded(data[0].id);
-    } catch (e: any) {
-      setError(e?.response?.data?.detail ?? t('dpres.load_error'));
+    } catch (e) {
+      setError(apiErrorMessage(e, t('dpres.load_error')));
     } finally { setLoading(false); }
-  };
+  }, [filter, t]);
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => {
     api.get<PemStatus>('/api/v1/clinical-operations/integrations/pem/status')
       .then(response => setPemStatus(response.data))
@@ -130,8 +131,8 @@ export default function DoctorPrescriptionsPage() {
         adjusted_dose: adjDose || undefined, adjusted_frequency: adjFreq || undefined,
       });
       setRequests(prev => prev.map(r => r.id === id ? data : r));
-    } catch (e: any) {
-      alert(e?.response?.data?.detail ?? t('dpres.decide_error'));
+    } catch (e) {
+      alert(apiErrorMessage(e, t('dpres.decide_error')));
     } finally { setSubmitting(null); setNoteFor(null); setNoteText(''); setAdjDoseText(''); setAdjFreqText(''); }
   };
 
@@ -177,7 +178,7 @@ export default function DoctorPrescriptionsPage() {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             {pending.length > 0 && <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '0.35rem 0.75rem', borderRadius: 999 }}>{pending.length} {t('dpres.pending_badge')}</span>}
-            <button onClick={load} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.75rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
+            <button onClick={() => { setLoading(true); load(); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.75rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
               <RefreshCw size={13} /> {t('common.refresh')}
             </button>
           </div>
@@ -189,7 +190,7 @@ export default function DoctorPrescriptionsPage() {
             <input className="form-input" placeholder={t('dpres.search_ph')} value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.1rem' }} />
           </div>
           {(['pending', 'all'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}>
+            <button key={f} onClick={() => { if (f !== filter) { setLoading(true); setFilter(f); } }} style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}>
               {f === 'pending' ? t('dpres.filter_pending') : t('dpres.filter_all')}
             </button>
           ))}

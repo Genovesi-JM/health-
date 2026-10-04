@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api, { clearSession } from '../api';
 import { useT } from '../i18n/LanguageContext';
@@ -8,6 +8,8 @@ import kayaLogo from '/kaya-logo.svg';
 import LanguageSelector from '../components/LanguageSelector';
 import { apiErrorMessage } from '../utils/apiError';
 import { accountPathAfterLogin } from '../authRouting';
+
+type LoginSession = Parameters<ReturnType<typeof useAuth>['login']>[0];
 
 export default function LoginPage() {
   const { login, refreshUser } = useAuth();
@@ -37,15 +39,15 @@ export default function LoginPage() {
   const [enrollSecret, setEnrollSecret] = useState('');
   const [enrollCode, setEnrollCode] = useState('');
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
-  const [pendingSession, setPendingSession] = useState<any>(null);
+  const [pendingSession, setPendingSession] = useState<LoginSession | null>(null);
 
   const enrollAuth = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
-  const finishLogin = async (data: any) => {
+  const finishLogin = async (data: LoginSession) => {
     login(data);
     const fresh = await refreshUser();
-    const from = (location.state as any)?.from?.pathname;
-    navigate(accountPathAfterLogin(fresh, from), { replace: true });
+    const from: unknown = location.state?.from?.pathname;
+    navigate(accountPathAfterLogin(fresh, typeof from === 'string' ? from : undefined), { replace: true });
   };
 
   const handleLogin = async (e: FormEvent) => {
@@ -73,7 +75,7 @@ export default function LoginPage() {
         return;
       }
       await finishLogin(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(apiErrorMessage(err, t('login.invalid')));
     } finally { setLoading(false); }
   };
@@ -86,7 +88,7 @@ export default function LoginPage() {
       // Show the one-time recovery codes, then complete login with the returned session.
       setRecoveryCodes(res.data.recovery_codes || []);
       setPendingSession(res.data.session);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(apiErrorMessage(err, t('mfa.invalid_code')));
     } finally { setLoading(false); }
   };
@@ -97,7 +99,7 @@ export default function LoginPage() {
     try {
       const res = await api.post('/auth/mfa/challenge', { mfa_token: mfaToken, code: mfaCode.trim() });
       await finishLogin(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(apiErrorMessage(err, t('mfa.invalid_code')));
     } finally { setLoading(false); }
   };

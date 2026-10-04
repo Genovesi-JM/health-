@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Users, Search, X, User, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
@@ -35,18 +35,18 @@ export default function DoctorPatientsPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Patient | null>(null);
 
-  const fetchPatients = () => {
-    setLoading(true);
-    api.get('/api/v1/doctor/patients', { params: { search: search || undefined, limit: 100 } })
+  const fetchPatients = useCallback((query = '') => {
+    api.get('/api/v1/doctor/patients', { params: { search: query || undefined, limit: 100 } })
       .then(r => {
         setPatients(r.data.patients ?? []);
         setTotal(r.data.total ?? 0);
       })
       .catch(() => { setPatients([]); setTotal(0); })
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  useEffect(() => { fetchPatients(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchPatients(); }, [fetchPatients]);
+  const refresh = () => { setLoading(true); fetchPatients(search); };
 
   const shown = patients.filter(p =>
     !search || p.name.toLowerCase().includes(search.toLowerCase()),
@@ -61,7 +61,7 @@ export default function DoctorPatientsPage() {
           </h1>
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>{total} {total !== 1 ? t('dpat.patient_many') : t('dpat.patient_one')}</p>
         </div>
-        <button onClick={fetchPatients} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1rem', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+        <button onClick={refresh} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1rem', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
           <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
           {loading ? t('common.loading') : t('common.refresh')}
         </button>
@@ -72,10 +72,10 @@ export default function DoctorPatientsPage() {
           <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input className="form-input" placeholder={t('dpat.search_placeholder')} value={search}
             onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && fetchPatients()}
+            onKeyDown={e => e.key === 'Enter' && refresh()}
             style={{ paddingLeft: '2.1rem' }} />
         </div>
-        <button onClick={fetchPatients} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 8, padding: '0 1rem', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+        <button onClick={refresh} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 8, padding: '0 1rem', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
           {t('dpat.search_btn')}
         </button>
       </div>

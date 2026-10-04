@@ -39,7 +39,11 @@ const METHOD_ICON: Record<string, React.ReactNode> = {
   iban_transfer: <Landmark size={18} />,
 };
 
-export default function PaymentModal({ open, consultationId, onClose, onPaid }: Props) {
+export default function PaymentModal(props: Props) {
+  return props.open ? <PaymentSession key={props.consultationId} {...props} /> : null;
+}
+
+function PaymentSession({ open, consultationId, onClose, onPaid }: Props) {
   const { t } = useT();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -53,12 +57,13 @@ export default function PaymentModal({ open, consultationId, onClose, onPaid }: 
   // Load available methods when opened.
   useEffect(() => {
     if (!open) return;
-    setStatus('methods'); setChosen(null); setCheckout(null); setError('');
+    let active = true;
     api.get('/api/v1/billing/payment-methods')
-      .then(r => setMethods((r.data.methods || []).filter((m: PaymentMethod) => m.enabled)))
-      .catch(() => setMethods([
+      .then(r => { if (active) setMethods((r.data.methods || []).filter((m: PaymentMethod) => m.enabled)); })
+      .catch(() => { if (active) setMethods([
         { id: 'multicaixa_express', label: 'Multicaixa Express', description: '', enabled: true },
-      ]));
+      ]); });
+    return () => { active = false; };
   }, [open]);
 
   // Start checkout once a method is chosen.
@@ -88,9 +93,11 @@ export default function PaymentModal({ open, consultationId, onClose, onPaid }: 
   useEffect(() => {
     if (status !== 'pending' || !checkout) return;
     if (checkout.provider === 'iban_transfer') return;
+    let active = true;
     const tick = async () => {
       try {
         const res = await api.get(`/api/v1/billing/consultation/${consultationId}/payment-status`);
+        if (!active) return;
         if (res.data.consultation_paid || res.data.status === 'paid') {
           setStatus('paid'); onPaid();
         } else if (res.data.status === 'failed') {
@@ -99,8 +106,8 @@ export default function PaymentModal({ open, consultationId, onClose, onPaid }: 
       } catch { /* transient — keep polling */ }
     };
     pollRef.current = window.setInterval(tick, 4000);
-    return () => { if (pollRef.current) window.clearInterval(pollRef.current); };
-  }, [status, checkout, consultationId]);
+    return () => { active = false; if (pollRef.current) window.clearInterval(pollRef.current); };
+  }, [status, checkout, consultationId, onPaid, t]);
 
   if (!open) return null;
 

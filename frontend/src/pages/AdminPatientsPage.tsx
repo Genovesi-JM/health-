@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../api';
 import {
   Users, Search, RefreshCw, User, Heart, AlertCircle,
@@ -32,18 +32,17 @@ export default function AdminPatientsPage() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<PatientAdmin | null>(null);
 
-  useEffect(() => { loadPatients(); }, []);
-
-  const loadPatients = (query?: string) => {
-    setLoading(true);
+  const loadPatients = useCallback((query?: string) => {
     const params = query ? `?search=${encodeURIComponent(query)}` : '';
     api.get(`/api/v1/patients/${params}`)
       .then(r => setPatients(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  const handleSearch = () => loadPatients(search.trim() || undefined);
+  useEffect(() => { loadPatients(); }, [loadPatients]);
+
+  const handleSearch = () => { setLoading(true); loadPatients(search.trim() || undefined); };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSearch();

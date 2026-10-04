@@ -38,4 +38,29 @@ describe('typed api client', () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.message).toBe('Network Error');
   });
+
+  it('converts validation details into renderable text', async () => {
+    mockRequest.mockRejectedValueOnce({ response: { status: 422, data: {
+      detail: [{ msg: 'Selecione o país.' }, null, { msg: 'Indique uma data.' }],
+    } } });
+    const res = await http.post('/api/v1/example');
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.status).toBe(422);
+      expect(res.error.message).toBe('Selecione o país. Indique uma data.');
+    }
+  });
+
+  it.each([null, 'failed', { response: { status: '401', data: { message: {} } }, code: {} }])(
+    'handles malformed thrown values without returning objects as UI messages: %j', async failure => {
+      mockRequest.mockRejectedValueOnce(failure);
+      const res = await http.get('/api/v1/example');
+      expect(res.ok).toBe(false);
+      if (!res.ok) {
+        expect(res.status).toBe(0);
+        expect(res.error.message).toBe('Request failed');
+        expect(res.error.code).toBeUndefined();
+      }
+    },
+  );
 });

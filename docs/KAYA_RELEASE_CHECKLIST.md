@@ -2,6 +2,14 @@
 
 Release verdict HOLD on 14 September 2026. This checklist records evidence, not approval. Review on every phase completion and before any release action.
 
+**4 October update:** the entries below retain their historical phase scope.
+Current local implementation/build evidence and remaining work are recorded in
+[the development readiness record](KAYA_DEVELOPMENT_READINESS_2026-10-04.md).
+Web tests, TypeScript and lint now pass. The current web entrypoint mounts the
+operational client; the default API and native entrypoints remain held. The
+historical Phase 1 web-entrypoint assertion below is not the current web state.
+No human gate or live deployment state is approved by this update.
+
 - [x] Initial branch and HEAD recorded; existing dirty work identified.
 - [x] Source surfaces and release definitions inventoried.
 - [x] Default API denies clinical HTTP access without loading databases or clinical routers; Phase 1 adds one validated informational GET exception.

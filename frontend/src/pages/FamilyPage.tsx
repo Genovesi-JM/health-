@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { apiErrorMessage } from '../utils/apiError';
 import { useT } from '../i18n/LanguageContext';
 import {
   Users, Plus, Trash2, Save, X, Edit2, Activity,
@@ -84,7 +85,7 @@ export default function FamilyPage() {
       .then(r => setMembers(r.data))
       .catch(() => setError(t('fam.err_load')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   // ── Form helpers ──────────────────────────────────────────────────────────
 
@@ -135,8 +136,8 @@ export default function FamilyPage() {
         setMembers(prev => [...prev, r.data]);
       }
       closeForm();
-    } catch (err: any) {
-      setFormError(err.response?.data?.detail || 'Erro ao guardar. Tente novamente.');
+    } catch (err) {
+      setFormError(apiErrorMessage(err, 'Erro ao guardar. Tente novamente.'));
     }
     setSaving(false);
   };

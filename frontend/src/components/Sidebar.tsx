@@ -8,8 +8,8 @@ import { useState, useEffect } from 'react';
 import {
   Activity, User, Users, Stethoscope, ClipboardList, Calendar,
   Shield, ShieldCheck, LayoutDashboard, LogOut, UserCog, Heart, Settings, Home, X, HeartPulse, Briefcase, Building2, Clock, ShoppingBag,
-  Cpu, CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
-  DollarSign, Star, Globe, HelpCircle, Lock, FileCheck2,
+  CreditCard, UserCheck, Bell, Video, FileText, MessageSquare,
+  DollarSign, Star, HelpCircle, Lock, FileCheck2,
 } from 'lucide-react';
 
 interface Props {

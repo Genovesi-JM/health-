@@ -41,7 +41,12 @@ api.interceptors.response.use(
   (err) => {
     const url = err.config?.url || '';
     const errorCode = err.response?.headers?.['x-kaya-error-code'];
-    if (requiresReauthentication(err.response?.status, errorCode, url)) {
+    // A response belongs to the credential sent with that request. An expired
+    // previous account (or a separate MFA challenge) cannot clear a newer login.
+    const currentToken = localStorage.getItem('ht_token');
+    const requestAuthorization = err.config?.headers?.Authorization;
+    const isCurrentSession = currentToken && requestAuthorization === `Bearer ${currentToken}`;
+    if (isCurrentSession && requiresReauthentication(err.response?.status, errorCode, url)) {
       clearSession({ preservePendingAppointments: true });
       const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       if (!window.location.pathname.endsWith('/login')) {
@@ -71,6 +76,7 @@ export function persistSession(data: {
 }) {
   localStorage.setItem('ht_token', data.access_token);
   if (data.refresh_token) localStorage.setItem('ht_refresh_token', data.refresh_token);
+  else localStorage.removeItem('ht_refresh_token');
   localStorage.setItem('ht_user', JSON.stringify(data.user));
   localStorage.setItem('ht_email', data.user.email);
   localStorage.setItem('ht_name', data.user.name || '');

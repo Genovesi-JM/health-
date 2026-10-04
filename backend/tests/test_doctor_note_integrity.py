@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 
 from app.health_models import ConsultationNotes
 from test_consultation_lifecycle import api, people, seed_consultation
@@ -22,15 +23,16 @@ def read_summary(api, item, people, route):
     {"subjective": "CORRUPTED_CONTENT"}, {"assessment": "CORRUPTED_CONTENT"},
     {"finalization_digest": None}, {"finalized_at": None}, {"finalized_by_user_id": None},
 ])
-def test_finalized_note_corruption_is_withheld_on_provider_summary_routes(api, people, db_session, route, changed):
+def test_finalized_note_corruption_is_prevented_before_provider_reads(api, people, db_session, route, changed):
     item = seed_consultation(db_session, people, "in_progress", scheduled_at=datetime(2026, 10, 5, 12))
     assert complete(api, item, people).status_code == 200
-    db_session.execute(update(ConsultationNotes).where(ConsultationNotes.consultation_id == item.id).values(**changed))
-    db_session.commit()
+    with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+        db_session.execute(update(ConsultationNotes).where(ConsultationNotes.consultation_id == item.id).values(**changed))
+    db_session.rollback()
     response = read_summary(api, item, people, route)
-    assert response.status_code == 409, response.text
+    assert response.status_code == 200, response.text
     assert "CORRUPTED_CONTENT" not in response.text
-    assert "Private synthetic" not in response.text
+    assert "Private synthetic history" in response.text
 
 
 @pytest.mark.parametrize("route", ["agenda", "clinical-summary"])

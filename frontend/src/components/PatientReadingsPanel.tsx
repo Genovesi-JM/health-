@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../api';
 import {
   Activity, Heart, Droplets, ThermometerSun, Wind,
@@ -157,7 +157,11 @@ const ALL_TYPES: ReadingType[] = [
   'blood_pressure', 'glucose', 'temperature', 'oxygen_saturation', 'weight', 'heart_rate',
 ];
 
-export default function PatientReadingsPanel({ patientId, patientName }: Props) {
+export default function PatientReadingsPanel(props: Props) {
+  return <ReadingsPanel key={props.patientId} {...props} />;
+}
+
+function ReadingsPanel({ patientId, patientName }: Props) {
   const { t, lang } = useT();
   const locale = LOCALES[lang] || 'pt-PT';
   const [readings, setReadings] = useState<DeviceReading[]>([]);
@@ -167,22 +171,19 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
   const [medications, setMedications] = useState<PatientMedication[]>([]);
   const [medsLoading, setMedsLoading] = useState(true);
 
-  const load = () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(() => {
     api.get<ReadingListOut>(`/api/v1/readings/patient/${patientId}?limit=50`)
-      .then(r => { setReadings(r.data.readings); setTotal(r.data.total); })
+      .then(r => { setError(''); setReadings(r.data.readings); setTotal(r.data.total); })
       .catch(() => setError(t('prp.readings_error')))
       .finally(() => setLoading(false));
 
-    setMedsLoading(true);
     api.get<PatientMedication[]>(`/api/v1/medications/patient/${patientId}`)
       .then(r => setMedications(r.data))
       .catch(() => {})
       .finally(() => setMedsLoading(false));
-  };
+  }, [patientId, t]);
 
-  useEffect(() => { if (patientId) load(); }, [patientId]);
+  useEffect(() => { if (patientId) load(); }, [patientId, load]);
 
   // Latest reading per type
   const latest = Object.fromEntries(
@@ -206,7 +207,7 @@ export default function PatientReadingsPanel({ patientId, patientName }: Props) 
             </span>
           )}
         </div>
-        <button onClick={load} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', padding: '0.25rem' }}>
+        <button onClick={() => { setLoading(true); load(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', padding: '0.25rem' }}>
           <RefreshCw size={12} /> {t('common.refresh')}
         </button>
       </div>

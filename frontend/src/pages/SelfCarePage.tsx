@@ -27,14 +27,14 @@ export default function SelfCarePage() {
   const [medications, setMedications] = useState<Medication[]>([]);
 
   useEffect(() => {
-    api.get('/api/v1/dashboard/patient-state')
-      .then((res: any) => setPatientState(res.data))
+    api.get<PatientState>('/api/v1/dashboard/patient-state')
+      .then(res => setPatientState(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
 
     // Load medications from backend
-    api.get('/api/v1/medications/me')
-      .then((res: any) => setMedications(res.data))
+    api.get<Medication[]>('/api/v1/medications/me')
+      .then(res => setMedications(res.data))
       .catch(() => {});
   }, []);
 

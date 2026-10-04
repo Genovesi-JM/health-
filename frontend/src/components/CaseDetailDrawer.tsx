@@ -149,7 +149,7 @@ export default function CaseDetailDrawer({ credentialId, onClose, onCaseUpdated 
     reject:                { label: t('admc.action_reject'),           requiresReason: true,  destructive: true, run: (r, n) => runAction('reject', r, n) },
     'request-information': { label: t('admc.action_request_info'),     requiresReason: true,                    run: (r, n) => runAction('request-information', r, n) },
     suspend:               { label: t('admc.action_suspend'),          requiresReason: true,  destructive: true, run: (r, n) => runAction('suspend', r, n) },
-    reactivate:            { label: t('admc.action_reactivate'),       requiresReason: false, primary: true,   run: (_r, _n) => runAction('reactivate', '', '') },
+    reactivate:            { label: t('admc.action_reactivate'),       requiresReason: false, primary: true,   run: () => runAction('reactivate', '', '') },
     revoke:                { label: t('admc.action_revoke'),           requiresReason: true,  destructive: true, run: (r, n) => runAction('revoke', r, n) },
     'manual-verified':     { label: t('admc.action_manual_verified'),  requiresReason: false,                   run: (r, n) => runAction('manual-verified', r, n) },
     'manual-partial':      { label: t('admc.action_manual_partial'),   requiresReason: false,                   run: (r, n) => runAction('manual-partial', r, n) },

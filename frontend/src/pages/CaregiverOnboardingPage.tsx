@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, HeartHandshake, Loader2 } from 'lucide-react';
@@ -50,8 +51,8 @@ export default function CaregiverOnboardingPage() {
       });
       setLinkId(r.data.id);
       return true;
-    } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao criar dependente.');
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, 'Erro ao criar dependente.'));
       return false;
     } finally { setBusy(false); }
   };
@@ -67,8 +68,8 @@ export default function CaregiverOnboardingPage() {
         can_act_on_behalf: actOnBehalf,
       });
       return true;
-    } catch (e: any) {
-      setError(e.response?.data?.detail || 'Não foi possível guardar as permissões.');
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, 'Não foi possível guardar as permissões.'));
       return false;
     } finally { setBusy(false); }
   };

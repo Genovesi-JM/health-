@@ -1,8 +1,10 @@
 # Kaya in-app workflow notifications
 
-Engineering evidence: 4 October 2026. The default release remains HOLD. These
-endpoints run in the isolated operational application; the public default entry
-points still refuse clinical operations.
+Engineering evidence: 4 October 2026. The release decision remains HOLD. These
+endpoints run in the isolated operational API; the default API entrypoint refuses
+clinical operations. The web entrypoint mounts the operational client unless its
+explicit hold setting is enabled; the native entrypoint is informational. Source
+policy does not establish the state of an existing remote deployment.
 
 ## Durable events and transaction ownership
 

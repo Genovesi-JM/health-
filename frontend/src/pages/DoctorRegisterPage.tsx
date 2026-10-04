@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
@@ -134,8 +135,8 @@ export default function DoctorRegisterPage() {
       } catch { /* non-blocking */ }
       setStep('success');
       setTimeout(() => navigate('/professional-verification'), 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t('dreg.err_generic'));
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, t('dreg.err_generic')));
     } finally {
       setLoading(false);
     }
@@ -283,11 +284,11 @@ export default function DoctorRegisterPage() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
-            {[
+            {([
               ['dreg.country_practice', practiceCountry, setPracticeCountry],
               ['dreg.country_licence', licenceCountry, setLicenceCountry],
               ['dreg.country_diploma', diplomaCountry, setDiplomaCountry],
-            ].map(([labelKey, value, setter]: any) => (
+            ] as const).map(([labelKey, value, setter]) => (
               <div key={labelKey}>
                 <label className="form-label">{t(labelKey)}</label>
                 <select className="form-input" value={value} onChange={e => setter(e.target.value)}>

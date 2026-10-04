@@ -462,7 +462,8 @@ class Consultation(Base):
 
     patient = relationship("Patient", back_populates="consultations", foreign_keys=[patient_id])
     doctor = relationship("Doctor", back_populates="consultations", foreign_keys=[doctor_id])
-    notes = relationship("ConsultationNotes", back_populates="consultation", uselist=False, cascade="all, delete-orphan")
+    notes = relationship("ConsultationNotes", back_populates="consultation", uselist=False,
+                         cascade="save-update, merge", passive_deletes=True)
     prescriptions = relationship("Prescription", back_populates="consultation", cascade="all, delete-orphan")
     referrals = relationship("Referral", back_populates="consultation", cascade="all, delete-orphan")
 
@@ -499,6 +500,29 @@ class ConsultationNotes(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     consultation = relationship("Consultation", back_populates="notes")
+
+
+class ConsultationAmendment(Base):
+    """An attributed full correction snapshot; the original note is immutable."""
+    __tablename__ = "consultation_amendments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    note_id: Mapped[str] = mapped_column(String(36), ForeignKey("consultation_notes.id", ondelete="RESTRICT"), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    author_user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    publish_to_patient: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    snapshot_json: Mapped[str] = mapped_column(Text, nullable=False)
+    previous_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("uq_consultation_amendment_revision", "note_id", "revision", unique=True),
+        Index("uq_consultation_amendment_request", "note_id", "request_key", unique=True),
+    )
 
 
 # ── Prescription & Referral ──
@@ -1522,3 +1546,8 @@ class ContactMessage(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="new", index=True)  # new | read | closed
     ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
+# Fresh synthetic databases have the same record protections as migrated ones.
+from .services.clinical_retention import register_retention_guards
+register_retention_guards(Base.metadata)

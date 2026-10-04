@@ -1,11 +1,14 @@
 # Kaya clinical documentation & note integrity (Phase 26)
 
-A clinical note is a legal record. Once finalized it must be tamper-evident and
-non-repudiable. This phase ships the canonical, domain-pure policy
-(`backend/app/note_integrity.py`) with negative tests; wiring the existing
-mutable ORM model onto it is a separate adoption gate.
+The original Phase26 module (`backend/app/note_integrity.py`) defines pure
+note-integrity policy and negative tests. The October implementation now persists
+finalized note digests and append-only correction snapshots in the application
+models. See the [runtime correction record](KAYA_CLINICAL_AMENDMENTS.md) for the
+implemented API, patient disclosure and database guards. A content digest is not
+a certificate-backed digital signature or proof against a database administrator
+who changes schema/data.
 
-## Invariants enforced
+## Original domain-policy invariants
 
 - **Authored-by is immutable.** The author is fixed at creation; there is no code
   path to reassign it (`reassign_author_prohibited` always raises).
@@ -46,17 +49,22 @@ episode/org/privilege with patient self-read delegated.
 
 ## Human intervention / external gates
 
-- **ORM adoption (owner-bound).** The live `ConsultationNotes` model
-  (`backend/app/health_models.py:421`) is today mutable, has no sign/lock state,
-  no amendment chain, and `ondelete=CASCADE` (a consultation delete would remove
-  the note). A named clinical-systems owner must approve the migration that adds
-  the signed-hash/lock columns and the amendment table, removes the cascade
-  hard-delete, and routes edits through this policy. The agent prepares the
-  policy and tests; it does not migrate a live database.
+- **Runtime migration approval.** `ConsultationNotes` now carries author/time
+  and a finalization digest; `ConsultationAmendment` retains attributed correction
+  snapshots. SQLite/PostgreSQL triggers reject finalized-note updates/deletes,
+  amendment updates/deletes and parent deletions or identity/jurisdiction changes.
+  The historical cascade declarations remain for unsigned legacy records; the
+  guards prevent them from deleting finalized records. An explicit migration
+  installs guards on an existing database. Local SQLite and PostgreSQL evidence
+  does not authorize migration of a live database.
 - **Retention & medico-legal record schedule** must be set by the data
   controller / clinical owner (how long notes and amendment chains are kept, and
   the lawful basis).
-- **Runtime adoption verification** — a harness-verified task must confirm the
-  held note endpoints consume `note_integrity` (sign, amend, access) once the
-  model is adopted.
+- **Runtime adoption verification.** The application uses transactional
+  `consultation_closeout`, `consultation_amendments` and `clinical_retention`
+  services with shared integrity checks in each clinician summary reader. This
+  is distinct from the pure in-memory `AmendmentLog`. The runtime currently
+  supports corrections of SOAP and patient-summary text, not a wrong-patient
+  retraction or changes to outcome/follow-up obligations. Those require a
+  separate reviewed clinical workflow.
 - **Clinical release stays HOLD.**

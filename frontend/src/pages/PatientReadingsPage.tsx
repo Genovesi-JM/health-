@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../api';
+import { apiErrorMessage } from '../utils/apiError';
 import {
   Activity, Plus, Trash2, X, Loader2, ThermometerSun,
   Droplets, Wind, Weight, Heart, HeartPulse, Upload, Scale,
@@ -126,16 +127,15 @@ export default function PatientReadingsPage() {
   const [importing, setImporting]   = useState(false);
 
   // Load readings
-  const load = (type?: ReadingType | '') => {
-    setLoading(true);
+  const load = useCallback((type?: ReadingType | '') => {
     const params = type ? `?reading_type=${type}` : '';
     api.get<ReadingListOut>(`/api/v1/readings/me${params}`)
       .then(r => { setReadings(r.data.readings); setTotal(r.data.total); })
       .catch(() => setError(t('read.err_load')))
       .finally(() => setLoading(false));
-  };
+  }, [t]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(filterType); }, [load, filterType]);
 
   // Sync unit default when reading_type changes
   const handleTypeChange = (type: ReadingType) => {
@@ -143,8 +143,7 @@ export default function PatientReadingsPage() {
   };
 
   const handleFilterChange = (type: ReadingType | '') => {
-    setFilterType(type);
-    load(type);
+    if (type !== filterType) { setLoading(true); setFilterType(type); }
   };
 
   // Submit new reading
@@ -187,8 +186,8 @@ export default function PatientReadingsPage() {
       setShowForm(false);
       setForm(emptyForm);
       load(filterType);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || t('read.err_save'));
+    } catch (err) {
+      setError(apiErrorMessage(err, t('read.err_save')));
     } finally {
       setSaving(false);
     }
@@ -225,8 +224,8 @@ export default function PatientReadingsPage() {
         .replace('{imported}', String(response.data.imported ?? 0))
         .replace('{skipped}', String(response.data.skipped ?? 0)));
       load(filterType);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || t('read.import_error'));
+    } catch (err) {
+      setError(apiErrorMessage(err, t('read.import_error')));
     } finally {
       setImporting(false);
     }

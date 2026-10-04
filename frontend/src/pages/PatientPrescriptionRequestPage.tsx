@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -100,8 +101,8 @@ export default function PatientPrescriptionRequestPage() {
       setSuccessMsg(t('ppr.success'));
       setMedName(''); setDose(''); setFrequency(''); setReason(''); setDoctorId('');
       setShowForm(false);
-    } catch (err: any) {
-      setErrorMsg(err?.response?.data?.detail ?? t('ppr.error'));
+    } catch (err: unknown) {
+      setErrorMsg(apiErrorMessage(err, t('ppr.error')));
     } finally {
       setSubmitting(false);
     }

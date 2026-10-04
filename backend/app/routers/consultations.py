@@ -30,7 +30,7 @@ from app.health_models import (
     Patient, Doctor, Consultation, ConsultationNotes, TriageSession, TriageResult, HealthAuditLog,
 )
 from app.health_schemas import (
-    ConsultationBookRequest, ConsultationOut, ConsultationCompleteRequest,
+    ConsultationBookRequest, ConsultationOut, ConsultationCompleteRequest, ConsultationAmendmentRequest,
     ConsultationCancelRequest, ConsultationQueueItem, RoleEnum,
 )
 from app.rbac import (
@@ -275,6 +275,38 @@ def complete_consultation(
         raise HTTPException(503, "Não foi possível confirmar a gravação. Tente novamente com o mesmo conteúdo.") from None
 
     return consultation
+
+
+@router.post("/api/v1/consultations/{consultation_id}/closeout/amendments")
+def amend_consultation_closeout(
+    consultation_id: str,
+    body: ConsultationAmendmentRequest,
+    response: Response,
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
+    user: User = Depends(require_verified_doctor),
+    db: Session = Depends(get_db),
+):
+    """Append an attributed correction without changing the finalized original."""
+    from app.services.consultation_amendments import append_amendment
+    doctor = db.query(Doctor).filter_by(user_id=user.id).first()
+    consultation = db.query(Consultation).filter_by(
+        id=consultation_id, doctor_id=doctor.id if doctor else None,
+    ).first() if doctor else None
+    if consultation is None:
+        raise HTTPException(404, "Consulta não encontrada ou não atribuída a si.")
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    try:
+        append_amendment(db, consultation, body, user, idempotency_key)
+        result = closeout_result(db, consultation, clinician=True)
+        db.commit()
+        return result
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível confirmar a correção. Repita com a mesma chave e conteúdo.") from None
 
 
 @router.get("/api/v1/consultations/{consultation_id}/closeout")

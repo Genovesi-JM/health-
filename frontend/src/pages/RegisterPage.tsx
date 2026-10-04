@@ -109,7 +109,7 @@ export default function RegisterPage() {
       // Applicants keep a non-clinical account while their dossier is reviewed.
       await refreshUser();
       navigate(nextPath);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(nextPath
         ? 'A conta foi criada. Não foi possível carregar o perfil. Tente continuar novamente ou entre com a sua conta.'
         : apiErrorMessage(err, t('register.error')));

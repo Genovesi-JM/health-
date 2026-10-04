@@ -1,20 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import api, { persistSession, clearSession, getSession } from './api';
 import type { User } from './types';
-
-interface AuthCtx {
-  user: User | null;
-  token: string | null;
-  login: (data: { access_token: string; refresh_token?: string; user: User }) => void;
-  logout: () => void;
-  loading: boolean;
-  refreshUser: () => Promise<User>;
-}
-
-const AuthContext = createContext<AuthCtx>({
-  user: null, token: null, login: () => {}, logout: () => {},
-  loading: true, refreshUser: async () => { throw new Error('AuthProvider is missing'); },
-});
+import { AuthContext } from './authContextState';
 
 function userFromResponse(me: User & { user_id?: string; full_name?: string }): User {
   return {
@@ -39,31 +26,53 @@ function cacheUser(user: User) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(getSession()));
+  const sessionVersion = useRef(0);
+  const advanceSession = useCallback(() => ++sessionVersion.current, []);
 
   /* Restore session from localStorage */
   useEffect(() => {
+    const version = advanceSession();
     const session = getSession();
     if (session) {
       // Cached roles and completion flags are not authoritative after a reload.
       api.get('/auth/me')
         .then(r => {
+          if (sessionVersion.current !== version || getSession()?.token !== session.token) return;
           const fresh = userFromResponse(r.data);
           setToken(session.token);
           setUser(fresh);
           cacheUser(fresh);
         })
         .catch(() => {
+          if (sessionVersion.current !== version) return;
           setToken(null);
           setUser(null);
         })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+        .finally(() => { if (sessionVersion.current === version) setLoading(false); });
     }
-  }, []);
+    // Other tabs share localStorage. Immediately remove the previous account's
+    // clinical view before resolving the identity associated with a new token.
+    const onStorage = (event: StorageEvent) => {
+      if ((event.storageArea && event.storageArea !== localStorage) || (event.key !== 'ht_token' && event.key !== null)) return;
+      const changedVersion = advanceSession();
+      const changedSession = getSession();
+      setUser(null); setToken(null); setLoading(Boolean(changedSession));
+      if (!changedSession) return;
+      api.get('/auth/me').then(r => {
+        if (sessionVersion.current !== changedVersion || getSession()?.token !== changedSession.token) return;
+        const fresh = userFromResponse(r.data);
+        setToken(changedSession.token); setUser(fresh); cacheUser(fresh);
+      }).catch(() => {
+        // The view was already cleared. Keep it clear on an unverified identity.
+      }).finally(() => { if (sessionVersion.current === changedVersion) setLoading(false); });
+    };
+    window.addEventListener('storage', onStorage);
+    return () => { advanceSession(); window.removeEventListener('storage', onStorage); };
+  }, [advanceSession]);
 
   const login = useCallback((data: { access_token: string; refresh_token?: string; user: User }) => {
+    sessionVersion.current++;
     persistSession({
       access_token: data.access_token,
       refresh_token: data.refresh_token,
@@ -71,17 +80,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     setToken(data.access_token);
     setUser(data.user);
+    setLoading(false);
     cacheUser(data.user);
   }, []);
 
   const logout = useCallback(() => {
+    sessionVersion.current++;
     clearSession();
     setToken(null);
     setUser(null);
+    setLoading(false);
   }, []);
 
   const refreshUser = useCallback(async () => {
+    const version = sessionVersion.current;
+    const session = getSession();
+    if (!session) throw new Error('A sessão terminou. Inicie sessão novamente.');
     const r = await api.get('/auth/me');
+    if (sessionVersion.current !== version || getSession()?.token !== session.token) {
+      throw new Error('A sessão mudou durante a atualização.');
+    }
     const fresh = userFromResponse(r.data);
     setUser(fresh);
     cacheUser(fresh);
@@ -94,5 +112,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-export const useAuth = () => useContext(AuthContext);

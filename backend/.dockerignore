@@ -162,6 +162,9 @@
 
 !app/services/notifications.py
 !alembic/versions/durable_notifications_v1.py
+!alembic/versions/clinical_amendments_v1.py
+!app/services/clinical_retention.py
+!app/services/consultation_amendments.py
 
 !app/services/specialties.py
 !app/services/credential_review.py

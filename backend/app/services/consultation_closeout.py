@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import json
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import update
@@ -142,14 +143,13 @@ def finalize_consultation(db: Session, consultation: Consultation, body: Consult
                              resource_type="clinical_care_task", resource_id=task.id,
                              metadata_json=json.dumps({"consultation_id": consultation.id, "assigned_role": "doctor"})))
     notes = ConsultationNotes(
-        consultation_id=consultation.id, doctor_id=consultation.doctor_id,
+        id=str(uuid4()), consultation_id=consultation.id, doctor_id=consultation.doctor_id,
         **{field: request_content[field] for field in TEXT_FIELDS}, outcome=body.outcome,
         follow_up_required=body.follow_up_required, follow_up_due_at=due_at,
         follow_up_task_id=task.id if task else None, finalized_at=now, finalized_by_user_id=user.id,
     )
-    db.add(notes)
-    db.flush()
     notes.finalization_digest = note_digest(notes)
+    db.add(notes)
     # Persist the disclosure and its exact follow-up link before selecting
     # patient recipients. Notifications still share this uncommitted transaction.
     db.flush()
@@ -195,4 +195,6 @@ def closeout_result(db: Session, consultation: Consultation, *, clinician: bool)
     }
     if clinician:
         result["closeout"]["notes"] = {field: getattr(notes, field) for field in ("subjective", "objective", "assessment", "plan")}
+    from app.services.consultation_amendments import disclose_amendments
+    disclose_amendments(db, notes, result["closeout"], clinician=clinician)
     return result

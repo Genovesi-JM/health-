@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, FileText, RefreshCw, Upload } from 'lucide-react';
 import api from '../api';
 
@@ -48,6 +48,8 @@ export default function PatientDocumentsPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const downloadUrls = useRef(new Set<string>());
+  const lifetime = useRef(0);
+  const advanceLifetime = useCallback(() => ++lifetime.current, []);
   const doc = documents.find(item => item.id === selectedId) ?? null;
   const text = doc ? drafts[doc.id] ?? defaultText(doc) : '';
   const canReview = doc?.scan_status === 'clean' && ['ready_for_review', 'needs_manual_review'].includes(doc.status);
@@ -57,9 +59,11 @@ export default function PatientDocumentsPage() {
     setDocuments(previous => [updated, ...previous.filter(item => item.id !== updated.id)]);
   };
   const load = async () => {
+    const version = lifetime.current;
     const [capabilityResult, documentResult] = await Promise.allSettled([
       api.get<Capabilities>(`${BASE}/capabilities`), api.get<PatientDocument[]>(BASE),
     ]);
+    if (version !== lifetime.current) return;
     const failures: string[] = [];
     if (capabilityResult.status === 'fulfilled') setCapabilities(capabilityResult.value.data);
     else { setCapabilities(null); failures.push('Não foi possível verificar a disponibilidade do envio.'); }
@@ -71,33 +75,41 @@ export default function PatientDocumentsPage() {
     if (failures.length) setError(failures.join(' '));
   };
   useEffect(() => {
-    void load().finally(() => setLoading(false));
+    const version = advanceLifetime();
+    void load().finally(() => { if (version === lifetime.current) setLoading(false); });
     const urls = downloadUrls.current;
-    return () => { urls.forEach(url => URL.revokeObjectURL(url)); urls.clear(); };
-  }, []);
+    return () => { advanceLifetime(); urls.forEach(url => URL.revokeObjectURL(url)); urls.clear(); };
+  }, [advanceLifetime]);
 
   const run = async (name: string, action: () => Promise<void>) => {
     if (busyRef.current) return;
+    const version = lifetime.current;
     busyRef.current = true; setBusy(name); setError(''); setNotice('');
     try { await action(); }
-    catch (e) { setError(errorMessage(e, 'Não foi possível concluir. Os seus dados introduzidos foram mantidos; tente novamente.')); }
-    finally { busyRef.current = false; setBusy(''); }
+    catch (e) { if (version === lifetime.current) setError(errorMessage(e, 'Não foi possível concluir. Os seus dados introduzidos foram mantidos; tente novamente.')); }
+    finally { if (version === lifetime.current) { busyRef.current = false; setBusy(''); } }
   };
   const reloadConflict = async (id: string) => {
+    const version = lifetime.current;
     try {
       const response = await api.get<PatientDocument>(`${BASE}/${id}`);
+      if (version !== lifetime.current) return;
       replaceDocument(response.data);
       setError('O documento mudou noutra sessão. Carregámos a versão atual e mantivemos o seu texto. Compare-o antes de voltar a guardar.');
     } catch {
+      if (version !== lifetime.current) return;
       setError('O documento mudou noutra sessão. Não foi possível carregar a versão atual. O seu texto foi mantido; atualize antes de voltar a guardar.');
     }
   };
   const processDocument = async (item: PatientDocument) => {
+    const version = lifetime.current;
     try {
       const response = await api.post<PatientDocument>(`${BASE}/${item.id}/process`, { version: item.version });
+      if (version !== lifetime.current) return;
       replaceDocument(response.data);
       setNotice(response.data.status === 'ready_for_review' ? 'Leitura concluída. Reveja o texto antes de confirmar.' : 'Estado do documento atualizado.');
     } catch (e) {
+      if (version !== lifetime.current) return;
       if (isConflict(e)) await reloadConflict(item.id);
       else setError(errorMessage(e, 'O documento está guardado, mas a leitura não foi concluída. Pode tentar ler novamente.'));
     }
@@ -105,22 +117,25 @@ export default function PatientDocumentsPage() {
   const chooseFile = (picked: File | undefined) => {
     if (!picked) return;
     setError(''); setNotice('');
-    if (!ACCEPTED_TYPES.includes(picked.type)) { setFile(null); uploadKey.current = null; setError('Escolha um ficheiro PDF, JPG ou PNG.'); return; }
-    if (picked.size === 0 || picked.size > (capabilities?.max_bytes ?? 10485760)) {
-      setFile(null); uploadKey.current = null; setError('O ficheiro deve ter conteúdo e não pode exceder 10 MB.'); return;
+    if (!ACCEPTED_TYPES.includes(picked.type) || !capabilities?.accepted_types.includes(picked.type)) { setError('Escolha um ficheiro PDF, JPG ou PNG permitido para envio.'); return; }
+    if (picked.size === 0 || picked.size > Math.min(capabilities?.max_bytes ?? 10485760, 10485760)) {
+      setError('O ficheiro deve ter conteúdo e não pode exceder 10 MB.'); return;
     }
     if (!file || picked.name !== file.name || picked.size !== file.size || picked.lastModified !== file.lastModified || picked.type !== file.type) {
       uploadKey.current = crypto.randomUUID();
+      setConsent(false);
     }
     setFile(picked);
   };
   const upload = () => run('upload', async () => {
     if (!file || !consent || !capabilities?.upload_enabled) return;
+    const version = lifetime.current;
     uploadKey.current ??= crypto.randomUUID();
     const form = new FormData(); form.append('file', file); form.append('processing_consent', 'true');
     const response = await api.post<PatientDocument>(BASE, form, {
       headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': uploadKey.current },
     });
+    if (version !== lifetime.current) return;
     const uploaded = response.data;
     replaceDocument(uploaded); setSelectedId(uploaded.id);
     setFile(null); uploadKey.current = null; setConsent(false);
@@ -130,19 +145,24 @@ export default function PatientDocumentsPage() {
   });
   const review = (decision: 'confirm' | 'reject') => run('review', async () => {
     if (!doc || !canReview || (decision === 'confirm' && !text.trim())) return;
+    const version = lifetime.current;
     try {
       const response = await api.put<PatientDocument>(`${BASE}/${doc.id}/review`, { version: doc.version, decision, text });
+      if (version !== lifetime.current) return;
       replaceDocument(response.data);
       setDrafts(previous => { const next = { ...previous }; delete next[doc.id]; return next; });
       setNotice(decision === 'confirm' ? 'O texto revisto foi guardado.' : 'A leitura foi rejeitada. O documento original foi mantido.');
     } catch (e) {
+      if (version !== lifetime.current) return;
       if (isConflict(e)) await reloadConflict(doc.id);
       else throw e;
     }
   });
   const download = () => run('download', async () => {
     if (!doc || doc.scan_status !== 'clean') return;
+    const version = lifetime.current;
     const response = await api.get(`${BASE}/${doc.id}/download`, { responseType: 'blob' });
+    if (version !== lifetime.current) return;
     const url = URL.createObjectURL(response.data); downloadUrls.current.add(url);
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = doc.original_filename;
     document.body.appendChild(anchor); anchor.click(); anchor.remove();

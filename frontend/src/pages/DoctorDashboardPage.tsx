@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ClipboardList, CheckCircle2, Clock, AlertTriangle, ArrowRight,
-  Video, FileText, Calendar, DollarSign, Star, Users, TrendingUp,
-  Zap, ShieldCheck, ChevronRight, RefreshCw, User,
-  MessageSquare, Activity, AlertCircle,
-} from 'lucide-react';
+  ClipboardList, CheckCircle2, Clock, ArrowRight,
+  Video, FileText, Calendar, DollarSign, Star, Users, ChevronRight, RefreshCw, MessageSquare, Activity, } from 'lucide-react';
 import api from '../api';
 import { getSession } from '../api';
 import { useT } from '../i18n/LanguageContext';

@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useEffect, useState } from 'react';
 import api from '../api';
 import type { Consent } from '../types';
@@ -36,8 +37,8 @@ export default function ConsentsPage() {
       setConsents(c => [...c, r.data]);
       setConsentType('');
       setMsg(t('consents.registered'));
-    } catch (err: any) {
-      setMsg(err.response?.data?.detail || t('common.error'));
+    } catch (err: unknown) {
+      setMsg(apiErrorMessage(err, t('common.error')));
     }
     setAdding(false);
   };

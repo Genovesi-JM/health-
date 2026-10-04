@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, Eye, EyeOff, ShieldCheck, ChevronRight } from 'lucide-react';
@@ -22,8 +23,8 @@ export default function DoctorSecurityPage() {
       await api.post('/auth/change-password', { old_password: form.current, new_password: form.next });
       setMsg(t('dsec.updated'));
       setForm({ current: '', next: '', confirm: '' });
-    } catch (e: any) {
-      setErr(e?.response?.data?.detail ?? t('dsec.update_error'));
+    } catch (e: unknown) {
+      setErr(apiErrorMessage(e, t('dsec.update_error')));
     } finally {
       setLoading(false);
     }
@@ -38,15 +39,15 @@ export default function DoctorSecurityPage() {
       <div className="card" style={{ padding: '1.5rem', marginBottom: '1rem' }}>
         <div style={{ fontWeight: 700, marginBottom: '1.25rem' }}>{t('dsec.change_password')}</div>
         <form onSubmit={submit}>
-          {[
+          {([
             { key: 'current', label: t('dsec.current') },
             { key: 'next',    label: t('dsec.new') },
             { key: 'confirm', label: t('dsec.confirm') },
-          ].map(f => (
+          ] as const).map(f => (
             <div key={f.key} style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.3rem' }}>{f.label}</label>
               <div style={{ position: 'relative' }}>
-                <input className="form-input" type={show ? 'text' : 'password'} value={(form as any)[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))} required style={{ paddingRight: '2.5rem' }} />
+                <input className="form-input" type={show ? 'text' : 'password'} value={form[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))} required style={{ paddingRight: '2.5rem' }} />
                 <button type="button" onClick={() => setShow(s => !s)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                   {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>

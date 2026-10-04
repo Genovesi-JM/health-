@@ -23,49 +23,32 @@ export function ProtectedRoute() {
   const location = useLocation();
   const { t } = useT();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // null = checking, true = OK, false = needs consent
-  const [consentOk, setConsentOk] = useState<boolean | null>(null);
-  const [consentError, setConsentError] = useState(false);
   const [consentAttempt, setConsentAttempt] = useState(0);
-  const [checkedConsentFor, setCheckedConsentFor] = useState('');
-  const consentIdentity = `${user?.id ?? ''}:${user?.role ?? ''}:${location.pathname}`;
+  const [consentResult, setConsentResult] = useState<{ identity: string; ok: boolean; error: boolean } | null>(null);
+  const consentIdentity = `${user?.id ?? ''}:${user?.role ?? ''}:${location.pathname}:${consentAttempt}`;
+  const needsConsent = !!user && isPatientAccount(user) && !location.pathname.startsWith('/onboarding/')
+    && !['/settings', '/security', '/security/mfa', '/professional-verification', '/consent-gate', '/data-consent'].includes(location.pathname)
+    && !requiredPathRedirect(user, location.pathname);
+  const consentOk = !needsConsent ? true : consentResult?.identity === consentIdentity ? consentResult.ok : null;
+  const consentError = needsConsent && consentResult?.identity === consentIdentity && consentResult.error;
 
   useEffect(() => {
-    if (!user) return;
+    if (!needsConsent) return;
     let cancelled = false;
-    setConsentOk(null);
-    setConsentError(false);
-    setCheckedConsentFor(consentIdentity);
-
-    // Application and onboarding flows collect their own relevant information.
-    // Clinical patient consent must not block an applicant or a staff account.
-    if (!isPatientAccount(user) || location.pathname.startsWith('/onboarding/')
-      || ['/settings', '/security', '/security/mfa'].includes(location.pathname)
-      || location.pathname === '/professional-verification' || requiredPathRedirect(user, location.pathname)) {
-      setConsentOk(true);
-      return;
-    }
-
-    // Don't check if we're already on the consent gate (avoid redirect loop)
-    if (location.pathname === '/consent-gate' || location.pathname === '/data-consent') {
-      setConsentOk(true);
-      return;
-    }
 
     api.get('/api/v1/compliance/consents')
       .then(r => {
         if (cancelled) return;
         const types: string[] = r.data.map((c: { consent_type: string }) => c.consent_type);
         const allAccepted = REQUIRED_CONSENTS.every(ct => types.includes(ct));
-        setConsentOk(allAccepted);
+        setConsentResult({ identity: consentIdentity, ok: allAccepted, error: false });
       })
       .catch(() => {
         if (cancelled) return;
-        setConsentOk(false);
-        setConsentError(true);
+        setConsentResult({ identity: consentIdentity, ok: false, error: true });
       });
     return () => { cancelled = true; };
-  }, [user, location.pathname, consentIdentity, consentAttempt]);
+  }, [needsConsent, consentIdentity]);
 
   if (loading) {
     return (
@@ -83,7 +66,7 @@ export function ProtectedRoute() {
   if (accountRedirect) return <Navigate to={accountRedirect} replace />;
 
   // Still checking consents — show spinner
-  if (consentOk === null || checkedConsentFor !== consentIdentity) {
+  if (consentOk === null) {
     return (
       <div className="page-loading">
         <div className="spinner" />
@@ -159,7 +142,7 @@ export function ProtectedRoute() {
   const pageTitle = crumbs[location.pathname] || '';
 
   return (
-    <div className="app-layout">
+    <div className="app-layout" key={`${user.id}:${user.role}`}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="app-main">
         <header className="app-topbar">

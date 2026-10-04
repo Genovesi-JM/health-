@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
@@ -89,14 +89,20 @@ const QUESTION_LABELS: Record<string, string> = {
   depression_symptoms:      'Tem sentimentos de tristeza persistente ou depressão?',
 };
 
+type InitialDependent = { id: string; is_minor: boolean };
+
 export default function TriagePage() {
-  const { t, lang } = useT();
   const location = useLocation();
+  return <TriageSession key={location.key} initialDependent={location.state?.dependent as InitialDependent | undefined} />;
+}
+
+function TriageSession({ initialDependent }: { initialDependent?: InitialDependent }) {
+  const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
-  const [step, setStep] = useState<Step>('history');
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>('adult');
+  const [step, setStep] = useState<Step>(initialDependent ? 'start' : 'history');
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>(initialDependent?.is_minor ? 'pediatric' : 'adult');
   const [category, setCategory] = useState<TriageCategory>('general');
-  const [guardian, setGuardian] = useState(false);
+  const [guardian, setGuardian] = useState(!!initialDependent?.is_minor);
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [questions, setQuestions] = useState<TriageQuestion[]>([]);
@@ -110,7 +116,7 @@ export default function TriagePage() {
 
   // ── Dependent selector ─────────────────────────────────────
   const [dependents, setDependents] = useState<{ id: string; name: string; is_minor: boolean }[]>([]);
-  const [selectedDependent, setSelectedDependent] = useState<string>('me');
+  const [selectedDependent, setSelectedDependent] = useState<string>(initialDependent?.id || 'me');
 
   // ── Vitals state ───────────────────────────────────────────
   const [vitals, setVitals] = useState<Partial<VitalReadings>>({});
@@ -130,22 +136,6 @@ export default function TriagePage() {
     }
     return error instanceof Error ? error.message : t('vitals.connection_failed');
   };
-
-  useEffect(() => {
-    loadHistory();
-    loadPhotoRequests();
-    // Load family members from backend
-    api.get('/api/v1/family/me')
-      .then((r: any) => setDependents(r.data.map((m: any) => ({ id: m.id, name: m.full_name, is_minor: m.is_minor }))))
-      .catch(() => {});
-    // Pre-select dependent if navigated from ProfilePage
-    if (location.state?.dependent) {
-      const dep = location.state.dependent;
-      setSelectedDependent(dep.id);
-      if (dep.is_minor) { setAgeGroup('pediatric'); setGuardian(true); }
-      setStep('start');
-    }
-  }, []);
 
   // Vital colour coding
   const vitalStatus = (key: keyof VitalReadings, val?: number) => {
@@ -209,27 +199,31 @@ export default function TriagePage() {
     }
   };
 
-  const loadHistory = async () => {
-    try {
-      const r = await api.get('/api/v1/triage/history');
-      setHistory(r.data);
-    } catch { /* ignore */ }
-  };
+  const loadHistory = useCallback(() => {
+    return api.get<TriageHistoryItem[]>('/api/v1/triage/history')
+      .then(response => setHistory(response.data))
+      .catch(() => {});
+  }, []);
 
-  const loadPhotoRequests = async () => {
-    try {
-      const response = await api.get<PhotoRequest[]>('/api/v1/triage/photo-requests/pending');
-      setPendingPhotoRequests(response.data);
-    } catch {
-      setPendingPhotoRequests([]);
-    }
-  };
+  const loadPhotoRequests = useCallback(() => {
+    return api.get<PhotoRequest[]>('/api/v1/triage/photo-requests/pending')
+      .then(response => setPendingPhotoRequests(response.data))
+      .catch(() => setPendingPhotoRequests([]));
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+    loadPhotoRequests();
+    api.get<{ id: string; full_name: string; is_minor: boolean }[]>('/api/v1/family/me')
+      .then(r => setDependents(r.data.map(m => ({ id: m.id, name: m.full_name, is_minor: m.is_minor }))))
+      .catch(() => {});
+  }, [loadHistory, loadPhotoRequests]);
 
   const deleteTriage = async (id: string) => {
     try {
       await api.delete(`/api/v1/triage/${id}`);
       setHistory(prev => prev.filter(h => h.id !== id));
-    } catch (err: any) {
+    } catch (err) {
       setError(apiErrorMessage(err, 'Erro ao eliminar triagem.'));
     }
     setDeleteConfirm(null);
@@ -258,7 +252,7 @@ export default function TriagePage() {
       setQuestions(r.data.questions || []);
       setAnswers({});
       setStep('questions');
-    } catch (err: any) {
+    } catch (err) {
       setError(apiErrorMessage(err, 'Erro ao iniciar triagem.'));
     }
     setLoading(false);
@@ -283,7 +277,7 @@ export default function TriagePage() {
       });
       setStep('result');
       loadHistory();
-    } catch (err: any) {
+    } catch (err) {
       setError(apiErrorMessage(err, 'Erro ao submeter respostas.'));
     }
     setLoading(false);
@@ -578,7 +572,7 @@ export default function TriagePage() {
                           <input type="number" className="form-input" style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
                             placeholder="—"
                             value={val ?? ''}
-                            onChange={e => setVitals((v: any) => ({
+                            onChange={e => setVitals((v) => ({
                               ...v,
                               [key]: e.target.value ? Number(e.target.value) : undefined,
                               source: 'manual',

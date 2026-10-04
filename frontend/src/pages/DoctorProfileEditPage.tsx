@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useEffectEvent } from 'react';
 import {
   Stethoscope, User, Phone, MapPin, BookOpen, Save, CheckCircle2,
   AlertCircle, Loader2, Globe, Link2, ExternalLink, PlusCircle, Trash2,
 } from 'lucide-react';
 import api from '../api';
+import { apiErrorMessage } from '../utils/apiError';
 import { useT } from '../i18n/LanguageContext';
 
 const SPECIALTY_VALUES = [
@@ -25,7 +25,6 @@ type Education = { institution: string; degree: string; year: string };
 
 export default function DoctorProfileEditPage() {
   const { t } = useT();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -51,6 +50,8 @@ export default function DoctorProfileEditPage() {
   const [languages, setLanguages] = useState<string[]>(['PT']);
   const [education, setEducation] = useState<Education[]>([]);
 
+  const loadFailed = useEffectEvent(() => setError(t('dpe.load_error')));
+
   useEffect(() => {
     api.get('/api/v1/doctors/me')
       .then(r => {
@@ -72,9 +73,9 @@ export default function DoctorProfileEditPage() {
         setAcceptsNew(d.accepts_new_patients ?? true);
         setConsultTypes(d.consultation_types || ['teleconsulta']);
         setLanguages(d.languages || ['PT']);
-        setEducation((d.education || []).map((e: any) => ({ ...e, year: e.year?.toString() || '' })));
+        setEducation((d.education || []).map((e: Omit<Education, 'year'> & { year?: number | string }) => ({ ...e, year: e.year?.toString() || '' })));
       })
-      .catch(() => setError(t('dpe.load_error')))
+      .catch(() => loadFailed())
       .finally(() => setLoading(false));
   }, []);
 
@@ -119,8 +120,8 @@ export default function DoctorProfileEditPage() {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t('dpe.save_error'));
+    } catch (err) {
+      setError(apiErrorMessage(err, t('dpe.save_error')));
     } finally {
       setSaving(false);
     }

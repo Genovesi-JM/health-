@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState, type FormEvent } from 'react';
 import api from '../api';
 import { Navbar } from '../components/Navbar';
@@ -66,8 +67,8 @@ export default function DoctorApplyPage() {
       };
       await api.post('/api/v1/doctors/apply', body);
       setDone(true);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t('dapply.error'));
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, t('dapply.error')));
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,7 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import create_engine, event, inspect, text, update
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.health_models import (
     ClinicalCareTask, Consultation, ConsultationNotes, HealthAuditLog, PatientConsent,
@@ -126,13 +127,14 @@ def test_legacy_notes_are_never_implicitly_disclosed(api, people, db_session):
     assert complete(api, item, people).status_code == 409
 
 
-def test_tampered_finalized_content_is_not_disclosed(api, people, db_session):
+def test_finalized_content_cannot_be_overwritten_in_the_database(api, people, db_session):
     item = seed_consultation(db_session, people, "in_progress")
     assert complete(api, item, people).status_code == 200
-    db_session.execute(update(ConsultationNotes).where(ConsultationNotes.consultation_id == item.id).values(patient_summary="Changed underneath finalization"))
-    db_session.commit()
-    assert read(api, item, people).status_code == 409
-    assert complete(api, item, people).status_code == 409
+    with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+        db_session.execute(update(ConsultationNotes).where(ConsultationNotes.consultation_id == item.id).values(patient_summary="Changed underneath finalization"))
+    db_session.rollback()
+    assert read(api, item, people).json()["closeout"]["patient_summary"] == "Explicit patient instructions"
+    assert complete(api, item, people).status_code == 200
 
 
 def test_audit_failure_rolls_back_entire_closeout(api, people, db_session):

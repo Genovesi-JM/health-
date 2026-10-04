@@ -1,6 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { Heart, Target, Eye, Stethoscope, Headphones, FileCheck } from 'lucide-react';
+import { Heart, Target, Eye, Stethoscope, Headphones } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import api from '../api';
 import PatientDocumentsPage from './PatientDocumentsPage';
 
@@ -55,6 +55,43 @@ describe('patient document persistence and review', () => {
     expect(screen.getByText('Selecionado: novo.pdf')).toBeInTheDocument(); expect(screen.queryByText('Documento guardado.')).not.toBeInTheDocument();
     const key = vi.mocked(api.post).mock.calls[0][2]?.headers?.['Idempotency-Key']; upload(); await screen.findByLabelText('Texto para rever');
     expect(vi.mocked(api.post).mock.calls[1][2]?.headers?.['Idempotency-Key']).toBe(key);
+  });
+  it('keeps the chosen file, consent and retry key after invalid or cancelled selection', async () => {
+    setGet([]); vi.mocked(api.post).mockRejectedValue(new Error('Lost response'));
+    await show(); pick(); fireEvent.click(screen.getByRole('checkbox')); upload(); await screen.findByRole('alert');
+    const key = vi.mocked(api.post).mock.calls[0][2]?.headers?.['Idempotency-Key'];
+    pick(new File(['bad'], 'bad.html', { type: 'text/html' }));
+    fireEvent.change(screen.getByLabelText('Ficheiro'), { target: { files: [] } });
+    expect(screen.getByText('Selecionado: novo.pdf')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeChecked();
+    upload(); await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(api.post).mock.calls[1][2]?.headers?.['Idempotency-Key']).toBe(key);
+  });
+  it('requires separate consent when replacing the chosen document', async () => {
+    await show(); pick(); fireEvent.click(screen.getByRole('checkbox'));
+    pick(new File(['%PDF replacement'], 'outro.pdf', { type: 'application/pdf' }));
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Enviar e ler documento' })).toBeDisabled();
+  });
+  it('does not start another operation after an upload resolves for an unmounted account view', async () => {
+    setGet([]);
+    let finish: (value: unknown) => void = () => {};
+    vi.mocked(api.post).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const view = render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' });
+    pick(); fireEvent.click(screen.getByRole('checkbox')); upload();
+    await waitFor(() => expect(api.post).toHaveBeenCalledOnce()); view.unmount();
+    await act(async () => { finish({ data: fixture({ status: 'pending_processing' }) }); });
+    expect(api.post).toHaveBeenCalledOnce();
+  });
+  it('does not download private bytes after the owning account view unmounts', async () => {
+    const createUrl = vi.fn(); Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createUrl });
+    let finish: (value: unknown) => void = () => {};
+    const view = render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' });
+    vi.mocked(api.get).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descarregar original' }));
+    await waitFor(() => expect(api.get).toHaveBeenLastCalledWith(`${BASE}/doc-1/download`, { responseType: 'blob' }));
+    view.unmount(); await act(async () => { finish({ data: new Blob(['private content']) }); });
+    expect(createUrl).not.toHaveBeenCalled();
   });
   it('retains uploaded files after processing failure and retries only reading', async () => {
     setGet([]); vi.mocked(api.post).mockResolvedValueOnce({ data: fixture({ status: 'pending_processing', scan_status: 'pending', version: 1, extracted_text: null }) })

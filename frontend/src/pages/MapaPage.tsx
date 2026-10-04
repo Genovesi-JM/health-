@@ -45,10 +45,30 @@ const DEFAULT_ZOOM = 12;
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
+type Coordinates = [number, number];
+interface LeafletMap {
+  setView(center: Coordinates, zoom: number, options?: { animate: boolean }): LeafletMap;
+  fitBounds(bounds: Coordinates[], options: { padding: Coordinates; maxZoom: number }): void;
+  removeLayer(marker: LeafletMarker): void;
+  remove(): void;
+}
+interface LeafletMarker {
+  addTo(map: LeafletMap): LeafletMarker;
+  bindPopup(content: HTMLElement): LeafletMarker;
+  on(event: 'click', callback: () => void): LeafletMarker;
+  openPopup(): void;
+}
+interface LeafletApi {
+  map(element: HTMLElement, options: { scrollWheelZoom: boolean }): LeafletMap;
+  tileLayer(url: string, options: { attribution: string; maxZoom: number }): { addTo(map: LeafletMap): void };
+  divIcon(options: { className: string; html: string; iconSize: Coordinates; iconAnchor: Coordinates; popupAnchor: Coordinates }): object;
+  marker(coordinates: Coordinates, options: { icon: object }): LeafletMarker;
+}
+const leafletWindow = window as Window & { L?: LeafletApi };
+
 /** Load Leaflet from CDN once; resolves when window.L is available. */
-function loadLeaflet(): Promise<any> {
-  const w = window as any;
-  if (w.L) return Promise.resolve(w.L);
+function loadLeaflet(): Promise<LeafletApi> {
+  if (leafletWindow.L) return Promise.resolve(leafletWindow.L);
   if (!document.querySelector(`link[href="${LEAFLET_CSS}"]`)) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -56,23 +76,24 @@ function loadLeaflet(): Promise<any> {
     document.head.appendChild(link);
   }
   return new Promise((resolve, reject) => {
+    const loaded = () => leafletWindow.L ? resolve(leafletWindow.L) : reject(new Error('Map library unavailable'));
     const existing = document.querySelector(`script[src="${LEAFLET_JS}"]`) as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener('load', () => resolve((window as any).L));
+      existing.addEventListener('load', loaded, { once: true });
       existing.addEventListener('error', reject);
-      if ((window as any).L) resolve((window as any).L);
+      if (leafletWindow.L) resolve(leafletWindow.L);
       return;
     }
     const script = document.createElement('script');
     script.src = LEAFLET_JS;
     script.async = true;
-    script.onload = () => resolve((window as any).L);
+    script.onload = loaded;
     script.onerror = reject;
     document.head.appendChild(script);
   });
 }
 
-function pinIcon(L: any, color: string) {
+function pinIcon(L: LeafletApi, color: string) {
   return L.divIcon({
     className: 'kaya-map-pin',
     html: `<span style="display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></span>`,
@@ -88,14 +109,15 @@ export default function MapaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mapError, setMapError] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   const [typeFilter, setTypeFilter] = useState('');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const mapDivRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<Record<string, any>>({});
-  const leafletRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markersRef = useRef<Record<string, LeafletMarker>>({});
+  const leafletRef = useRef<LeafletApi | null>(null);
 
   // Fetch facilities.
   useEffect(() => {
@@ -112,7 +134,7 @@ export default function MapaPage() {
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [t]);
 
   // Init map once.
   useEffect(() => {
@@ -127,6 +149,7 @@ export default function MapaPage() {
           maxZoom: 19,
         }).addTo(map);
         mapRef.current = map;
+        setMapReady(true);
       })
       .catch(() => { if (active) setMapError(true); });
     return () => {
@@ -155,7 +178,7 @@ export default function MapaPage() {
     const map = mapRef.current;
     if (!L || !map) return;
 
-    Object.values(markersRef.current).forEach((m: any) => map.removeLayer(m));
+    Object.values(markersRef.current).forEach(m => map.removeLayer(m));
     markersRef.current = {};
 
     const bounds: [number, number][] = [];
@@ -163,11 +186,14 @@ export default function MapaPage() {
       if (f.latitude == null || f.longitude == null) return;
       const color = TYPE_COLOR[f.org_type] || '#2563eb';
       const marker = L.marker([f.latitude, f.longitude], { icon: pinIcon(L, color) }).addTo(map);
-      marker.bindPopup(
-        `<strong>${f.org_name}</strong><br/>${f.org_type_label}` +
-        (f.address ? `<br/>${f.address}` : '') +
-        (f.contact_phone ? `<br/>${f.contact_phone}` : ''),
-      );
+      const popup = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = f.org_name;
+      popup.append(name);
+      for (const value of [f.org_type_label, f.address, f.contact_phone]) {
+        if (value) popup.append(document.createElement('br'), document.createTextNode(value));
+      }
+      marker.bindPopup(popup);
       marker.on('click', () => setSelectedId(f.id));
       markersRef.current[f.id] = marker;
       bounds.push([f.latitude, f.longitude]);
@@ -176,7 +202,7 @@ export default function MapaPage() {
     if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
     }
-  }, [filtered, mapError]);
+  }, [filtered, mapReady]);
 
   const focusFacility = (f: Facility) => {
     setSelectedId(f.id);

@@ -12,11 +12,12 @@ export default function AuthCallbackPage() {
   const { login, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const token = searchParams.get('token') || searchParams.get('access_token');
+  const shownError = token ? error : searchParams.get('error') || t('authcb.failed');
 
   useEffect(() => {
     let cancelled = false;
     // Backend sends: ?token=...&email=...&role=...&name=...&redirect=...
-    const token = searchParams.get('token') || searchParams.get('access_token');
     const redirect = searchParams.get('redirect') || undefined;
 
     if (token) {
@@ -36,11 +37,9 @@ export default function AuthCallbackPage() {
           }
         }
       })();
-    } else {
-      setError(searchParams.get('error') || t('authcb.failed'));
     }
     return () => { cancelled = true; };
-  }, [searchParams, login, logout, refreshUser, navigate, t]);
+  }, [searchParams, token, login, logout, refreshUser, navigate, t]);
 
   return (
     <div className="auth-shell">
@@ -49,10 +48,10 @@ export default function AuthCallbackPage() {
           <img src={kayaLogo} alt="KAYA" style={{ width: 48, height: 48 }} />
           <span className="auth-brand-text">KAYA</span>
         </div>
-        {error ? (
+        {shownError ? (
           <>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('authcb.error_title')}</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>{error}</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>{shownError}</p>
             <button className="btn btn-primary" onClick={() => navigate('/login')}>{t('authcb.back_login')}</button>
           </>
         ) : (

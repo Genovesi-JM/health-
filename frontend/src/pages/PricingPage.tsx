@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import {
-  Heart, Video, Activity, Users, Building2,
+  Heart, Users, Building2,
   CheckCircle2, ArrowRight, Star, RefreshCw,
   Shield, Clock, TrendingUp,
 } from 'lucide-react';

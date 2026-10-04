@@ -58,10 +58,10 @@ export default function DoctorAgendaPage() {
   useEffect(() => {
     let active = true;
     setLoading(true); setLoadError(''); setAppts([]);
-    api.get('/api/v1/doctor/agenda/today', { params: { date: selectedDate, timezone, country } })
+    api.get<Appointment[]>('/api/v1/doctor/agenda/today', { params: { date: selectedDate, timezone, country } })
       .then(r => {
         if (!active) return;
-        const mapped: Appointment[] = (r.data || []).map((a: any) => ({
+        const mapped: Appointment[] = (r.data || []).map(a => ({
           id: a.id,
           time: a.scheduled_at ? new Intl.DateTimeFormat(locale, { timeZone: timezone, hour: '2-digit', minute: '2-digit', timeZoneName: 'shortOffset' }).format(new Date(a.scheduled_at)) : a.time,
           duration: a.duration ?? null,

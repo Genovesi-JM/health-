@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  MapPin, Phone, Video, Building2, Home, Globe, BookOpen,
+  MapPin, Video, Building2, Home, Globe, BookOpen,
   CheckCircle2, Loader2, ChevronLeft, Calendar, Star,
 } from 'lucide-react';
 import api from '../api';

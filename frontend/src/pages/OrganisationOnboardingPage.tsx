@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Building2, CheckCircle2, Loader2, MapPin, Plus, Trash2 } from 'lucide-react';
@@ -91,8 +92,8 @@ export default function OrganisationOnboardingPage() {
       });
       setOrg(r.data);
       return true;
-    } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao guardar.');
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, 'Erro ao guardar.'));
       return false;
     } finally { setBusy(false); }
   };
@@ -109,8 +110,8 @@ export default function OrganisationOnboardingPage() {
       const r = await api.post('/api/v1/organisations/me/locations', { name: locName.trim(), city: locCity.trim() || null });
       setOrg(r.data);
       setLocName(''); setLocCity('');
-    } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao adicionar localização.');
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, 'Erro ao adicionar localização.'));
     } finally { setBusy(false); }
   };
 
@@ -137,9 +138,8 @@ export default function OrganisationOnboardingPage() {
       await saveProfile();
       await api.post('/api/v1/organisations/me/submit');
       setDone(true);
-    } catch (e: any) {
-      const d = e.response?.data?.detail;
-      setError(typeof d === 'object' ? 'Precisa de pelo menos um documento e uma localização.' : (d || 'Erro ao submeter.'));
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, 'Não foi possível submeter. Verifique os documentos e as localizações.'));
     } finally { setBusy(false); }
   };
 

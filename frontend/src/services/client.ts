@@ -8,6 +8,7 @@
  */
 import api from '../api';
 import type { AxiosRequestConfig } from 'axios';
+import { apiErrorMessage, apiErrorStatus } from '../utils/apiError';
 
 /** A discriminated result so callers never have to try/catch for expected errors. */
 export type ApiResult<T> =
@@ -20,15 +21,24 @@ export interface ApiError {
   details?: unknown;
 }
 
-function toError(e: any): { error: ApiError; status: number } {
-  const status = e?.response?.status ?? 0;
-  const detail = e?.response?.data?.detail;
-  const message =
-    (typeof detail === 'string' && detail) ||
-    e?.response?.data?.message ||
-    e?.message ||
-    'Request failed';
-  return { error: { message, code: e?.code, details: e?.response?.data }, status };
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown> : undefined;
+}
+
+function toError(e: unknown): { error: ApiError; status: number } {
+  const thrown = record(e);
+  const data = record(thrown?.response)?.data;
+  const fallback = [record(data)?.message, thrown?.message]
+    .find((value): value is string => typeof value === 'string' && Boolean(value.trim()));
+  return {
+    error: {
+      message: apiErrorMessage(e, fallback || 'Request failed'),
+      code: typeof thrown?.code === 'string' ? thrown.code : undefined,
+      details: data,
+    },
+    status: apiErrorStatus(e) ?? 0,
+  };
 }
 
 export async function request<T>(config: AxiosRequestConfig): Promise<ApiResult<T>> {
