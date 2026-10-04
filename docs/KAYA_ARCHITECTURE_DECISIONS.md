@@ -1,5 +1,13 @@
 # Kaya architecture decisions
 
+## Coded application and two market preparation
+
+4 October 2026. The user selected Angola and Portugal, prioritising Angola, and agreed to proceed with the recommended React Native/Expo approach after clarifying standalone delivery. Continue React/TypeScript web/PWA, React Native/Expo mobile and the shared FastAPI backend in `health-`. Patients install Kaya; Expo Go is not a customer dependency. The responsive web/PWA is the first delivery target while the mobile app is completed against the same backend contracts. FlutterFlow remains a design/prototype reference. See the [current product and launch plan](../PRODUCT_AND_LAUNCH_PLAN.md#launch-market-and-delivery-decision) for rationale and work order.
+
+Prepare explicit AO/PT market configuration, localised copy and formatting, clinic timezones, provider eligibility, consent versions and access boundaries. Maintain a shared codebase while allowing separate storage or deployments according to the reviewed operating model. Cross-border care is a separate capability. Payments remain in the final implementation phase, with currency and price modelling prepared earlier.
+
+This is the current product and delivery decision. It supersedes the earlier single-market product assumption, while the historical Phase 0/1 implementation and release restrictions below remain in effect until reconciled through implementation. Adding a target market to the plan does not itself activate care routes, change a live deployment or certify launch readiness.
+
 ## Phase 0 default clinical launch hold
 
 14 September 2026. Engineering decision only. The original API initializes databases and exposes clinical routes, so a middleware added after startup would not prevent database side effects.

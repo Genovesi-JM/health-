@@ -2,7 +2,18 @@
 
 Generated from [canonical policy](../policy/kaya_phase1_policy.json). Run `python3 scripts/generate_kaya_policy.py --check` to verify mirrors, mounted API declarations and web route coverage. Do not edit generated files.
 
-**Planning: Angola — Luanda. Release: HOLD. All feature flags are false.** Every current web/Expo entrypoint is informational, including unknown routes and synthetic selections. `included_in_pilot` identifies a future design dependency, never an enabled service. Legacy implementation evidence does not establish correctness or approval.
+**Planning: Angola first, initially Luanda; Portugal preparation in parallel. Release policy: HOLD. All feature flags are false.** Market configuration supplies display and formatting data, never care eligibility or activation. `included_in_pilot` identifies a future design dependency, never an enabled service. Legacy implementation evidence does not establish correctness or approval.
+
+## Target markets
+
+Select a clinic timezone explicitly from its market's supported IANA zones. Portugal has no default city or timezone; daylight-saving rules depend on the selected zone and date. Locale, currency and device settings do not choose a service country.
+
+| Market | Launch role | Initial city | Locale | Currency | Clinic timezones |
+| --- | --- | --- | --- | --- | --- |
+| Angola (`AO`) | primary | Luanda | `pt-AO` | `AOA` | `Africa/Luanda` |
+| Portugal (`PT`) | preparation | Not selected | `pt-PT` | `EUR` | `Europe/Lisbon`, `Atlantic/Madeira`, `Atlantic/Azores` |
+
+## Capability status
 
 States: NOT_BUILT, MOCK, SYNTHETIC_ONLY, DISABLED_PENDING_GATE, PILOT, LIVE. No capability is PILOT or LIVE. The preserved backend synthetic fixture is isolated test source; the public runtime does not expose it.
 

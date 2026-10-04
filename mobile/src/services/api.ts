@@ -2,13 +2,18 @@
  * API service for KAYA mobile app.
  * Uses axios with Bearer token from SecureStore.
  *
- * Base URL is read from EXPO_PUBLIC_API_BASE_URL env var (falls back to localhost).
+ * EXPO_PUBLIC_API_URL is required for distribution; localhost is development-only.
  */
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { assertOperationalAccess } from '../phase1/policy';
+import { resolveApiBaseUrl } from '../config/apiUrl';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+const BASE_URL = resolveApiBaseUrl(
+  process.env.EXPO_PUBLIC_API_URL,
+  process.env.EXPO_PUBLIC_API_BASE_URL,
+  __DEV__,
+);
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,

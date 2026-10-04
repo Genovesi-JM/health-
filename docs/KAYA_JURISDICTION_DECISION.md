@@ -1,12 +1,22 @@
 # Kaya jurisdiction planning decision
 
-Recorded 14 September 2026. **Angola — Luanda is the user-selected planning market. Clinical launch remains HOLD; execution remains synthetic-only.**
+## Current target markets
+
+**Updated 4 October 2026. The user selected Angola and Portugal as launch markets, with Angola prioritised.** Luanda remains the initial Angola planning location; Portugal preparation proceeds alongside the first Angola journey. The user's instruction is the product-planning decision and does not require another market-selection confirmation.
+
+The [product and launch plan](../PRODUCT_AND_LAUNCH_PLAN.md#launch-market-and-delivery-decision) records the work order, country-specific preparation and selected React Native/Expo standalone mobile application with the existing React web/PWA and FastAPI backend. Market preparation must cover separate provider eligibility, service locations, consent/privacy documents, operational contacts and commercial configuration. Each market's launch readiness is evaluated separately.
+
+The canonical Phase 1 policy now includes explicit AO/PT planning metadata and generated web/mobile/backend copies. The existing Luanda pilot perimeter and release restrictions remain unchanged; target-market metadata does not activate care in Portugal. The historical evidence below records what was assessed on 14 September, not a current verification of the repository or live services.
+
+## Historical decision from 14 September 2026
+
+Recorded 14 September 2026. **Angola — Luanda was the user-selected planning market. Clinical launch was HOLD; execution was synthetic-only.**
 
 The user explicitly selected “Angola — Luanda” in this task in response to a planning-only market question. This records that human product-planning choice. It is not a clinical, legal, privacy, security, professional-licensing, hosting, or operating approval. No clinic, legal entity, clinician, data controller, emergency partner, payment arrangement, or launch date was approved by that selection. The agent has not supplied a signature or approval on anyone's behalf.
 
 The evidence reviewed below is repository source at Phase 1 starting HEAD `d6d99953846602ab411822cfa616e4c753f41ed7`. Historical documentation and configuration are evidence of prior assumptions, not evidence that services or contracts exist. No live service, provider, database, or deployment was inspected for this decision.
 
-## Decision record
+## Historical policy record
 
 The [canonical policy](../policy/kaya_phase1_policy.json) is the machine-readable authority; the [generated capability matrix](KAYA_CAPABILITY_MATRIX.md) maps its states to routes, copy and flags. Generated web/mobile/backend copies are derived views, not independent jurisdiction decisions.
 
@@ -27,7 +37,7 @@ The choice is based on the user's stated planning preference. Angola-focused pro
 
 The selected planning market must come from the explicit reviewed policy. Language, currency, IP address, device locale, translation availability, and Azure region must never infer or expand a supported jurisdiction. An unknown jurisdiction receives informational content only; all care workflows stay disabled.
 
-## Spain-first and Angola/Luanda comparison
+## Historical Spain and Angola comparison
 
 Each row identifies the decision and evidence still required. Both alternatives remain unapproved for patient use.
 
@@ -43,7 +53,7 @@ Each row identifies the decision and evidence still required. Both alternatives 
 | Provider contracts | No agreement or approval is established by optional Azure, AI, video, email, storage, or payment configuration. | Same gap, assessed for the exact Luanda workflow and controller/operator roles. AI/video/payments/credential automation/external messaging remain disabled. | Privacy and integration owners: processor inventory, contractual role, data categories, purpose, subprocessors, access, retention, failure behavior, and dated approvals. |
 | Hosting and transfers | Source defines an empty `spaincentral` foundation; no application runtime, approved data flow, recovery proof, or live readiness follows from it. | The same proposed Spanish hosting location may remain a technical hypothesis only. The effect of processing Luanda-related data there requires an explicit transfer/hosting decision; this task makes no legal finding. | Infrastructure and privacy owners with qualified counsel: exact hosting/backup/log/support locations, data-flow and transfer review, agreements, least privilege, restore evidence, and approved deployment digest. |
 
-The product plan identifies these external launch gates at [lines 85–98](../PRODUCT_AND_LAUNCH_PLAN.md#L85). The Azure foundation describes its empty scope and `spaincentral` assumption at [lines 1–13](../infra/azure/README.md#L1), both database destinations at [lines 44–56](../infra/azure/README.md#L44), public authenticated endpoints at [lines 84–90](../infra/azure/README.md#L84), and Angola-specific review gates at [lines 124–128](../infra/azure/README.md#L124). No legal or medical factual determination has been substituted for those required reviews.
+The product plan identifies these external launch gates in [section 6](../PRODUCT_AND_LAUNCH_PLAN.md#6-safety-privacy-and-operational-controls-required-before-public-launch). The Azure foundation describes its empty scope and `spaincentral` assumption at [lines 1–13](../infra/azure/README.md#L1), both database destinations at [lines 44–56](../infra/azure/README.md#L44), public authenticated endpoints at [lines 84–90](../infra/azure/README.md#L84), and Angola-specific review gates at [lines 124–128](../infra/azure/README.md#L124). No legal or medical factual determination has been substituted for those required reviews.
 
 ## Source contradictions and their planning disposition
 
@@ -61,7 +71,7 @@ The product plan identifies these external launch gates at [lines 85–98](../PR
 
 These contradictions remain tracked work until the relevant source, copy, tests, and approved deployment evidence are reconciled. This decision document does not itself claim those surfaces have been remediated.
 
-## External decisions still open
+## External decisions recorded open on 14 September
 
 | Gate | Status / approver | Evidence required before real participation |
 | --- | --- | --- |

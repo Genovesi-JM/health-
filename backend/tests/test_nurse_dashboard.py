@@ -10,8 +10,9 @@ import uuid
 from datetime import datetime, timedelta
 
 from app.health_models import Consultation, Patient
+from app.routers import nurse as nurse_routes
 
-from tests.test_clinician_credentials import _headers, _register, _verify_clinician
+from tests.test_clinician_credentials import _headers, _provision_clinician, _verify_clinician
 
 
 def _make_patient(client, db_session) -> Patient:
@@ -30,12 +31,22 @@ def _make_patient(client, db_session) -> Patient:
     return patient
 
 
-def test_stale_requests_excluded_from_queue_metrics(client, db_session):
-    nurse = _register(client, role="nurse", diploma_country="AO")
+def test_stale_requests_excluded_from_queue_metrics(client, db_session, monkeypatch):
+    nurse = _provision_clinician(client, role="nurse", diploma_country="AO")
     _verify_clinician(client, nurse)
     patient = _make_patient(client, db_session)
 
-    now = datetime.utcnow()
+    # The suite shares a database. Advance this router's clock past all prior
+    # fixture requests so only the two records below can affect queue metrics.
+    now = datetime(2099, 1, 1, 12, 0)
+
+    class QueueClock(datetime):
+        @classmethod
+        def utcnow(cls):
+            return now
+
+    monkeypatch.setattr(nurse_routes, "datetime", QueueClock)
+    monkeypatch.setenv("NURSE_QUEUE_ACTIVE_HOURS", "48")
     # A fresh, genuinely-waiting request (~10 min).
     db_session.add(Consultation(
         patient_id=patient.id, specialty="clinica_geral", status="requested",

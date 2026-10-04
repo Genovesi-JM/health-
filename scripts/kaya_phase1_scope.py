@@ -29,6 +29,12 @@ METRIC_CONTRACT = {
     "critical_boundary_comprehension_ratio": {"kind": "ratio", "operator": "min", "threshold": 0.9, "minimum_sample": 10, "required_evidence_kind": "consented_human_evaluation", "individual_failure_blocks_admission": True, "breach_action": "HOLD"},
 }
 OWNER_ROLES = {"operator", "licensed_clinic", "clinical_safety", "data_controller", "privacy", "security", "operations", "credentialing", "language_accessibility", "release_board"}
+TARGET_MARKETS = (
+    {"country_code": "AO", "country_name": "Angola", "launch_role": "primary", "initial_city": "Luanda",
+     "locale": "pt-AO", "currency": "AOA", "timezones": ["Africa/Luanda"]},
+    {"country_code": "PT", "country_name": "Portugal", "launch_role": "preparation", "initial_city": None,
+     "locale": "pt-PT", "currency": "EUR", "timezones": ["Europe/Lisbon", "Atlantic/Madeira", "Atlantic/Azores"]},
+)
 
 
 def require(condition):
@@ -51,6 +57,14 @@ def validate_policy(policy):
         require(planning["formal_jurisdiction_status"] == "BLOCKED_EXTERNAL")
         require(planning["country_code"] == pilot["country_code"] == "AO")
         require(planning["city"] == pilot["city"] == "Luanda")
+        # Display/formatting configuration records the user's planning choice;
+        # neither market is added to approved_jurisdictions by this selection.
+        markets = planning["target_markets"]
+        require(isinstance(markets, list) and len(markets) == len(TARGET_MARKETS))
+        for market, expected in zip(markets, TARGET_MARKETS):
+            require(isinstance(market, dict))
+            require(all(key in market and market[key] == value and type(market[key]) is type(value)
+                        for key, value in expected.items()))
         require(pilot["execution_mode"] == "synthetic_only")
         require(pilot["real_participants_enabled"] is False and pilot["automatic_resume"] is False)
         require(pilot["metric_status"] == "DRAFT_REQUIRES_HUMAN_APPROVAL")

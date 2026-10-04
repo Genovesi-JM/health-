@@ -98,7 +98,10 @@ export default function DoctorDashboardScreen() {
     if (!item.patient_id) return;
     setAccepting(item.id);
     try {
-      if (item.status !== 'in_progress') await api.post(`/api/v1/doctor/queue/${item.id}/accept`);
+      if (item.status !== 'in_progress') {
+        const action = item.status === 'scheduled' ? 'start' : 'accept';
+        await api.post(`/api/v1/doctor/queue/${item.id}/${action}`);
+      }
       navigation.navigate('Patient360', { patientId: item.patient_id });
       void load();
     } catch (requestError: any) {
@@ -271,4 +274,3 @@ const styles = StyleSheet.create({
   avatar: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#ccfbf1' },
   avatarText: { color: '#0f766e', fontSize: 11, fontWeight: '900' },
 });
-

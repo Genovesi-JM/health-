@@ -100,6 +100,44 @@ class DraftScopeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_policy(policy)
 
+    def test_target_markets_cannot_change_release_or_primary_pilot(self):
+        markets = POLICY["planning"]["target_markets"]
+        self.assertEqual([market["country_code"] for market in markets], ["AO", "PT"])
+        self.assertEqual([market["launch_role"] for market in markets], ["primary", "preparation"])
+        self.assertIsNone(markets[1]["initial_city"])
+        self.assertEqual(POLICY["pilot"]["country_code"], "AO")
+        for jurisdictions in [["AO"], ["PT"], ["AO", "PT"]]:
+            policy = copy.deepcopy(POLICY)
+            policy["release"]["approved_jurisdictions"] = jurisdictions
+            with self.assertRaises(ValueError):
+                validate_policy(policy)
+
+    def test_market_configuration_cannot_be_ambiguous_or_silently_fallback(self):
+        for value in [None, {}, [], [POLICY["planning"]["target_markets"][0]]]:
+            policy = copy.deepcopy(POLICY)
+            policy["planning"]["target_markets"] = value
+            with self.assertRaises(ValueError):
+                validate_policy(policy)
+        for index, field, value in [
+            (0, "country_code", "PT"), (0, "currency", "EUR"), (0, "locale", "pt-PT"),
+            (0, "timezones", ["Europe/Lisbon"]), (1, "launch_role", "primary"),
+            (1, "initial_city", "Lisbon"), (1, "currency", "AOA"),
+            (1, "timezones", ["Europe/Lisbon"]),
+        ]:
+            with self.subTest(index=index, field=field):
+                policy = copy.deepcopy(POLICY)
+                policy["planning"]["target_markets"][index][field] = value
+                with self.assertRaises(ValueError):
+                    validate_policy(policy)
+
+    def test_nullable_market_city_must_be_explicit(self):
+        policy = copy.deepcopy(POLICY)
+        self.assertIsNone(policy["planning"]["target_markets"][1]["initial_city"])
+        validate_policy(policy)
+        del policy["planning"]["target_markets"][1]["initial_city"]
+        with self.assertRaises(ValueError):
+            validate_policy(policy)
+
     def test_weakened_stop_rules_are_rejected(self):
         mutations = [
             ("safety_boundary_violation_count", "operator", "min"),

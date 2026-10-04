@@ -46,6 +46,8 @@ export default function DoctorQueuePage() {
   const [selected, setSelected] = useState<ConsultationQueueItem | null>(null);
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [acceptingEscalation, setAcceptingEscalation] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => { loadQueue(); }, []);
 
@@ -75,20 +77,35 @@ export default function DoctorQueuePage() {
     }
   };
 
-  const startConsultation = async (id: string) => {
+  const startConsultation = async (item: ConsultationQueueItem) => {
+    setPendingAction(item.id);
+    setActionError('');
     try {
-      await api.post(`/api/v1/doctor/queue/${id}/accept`);
+      const action = item.status === 'scheduled' ? 'start' : 'accept';
+      await api.post(`/api/v1/doctor/queue/${item.id}/${action}`);
       setSelected(null);
       loadQueue();
-    } catch { /* ignore */ }
+    } catch {
+      setActionError(t('queue.action_error'));
+      loadQueue();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const completeConsultation = async (id: string) => {
+    setPendingAction(id);
+    setActionError('');
     try {
       await api.post(`/api/v1/consultations/${id}/complete`, { outcome: 'resolved' });
       setSelected(null);
       loadQueue();
-    } catch { /* ignore */ }
+    } catch {
+      setActionError(t('queue.action_error'));
+      loadQueue();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
@@ -101,6 +118,7 @@ export default function DoctorQueuePage() {
         <h1>{t('queue.title')}</h1>
         <p>Consultas diretas e encaminhamentos estruturados da equipa de enfermagem.</p>
       </div>
+      {actionError && <p role="alert" className="alert alert-danger">{actionError}</p>}
 
       <section className="doctor-escalation-board">
         <header>
@@ -189,16 +207,16 @@ export default function DoctorQueuePage() {
                         </span>
                       </td>
                       <td><span className={`badge ${riskBadge(q.risk_level)}`}>{q.risk_level || '—'}</span></td>
-                      <td>{new Date(q.created_at).toLocaleDateString(locale)}</td>
+                      <td>{q.scheduled_at ? new Date(q.scheduled_at).toLocaleString(locale) : new Date(q.created_at).toLocaleDateString(locale)}<br /><span>{t(`consult.status_${q.status}`)}</span></td>
                       <td onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                           {q.status !== 'in_progress' && (
-                            <button className="btn btn-primary btn-sm" onClick={() => startConsultation(q.id)}>
-                              <Play size={13} /> {t('queue.start')}
+                            <button className="btn btn-primary btn-sm" disabled={pendingAction !== null} onClick={() => startConsultation(q)}>
+                              <Play size={13} /> {t(q.status === 'scheduled' ? 'queue.start' : 'queue.accept')}
                             </button>
                           )}
                           {q.status === 'in_progress' && (
-                            <button className="btn btn-sm" onClick={() => completeConsultation(q.id)}
+                            <button className="btn btn-sm" disabled={pendingAction !== null} onClick={() => completeConsultation(q.id)}
                               style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
                               <CheckCircle2 size={13} /> {t('queue.complete')}
                             </button>
@@ -254,12 +272,12 @@ export default function DoctorQueuePage() {
               {/* Quick actions */}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 {selected.status !== 'in_progress' && (
-                  <button className="btn btn-primary" style={{ flex: 1, fontSize: '0.82rem' }} onClick={() => startConsultation(selected.id)}>
-                    <Play size={14} /> Aceitar Consulta
+                  <button className="btn btn-primary" disabled={pendingAction !== null} style={{ flex: 1, fontSize: '0.82rem' }} onClick={() => startConsultation(selected)}>
+                    <Play size={14} /> {t(selected.status === 'scheduled' ? 'queue.start' : 'queue.accept')}
                   </button>
                 )}
                 {selected.status === 'in_progress' && (
-                  <button className="btn" style={{ flex: 1, fontSize: '0.82rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }} onClick={() => completeConsultation(selected.id)}>
+                  <button className="btn" disabled={pendingAction !== null} style={{ flex: 1, fontSize: '0.82rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }} onClick={() => completeConsultation(selected.id)}>
                     <CheckCircle2 size={14} /> Concluir
                   </button>
                 )}

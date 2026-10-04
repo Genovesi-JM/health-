@@ -239,10 +239,10 @@ def assert_doctor_can_access_patient(
 
     A doctor is allowed to access a patient's data when at least one of the
     following is true:
-    - The patient has a consultation (any status) assigned to this doctor.
+    - The patient has an accepted consultation assigned to this doctor.
     - The patient has an open prescription request directed at this doctor.
-    - The patient is in the doctor's queue (consultation.doctor_id is None but
-      specialty matches — handled via consultation with no doctor yet).
+
+    A directed request is not acceptance and does not grant record access.
 
     Admin / support access is handled separately and must be audited with a
     reason; that check is NOT done here.
@@ -255,6 +255,7 @@ def assert_doctor_can_access_patient(
         .filter(
             Consultation.doctor_id == doctor.id,
             Consultation.patient_id == patient_id,
+            Consultation.status.in_(("scheduled", "in_progress", "completed")),
         )
         .first()
     )

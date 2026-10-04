@@ -7,9 +7,29 @@
     "decision_status": "SELECTED_BY_USER",
     "approval_scope": "planning_only",
     "formal_jurisdiction_status": "BLOCKED_EXTERNAL",
-    "decision_date": "2026-09-14",
+    "decision_date": "2026-10-04",
     "decision_actor": "user in current task",
-    "decision_quote": "Angola — Luanda",
+    "decision_quote": "lets consider final launch market, angola and portugal(prepare for both priritise ngola). the second decision you can take.",
+    "target_markets": [
+      {
+        "country_code": "AO",
+        "country_name": "Angola",
+        "launch_role": "primary",
+        "initial_city": "Luanda",
+        "locale": "pt-AO",
+        "currency": "AOA",
+        "timezones": ["Africa/Luanda"]
+      },
+      {
+        "country_code": "PT",
+        "country_name": "Portugal",
+        "launch_role": "preparation",
+        "initial_city": null,
+        "locale": "pt-PT",
+        "currency": "EUR",
+        "timezones": ["Europe/Lisbon", "Atlantic/Madeira", "Atlantic/Azores"]
+      }
+    ],
     "inference_prohibited": [
       "language",
       "currency",
@@ -1418,7 +1438,7 @@
   "public_copy": {
     "title": "Kaya — pilot planning",
     "availability": "Kaya is not accepting participants or providing care through this application.",
-    "planning_notice": "Luanda, Angola is the selected planning location; clinical and operational approval is pending.",
+    "planning_notice": "Angola is the first launch market, initially Luanda. Portugal is being prepared in parallel; its initial location is not yet selected. Service availability remains subject to each market's release readiness.",
     "unavailable_actions": [
       "signup",
       "triage",

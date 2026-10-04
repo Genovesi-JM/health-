@@ -17,6 +17,12 @@ MAX_POLICY_BYTES = 1_000_000
 _HELD_STATES = {"NOT_BUILT", "MOCK", "SYNTHETIC_ONLY", "DISABLED_PENDING_GATE"}
 _TEST_STATES = {"UNVERIFIED", "PRESERVED_SOURCE", "NOT_BUILT", "MOCK"}
 _METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "WEBSOCKET"}
+_TARGET_MARKETS = (
+    {"country_code": "AO", "country_name": "Angola", "launch_role": "primary", "initial_city": "Luanda",
+     "locale": "pt-AO", "currency": "AOA", "timezones": ["Africa/Luanda"]},
+    {"country_code": "PT", "country_name": "Portugal", "launch_role": "preparation", "initial_city": None,
+     "locale": "pt-PT", "currency": "EUR", "timezones": ["Europe/Lisbon", "Atlantic/Madeira", "Atlantic/Azores"]},
+)
 
 
 class PolicyUnavailable(ValueError):
@@ -50,6 +56,18 @@ def _reject_nonfinite(value: str) -> None:
     raise PolicyUnavailable("Planning policy is unavailable")
 
 
+def _public_target_markets(value: Any) -> list[dict[str, Any]]:
+    """Whitelist planning metadata only; this never determines care eligibility."""
+    _require(isinstance(value, list) and len(value) == len(_TARGET_MARKETS))
+    result = []
+    for item, expected in zip(value, _TARGET_MARKETS):
+        market = _object(item)
+        _require(all(key in market and market[key] == setting and type(market[key]) is type(setting)
+                     for key, setting in expected.items()))
+        result.append({key: market[key] for key in expected})
+    return result
+
+
 def public_pilot_scope() -> dict[str, Any]:
     """Return an explicitly informational view of a validated, disabled policy."""
     try:
@@ -67,6 +85,10 @@ def public_pilot_scope() -> dict[str, Any]:
         _require(planning.get("decision_status") == "SELECTED_BY_USER")
         _require(planning.get("approval_scope") == "planning_only")
         _require(planning.get("formal_jurisdiction_status") == "BLOCKED_EXTERNAL")
+        target_markets = _public_target_markets(planning.get("target_markets"))
+        _require(country_code == target_markets[0]["country_code"])
+        _require(country_name == target_markets[0]["country_name"])
+        _require(city == target_markets[0]["initial_city"])
 
         release = _object(policy.get("release"))
         _require(release.get("status") == "HOLD")
@@ -134,6 +156,7 @@ def public_pilot_scope() -> dict[str, Any]:
             "decision_status": "SELECTED_BY_USER",
             "approval_scope": "planning_only",
             "formal_jurisdiction_status": "BLOCKED_EXTERNAL",
+            "target_markets": target_markets,
         },
         "release": {
             "status": "HOLD",

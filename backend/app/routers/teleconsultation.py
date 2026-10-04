@@ -24,6 +24,7 @@ from app.health_models import (
     TeleconsultationSession,
 )
 from app.rbac import log_health_audit
+from app.services.consultation_lifecycle import transition
 
 
 router = APIRouter(prefix="/api/v1/teleconsultations", tags=["teleconsultation"])
@@ -285,10 +286,13 @@ def start_session(
         or not doctor_participant.microphone_ready
     ):
         raise HTTPException(status_code=409, detail="O médico deve concluir o teste do dispositivo e o check-in.")
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_video_started",
+        allowed_from=("scheduled", "in_progress"), status="in_progress",
+        started_at=consultation.started_at or datetime.utcnow(),
+    )
     session.status = "in_progress"
     session.started_at = session.started_at or datetime.utcnow()
-    consultation.status = "in_progress"
-    consultation.started_at = consultation.started_at or datetime.utcnow()
     db.commit()
     log_health_audit(db, "teleconsultation.started", user.id, "teleconsultation_session", session.id, request=request)
     return _session_out(session, db)
@@ -301,7 +305,9 @@ def join_session(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _authorized_consultation(user, consultation_id, db)
+    consultation = _authorized_consultation(user, consultation_id, db)
+    if consultation.status != "in_progress":
+        raise HTTPException(status_code=409, detail="A consulta não está em curso.")
     session = _session(consultation_id, db)
     if session.status == "completed":
         raise HTTPException(status_code=409, detail="Teleconsulta já concluída.")
@@ -315,8 +321,6 @@ def join_session(
         raise HTTPException(status_code=409, detail="Faça o check-in e teste o dispositivo antes de entrar.")
     if not participant.camera_ready or not participant.microphone_ready:
         raise HTTPException(status_code=409, detail="Câmara e microfone devem estar prontos.")
-    participant.joined_at = datetime.utcnow()
-    db.commit()
     # Phase 25: no public-room fallback. Video is disabled unless an approved
     # provider is configured server-side; there is no meet.jit.si default and no
     # consultation-id-derived public room.
@@ -325,6 +329,8 @@ def join_session(
     video_base = os.getenv("VIDEO_BASE_URL", "").rstrip("/")
     if not video_base:
         raise HTTPException(status_code=503, detail="Teleconsulta indisponível: fornecedor de vídeo não configurado.")
+    participant.joined_at = datetime.utcnow()
+    db.commit()
     log_health_audit(db, "teleconsultation.joined", user.id, "teleconsultation_session", session.id, {"role": participant.role}, request)
     return {
         "room_url": f"{video_base}/{session.room_key}",
@@ -345,10 +351,14 @@ def complete_session(
     if user.role != "doctor":
         raise HTTPException(status_code=403, detail="A teleconsulta é encerrada pelo médico.")
     session = _session(consultation_id, db)
+    if session.status != "in_progress":
+        raise HTTPException(status_code=409, detail="A teleconsulta não está em curso.")
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_video_completed",
+        allowed_from=("in_progress",), status="completed", ended_at=datetime.utcnow(),
+    )
     session.status = "completed"
     session.ended_at = datetime.utcnow()
-    consultation.status = "completed"
-    consultation.ended_at = consultation.ended_at or datetime.utcnow()
     db.commit()
     log_health_audit(db, "teleconsultation.completed", user.id, "teleconsultation_session", session.id, request=request)
     return _session_out(session, db)

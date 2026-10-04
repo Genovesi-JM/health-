@@ -4,10 +4,10 @@ from __future__ import annotations
 Covers: Patient, Doctor, Triage, Consultation, Prescription, Referral,
 Corporate, Billing, Compliance, and Dashboard KPIs.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 # ── Roles ──
@@ -330,7 +330,7 @@ class ConsultationBookRequest(BaseModel):
     specialty: str = Field(default="clinica_geral")
     scheduled_at: Optional[datetime] = None
     next_available: bool = False
-    doctor_id: Optional[str] = None   # if set with scheduled_at, assign directly (scheduled)
+    doctor_id: Optional[str] = None   # preferred doctor; remains requested until accepted
 
 
 class ConsultationOut(BaseModel):
@@ -348,6 +348,16 @@ class ConsultationOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_serializer("scheduled_at", "started_at", "ended_at")
+    def serialize_utc(self, value: Optional[datetime]):
+        # The existing SQL columns store naive UTC. Keep the offset on the wire
+        # so browsers/mobile clients do not interpret it as their local time.
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
+
 
 class ConsultationCompleteRequest(BaseModel):
     subjective: Optional[str] = None
@@ -362,7 +372,7 @@ class ConsultationCancelRequest(BaseModel):
 
 
 class ConsultationQueueItem(BaseModel):
-    """Unassigned request or active consultation in the doctor's work queue."""
+    """Eligible shared request, directed request, or doctor's active consultation."""
     id: str
     patient_id: Optional[str] = None
     patient_name: Optional[str] = None
@@ -375,6 +385,14 @@ class ConsultationQueueItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("scheduled_at")
+    def serialize_utc(self, value: Optional[datetime]):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
 
 
 # ── Prescription ──

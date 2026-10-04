@@ -78,11 +78,24 @@ def _register(client, role="doctor"):
         "X-Forwarded-For": f"198.51.100.{uuid.uuid4().int % 200}",
     }, json=body)
     assert r.status_code == 201, r.text
+    if role in ('doctor', 'nurse'):
+        # Public registration deliberately keeps the account non-privileged.
+        # This fixture represents subsequent authorised clinical provisioning.
+        from app.database import SessionLocal
+        from app.models import User
+        with SessionLocal() as db:
+            user = db.query(User).filter(User.email == email).one()
+            assert user.role == 'patient'
+            user.role = role
+            db.commit()
+        login = client.post('/auth/login', json={'email': email, 'password': 'strong-pass'})
+        assert login.status_code == 200, login.text
+        return email, login.json()
     return email, r.json()
 
 
 def _headers(auth):
-    return {"Authorization": f"Bearer {auth['access_token']}"}
+    return {"Authorization": f"Bearer {auth.get('access_token') or auth['enrollment_token']}"}
 
 
 def _enroll(client, auth):
@@ -94,13 +107,32 @@ def _enroll(client, auth):
                          json={"code": totp_now(secret)})
     assert verify.status_code == 200, verify.text
     assert verify.json()["enabled"] is True
+    if 'session' in verify.json():
+        auth.clear()
+        auth.update(verify.json()['session'])
+    else:
+        # Enabling optional MFA invalidates the old unverified session too.
+        login = client.post('/auth/login', json={
+            'email': auth['user']['email'], 'password': 'strong-pass',
+        })
+        assert login.status_code == 200, login.text
+        session = client.post('/auth/mfa/challenge', json={
+            'mfa_token': login.json()['mfa_token'], 'code': totp_now(secret),
+        })
+        assert session.status_code == 200, session.text
+        auth.clear()
+        auth.update(session.json())
     return secret, verify.json()["recovery_codes"]
 
 
-def test_auth_response_flags_mandatory_for_doctor(client):
+def test_clinician_login_requires_enrollment_before_session(client):
     _email, auth = _register(client, role="doctor")
-    assert auth["mfa_mandatory"] is True
-    assert auth["mfa_enrolled"] is False
+    assert auth['mfa_enrollment_required'] is True
+    assert auth['enrollment_token']
+    assert 'access_token' not in auth
+    denied = client.get('/auth/me', headers=_headers(auth))
+    assert denied.status_code == 403
+    assert denied.headers['X-Kaya-Error-Code'] == 'mfa_enrollment_required'
 
 
 def test_auth_response_not_mandatory_for_patient(client):
@@ -179,13 +211,21 @@ def test_challenge_rejects_bad_code(client):
 
 
 def test_disable_requires_valid_code(client):
-    _email, auth = _register(client)
+    _email, auth = _register(client, role='patient')
     secret, _codes = _enroll(client, auth)
     bad = client.post("/auth/mfa/disable", headers=_headers(auth), json={"code": "000000"})
     assert bad.status_code == 401
     good = client.post("/auth/mfa/disable", headers=_headers(auth), json={"code": totp_now(secret)})
     assert good.status_code == 200
     assert good.json()["enabled"] is False
+
+
+def test_mandatory_mfa_cannot_be_disabled_with_valid_code(client):
+    _email, auth = _register(client, role='doctor')
+    secret, _codes = _enroll(client, auth)
+    denied = client.post('/auth/mfa/disable', headers=_headers(auth), json={'code': totp_now(secret)})
+    assert denied.status_code == 403
+    assert denied.headers['X-Kaya-Error-Code'] == 'mfa_required_for_role'
 
 
 def test_login_unchanged_for_non_enrolled_user(client):

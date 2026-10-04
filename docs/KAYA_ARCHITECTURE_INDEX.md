@@ -1,5 +1,7 @@
 # Kaya architecture index (Phase 4)
 
+**Delivery decision updated 4 October 2026:** Angola first, Portugal prepared in parallel. The selected stack is React web/PWA, React Native/Expo standalone mobile apps and FastAPI. The table below remains the 14 September source inventory; current mobile build and device validation are outstanding. See the [current product plan](../PRODUCT_AND_LAUNCH_PLAN.md#launch-market-and-delivery-decision).
+
 Evidence date 14 September 2026. This index makes the repository safe to evolve:
 one authoritative source, a precise status for every surface, and explicit edit
 boundaries. History is preserved; nothing user-owned was deleted.
@@ -17,7 +19,7 @@ boundaries. History is preserved; nothing user-owned was deleted.
   depend on `health-`); a rename must preserve history and update package,
   migration, CI, and deployment references together.
 
-## Surface status
+## Surface status recorded on 14 September 2026
 
 | Surface | Path | Status |
 | --- | --- | --- |

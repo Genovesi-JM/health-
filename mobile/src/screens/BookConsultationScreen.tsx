@@ -37,9 +37,9 @@ export default function BookConsultationScreen() {
         next_available: true,
       });
       Alert.alert(
-        'Consulta marcada',
-        'A sua consulta foi marcada. Pode agora efetuar o pagamento em "As minhas consultas".',
-        [{ text: 'Ver consultas', onPress: () => navigation.navigate('Consultations' as any) }],
+        'Pedido recebido',
+        'O seu pedido aguarda aceitação de um médico. Acompanhe o estado em "As minhas consultas".',
+        [{ text: 'Ver consultas', onPress: () => navigation.navigate('Consultations') }],
       );
       setSpecialty('');
     } catch (err: any) {
@@ -51,7 +51,7 @@ export default function BookConsultationScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.inner}>
       <Text style={styles.subtitle}>
-        Escolha a especialidade. Marcamos com o próximo profissional disponível.
+        Escolha a especialidade. O pedido será enviado para aceitação de um profissional.
       </Text>
 
       <Text style={styles.label}>Especialidade</Text>

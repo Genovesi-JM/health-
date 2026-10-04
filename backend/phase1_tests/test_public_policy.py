@@ -21,7 +21,14 @@ def valid_policy():
         "policy_version": 1,
         "planning": {"country_code": "AO", "country_name": "Angola", "city": "Luanda",
                      "decision_status": "SELECTED_BY_USER", "approval_scope": "planning_only",
-                     "formal_jurisdiction_status": "BLOCKED_EXTERNAL"},
+                     "formal_jurisdiction_status": "BLOCKED_EXTERNAL",
+                     "target_markets": [
+                         {"country_code": "AO", "country_name": "Angola", "launch_role": "primary",
+                          "initial_city": "Luanda", "locale": "pt-AO", "currency": "AOA", "timezones": ["Africa/Luanda"]},
+                         {"country_code": "PT", "country_name": "Portugal", "launch_role": "preparation",
+                          "initial_city": None, "locale": "pt-PT", "currency": "EUR",
+                          "timezones": ["Europe/Lisbon", "Atlantic/Madeira", "Atlantic/Azores"]},
+                     ]},
         "release": {"status": "HOLD", "approved_jurisdictions": [], "default_client_profile": "informational",
                     "unknown_jurisdiction_profile": "informational", "real_participants_enabled": False,
                     "external_communications_enabled": False, "provider_calls_enabled": False,
@@ -193,6 +200,7 @@ def test_metadata_is_whitelisted_and_does_not_expose_internal_bindings(boundary)
     data = valid_policy()
     data["internal_note"] = "not-for-public-output"
     data["planning"]["internal_note"] = "not-for-public-output"
+    data["planning"]["target_markets"][1]["internal_note"] = "not-for-public-output"
     data["capabilities"][0]["internal_note"] = "not-for-public-output"
     path.write_text(json.dumps(data))
     response = client.get(ENDPOINT)
@@ -202,12 +210,71 @@ def test_metadata_is_whitelisted_and_does_not_expose_internal_bindings(boundary)
     assert "ui_routes" not in response.text
 
 
+def test_target_markets_prioritize_angola_without_approving_either_country(boundary):
+    client, _, _ = boundary
+    result = client.get(ENDPOINT).json()
+    markets = result["planning"]["target_markets"]
+    assert [market["country_code"] for market in markets] == ["AO", "PT"]
+    assert [market["launch_role"] for market in markets] == ["primary", "preparation"]
+    assert markets[0]["initial_city"] == "Luanda"
+    assert markets[1]["initial_city"] is None
+    assert markets[1]["timezones"] == ["Europe/Lisbon", "Atlantic/Madeira", "Atlantic/Azores"]
+    assert result["release"]["approved_jurisdictions"] == []
+    assert all(enabled is False for enabled in result["feature_flags"].values())
+
+
+@pytest.mark.parametrize("index,field,value", [
+    (0, "country_code", "PT"), (0, "country_code", ["AO"]), (0, "launch_role", "LIVE"),
+    (0, "locale", "pt-PT"), (0, "currency", "EUR"), (0, "timezones", ["Europe/Lisbon"]),
+    (1, "country_code", "ES"), (1, "launch_role", "primary"), (1, "initial_city", "Lisbon"),
+    (1, "initial_city", False), (1, "locale", "pt-AO"), (1, "currency", "AOA"),
+    (1, "timezones", "Europe/Lisbon"), (1, "timezones", ["Europe/Lisbon"]),
+    (1, "timezones", ["Europe/Lisbon", "Atlantic/Madeira", "Africa/Luanda"]),
+])
+def test_invalid_target_market_metadata_fails_closed(boundary, index, field, value):
+    client, path, _ = boundary
+    data = valid_policy()
+    data["planning"]["target_markets"][index][field] = value
+    path.write_text(json.dumps(data))
+    response = client.get(ENDPOINT)
+    assert response.status_code == 503
+    assert response.json()["clinical_operations"] == "disabled"
+
+
+@pytest.mark.parametrize("case", ["missing", "empty", "malformed", "null_market", "missing_nullable_city", "duplicate", "reordered", "primary_mismatch"])
+def test_incomplete_or_ambiguous_markets_stay_held(boundary, case):
+    client, path, _ = boundary
+    data = valid_policy()
+    planning = data["planning"]
+    if case == "missing":
+        del planning["target_markets"]
+    elif case == "empty":
+        planning["target_markets"] = []
+    elif case == "malformed":
+        planning["target_markets"] = {"AO": {}, "PT": {}}
+    elif case == "null_market":
+        planning["target_markets"][1] = None
+    elif case == "missing_nullable_city":
+        del planning["target_markets"][1]["initial_city"]
+    elif case == "duplicate":
+        planning["target_markets"][1] = deepcopy(planning["target_markets"][0])
+    elif case == "reordered":
+        planning["target_markets"].reverse()
+    else:
+        planning["country_code"] = "PT"
+    path.write_text(json.dumps(data))
+    response = client.get(ENDPOINT)
+    assert response.status_code == 503
+    assert response.json()["clinical_operations"] == "disabled"
+
+
 def test_packaged_policy_is_valid_and_image_allows_only_reviewed_new_files(boundary, monkeypatch):
     _, _, policy = boundary
     monkeypatch.setattr(policy, "POLICY_PATH", APP / "kaya_policy.json")
     result = policy.public_pilot_scope()
     assert result["planning"]["country_code"] == "AO"
     assert result["planning"]["city"] == "Luanda"
+    assert [market["country_code"] for market in result["planning"]["target_markets"]] == ["AO", "PT"]
     assert result["service_mode"] == "informational_only"
     allowlist = (APP.parent / ".dockerignore").read_text().splitlines()
     assert "!app/phase1_policy.py" in allowlist
