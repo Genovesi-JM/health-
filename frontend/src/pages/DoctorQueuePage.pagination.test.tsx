@@ -11,7 +11,7 @@ vi.mock('../components/TriagePhotoReview', () => ({ default: () => <p>Private tr
 vi.mock('../components/ConsultationCloseout', () => ({ default: () => <p>Private closeout content</p> }));
 
 const visit = { id: 'visit', patient_id: 'patient', patient_name: 'Private patient name', chief_complaint: 'Private clinical complaint',
-  specialty: 'clinica_geral', status: 'in_progress', triage_session_id: 'triage', reschedule_revision: 3,
+  specialty: 'clinica_geral', status: 'in_progress', triage_session_id: 'triage', reschedule_revision: 3, request_expiry_state: 'open', requested_expires_at: '2099-01-01T00:00:00Z',
   created_at: '2026-10-04T10:00:00Z' };
 const escalation = { id: 'escalation', patient_id: 'other-patient', patient_name: 'Private escalation patient',
   reason: 'Private escalation reason', clinical_summary: 'Private escalation summary', urgency: 'high', status: 'pending', created_at: visit.created_at };

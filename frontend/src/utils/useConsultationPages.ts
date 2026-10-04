@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { getSession } from '../api';
 
 type Page<T> = { items: T[]; next_cursor: string | null };
-export function useConsultationPages<T extends { id: string }>(path: string, view?: string) {
+export function useConsultationPages<T extends { id: string }>(path: string, view?: string, onAccessLost?: () => void) {
   const owner = getSession()?.userId;
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,6 +11,7 @@ export function useConsultationPages<T extends { id: string }>(path: string, vie
   const [moreError, setMoreError] = useState('');
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [accessLost, setAccessLost] = useState(false);
+  const [accessEpoch, setAccessEpoch] = useState(0);
   const sequence = useRef(0);
   const busy = useRef(false);
   const active = useRef(true);
@@ -34,17 +35,17 @@ export function useConsultationPages<T extends { id: string }>(path: string, vie
     } catch (failure) {
       if (!current()) return;
       const status = (failure as { response?: { status?: number } })?.response?.status;
-      if (status === 401 || status === 403) { setAccessLost(true); setItems([]); setNextCursor(null); setError('O acesso mudou. Atualize a sessão para continuar.'); }
+      if (status === 401 || status === 403) { setAccessEpoch(value => value + 1); setAccessLost(true); setItems([]); setNextCursor(null); setError('O acesso mudou. Atualize a sessão para continuar.'); onAccessLost?.(); }
       else if (reset) setError('Não foi possível carregar as consultas. Tente atualizar a lista.');
       else setMoreError(status === 422 ? 'A referência da página expirou. Atualize a lista para continuar.' : 'Não foi possível carregar mais consultas. Tente novamente.');
     } finally {
       if (current()) { busy.current = false; setLoading(false); setLoadingMore(false); }
     }
-  }, [path, view, owner]);
+  }, [path, view, owner, onAccessLost]);
   useEffect(() => {
     active.current = true; setItems([]); void load(null, true);
     return () => { active.current = false; sequence.current += 1; busy.current = false; };
   }, [load]);
-  return { items, setItems, loading, loadingMore, error, moreError, nextCursor, accessLost,
+  return { items, setItems, loading, loadingMore, error, moreError, nextCursor, accessLost, accessEpoch,
     refresh: () => load(null, true), loadMore: () => nextCursor ? load(nextCursor, false) : Promise.resolve() };
 }

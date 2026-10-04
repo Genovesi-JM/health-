@@ -118,6 +118,15 @@ fresh consent. Web and native do not interpret a successful picker or upload as 
 clean malware scan or a clinically validated reading. See
 [native validation](KAYA_NATIVE_BUILD_2026-10-04.md#pdf-selection-session-isolation-and-offline-android-smoke).
 
+Native metadata pages and detail loading now match the web workflow. A bounded,
+owner-scoped SecureStore record retains the pending upload UUID, explicit consent
+and cached-file reference across restart. The owner-only
+`/api/v1/patient-documents/requests/{idempotency_key}` lookup recovers a committed
+document without that file. A missing result never proves a concurrent request
+cannot commit. Explicitly discarding local recovery requires a history-review
+acknowledgement and does not delete the server document. No document bytes or
+extracted text are stored in the recovery reference.
+
 On web, an upload with an unknown result locks replacement and consent controls
 until the exact request can be retried. A later generic failure does not prove
 the first attempt was absent. Keep the page open during this recovery: browser

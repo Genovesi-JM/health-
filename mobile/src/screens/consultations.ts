@@ -8,9 +8,14 @@ export type PatientConsultation = {
   country?: 'AO' | 'PT' | null;
   timezone?: string | null;
   doctor_id?: string | null;
+  patient_id?: string;
+  patient_name?: string | null;
   payment_status?: string;
   payment_id?: string | null;
   reschedule_revision?: number;
+  requested_expires_at?: string | null;
+  expired_at?: string | null;
+  request_expiry_state?: 'open' | 'expiry_pending' | 'review_required' | 'expired' | null;
   started_at?: string | null;
   ended_at?: string | null;
 };
@@ -64,7 +69,7 @@ export type PatientConsultationDetail = {
 export const CONSULTATION_STATUS: Record<string, string> = {
   requested: 'A aguardar aceitação', scheduled: 'Horário confirmado',
   in_progress: 'Em curso', completed: 'Concluída',
-  cancelled: 'Cancelada', no_show: 'Não realizada',
+  cancelled: 'Cancelada', no_show: 'Não realizada', expired: 'Pedido expirado',
 };
 
 export const CONSULTATION_OUTCOME: Record<string, string> = {
@@ -176,8 +181,8 @@ export async function loadPatientConsultation(api: ConsultationApi, id: string):
   };
 }
 
-export function canCancelConsultation(status: string): boolean {
-  return status === 'requested' || status === 'scheduled';
+export function canCancelConsultation(status: string, expiryState?: PatientConsultation['request_expiry_state']): boolean {
+  return status === 'scheduled' || (status === 'requested' && (expiryState === 'open' || expiryState === 'expiry_pending'));
 }
 
 export function consultationNextStep(status: string): string {
@@ -187,6 +192,7 @@ export function consultationNextStep(status: string): string {
   if (status === 'completed') return 'Consulte abaixo as orientações que o médico disponibilizou.';
   if (status === 'cancelled') return 'Esta consulta foi cancelada. Pode fazer um novo pedido em As minhas consultas.';
   if (status === 'no_show') return 'Esta consulta não foi realizada. Pode fazer um novo pedido em As minhas consultas.';
+  if (status === 'expired') return 'O pedido expirou sem confirmação de atendimento. Pode fazer um novo pedido em As minhas consultas.';
   return 'Atualize esta página para acompanhar o estado da consulta.';
 }
 

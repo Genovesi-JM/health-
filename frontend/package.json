@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prebuild": "node scripts/test-prototype.cjs"
+    "prebuild": "node scripts/test-prototype.cjs",
+    "postbuild": "node scripts/test-route-build.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",

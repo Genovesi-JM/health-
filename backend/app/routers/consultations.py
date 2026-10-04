@@ -25,7 +25,7 @@ from sqlalchemy import and_, or_
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import User
+from app.models import User, UserProfile
 from app.health_models import (
     Patient, Doctor, Consultation, ConsultationNotes, TriageSession, TriageResult, HealthAuditLog,
 )
@@ -43,6 +43,7 @@ from app.services.consultation_closeout import finalize_consultation, closeout_r
 
 from app.services.consultation_pages import consultation_page, history_query, private_page
 from app.services.specialties import normalize_specialty
+from app.services.request_expiry import annotate_expiry, safely_due_sql
 from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ def book_consultation(
     from app.services.appointment_booking import create_booking
     consultation, _ = create_booking(db, body, patient, user, idempotency_key)
 
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 @router.post("/api/v1/consultations/{consultation_id}/reschedule", response_model=ConsultationOut)
@@ -90,7 +91,7 @@ def reschedule_consultation(
         raise HTTPException(404, "Consulta não encontrada.")
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    return reschedule(db, consultation, body, patient, user, idempotency_key)
+    return annotate_expiry([reschedule(db, consultation, body, patient, user, idempotency_key)], db)[0]
 
 
 @router.get("/api/v1/consultations/me/page")
@@ -104,7 +105,7 @@ def patient_consultation_page(
     rows, next_cursor = consultation_page(query, viewer=patient.user_id, owner=patient.id,
         scope="patient-consultations", limit=limit, cursor=cursor, filters={"view": view, "status": status})
     private_page(response)
-    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in rows], "next_cursor": next_cursor}
+    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in annotate_expiry(rows, db)], "next_cursor": next_cursor}
 
 
 @router.get("/api/v1/consultations/me", response_model=List[ConsultationOut])
@@ -120,7 +121,7 @@ def my_consultations(
         q = q.filter(Consultation.status == status)
     if consultation_id:
         q = q.filter(Consultation.id == consultation_id)
-    return q.order_by(Consultation.created_at.desc()).limit(100).all()
+    return annotate_expiry(q.order_by(Consultation.created_at.desc()).limit(100).all(), db)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -148,12 +149,22 @@ def _queue_query(user, db, specialty):
         # A display filter can narrow access, never expand it to another specialty.
         q = q.filter(Consultation.specialty == normalize_specialty(specialty))
 
-    return q, doctor
+    return q.filter(~safely_due_sql()), doctor
+
+
+def _patient_names(consultations, db):
+    identifiers = {item.patient_id for item in consultations}
+    if not identifiers:
+        return {}
+    return {identifier: name or "Paciente" for identifier, name in db.query(Patient.id, UserProfile.full_name)
+        .join(User, User.id == Patient.user_id).outerjoin(UserProfile, UserProfile.user_id == User.id)
+        .filter(Patient.id.in_(identifiers)).all()}
 
 
 def _queue_items(consultations, db):
     items = []
-    for c in consultations:
+    names = _patient_names(consultations, db)
+    for c in annotate_expiry(consultations, db):
         # Get triage info if available (minimal patient data)
         risk_level = None
         chief_complaint = None
@@ -169,24 +180,16 @@ def _queue_items(consultations, db):
                 if result:
                     risk_level = result.risk_level
 
-        # Resolve patient display name
-        patient_name = None
-        try:
-            pat = db.query(Patient).filter(Patient.id == c.patient_id).first()
-            if pat:
-                u = db.get(User, pat.user_id)
-                if u:
-                    patient_name = u.name or u.email.split("@")[0]
-        except Exception:
-            pass
-
         items.append(ConsultationQueueItem(
             id=c.id,
             patient_id=c.patient_id,
-            patient_name=patient_name,
+            patient_name=names.get(c.patient_id, "Paciente"),
             triage_session_id=c.triage_session_id,
             specialty=c.specialty,
             status=c.status,
+            requested_expires_at=c.requested_expires_at,
+            expired_at=c.expired_at,
+            request_expiry_state=c.request_expiry_state,
             risk_level=risk_level,
             chief_complaint=chief_complaint,
             scheduled_at=c.scheduled_at,
@@ -234,8 +237,11 @@ def assigned_consultation_page(
     query = history_query(db.query(Consultation).filter(Consultation.doctor_id == doctor.id), view=view, status=status)
     rows, next_cursor = consultation_page(query, viewer=user.id, owner=doctor.id, scope="doctor-consultations",
         limit=limit, cursor=cursor, filters={"view": view, "status": status})
+    names = _patient_names(rows, db)
+    for row in rows:
+        row.patient_name = names.get(row.patient_id, "Paciente")
     private_page(response)
-    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in rows], "next_cursor": next_cursor}
+    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in annotate_expiry(rows, db)], "next_cursor": next_cursor}
 
 
 @router.get("/api/v1/doctor/consultations", response_model=List[ConsultationOut])
@@ -252,7 +258,7 @@ def doctor_consultations(
     q = db.query(Consultation).filter(Consultation.doctor_id == doctor.id)
     if status:
         q = q.filter(Consultation.status == status)
-    return q.order_by(Consultation.created_at.desc()).limit(100).all()
+    return annotate_expiry(q.order_by(Consultation.created_at.desc()).limit(100).all(), db)
 
 
 @router.post("/api/v1/doctor/queue/{consultation_id}/accept", response_model=ConsultationOut)
@@ -290,7 +296,7 @@ def accept_consultation(
     db.commit()
     db.refresh(consultation)
 
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 @router.post("/api/v1/doctor/queue/{consultation_id}/start", response_model=ConsultationOut)
@@ -321,7 +327,7 @@ def start_consultation(
     db.commit()
     db.refresh(consultation)
 
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 @router.post("/api/v1/consultations/{consultation_id}/complete", response_model=ConsultationOut)
@@ -350,7 +356,7 @@ def complete_consultation(
         db.rollback()
         raise HTTPException(503, "Não foi possível confirmar a gravação. Tente novamente com o mesmo conteúdo.") from None
 
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 @router.post("/api/v1/consultations/{consultation_id}/closeout/amendments")
@@ -455,12 +461,13 @@ def cancel_consultation(
         allowed_from=(("requested", "scheduled") if user.role in (RoleEnum.PATIENT, "cliente")
                       else ("requested", "scheduled", "in_progress")), status="cancelled",
         cancellation_reason=body.reason,
+        patient_cancel=user.role in (RoleEnum.PATIENT, "cliente"),
     )
     end_video(db, consultation, user.id, datetime.utcnow())
     db.commit()
     db.refresh(consultation)
 
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 # ── Patient review of a completed consultation ───────────────────────────────

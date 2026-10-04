@@ -3,7 +3,7 @@ import secrets
 import warnings
 from pathlib import Path
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from typing import Optional
 
 _INSECURE_DEFAULT = "CHANGE_ME"
@@ -150,6 +150,7 @@ class Settings(BaseSettings):
     # POST /api/v1/compliance/expiry/scan endpoint).
     expiry_scan_enabled: bool = False
     expiry_scan_interval_hours: int = 24
+    consultation_request_ttl_hours: int = Field(default=24, ge=1, le=168)
 
     # Pydantic v2 settings: accept extra env vars (ignore unknown variables)
     model_config = {

@@ -10,6 +10,9 @@ import TriagePhotoReview from '../components/TriagePhotoReview';
 import ConsultationCloseout from '../components/ConsultationCloseout';
 import { formatAppointmentTime } from '../utils/appointments';
 import { useConsultationPages } from '../utils/useConsultationPages';
+import DoctorConsultationHistory from '../components/DoctorConsultationHistory';
+import { requestCanProceed, requestExpiryMessage } from '../utils/requestExpiry';
+import { apiErrorStatus } from '../utils/apiError';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
 
@@ -41,10 +44,25 @@ interface Escalation {
 }
 
 export default function DoctorQueuePage() {
+  const [accessLost, setAccessLost] = useState(false);
+  const denyAccess = useCallback(() => setAccessLost(true), []);
+  // Unmount the entire clinical scope on authoritative denial. Its independent
+  // requests and selected records must never survive into a restored scope.
+  return accessLost ? <><p role="alert">O acesso mudou. Atualize a sessão para continuar.</p>
+    <button className="btn btn-secondary" onClick={() => setAccessLost(false)}>Atualizar consultas</button></>
+    : <DoctorQueueScope onAccessLost={denyAccess} />;
+}
+
+function DoctorQueueScope({ onAccessLost }: { onAccessLost: () => void }) {
   const { t, lang } = useT();
   const navigate = useNavigate();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
-  const history = useConsultationPages<ConsultationQueueItem>('/api/v1/doctor/queue/page');
+  const escalationSequence = useRef(0);
+  const mounted = useRef(true);
+  const denyClinicalAccess = useCallback(() => {
+    mounted.current = false; escalationSequence.current += 1; onAccessLost();
+  }, [onAccessLost]);
+  const history = useConsultationPages<ConsultationQueueItem>('/api/v1/doctor/queue/page', undefined, denyClinicalAccess);
   const queue = history.items;
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ConsultationQueueItem | null>(null);
@@ -53,18 +71,13 @@ export default function DoctorQueuePage() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
   const [escalationError, setEscalationError] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
   const [closingId, setClosingId] = useState<string | null>(null);
   const [closeoutDirty, setCloseoutDirty] = useState(false);
   const [closeoutBusy, setCloseoutBusy] = useState(false);
-  const escalationSequence = useRef(0);
-  const mounted = useRef(true);
   const dismissCloseout = () => {
     if (!closeoutDirty || window.confirm('Sair e perder o rascunho de conclusão desta sessão?')) { setClosingId(null); setCloseoutDirty(false); }
   };
-  useEffect(() => {
-    if (history.accessLost) { escalationSequence.current += 1; setSelected(null); setClosingId(null); setEscalations([]); setLoading(false); }
-  }, [history.accessLost]);
-
   const refreshEscalations = useCallback(async () => {
     setEscalationError('');
     const ticket = ++escalationSequence.current;
@@ -73,10 +86,13 @@ export default function DoctorQueuePage() {
     try {
       const response = await api.get('/api/v1/clinical-operations/escalations', { params: { status: 'pending' } });
       if (current()) setEscalations(response.data.items || []);
-    } catch {
-      if (current()) { setEscalations([]); setEscalationError('Não foi possível carregar os encaminhamentos. Atualize a lista.'); }
+    } catch (failure) {
+      if (current()) {
+        if ([401, 403].includes(apiErrorStatus(failure) ?? 0)) denyClinicalAccess();
+        else setEscalationError('Não foi possível carregar os encaminhamentos. Atualize a lista.');
+      }
     } finally { if (current()) setLoading(false); }
-  }, []);
+  }, [denyClinicalAccess]);
   useEffect(() => {
     mounted.current = true; void refreshEscalations();
     return () => { mounted.current = false; escalationSequence.current += 1; };
@@ -92,15 +108,19 @@ export default function DoctorQueuePage() {
     setAcceptingEscalation(item.id);
     try {
       await api.post(`/api/v1/clinical-operations/escalations/${item.id}/accept`);
+      if (!mounted.current) return;
       navigate(`/clinician/patients/${item.patient_id}`);
-    } catch {
-      loadQueue();
+    } catch (failure) {
+      if (!mounted.current) return;
+      if ([401, 403].includes(apiErrorStatus(failure) ?? 0)) denyClinicalAccess();
+      else loadQueue();
     } finally {
       setAcceptingEscalation(null);
     }
   };
 
   const startConsultation = async (item: ConsultationQueueItem) => {
+    if (!requestCanProceed(item)) { setActionError('O prazo ou a elegibilidade do pedido mudou. Atualize a lista.'); return; }
     if (!Number.isSafeInteger(item.reschedule_revision) || item.reschedule_revision! < 0) {
       setActionError('Não foi possível confirmar a versão do horário. Atualize a lista.'); return;
     }
@@ -109,9 +129,12 @@ export default function DoctorQueuePage() {
     try {
       const action = item.status === 'scheduled' ? 'start' : 'accept';
       await api.post(`/api/v1/doctor/queue/${item.id}/${action}`, undefined, { params: { expected_revision: item.reschedule_revision ?? 0 } });
+      if (!mounted.current) return;
       setSelected(null);
       loadQueue();
-    } catch {
+    } catch (failure) {
+      if (!mounted.current) return;
+      if ([401, 403].includes(apiErrorStatus(failure) ?? 0)) { denyClinicalAccess(); return; }
       setActionError(t('queue.action_error'));
       setSelected(null);
       loadQueue();
@@ -121,7 +144,7 @@ export default function DoctorQueuePage() {
   };
 
 
-  if (loading || history.loading) return <div className="page-loading"><div className="spinner" /></div>;
+  if (loading || (history.loading && !queue.length && !selected && !closingId && !showHistory)) return <div className="page-loading"><div className="spinner" /></div>;
   if (history.accessLost) return <><p role="alert">{history.error}</p><button className="btn btn-secondary" onClick={loadQueue}>Atualizar consultas</button></>;
 
   const riskMeta = selected?.risk_level ? RISK_MAP[selected.risk_level.toUpperCase()] : null;
@@ -136,9 +159,12 @@ export default function DoctorQueuePage() {
       {escalationError && <p role="alert">{escalationError}</p>}
       {history.error && <p role="alert">{history.error}</p>}
       {history.moreError && <p role="alert">{history.moreError}</p>}
+      {history.loading && <p role="status">A atualizar consultas…</p>}
       <button className="btn btn-secondary" onClick={loadQueue}>Atualizar consultas</button>
       {history.nextCursor && <button className="btn btn-secondary" disabled={history.loadingMore} onClick={() => void history.loadMore()}>{history.loadingMore ? 'A carregar…' : 'Carregar mais consultas'}</button>}
       {history.nextCursor && <p>A fila continua. Carregue mais para ver os restantes pedidos.</p>}
+      <button className="btn btn-secondary" aria-expanded={showHistory} onClick={() => setShowHistory(value => !value)}>{showHistory ? 'Fechar histórico' : 'Ver histórico das minhas consultas'}</button>
+      {showHistory && <DoctorConsultationHistory onAccessLost={denyClinicalAccess} />}
 
       <section className="doctor-escalation-board">
         <header>
@@ -227,11 +253,11 @@ export default function DoctorQueuePage() {
                         </span>
                       </td>
                       <td><span className={`badge ${riskBadge(q.risk_level)}`}>{q.risk_level || '—'}</span></td>
-                      <td>{q.scheduled_at ? formatAppointmentTime(q.scheduled_at, q.timezone || 'UTC', locale) : new Date(q.created_at).toLocaleDateString(locale)}{q.scheduled_end_at && <><br />{formatAppointmentTime(q.scheduled_end_at, q.timezone || 'UTC', locale)}</>}<br /><span>{t(`consult.status_${q.status}`)}</span></td>
+                      <td>{q.scheduled_at ? formatAppointmentTime(q.scheduled_at, q.timezone || 'UTC', locale) : new Date(q.created_at).toLocaleDateString(locale)}{q.scheduled_end_at && <><br />{formatAppointmentTime(q.scheduled_end_at, q.timezone || 'UTC', locale)}</>}<br /><span>{t(`consult.status_${q.status}`)}</span>{requestExpiryMessage(q) && <p>{requestExpiryMessage(q)}</p>}</td>
                       <td onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                           {q.status !== 'in_progress' && (
-                            <button className="btn btn-primary btn-sm" disabled={pendingAction !== null} onClick={() => startConsultation(q)}>
+                            <button className="btn btn-primary btn-sm" disabled={pendingAction !== null || !requestCanProceed(q)} onClick={() => startConsultation(q)}>
                               <Play size={13} /> {t(q.status === 'scheduled' ? 'queue.start' : 'queue.accept')}
                             </button>
                           )}
@@ -292,12 +318,12 @@ export default function DoctorQueuePage() {
               {/* Quick actions */}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 {selected.status !== 'in_progress' && (
-                  <button className="btn btn-primary" disabled={pendingAction !== null} style={{ flex: 1, fontSize: '0.82rem' }} onClick={() => startConsultation(selected)}>
+                  <button className="btn btn-primary" disabled={pendingAction !== null || !requestCanProceed(selected)} style={{ flex: 1, fontSize: '0.82rem' }} onClick={() => startConsultation(selected)}>
                     <Play size={14} /> {t(selected.status === 'scheduled' ? 'queue.start' : 'queue.accept')}
                   </button>
                 )}
                 {selected.status === 'in_progress' && (
-                  <button className="btn" disabled={pendingAction !== null} style={{ flex: 1, fontSize: '0.82rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }} onClick={() => setClosingId(selected.id)}>
+                  <button className="btn" disabled={pendingAction !== null || !requestCanProceed(selected)} style={{ flex: 1, fontSize: '0.82rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }} onClick={() => setClosingId(selected.id)}>
                     <CheckCircle2 size={14} /> Concluir
                   </button>
                 )}
@@ -327,7 +353,7 @@ export default function DoctorQueuePage() {
       {closingId && <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Concluir consulta">
         <div className="modal" style={{ width: 'min(760px, 95vw)', maxHeight: '90vh', overflowY: 'auto' }}>
           <div className="modal-header"><h3>Rever e concluir consulta</h3><button type="button" className="btn btn-sm" onClick={dismissCloseout} disabled={closeoutBusy} aria-label="Fechar conclusão"><X size={20} /></button></div>
-          <div className="modal-body"><ConsultationCloseout consultationId={closingId} role="doctor" onDirtyChange={setCloseoutDirty} onBusyChange={setCloseoutBusy} onFinalized={() => {
+          <div className="modal-body"><ConsultationCloseout consultationId={closingId} role="doctor" onAccessLost={denyClinicalAccess} onDirtyChange={setCloseoutDirty} onBusyChange={setCloseoutBusy} onFinalized={() => {
             history.setItems(current => current.filter(item => item.id !== closingId)); setSelected(null);
           }} /></div>
         </div>

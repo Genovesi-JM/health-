@@ -47,6 +47,11 @@ def reschedule(db, consultation, body, patient, user, key):
             raise _not_committed("O horário mudou noutra sessão. Atualize a consulta antes de escolher novamente.")
         if consultation.status not in ("requested", "scheduled"):
             raise _not_committed("Esta consulta já não permite alterar o horário.")
+        from app.services.request_expiry import deadline, payment_link_sql, require_open_request
+        try:
+            require_open_request(db, consultation)
+        except HTTPException:
+            raise _not_committed("O prazo deste pedido terminou ou requer revisão. Atualize a consulta antes de alterar o horário.") from None
         if consultation.started_at or consultation.ended_at:
             raise _not_committed("Existem registos de cuidados iniciados. A consulta requer revisão antes de alterar o horário.")
         session = db.query(TeleconsultationSession).filter_by(consultation_id=consultation_id).populate_existing().first()
@@ -56,7 +61,8 @@ def reschedule(db, consultation, body, patient, user, key):
             raise _not_committed("Existem registos de uma teleconsulta iniciada. A consulta requer revisão antes de alterar o horário.")
         if not doctor_id or consultation.doctor_id != doctor_id or consultation.country not in MARKET_ZONES:
             raise _not_committed("A alteração requer um médico e país de atendimento definidos.")
-        if consultation.payment_status == "paid" or consultation.payment_id:
+        if consultation.payment_status == "paid" or db.query(Consultation.id).filter(
+                Consultation.id == consultation_id, payment_link_sql()).first():
             raise _not_committed("Esta consulta requer apoio para rever o pagamento antes de alterar o horário.")
         doctor = current_doctor(db, doctor_id, consultation.country)
         slot = db.get(AppointmentSlot, body.slot_id, populate_existing=True)
@@ -96,6 +102,7 @@ def reschedule(db, consultation, body, patient, user, key):
             Consultation.doctor_id == doctor_id, Consultation.patient_id == patient_id,
         ).values(slot_id=slot.id, scheduled_at=slot.starts_at, scheduled_end_at=slot.ends_at,
                  timezone=slot.timezone, status="requested", reschedule_revision=revision,
+                 requested_expires_at=deadline(slot.starts_at), expired_at=None,
                  updated_at=datetime.utcnow()))
         if changed.rowcount != 1:
             raise _not_committed("A consulta mudou. Atualize-a antes de alterar o horário.")

@@ -1,8 +1,9 @@
 import type { Consultation } from '../types';
+import { requestCanProceed } from './requestExpiry';
 
 export function canReschedule(item: Consultation): boolean {
   return ['requested', 'scheduled'].includes(item.status) && !!item.doctor_id && ['AO', 'PT'].includes(item.country ?? '')
-    && item.payment_status !== 'paid' && Number.isSafeInteger(item.reschedule_revision);
+    && item.payment_status !== 'paid' && Number.isSafeInteger(item.reschedule_revision) && requestCanProceed(item);
 }
 
 export interface RescheduleAttempt { key: string; payload: { slot_id: string; expected_revision: number } }

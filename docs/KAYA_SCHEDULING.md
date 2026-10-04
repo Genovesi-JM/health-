@@ -73,8 +73,8 @@ consultations retain a null country and timezone unless they already have that
 information. Tests use disposable databases; no user database has been migrated.
 
 Remaining scheduling work includes recurring publication, leave/blackout editing,
-expiry of unaccepted requests, pagination of broader consultation
-history, deployment-specific PostgreSQL concurrency evidence and device verification.
+deployment-specific worker activation and PostgreSQL concurrency evidence,
+and device verification.
 Local PostgreSQL API concurrency checks are recorded in [booking](KAYA_BOOKING.md).
 Published slots alone do not establish a clinical service's launch eligibility.
 
@@ -110,3 +110,45 @@ Replaying a committed request cannot erase newly recorded preparation.
 downgrade refuses to discard nonempty rescheduling history. All migration and
 concurrency validation uses disposable databases; no operational database was
 migrated.
+
+## Acceptance deadlines and retained history
+
+New unaccepted requests have a persisted `requested_expires_at`: the earlier of
+the slot start and the configured request lifetime (`CONSULTATION_REQUEST_TTL_HOURS`,
+default 24, bounded 1–168 hours). A move starts a new acceptance period; an exact
+retry never renews it. This is an engineering default for review before pilot
+activation, not a clinical response-time commitment. Accepted visits do not
+expire under this rule.
+
+Responses distinguish `open`, `expiry_pending`, `review_required` and persisted
+`expired`. Unknown/invalid chronology, linked payments or actual-care evidence
+are held for review as appropriate; they are never silently released. Expiry
+pending means the deadline passed but durable cleanup has not completed. Patient
+screens explain this distinction and keep exact retry recovery available.
+Patient cancellation remains available for ordinary open or overdue requests;
+the server refuses it when actual-care evidence exists even if a stale status
+still says requested. Clients conservatively withhold cancellation controls for
+ambiguous review-required requests.
+
+The explicit worker processes bounded batches, locks doctor then patient,
+rechecks current state and atomically commits expiry, matching-reservation
+release, audit and generic in-app notices. Competing acceptance, movement,
+duplicate workers and audit failure are tested against PostgreSQL. Capacity and
+queue queries ignore only safely overdue requests; a dated slot's retained claim
+stays unavailable until its transaction releases it. GET requests never perform
+expiry writes. The current CLI remains constrained to an isolated synthetic
+workspace under HOLD; no background worker or production schedule was activated.
+
+`consultation_request_expiry_v1` records valid historical deadlines using a fixed
+24-hour backfill rule, capped by the scheduled time. A moved request uses the
+matching retained rescheduling timestamp. Invalid chronology stays null for
+review. Backfill writes an audit and never expires or releases a visit inside the
+migration. Downgrade refuses to discard retained deadlines.
+
+`/api/v1/consultations/me/page`, `/api/v1/doctor/queue/page` and
+`/api/v1/doctor/consultations/page` traverse bounded lists with viewer-, owner-
+and filter-bound signed cursors. Patient and assigned-doctor history use newest
+creation time then ID; the operational queue uses oldest first. A page limit of
+1–100 applies before serialization. Current authorization is checked on every
+page. Mutable status changes are reconciled through refresh rather than claiming
+a fixed historical snapshot. Legacy array endpoints remain bounded summaries.

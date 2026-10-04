@@ -1,5 +1,6 @@
 import type { PatientConsultation } from './consultations';
 import type { AppointmentSlot, AppointmentWindow } from './appointmentAvailability';
+import { requestAllowsNewScheduleAction } from './consultationExpiry';
 
 export type RescheduleAttempt = {
   key: string;
@@ -30,6 +31,7 @@ export function rescheduleStorageKey(ownerId: string, consultationId: string): s
 
 export function canRescheduleConsultation(consultation: PatientConsultation | null): boolean {
   return !!consultation && ['requested', 'scheduled'].includes(consultation.status) &&
+    requestAllowsNewScheduleAction(consultation) &&
     !!consultation.doctor_id && ['AO', 'PT'].includes(consultation.country || '') &&
     consultation.payment_status !== 'paid' && consultation.payment_id == null &&
     Number.isSafeInteger(consultation.reschedule_revision) && consultation.reschedule_revision! >= 0;

@@ -100,7 +100,8 @@ def ensure_capacity(db: Session, *, doctor_id: str | None, patient_id: str | Non
         predicates.append(Consultation.doctor_id == doctor_id)
     if patient_id:
         predicates.append(Consultation.patient_id == patient_id)
-    query = db.query(Consultation).filter(Consultation.status.in_(BLOCKING), or_(*predicates))
+    from app.services.request_expiry import safely_due_sql
+    query = db.query(Consultation).filter(Consultation.status.in_(BLOCKING), or_(*predicates), ~safely_due_sql(now))
     if exclude_id:
         query = query.filter(Consultation.id != exclude_id)
     for other in query.populate_existing().all():
@@ -131,6 +132,8 @@ def guard_transition(db: Session, consultation: Consultation, status: str, docto
     lock_resources(db, doctor_id, consultation.patient_id)
     if status in ("scheduled", "in_progress"):
         current_doctor(db, doctor_id, consultation.country)
+        from app.services.request_expiry import require_open_request
+        require_open_request(db, consultation)
         if consultation.slot_id:
             slot = db.get(AppointmentSlot, consultation.slot_id, populate_existing=True)
             if not slot or slot.withdrawn or slot.reserved_consultation_id != consultation.id:

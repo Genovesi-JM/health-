@@ -32,7 +32,7 @@ from sqlalchemy.orm import Session
 from app.models import User
 from app.health_models import (Patient, Doctor, ClinicianCredential, PatientConsent, MfaCredential,
                               AppointmentSlot, Consultation, ConsultationNotes, ConsultationAmendment, ConsultationReschedule,
-                              ClinicalCareTask, HealthAuditLog, Notification,
+                              ClinicalCareTask, HealthAuditLog, HealthPayment, Notification,
                               TeleconsultationSession, TeleconsultationParticipant)
 from app.oauth2 import create_access_token
 from app.routers import appointments, consultations, notifications, teleconsultation
@@ -699,6 +699,122 @@ def reschedule_video_reset_rollback():
     return {'preparation_and_claims_rollback_together': True, 'same_key_retry_succeeds': True}
 
 
+def make_request_due(identifier):
+    with Session(engine) as db:
+        item = db.get(Consultation, identifier)
+        item.created_at = datetime.utcnow() - timedelta(days=3)
+        item.requested_expires_at = datetime.utcnow() - timedelta(minutes=1)
+        db.commit()
+
+
+def expire_request(identifier):
+    from app.services.request_expiry import expire_one
+    with Session(engine) as db:
+        result = expire_one(db, identifier)
+        db.commit()
+        return result
+
+
+def request_expiry_duplicate_workers():
+    for _ in range(5):
+        p, slots, identifier = move_setup(); make_request_due(identifier)
+        assert sorted(together([lambda: expire_request(identifier), lambda: expire_request(identifier)])) == [False, True]
+        with Session(engine) as db:
+            assert db.get(Consultation, identifier).status == 'expired'
+            assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id is None
+            assert db.query(HealthAuditLog).filter_by(resource_id=identifier, action='consultation_request_expired').count() == 1
+            assert db.query(Notification).filter_by(event_key=f'consultation:{identifier}:expired').count() == 2
+    return {'forced_races': 5, 'one_transition_audit_and_recipient_notice_set': True}
+
+
+def request_expiry_vs_actions():
+    outcomes = []
+    for action in ('accept', 'reschedule'):
+        for _ in range(5):
+            p, slots, identifier = move_setup(); make_request_due(identifier)
+            results = together([lambda: expire_request(identifier),
+                lambda: accept(p['d1'], identifier) if action == 'accept' else move(p['p1'], identifier, slots[1])])
+            assert results[0] is True and results[1].status_code == 409, (results[0], results[1].text)
+            with Session(engine) as db:
+                item = db.get(Consultation, identifier)
+                assert item.status == 'expired' and item.reschedule_revision == 0
+                assert db.get(AppointmentSlot, slots[1]['id']).reserved_consultation_id is None
+                assert db.query(ConsultationReschedule).filter_by(consultation_id=identifier).count() == 0
+            outcomes.append([action, results[1].status_code])
+    return {'forced_races': 10, 'late_accept_and_reschedule_never_restore_expired_request': outcomes}
+
+
+def request_expiry_rollback_and_stale_release():
+    p, slots, identifier = move_setup(); make_request_due(identifier)
+    def fail(mapper, connection, row):
+        if row.action == 'consultation_request_expired': raise RuntimeError('Synthetic expiry audit failure')
+    event.listen(HealthAuditLog, 'before_insert', fail)
+    try:
+        try:
+            expire_request(identifier)
+            raise AssertionError('Expiry should have rolled back')
+        except RuntimeError as error:
+            assert 'Synthetic expiry' in str(error)
+    finally:
+        event.remove(HealthAuditLog, 'before_insert', fail)
+    with Session(engine) as db:
+        assert db.get(Consultation, identifier).status == 'requested'
+        assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id == identifier
+        assert not db.query(Notification).filter_by(event_key=f'consultation:{identifier}:expired').count()
+    assert expire_request(identifier)
+    replacement = book(p['p2'], slots[0]); assert replacement.status_code == 200
+    assert not expire_request(identifier)
+    with Session(engine) as db:
+        assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id == replacement.json()['id']
+    return {'rollback_preserves_reservation': True, 'replayed_expiry_cannot_release_replacement': True}
+
+
+def request_expiry_migration():
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    spec = importlib.util.spec_from_file_location('pg_expiry_migration', pathlib.Path('alembic/versions/consultation_request_expiry_v1.py'))
+    migration = importlib.util.module_from_spec(spec); spec.loader.exec_module(migration)
+    with engine.begin() as conn, Operations.context(MigrationContext.configure(conn)):
+        migration.upgrade()
+    schema = 'synthetic_expiry_' + uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}')
+        conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        conn.exec_driver_sql('CREATE TABLE consultations (id VARCHAR(36) PRIMARY KEY, status VARCHAR(20), created_at TIMESTAMP, scheduled_at TIMESTAMP)')
+        conn.exec_driver_sql("INSERT INTO consultations VALUES ('historical','requested','2026-01-01 10:00:00',NULL), ('accepted','scheduled','2026-01-01 10:00:00',NULL), ('invalid','requested','2099-01-01 10:00:00',NULL)")
+        with Operations.context(MigrationContext.configure(conn)):
+            migration.upgrade(); migration.upgrade()
+            rows = {row[0]: row[1:] for row in conn.execute(text('SELECT id,status,requested_expires_at,expired_at FROM consultations'))}
+            assert rows['historical'] == ('requested', datetime(2026,1,2,10), None)
+            assert rows['accepted'][1] is None and rows['invalid'][1] is None
+            try:
+                migration.downgrade()
+                raise AssertionError('Deadline history cannot be removed')
+            except RuntimeError as error:
+                assert 'Retained' in str(error)
+        conn.exec_driver_sql('SET LOCAL search_path TO public')
+        conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'runtime_adoption_and_legacy_backfill': True, 'invalid_chronology_retained_unknown': True, 'destructive_downgrade_refused': True}
+
+
+def request_expiry_linked_payment_review():
+    for status in ('pending', 'paid', 'failed', 'refunded'):
+        p, slots, identifier = move_setup()
+        with Session(engine) as db:
+            db.add(HealthPayment(patient_id=p['p1']['id'], consultation_id=identifier, amount=100,
+                currency='AOA', status=status, provider='synthetic'))
+            db.commit()
+            assert db.get(Consultation, identifier).payment_id is None
+        assert move(p['p1'], identifier, slots[1]).status_code == 409
+        make_request_due(identifier)
+        assert not expire_request(identifier)
+        with Session(engine) as db:
+            assert db.get(Consultation, identifier).status == 'requested'
+            assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id == identifier
+    return {'all_linked_financial_history_requires_review_before_release': True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
@@ -711,7 +827,12 @@ for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_differ
                 ('reschedule_competing_target', reschedule_competing_target), ('reschedule_accept_race', reschedule_accept_race),
                 ('reschedule_audit_rollback', reschedule_audit_rollback), ('reschedule_migration', reschedule_migration),
                 ('reschedule_video_preparation_race', reschedule_video_preparation_race),
-                ('reschedule_video_reset_rollback', reschedule_video_reset_rollback)]:
+                ('reschedule_video_reset_rollback', reschedule_video_reset_rollback),
+                ('request_expiry_duplicate_workers', request_expiry_duplicate_workers),
+                ('request_expiry_vs_actions', request_expiry_vs_actions),
+                ('request_expiry_rollback_and_stale_release', request_expiry_rollback_and_stale_release),
+                ('request_expiry_migration', request_expiry_migration),
+                ('request_expiry_linked_payment_review', request_expiry_linked_payment_review)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}

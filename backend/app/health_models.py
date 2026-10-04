@@ -31,6 +31,11 @@ def _uuid():
     return str(uuid.uuid4())
 
 
+def _request_deadline(context):
+    from app.services.request_expiry import default_deadline
+    return default_deadline(context)
+
+
 # ── Patient Profile (extends User) ──
 
 class Patient(Base):
@@ -444,7 +449,9 @@ class Consultation(Base):
     specialty: Mapped[str] = mapped_column(String(100), nullable=False, default="clinica_geral")
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="requested",
-    )  # requested, scheduled, in_progress, completed, cancelled, no_show
+    )  # requested, scheduled, in_progress, completed, cancelled, no_show, expired
+    requested_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=_request_deadline)
+    expired_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     scheduled_end_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     slot_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("appointment_slots.id"), nullable=True)
@@ -469,6 +476,7 @@ class Consultation(Base):
     referrals = relationship("Referral", back_populates="consultation", cascade="all, delete-orphan")
 
     __table_args__ = (
+        Index("ix_consultations_request_expiry", "status", "requested_expires_at", "id"),
         Index("ix_consultations_patient_scheduled", "patient_id", "scheduled_at"),
         Index("ix_consultations_doctor_scheduled", "doctor_id", "scheduled_at"),
         Index("ix_consultations_patient_booking_key", "patient_id", "booking_request_key", unique=True),
@@ -906,7 +914,7 @@ class HealthPayment(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     patient_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
     corporate_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
-    consultation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    consultation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
     payment_type: Mapped[str] = mapped_column(String(30), nullable=False, default="consultation")  # consultation, subscription
     amount: Mapped[int] = mapped_column(Integer, nullable=False)  # in smallest currency unit
     currency: Mapped[str] = mapped_column(String(5), nullable=False, default="AOA")

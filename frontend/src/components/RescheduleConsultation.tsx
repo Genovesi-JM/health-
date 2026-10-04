@@ -3,6 +3,7 @@ import api, { getSession } from '../api';
 import type { Consultation } from '../types';
 import { appointmentWindow, appointmentWindowLabel, formatAppointmentTime, type AppointmentSlot } from '../utils/appointments';
 import { apiErrorMessage } from '../utils/apiError';
+import { requestCanProceed, requestExpiryMessage } from '../utils/requestExpiry';
 import { canReschedule, clearReschedule, readReschedule, rescheduleNotCommitted, saveReschedule, type RescheduleAttempt } from '../utils/pendingReschedule';
 
 export default function RescheduleConsultation({ consultation, onClose, onUpdated }: {
@@ -87,7 +88,7 @@ export default function RescheduleConsultation({ consultation, onClose, onUpdate
   return <div className="modal-overlay"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="reschedule-title" style={{ padding: '1.5rem', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto' }}>
     <h2 id="reschedule-title">Alterar horário da consulta</h2>
     <p>Horário atual: {current.scheduled_at ? formatAppointmentTime(current.scheduled_at, current.timezone) : 'Por definir'}</p>
-    {saved ? <p role="status">{current.status === 'requested' ? 'Alteração guardada. O novo horário aguarda aceitação do médico.' : 'Pedido recuperado. O estado atual da consulta foi atualizado na lista.'}</p> : <>
+    {saved ? <p role="status">{current.status === 'requested' && requestCanProceed(current) ? 'Alteração guardada. O novo horário aguarda aceitação do médico.' : requestExpiryMessage(current) || 'Pedido recuperado. O estado atual da consulta foi atualizado na lista.'}</p> : <>
       <p>Escolha outro horário do mesmo médico. A reserva atual é mantida até a alteração ser guardada. O novo horário precisa de nova aceitação do médico.</p>
       {pending && <p role="status">Existe uma alteração por confirmar. Recupere o mesmo pedido; fechar e voltar a abrir mantém a referência neste separador.</p>}
       {needsReload && !pending && <button className="btn btn-secondary" disabled={busy} onClick={() => void reload()}>Atualizar marcação atual</button>}

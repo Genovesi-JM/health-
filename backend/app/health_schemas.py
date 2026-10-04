@@ -339,10 +339,14 @@ class ConsultationBookRequest(BaseModel):
 class ConsultationOut(BaseModel):
     id: str
     patient_id: str
+    patient_name: Optional[str] = None
     doctor_id: Optional[str] = None
     triage_session_id: Optional[str] = None
     specialty: str
     status: str
+    requested_expires_at: Optional[datetime] = None
+    expired_at: Optional[datetime] = None
+    request_expiry_state: Optional[Literal["open", "expiry_pending", "review_required", "expired"]] = None
     scheduled_at: Optional[datetime] = None
     scheduled_end_at: Optional[datetime] = None
     slot_id: Optional[str] = None
@@ -356,7 +360,7 @@ class ConsultationOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("scheduled_at", "scheduled_end_at", "started_at", "ended_at")
+    @field_serializer("scheduled_at", "scheduled_end_at", "started_at", "ended_at", "requested_expires_at", "expired_at")
     def serialize_utc(self, value: Optional[datetime]):
         # The existing SQL columns store naive UTC. Keep the offset on the wire
         # so browsers/mobile clients do not interpret it as their local time.
@@ -407,6 +411,9 @@ class ConsultationAmendmentRequest(BaseModel):
 
 
 class ConsultationQueueItem(BaseModel):
+    requested_expires_at: Optional[datetime] = None
+    expired_at: Optional[datetime] = None
+    request_expiry_state: Optional[Literal["open", "expiry_pending", "review_required", "expired"]] = None
     reschedule_revision: int = 0
     timezone: Optional[str] = None
     scheduled_end_at: Optional[datetime] = None
@@ -424,7 +431,7 @@ class ConsultationQueueItem(BaseModel):
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("scheduled_at", "scheduled_end_at")
+    @field_serializer("scheduled_at", "scheduled_end_at", "requested_expires_at", "expired_at")
     def serialize_utc(self, value: Optional[datetime]):
         if value is None:
             return None

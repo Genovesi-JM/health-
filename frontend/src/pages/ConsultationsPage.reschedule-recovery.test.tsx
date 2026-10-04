@@ -23,7 +23,9 @@ beforeEach(() => {
   vi.resetAllMocks(); sessionStorage.clear(); identity.userId = 'patient-user';
 });
 
-it.each([{ status: 'in_progress' }, { status: 'completed' }, { payment_status: 'paid' }])(
+it.each([{ status: 'in_progress' }, { status: 'completed' }, { payment_status: 'paid' }, { status: 'expired' },
+  { status: 'requested', request_expiry_state: 'expiry_pending', requested_expires_at: '2020-01-01T00:00:00Z' },
+  { status: 'requested', request_expiry_state: 'review_required' }])(
   'recovers the exact saved request after fresh rescheduling is no longer eligible: %j', async change => {
     const current = { ...visit, ...change };
     saveReschedule(identity.userId, visit.id, attempt);
@@ -36,7 +38,14 @@ it.each([{ status: 'in_progress' }, { status: 'completed' }, { payment_status: '
     fireEvent.click(await screen.findByRole('button', { name: 'Recuperar alteração' }));
     const dialog = screen.getByRole('dialog', { name: 'Alterar horário da consulta' });
     fireEvent.click(await within(dialog).findByRole('button', { name: 'Recuperar alteração' }));
-    await within(dialog).findByText('Pedido recuperado. O estado atual da consulta foi atualizado na lista.');
+    await waitFor(() => {
+      const notice = within(dialog).getByRole('status');
+      if (current.status === 'expired') expect(notice).toHaveTextContent('O prazo terminou e o pedido foi encerrado');
+      else if ('request_expiry_state' in change) expect(notice).toHaveTextContent(change.request_expiry_state === 'review_required'
+        ? 'requer verificação da equipa' : 'O prazo de aceitação terminou');
+      else expect(notice).toHaveTextContent('Pedido recuperado. O estado atual da consulta foi atualizado na lista.');
+      expect(notice).not.toHaveTextContent('aguarda aceitação');
+    });
     expect(api.post).toHaveBeenCalledExactlyOnceWith('/api/v1/consultations/visit-1/reschedule', attempt.payload,
       { headers: { 'Idempotency-Key': attempt.key } });
     expect(api.patch).not.toHaveBeenCalled();

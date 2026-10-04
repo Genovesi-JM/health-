@@ -38,6 +38,7 @@ def consultation_event(db: Session, consultation, event: str) -> None:
         "accepted": ("Consulta aceite", "O pedido foi aceite. Abra a consulta para consultar os detalhes.", "success"),
         "started": ("Consulta iniciada", "A consulta foi iniciada. Abra os detalhes para acompanhar.", "info"),
         "cancelled": ("Consulta cancelada", "A consulta foi cancelada. Abra os detalhes para consultar o estado.", "warning"),
+        "expired": ("Prazo do pedido terminado", "O pedido não foi aceite dentro do prazo. Abra a consulta para consultar o estado e escolher outro horário.", "warning"),
         "closed": ("Resumo da consulta disponível", "O resumo da consulta está disponível. Abra a consulta para ler.", "success"),
     }
     title, message, level = messages[event]

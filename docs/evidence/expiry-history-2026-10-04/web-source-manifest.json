@@ -1,0 +1,89 @@
+{
+  "repository": "/Users/genovesimaria/Documents/kaya-web",
+  "files": [
+    {
+      "path": "frontend/package.json",
+      "sha256": "bda18f1a2abb9588002daf517cdb118634f1e1ca2c51462bba4e46887b9bffbf"
+    },
+    {
+      "path": "frontend/src/components/ConsultationCloseout.tsx",
+      "sha256": "de5519ae2f732e8e61fcfe4726e7533b0c378a040c60092a8cd3583fa1777ac9"
+    },
+    {
+      "path": "frontend/src/components/DoctorConsultationHistory.test.tsx",
+      "sha256": "cfeae5c0db1ec529f6a358b77361261272c2d5b8a21e3d67c813a7fa2b41ef82"
+    },
+    {
+      "path": "frontend/src/components/DoctorConsultationHistory.tsx",
+      "sha256": "06b4bdf6257de5af4feac8309e46081234e077b2bfaef509f54e17eb0b2b255b"
+    },
+    {
+      "path": "frontend/src/components/RescheduleConsultation.test.tsx",
+      "sha256": "50eaf84dee9184752698e84c046aec6dd811bf561e37d4068da07958d108ee33"
+    },
+    {
+      "path": "frontend/src/components/RescheduleConsultation.tsx",
+      "sha256": "ae91fd919aca465f7e8b8f6c6afb1a81dd32d24cec919fb90d31f532960d85a4"
+    },
+    {
+      "path": "frontend/src/pages/ConsultationsPage.reschedule-recovery.test.tsx",
+      "sha256": "40049a6d2702d58e1df1dab2c3ac18d4f4d6fb78bde208cd22d569651348b290"
+    },
+    {
+      "path": "frontend/src/pages/ConsultationsPage.tsx",
+      "sha256": "dfb3660fdbca75dc570bedca1d707e89190314ddd200c3dda63ee4f6917f1f80"
+    },
+    {
+      "path": "frontend/src/pages/DoctorQueuePage.access.test.tsx",
+      "sha256": "6efbde4ac07b465ede10726a766ce19b68d4a43bf61e2099758bd67460698afc"
+    },
+    {
+      "path": "frontend/src/pages/DoctorQueuePage.pagination.test.tsx",
+      "sha256": "34ce5f8d7425ff9303b796e3bbb7f5ed8fcf8fc014b5280ffcc3974293bb3b2b"
+    },
+    {
+      "path": "frontend/src/pages/DoctorQueuePage.test.tsx",
+      "sha256": "847f8f970a7d5eab130d63c16f1da9736801156e76fbecd0679a13e13f20175e"
+    },
+    {
+      "path": "frontend/src/pages/DoctorQueuePage.tsx",
+      "sha256": "e774c7106b0a834e0e535ffe32cf15b29e05ecba3f5d718ca0665c393449ac36"
+    },
+    {
+      "path": "frontend/src/pages/DoctorsListPage.test.tsx",
+      "sha256": "8dae1d2a9f4916407adcbc31c7ce29a8e7a8765d49d36ed509ffabcb5c2d330d"
+    },
+    {
+      "path": "frontend/src/pages/DoctorsListPage.tsx",
+      "sha256": "ac4aec29567335b4e22d2f25651df3dafe6e8bfc71d3fad099ee223bca8fb52f"
+    },
+    {
+      "path": "frontend/src/pages/PublicDoctorPage.test.tsx",
+      "sha256": "e5035f4171b0d577bbad3ccefd93f1263be4305c1b7e51261632933e4bacd4cb"
+    },
+    {
+      "path": "frontend/src/pages/PublicDoctorPage.tsx",
+      "sha256": "c1f32bad86dff779c5351aac36c13da159e8488be14269227bf5ff06793b4790"
+    },
+    {
+      "path": "frontend/src/types.ts",
+      "sha256": "0ba44f058ae5e96512456a5a3633eede6dcb3f1fbdeef76c2595aa48514bd8b9"
+    },
+    {
+      "path": "frontend/src/utils/pendingReschedule.ts",
+      "sha256": "3aa8ae2d478648622ed0576b662f87846e13caa31508375849ec03f3d4bad936"
+    },
+    {
+      "path": "frontend/src/utils/requestExpiry.test.ts",
+      "sha256": "4621d8d3ef6df35013b70fe02eb7c1af420ae505b123b66e2509728f8f598e13"
+    },
+    {
+      "path": "frontend/src/utils/requestExpiry.ts",
+      "sha256": "02dfc4ed4e7e2c62fff2a0219299a676e7f9729cf4ae2d44024be9b84e2b3f04"
+    },
+    {
+      "path": "frontend/src/utils/useConsultationPages.ts",
+      "sha256": "b9e3e77d769dfe14fa7ae66ae7c021387fd5a8e518733d08ac83a588c56ea6b1"
+    }
+  ]
+}

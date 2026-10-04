@@ -16,6 +16,7 @@ import {
 } from './consultations';
 import { APPOINTMENT_MARKETS, appointmentDate } from './appointmentAvailability';
 import { canRescheduleConsultation, rescheduleStorageKey } from './appointmentRescheduling';
+import { consultationExpiryMessage, requestAllowsNewScheduleAction } from './consultationExpiry';
 
 const TEAL = '#0d9488';
 
@@ -98,7 +99,7 @@ export default function ConsultationDetailScreen() {
 
   const cancel = async () => {
     if (!active.current || focusedConsultationId.current !== consultationId ||
-        busy.current || !detail || !canCancelConsultation(detail.result.status) || rescheduleRecovery.present || !rescheduleRecovery.verified) return;
+        busy.current || !detail || !canCancelConsultation(detail.result.status, detail.consultation?.request_expiry_state) || rescheduleRecovery.present || !rescheduleRecovery.verified) return;
     const version = viewVersion.current;
     const sameView = () => active.current && viewVersion.current === version &&
       focusedConsultationId.current === consultationId && currentOwner.current === ownerId;
@@ -123,6 +124,7 @@ export default function ConsultationDetailScreen() {
   const closeout = detail?.result.closeout;
   const publication = closeout ? patientSummaryPublication(closeout) : null;
   const status = detail?.result.status;
+  const expiryNote = detail?.consultation ? consultationExpiryMessage(detail.consultation) : null;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}
@@ -138,14 +140,17 @@ export default function ConsultationDetailScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>{detail.consultation?.specialty.replace(/_/g, ' ') || 'Consulta'}</Text>
           <Text style={styles.status}>{CONSULTATION_STATUS[detail.result.status] || 'Estado por confirmar'}</Text>
-          <Text style={styles.body}>{consultationNextStep(detail.result.status)}</Text>
+          <Text style={styles.body}>{expiryNote || consultationNextStep(detail.result.status)}</Text>
+          {detail.consultation?.requested_expires_at && status === 'requested' && <Text style={styles.body}>
+            Prazo de aceitação: {appointmentDate(detail.consultation.requested_expires_at, detail.consultation.timezone)}
+          </Text>}
           {detail.consultation?.country && <Text style={styles.body}>País de atendimento: {APPOINTMENT_MARKETS[detail.consultation.country]}</Text>}
           {detail.consultation?.scheduled_at && <Text style={styles.body}>
             {status === 'requested' ? 'Horário pedido: ' : 'Horário: '}{appointmentDate(detail.consultation.scheduled_at, detail.consultation.timezone)}
             {detail.consultation.scheduled_end_at ? ` — ${appointmentDate(detail.consultation.scheduled_end_at, detail.consultation.timezone)}` : ''}
           </Text>}
-          {status === 'requested' && detail.consultation?.slot_id && <Text style={styles.hint}>Este horário está reservado para o seu pedido enquanto aguarda aceitação do médico. O cancelamento liberta o horário.</Text>}
-          {status === 'requested' && detail.consultation && !detail.consultation.scheduled_at && <Text style={styles.hint}>Pedido sem horário; não garante atendimento imediato.</Text>}
+          {status === 'requested' && detail.consultation?.slot_id && requestAllowsNewScheduleAction(detail.consultation) && <Text style={styles.hint}>Este horário está reservado para o seu pedido enquanto aguarda aceitação do médico. O cancelamento liberta o horário.</Text>}
+          {status === 'requested' && detail.consultation && !detail.consultation.scheduled_at && requestAllowsNewScheduleAction(detail.consultation) && <Text style={styles.hint}>Pedido sem horário; não garante atendimento imediato.</Text>}
           {detail.consultation?.started_at && <Text style={styles.body}>Início: {consultationDate(detail.consultation.started_at)}</Text>}
           {detail.consultation?.ended_at && <Text style={styles.body}>Fim: {consultationDate(detail.consultation.ended_at)}</Text>}
           {detail.metadataUnavailable && <Text style={styles.hint}>Não foi possível atualizar os horários. O estado e o resumo foram atualizados.</Text>}
@@ -157,7 +162,7 @@ export default function ConsultationDetailScreen() {
             onPress={() => navigation.navigate('RescheduleConsultation', { consultationId })}>
             <Text style={styles.link}>{rescheduleRecovery.present ? 'Recuperar alteração de horário' : 'Alterar horário'}</Text>
           </TouchableOpacity>}
-          {canCancelConsultation(detail.result.status) && <TouchableOpacity accessibilityRole="button"
+          {canCancelConsultation(detail.result.status, detail.consultation?.request_expiry_state) && <TouchableOpacity accessibilityRole="button"
             disabled={loading || cancelling || !!error || rescheduleRecovery.present || !rescheduleRecovery.verified}
             onPress={() => Alert.alert('Cancelar consulta?', 'O cancelamento será registado no seu pedido.', [
               { text: 'Manter', style: 'cancel' },
@@ -205,7 +210,7 @@ export default function ConsultationDetailScreen() {
             </View>}
             {closeout.follow_up_required && !closeout.follow_up && <Text style={styles.hint}>Foi indicado acompanhamento. Consulte as orientações do médico; os dados da equipa responsável ainda não estão disponíveis.</Text>}
           </> : <Text style={styles.body}>
-            {status === 'cancelled' || status === 'no_show'
+            {status === 'cancelled' || status === 'no_show' || status === 'expired'
               ? 'Não existe resumo clínico disponível para esta consulta.'
               : status === 'completed'
                 ? 'O resumo desta consulta ainda não foi disponibilizado.'

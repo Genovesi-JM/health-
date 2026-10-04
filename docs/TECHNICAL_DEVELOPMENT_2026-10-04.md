@@ -653,3 +653,37 @@ and [native source evidence](evidence/native-pages-rescheduling-2026-10-04/manif
 The first expanded run exposed two test fixtures assuming an empty shared queue;
 the corrected fixtures explicitly narrow to their synthetic specialty. No test
 was skipped. Policy remains HOLD with 284 route declarations and no activation.
+
+## Persisted expiry, historical records and market discovery
+
+Unaccepted consultation requests now carry an explicit acceptance deadline and
+an audited, bounded expiry operation. Reads expose open, expiry-pending or
+review-required state without silently releasing a slot. The worker rechecks
+locks, revision, care evidence and all linked payment history before changing
+status, releasing capacity and recording a notification in one transaction.
+Historical migration assigns a capped deadline where chronology is known and
+retains ambiguous requests for review. No worker or live migration was activated.
+
+Web and native clinician history can traverse older records and read the exact
+completed closeout without relying on the recent-patient summary. Patient and
+clinician screens show expiry and preserve exact rescheduling recovery. Public
+doctor discovery defaults to Angola with explicit Portugal selection; country
+changes discard stale replies and legacy kwanza prices appear only for Angola.
+
+Any authoritative queue, escalation, history or closeout-read access denial now
+closes the whole clinician page scope and invalidates late sibling replies.
+Explicit retry creates a fresh scope. Ordinary refresh preserves loaded records
+and open closeout state, including unsaved drafts. Uncertain amendment recovery
+remains memory-only: full authority loss tears down clinical state, and restoring
+access never silently recreates a correction.
+
+The exact staged expiry backend passed 1,710 tests in 172.42 seconds. Disposable
+PostgreSQL passed 28 scenarios including 90 forced races and was stopped. Web
+passed 334 tests, TypeScript, zero-warning lint, 15 prototype checks, production
+build and the emitted service-worker graph check, now enforced by postbuild.
+Repository checks passed 29 tests and 43 subtests. Native passed 174 tests,
+TypeScript and four Hermes exports. See [combined source-hashed evidence](evidence/expiry-history-2026-10-04/manifest.json) and [native export evidence](evidence/native-consultation-pages-expiry-2026-10-04/manifest.json).
+
+Policy remains 284 routes and HOLD. The existing Android APK is the earlier
+09df949 informational source snapshot with policy277; these newer JavaScript
+exports do not update that APK or establish a tested operational device journey.

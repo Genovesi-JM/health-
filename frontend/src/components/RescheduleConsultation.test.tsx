@@ -12,7 +12,8 @@ const visit: Consultation = { id: 'consultation-1', patient_id: 'patient-1', doc
   reschedule_revision: 0, payment_status: 'pending', created_at: '2026-10-04T10:00:00Z' };
 const slot = { id: 'new-slot', doctor_id: 'doctor-1', doctor_name: 'Médico da consulta', specialty: 'clinica_geral', country: 'AO',
   timezone: 'Africa/Luanda', starts_at: '2026-12-02T10:00:00Z', ends_at: '2026-12-02T10:30:00Z', status: 'open' };
-const saved = { ...visit, status: 'requested', slot_id: slot.id, scheduled_at: slot.starts_at, reschedule_revision: 1 };
+const saved = { ...visit, status: 'requested', slot_id: slot.id, scheduled_at: slot.starts_at, reschedule_revision: 1,
+  request_expiry_state: 'open', requested_expires_at: '2099-01-01T00:00:00Z' };
 beforeEach(() => {
   vi.resetAllMocks(); sessionStorage.clear(); identity.userId = 'patient-user';
   vi.mocked(api.get).mockImplementation(async url => ({ data: url.includes('/appointments/slots') ? [slot] : [visit] }));

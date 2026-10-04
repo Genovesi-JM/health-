@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-04",
+  "scope": "Synthetic local request expiry, market discovery, complete clinical history and clinical access isolation",
+  "backend": {
+    "passed": 1710,
+    "warnings": 33721,
+    "seconds": 172.42,
+    "source_matches_index": true,
+    "source_manifest": "backend-source-manifest.json",
+    "junit": "backend.xml.gz"
+  },
+  "postgresql": {
+    "scenarios": 28,
+    "forced_races": 90,
+    "cluster_stopped": true,
+    "evidence": "postgresql.json"
+  },
+  "web": {
+    "passed": 334,
+    "files": 51,
+    "focused_passed": 38,
+    "typescript": "passed",
+    "eslint": "zero errors/warnings",
+    "prototype_checks": 15,
+    "production_build": "passed",
+    "emitted_pwa_graph": "passed",
+    "shell_bytes": 752919,
+    "shell_gzip_bytes": 236262,
+    "shell_and_landing_bytes": 783607,
+    "shell_and_landing_gzip_bytes": 246500,
+    "deferred_js_chunks": 135,
+    "precache_entries": 17,
+    "bundle_warning": true,
+    "source_manifest": "web-source-manifest.json"
+  },
+  "repository": {
+    "passed": 29,
+    "subtests": 43
+  },
+  "native": {
+    "passed": 174,
+    "hermes_exports": 4,
+    "evidence": "../native-consultation-pages-expiry-2026-10-04/manifest.json"
+  },
+  "policy": {
+    "routes": 284,
+    "release": "HOLD",
+    "all_activation_flags": false
+  },
+  "limits": [
+    "No live migration, worker activation, provider enablement or deployment.",
+    "Default API and native entrypoints are informational; web operational request gate requires explicit VITE_OPERATIONAL_HOLD=true.",
+    "Existing native APK is the earlier09df949/policy277 informational snapshot; this checkpoint validates current JS exports only.",
+    "Clinical amendment recovery is memory-only: ordinary refresh preserves mounted draft, but an authoritative whole-page access denial tears down clinical state. Restored access never recreates a correction automatically.",
+    "Existing Python deprecation and large-shell warnings remain; first repository check used host Git behind Xcode license and was rerun successfully with portable Git.",
+    "Payment recovery changes in progress are excluded from this checkpoint."
+  ]
+}

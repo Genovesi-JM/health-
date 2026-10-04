@@ -2,12 +2,16 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import DoctorDashboardScreen from '../screens/DoctorDashboardScreen';
+import DoctorConsultationsScreen from '../screens/DoctorConsultationsScreen';
+import DoctorConsultationDetailScreen from '../screens/DoctorConsultationDetailScreen';
 import NurseDashboardScreen from '../screens/NurseDashboardScreen';
 import ClinicianPatient360Screen from '../screens/ClinicianPatient360Screen';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export type ClinicianStackParamList = {
   DoctorDashboard: undefined;
+  DoctorConsultations: undefined;
+  DoctorConsultationDetail: { consultationId: string; patientName?: string };
   NurseDashboard: undefined;
   Patient360: { patientId: string };
 };
@@ -33,6 +37,16 @@ export default function ClinicianStack({ role }: { role: 'doctor' | 'nurse' }) {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="DoctorConsultations"
+        component={DoctorConsultationsScreen}
+        options={{ title: 'Consultas atribuídas' }}
+      />
+      <Stack.Screen
+        name="DoctorConsultationDetail"
+        component={DoctorConsultationDetailScreen}
+        options={{ title: 'Registo da consulta' }}
+      />
+      <Stack.Screen
         name="NurseDashboard"
         component={NurseDashboardScreen}
         options={{ headerShown: false }}
@@ -45,4 +59,3 @@ export default function ClinicianStack({ role }: { role: 'doctor' | 'nurse' }) {
     </Stack.Navigator>
   );
 }
-

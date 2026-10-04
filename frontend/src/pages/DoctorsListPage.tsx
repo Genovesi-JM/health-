@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, type ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, type ReactElement } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Video, Building2, Home, Filter, X, Loader2 } from 'lucide-react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
@@ -37,7 +37,7 @@ const CONSULT_KEYS: Record<string, string> = {
 };
 
 interface Doctor {
-  id: number;
+  id: string;
   display_name: string | null;
   title: string | null;
   specialization: string | null;
@@ -52,45 +52,37 @@ interface Doctor {
   price_min: number | null;
   price_max: number | null;
   languages: string[] | null;
+  practice_country: 'AO' | 'PT' | null;
 }
 
 export default function DoctorsListPage() {
   const { t } = useT();
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [params, setParams] = useSearchParams();
+  const country = params.get('country') === 'PT' ? 'PT' : 'AO';
+  const [result, setResult] = useState<{ key: string; doctors: Doctor[]; failed: boolean } | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [consultType, setConsultType] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const fetchDoctors = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const params: Record<string, string> = {};
-      if (specialty) params.specialty = specialty;
-      if (consultType) params.consultation_type = consultType;
-      const res = await api.get('/api/v1/doctors/', { params });
-      let data: Doctor[] = res.data;
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        data = data.filter(d =>
-          d.display_name?.toLowerCase().includes(q) ||
-          d.location_city?.toLowerCase().includes(q) ||
-          d.specialization?.toLowerCase().includes(q) ||
-          d.bio?.toLowerCase().includes(q)
-        );
-      }
-      setDoctors(data);
-    } catch {
-      setError(t('dlist.error'));
-    } finally {
-      setLoading(false);
-    }
-  }, [specialty, consultType, search, t]);
+  const requestKey = JSON.stringify([country, specialty, consultType, attempt]);
+  const loading = result?.key !== requestKey;
+  const error = !loading && result?.failed;
+  const query = search.trim().toLowerCase();
+  const doctors = loading || error ? [] : (result?.doctors ?? []).filter(doctor => !query ||
+    [doctor.display_name, doctor.location_city, doctor.specialization, doctor.bio].some(value => value?.toLowerCase().includes(query)));
 
-  useEffect(() => { fetchDoctors(); }, [fetchDoctors]);
+  useEffect(() => {
+    let active = true;
+    api.get<Doctor[]>('/api/v1/doctors/', { params: { country,
+      ...(specialty ? { specialty } : {}), ...(consultType ? { consultation_type: consultType } : {}),
+    } }).then(response => {
+      if (!Array.isArray(response.data)) throw new Error('Invalid directory response');
+      if (active) setResult({ key: requestKey, doctors: response.data, failed: false });
+    }).catch(() => { if (active) setResult({ key: requestKey, doctors: [], failed: true }); });
+    return () => { active = false; };
+  }, [country, specialty, consultType, requestKey]);
 
   const activeFilters = [specialty, consultType].filter(Boolean).length;
 
@@ -105,6 +97,11 @@ export default function DoctorsListPage() {
 
       {/* Search + filter bar */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        <label>País de atendimento
+          <select className="form-input" value={country} onChange={event => { const next = new URLSearchParams(params); next.set('country', event.target.value); setParams(next); }}>
+            <option value="AO">Angola</option><option value="PT">Portugal</option>
+          </select>
+        </label>
         <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
           <Search size={16} style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
@@ -143,11 +140,11 @@ export default function DoctorsListPage() {
       )}
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem 0' }}>
+        <div role="status" aria-label="A carregar médicos" style={{ display: 'flex', justifyContent: 'center', padding: '4rem 0' }}>
           <Loader2 size={28} style={{ color: 'var(--brand-primary)', animation: 'spin 1s linear infinite' }} />
         </div>
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>{error}</div>
+        <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}><p role="alert">{t('dlist.error')}</p><button className="btn btn-secondary" onClick={() => setAttempt(value => value + 1)}>Tentar novamente</button></div>
       ) : doctors.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>{t('dlist.empty')}</p>
@@ -164,7 +161,7 @@ export default function DoctorsListPage() {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
             {doctors.map(d => (
-              <DoctorCard key={d.id} doctor={d} />
+              <DoctorCard key={d.id} doctor={d} country={country} />
             ))}
           </div>
         </>
@@ -173,14 +170,14 @@ export default function DoctorsListPage() {
   );
 }
 
-function DoctorCard({ doctor: d }: { doctor: Doctor }) {
+function DoctorCard({ doctor: d, country }: { doctor: Doctor; country: 'AO' | 'PT' }) {
   const { t } = useT();
   const initials = (d.display_name || 'M').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const specKey = SPECIALTY_OPTIONS.find(s => s.value === d.specialization)?.labelKey;
   const specialtyLabel = specKey ? t(specKey) : d.specialization ?? t('dlist.default_specialty');
 
   return (
-    <Link to={d.slug ? `/medicos/${d.slug}` : '#'} style={{ textDecoration: 'none', color: 'inherit' }}>
+    <Link to={d.slug ? `/medicos/${encodeURIComponent(d.slug)}?country=${country}` : '#'} style={{ textDecoration: 'none', color: 'inherit' }}>
       <div className="card" style={{ padding: '1.25rem', transition: 'box-shadow 0.2s, transform 0.15s', cursor: 'pointer' }}
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}>
@@ -197,6 +194,7 @@ function DoctorCard({ doctor: d }: { doctor: Doctor }) {
               {d.title ? `${d.title} ` : ''}{d.display_name || t('dlist.doctor')}
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--brand-primary)', fontWeight: 600, marginTop: '0.1rem' }}>{specialtyLabel}</div>
+            <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{d.practice_country === 'AO' ? 'Exercício confirmado em Angola' : d.practice_country === 'PT' ? 'Exercício confirmado em Portugal' : 'País de exercício não confirmado'}</div>
           </div>
         </div>
 
@@ -223,7 +221,7 @@ function DoctorCard({ doctor: d }: { doctor: Doctor }) {
               <MapPin size={11} /> {[d.location_city, d.location_province].filter(Boolean).join(', ')}
             </span>
           )}
-          {(d.price_min || d.price_max) && (
+          {d.practice_country === 'AO' && (d.price_min || d.price_max) && (
             <span style={{ fontSize: '0.77rem', fontWeight: 600, color: 'var(--text-secondary)', marginLeft: 'auto' }}>
               {d.price_min && d.price_max ? `${d.price_min.toLocaleString()}–${d.price_max.toLocaleString()} Kz` : d.price_min ? `${t('dlist.price_from')} ${d.price_min.toLocaleString()} Kz` : `${t('dlist.price_upto')} ${d.price_max!.toLocaleString()} Kz`}
             </span>

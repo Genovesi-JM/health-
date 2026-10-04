@@ -75,9 +75,10 @@ def create_booking(db, body, patient, user, key):
                 raise HTTPException(409, "Este horário já não está disponível. Escolha outro horário publicado.")
         start, end = (slot.starts_at, slot.ends_at) if slot else (None, None)
         ensure_capacity(db, doctor_id=doctor_id, patient_id=patient.id, start=start, end=end)
+        from app.services.request_expiry import deadline
         item = Consultation(patient_id=patient.id, triage_session_id=body.triage_session_id,
             specialty=specialty, doctor_id=doctor_id, status="requested", scheduled_at=start,
-            scheduled_end_at=end, slot_id=slot.id if slot else None, country=body.country,
+            scheduled_end_at=end, requested_expires_at=deadline(start), slot_id=slot.id if slot else None, country=body.country,
             timezone=slot.timezone if slot else None, booking_request_key=key, booking_request_digest=digest if key else None)
         db.add(item)
         db.flush()

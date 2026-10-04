@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   MapPin, Video, Building2, Home, Globe, BookOpen,
   CheckCircle2, Loader2, ChevronLeft, Calendar, Star,
@@ -35,39 +35,53 @@ interface DoctorPublic {
   price_max: number | null;
   languages: string[] | null;
   education: { institution: string; degree: string; year: number | null }[] | null;
+  practice_country: 'AO' | 'PT' | null;
 }
 
 export default function PublicDoctorPage() {
   const { t } = useT();
   const { slug } = useParams<{ slug: string }>();
-  const [doctor, setDoctor] = useState<DoctorPublic | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const country = params.get('country') === 'PT' ? 'PT' : 'AO';
+  const [attempt, setAttempt] = useState(0);
+  const requestKey = JSON.stringify([slug, country, attempt]);
+  const [result, setResult] = useState<{ key: string; doctor: DoctorPublic | null; status: 'ready' | 'not_found' | 'error' } | null>(null);
+  const loading = result?.key !== requestKey;
+  const doctor = !loading ? result?.doctor : null;
+  const notFound = !loading && result?.status === 'not_found';
+  const directoryLink = `/medicos?country=${country}`;
+  const marketSelector = <label style={{ display: 'block', maxWidth: 760, margin: '1rem auto', padding: '0 1.25rem' }}>País de atendimento
+    <select className="form-input" value={country} onChange={event => { const next = new URLSearchParams(params); next.set('country', event.target.value); setParams(next); }}>
+      <option value="AO">Angola</option><option value="PT">Portugal</option>
+    </select>
+  </label>;
 
   useEffect(() => {
-    if (!slug) return;
-    api.get(`/api/v1/doctors/by-slug/${slug}`)
-      .then(r => setDoctor(r.data))
-      .catch(err => { if (err.response?.status === 404) setNotFound(true); })
-      .finally(() => setLoading(false));
-  }, [slug]);
+    let active = true;
+    api.get<DoctorPublic>(`/api/v1/doctors/by-slug/${encodeURIComponent(slug ?? '')}`, { params: { country } })
+      .then(response => { if (active) setResult({ key: requestKey, doctor: response.data, status: 'ready' }); })
+      .catch((failure: unknown) => {
+        const status = (failure as { response?: { status?: number } })?.response?.status;
+        if (active) setResult({ key: requestKey, doctor: null, status: status === 404 ? 'not_found' : 'error' });
+      });
+    return () => { active = false; };
+  }, [slug, country, requestKey]);
 
-  if (loading) return (
-    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+  if (loading) return <>{marketSelector}
+    <div role="status" aria-label="A carregar perfil" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Loader2 size={28} style={{ color: 'var(--brand-primary)', animation: 'spin 1s linear infinite' }} />
-    </div>
-  );
+    </div></>;
 
-  if (notFound || !doctor) return (
+  if (notFound || !doctor) return <>{marketSelector}
     <div style={{ maxWidth: 560, margin: '4rem auto', textAlign: 'center', padding: '1.25rem' }}>
-      <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-        {t('pubdoc.not_found')}
+      <p role={notFound ? 'status' : 'alert'} style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+        {notFound ? `Este perfil não está disponível para atendimento em ${country === 'AO' ? 'Angola' : 'Portugal'}.` : 'Não foi possível carregar o perfil. Verifique a ligação e tente novamente.'}
       </p>
-      <Link to="/medicos" style={{ color: 'var(--brand-primary)', fontWeight: 600, fontSize: '0.9rem' }}>
+      {!notFound && <button className="btn btn-secondary" onClick={() => setAttempt(value => value + 1)}>Tentar novamente</button>}
+      <Link to={directoryLink} style={{ color: 'var(--brand-primary)', fontWeight: 600, fontSize: '0.9rem' }}>
         ← {t('pubdoc.see_all')}
       </Link>
-    </div>
-  );
+    </div></>;
 
   const initials = (doctor.display_name || 'M').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const specialtyLabel = doctor.specialization && SPECIALTY_CODES.has(doctor.specialization)
@@ -75,6 +89,7 @@ export default function PublicDoctorPage() {
     : doctor.specialization ?? t('dlist.default_specialty');
 
   const priceText = () => {
+    if (doctor.practice_country !== 'AO') return null;
     if (doctor.price_min && doctor.price_max) return `${doctor.price_min.toLocaleString()} – ${doctor.price_max.toLocaleString()} Kz`;
     if (doctor.price_min) return `${t('dlist.price_from')} ${doctor.price_min.toLocaleString()} Kz`;
     if (doctor.price_max) return `${t('dlist.price_upto')} ${doctor.price_max.toLocaleString()} Kz`;
@@ -82,8 +97,8 @@ export default function PublicDoctorPage() {
   };
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '1.75rem 1.25rem 4rem' }}>
-      <Link to="/medicos" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.83rem', color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none', marginBottom: '1.5rem' }}>
+    <>{marketSelector}<div style={{ maxWidth: 760, margin: '0 auto', padding: '1.75rem 1.25rem 4rem' }}>
+      <Link to={directoryLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.83rem', color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none', marginBottom: '1.5rem' }}>
         <ChevronLeft size={14} /> {t('pubdoc.all_doctors')}
       </Link>
 
@@ -107,6 +122,7 @@ export default function PublicDoctorPage() {
               </span>
             </div>
             <div style={{ fontSize: '0.9rem', color: 'var(--brand-primary)', fontWeight: 600, marginTop: '0.2rem' }}>{specialtyLabel}</div>
+            <p style={{ color: 'var(--text-secondary)', margin: '0.4rem 0' }}>{doctor.practice_country === 'AO' ? 'Exercício confirmado em Angola' : doctor.practice_country === 'PT' ? 'Exercício confirmado em Portugal' : 'País de exercício não confirmado'}</p>
             {doctor.years_experience && (
               <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                 <Star size={12} style={{ verticalAlign: 'middle', marginRight: '0.2rem' }} />
@@ -208,6 +224,6 @@ export default function PublicDoctorPage() {
           </div>
         </div>
       </div>
-    </div>
+    </div></>
   );
 }

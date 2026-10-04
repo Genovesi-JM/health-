@@ -10,6 +10,7 @@ import type { AxiosRequestConfig } from 'axios';
 import { appointmentDate, appointmentRange, appointmentWindow, APPOINTMENT_MARKETS, type AppointmentCapabilities, type AppointmentSlot } from './appointmentAvailability';
 import { newUploadKey } from './patientDocuments';
 import type { PatientConsultation } from './consultations';
+import { consultationExpiryMessage } from './consultationExpiry';
 import { canRescheduleConsultation, createRescheduleAttempt, loadRescheduleConsultation, rescheduleError,
   rescheduleSlots, rescheduleSlotsPath, rescheduleStorageKey, restoreRescheduleAttempt, sendRecoverableReschedule,
   type RescheduleAttempt } from './appointmentRescheduling';
@@ -141,6 +142,7 @@ export default function RescheduleConsultationScreen() {
     {consultation && <View style={styles.card}>
       <Text style={styles.heading}>Marcação atual</Text>
       <Text style={styles.body}>{appointmentDate(consultation.scheduled_at, consultation.timezone)}</Text>
+      {consultationExpiryMessage(consultation) && <Text style={styles.body}>{consultationExpiryMessage(consultation)}</Text>}
       {consultation.country && <Text style={styles.body}>{APPOINTMENT_MARKETS[consultation.country]}</Text>}
     </View>}
     {pending ? <View style={styles.card}>

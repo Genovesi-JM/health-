@@ -23,10 +23,11 @@ type Submission = Omit<typeof emptyDraft, 'subjective' | 'objective' | 'follow_u
 };
 const fieldStyle = { display: 'grid', gap: '0.35rem', marginBottom: '1rem' };
 
-export default function ConsultationCloseout({ consultationId, role, onFinalized, onDirtyChange, onBusyChange, onRecordUpdated, allowAmendment = true }: {
+export default function ConsultationCloseout({ consultationId, role, onFinalized, onDirtyChange, onBusyChange, onRecordUpdated, onAccessLost, allowAmendment = true }: {
   consultationId: string; role: 'doctor' | 'patient'; onFinalized?: () => void; onDirtyChange?: (dirty: boolean) => void; onBusyChange?: (busy: boolean) => void;
   allowAmendment?: boolean;
   onRecordUpdated?: (record: CloseoutRecord) => void;
+  onAccessLost?: () => void;
 }) {
   const [record, setRecord] = useState<CloseoutRecord | null>(null);
   const [draft, setDraft] = useState(emptyDraft);
@@ -64,6 +65,7 @@ export default function ConsultationCloseout({ consultationId, role, onFinalized
       if (currentId.current === id && generation === recordGeneration.current) setRecord(data);
     } catch (failure: unknown) { if (currentId.current === id && generation === recordGeneration.current) {
       if ([401, 403, 404, 409].includes(apiErrorStatus(failure) ?? 0)) setRecord(null);
+      if ([401, 403].includes(apiErrorStatus(failure) ?? 0)) onAccessLost?.();
       setError('Não foi possível carregar o registo da consulta. Tente novamente.');
     } }
     finally { if (currentId.current === id && generation === recordGeneration.current) setLoading(false); }
@@ -112,12 +114,17 @@ export default function ConsultationCloseout({ consultationId, role, onFinalized
       if (currentId.current !== id) return;
       setSaved(true); onDirtyChange?.(false);
       try { const result = await api.get<CloseoutRecord>(`/api/v1/consultations/${id}/closeout`); if (currentId.current === id) setRecord(result.data); }
-      catch { if (currentId.current === id) setError('Consulta concluída. Não foi possível recarregar o resumo; atualize para o consultar.'); }
+      catch (failure) { if (currentId.current === id) {
+        if (onAccessLost && [401, 403].includes(apiErrorStatus(failure) ?? 0)) { onAccessLost(); return; }
+        setError('Consulta concluída. Não foi possível recarregar o resumo; atualize para o consultar.');
+      } }
       if (currentId.current === id) onFinalized?.();
     } catch (failure: unknown) {
       if (currentId.current !== id) return;
+      if (onAccessLost && [401, 403].includes(apiErrorStatus(failure) ?? 0)) { onAccessLost(); return; }
       if (apiErrorStatus(failure) === 409) {
-        try { const result = await api.get<CloseoutRecord>(`/api/v1/consultations/${id}/closeout`); if (currentId.current === id) setRecord(result.data); } catch { /* Keep the unsaved draft. */ }
+        try { const result = await api.get<CloseoutRecord>(`/api/v1/consultations/${id}/closeout`); if (currentId.current === id) setRecord(result.data); }
+        catch (refreshFailure) { if (currentId.current === id && onAccessLost && [401, 403].includes(apiErrorStatus(refreshFailure) ?? 0)) { onAccessLost(); return; } }
         if (currentId.current !== id) return;
         setError('A consulta mudou noutra sessão. O seu rascunho foi preservado; reveja o registo atual antes de continuar.');
       } else {

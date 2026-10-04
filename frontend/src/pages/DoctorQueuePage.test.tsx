@@ -17,7 +17,7 @@ function renderQueue(status: string) {
     url === '/api/v1/doctor/queue/page' ? { items: [{
       id: 'consult-1', patient_name: 'Paciente de teste', specialty: 'clinica_geral',
       status, created_at: '2026-10-04T10:00:00Z', scheduled_at: '2026-10-06T10:00:00Z',
-      reschedule_revision: 3, timezone: 'Africa/Luanda',
+      reschedule_revision: 3, request_expiry_state: 'open', requested_expires_at: '2099-01-01T00:00:00Z', timezone: 'Africa/Luanda',
     }], next_cursor: null } : { items: [] },
   }));
   render(<MemoryRouter><I18nProvider><DoctorQueuePage /></I18nProvider></MemoryRouter>);

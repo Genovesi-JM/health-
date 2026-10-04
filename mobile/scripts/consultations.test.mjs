@@ -111,7 +111,9 @@ test('client stays explicit about unavailable native video even if future server
 });
 
 test('only pending and scheduled consultations offer patient cancellation', () => {
-  assert.equal(canCancelConsultation('requested'), true);
+  assert.equal(canCancelConsultation('requested', 'open'), true);
+  assert.equal(canCancelConsultation('requested', 'expiry_pending'), true);
+  for (const state of [undefined, null, 'review_required', 'expired']) assert.equal(canCancelConsultation('requested', state), false);
   assert.equal(canCancelConsultation('scheduled'), true);
   for (const status of ['in_progress', 'completed', 'cancelled', 'no_show', 'unknown', '']) assert.equal(canCancelConsultation(status), false);
   assert.match(consultationNextStep('requested'), /ainda não está confirmado/);

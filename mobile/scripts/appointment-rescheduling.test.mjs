@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canRescheduleConsultation, createRescheduleAttempt, rescheduleSlots, rescheduleSlotsPath,
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+const source = ts.transpileModule(readFileSync(new URL('../src/screens/appointmentRescheduling.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText.replace("'./consultationExpiry'", JSON.stringify(new URL('../src/screens/consultationExpiry.ts', import.meta.url).href));
+const { canRescheduleConsultation, createRescheduleAttempt, rescheduleSlots, rescheduleSlotsPath,
   rescheduleStorageKey, restoreRescheduleAttempt, rescheduleNotCommitted, sendRecoverableReschedule,
-  loadRescheduleConsultation } from '../src/screens/appointmentRescheduling.ts';
+  loadRescheduleConsultation } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const now = Date.parse('2026-10-04T12:00:00Z');
 const consultation = { id: 'consultation-1', doctor_id: 'doctor-1', specialty: 'clinica_geral', country: 'AO', status: 'scheduled', slot_id: 'old-slot', reschedule_revision: 0, payment_status: 'pending' };
 const slot = { id: 'new-slot', doctor_id: 'doctor-1', doctor_name: 'Médico', specialty: 'clinica_geral', country: 'AO', timezone: 'Africa/Luanda', starts_at: '2026-10-05T13:00:00Z', ends_at: '2026-10-05T13:30:00Z', status: 'open' };
@@ -120,4 +125,19 @@ test('another pending key or a mutated body cannot overwrite a saved reschedule'
     await assert.rejects(() => sendRecoverableReschedule(api, storage, 'owner', changed));
     assert.deepEqual(JSON.parse(await storage.getItemAsync(key)), attempt);
   }
+});
+
+test('a reached or unknown request deadline blocks a new move but never suppresses exact saved recovery', async () => {
+  for (const extra of [{ request_expiry_state: null }, { request_expiry_state: 'expiry_pending', requested_expires_at: '2000-01-01T12:00:00Z' },
+    { request_expiry_state: 'review_required', requested_expires_at: '2099-01-01T12:00:00Z' }]) {
+    assert.equal(canRescheduleConsultation({ ...consultation, status: 'requested', ...extra }), false);
+  }
+  const saved = makeAttempt(); const storage = store();
+  await assert.rejects(() => sendRecoverableReschedule({ post: async () => { throw new Error('Response lost'); } }, storage, 'owner', saved));
+  const restored = restoreRescheduleAttempt(await storage.getItemAsync(rescheduleStorageKey('owner', consultation.id)), consultation.id);
+  const result = await sendRecoverableReschedule({ post: async (path, payload, options) => {
+    assert.deepEqual(payload, saved.payload); assert.equal(options.headers['Idempotency-Key'], saved.key);
+    return { data: committed({ status: 'expired', request_expiry_state: 'expired' }) };
+  } }, storage, 'owner', restored);
+  assert.equal(result.kind, 'success'); assert.equal(result.consultation.status, 'expired');
 });

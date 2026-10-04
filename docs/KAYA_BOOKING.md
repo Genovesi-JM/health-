@@ -45,8 +45,9 @@ the server so a stale patient screen cannot cancel care that has already started
 
 The policy-level ten-minute hold and quoted-terms workflow described above is
 not the application's current lifecycle. An application request reserves its
-slot pending acceptance or cancellation; automatic expiry and payments remain
-further work. SQLite API race tests demonstrate one winner for competing slot
+slot pending acceptance, cancellation or its persisted acceptance deadline;
+payments remain separate work. The bounded expiry worker is implemented and
+synthetically validated but not activated. SQLite API race tests demonstrate one winner for competing slot
 claims and immediate-care acceptance. See
 [runtime scheduling](KAYA_SCHEDULING.md#application-integration--4-october-2026).
 

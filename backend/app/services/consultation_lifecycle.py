@@ -35,6 +35,7 @@ def record_event(db: Session, consultation: Consultation, actor_id: str,
 
 def transition(db: Session, consultation: Consultation, *, actor_id: str,
                action: str, allowed_from: tuple[str, ...], status: str,
+               patient_cancel: bool = False,
                **changes) -> None:
     """Compare-and-set status and owner, leaving commit to the caller.
 
@@ -51,12 +52,20 @@ def transition(db: Session, consultation: Consultation, *, actor_id: str,
     from app.services.appointments import guard_transition, release_cancelled_slot
     guard_transition(db, consultation, status, changes.get("doctor_id", previous_doctor_id))
     table = Consultation.__table__
+    predicates = []
+    if patient_cancel:
+        from app.services.request_expiry import actual_care_sql
+        if db.query(Consultation.id).filter(Consultation.id == consultation.id, actual_care_sql()).first():
+            db.rollback()
+            raise HTTPException(409, "Existem registos de cuidados iniciados. Contacte a equipa para rever a consulta.")
+        predicates.append(~actual_care_sql())
     result = db.execute(
         update(table).where(
             table.c.id == consultation.id,
             table.c.status == previous_status,
             table.c.doctor_id == previous_doctor_id,
             table.c.reschedule_revision == previous_revision,
+            *predicates,
         ).values(status=status, updated_at=datetime.utcnow(), **changes)
     )
     if result.rowcount != 1:

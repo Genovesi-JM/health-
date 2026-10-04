@@ -15,6 +15,7 @@ import TeleconsultationControl from '../components/TeleconsultationControl';
 import ConsultationCloseout from '../components/ConsultationCloseout';
 import RescheduleConsultation from '../components/RescheduleConsultation';
 import { useConsultationPages } from '../utils/useConsultationPages';
+import { requestCanCancel, requestExpiryMessage } from '../utils/requestExpiry';
 import { canReschedule, readReschedule } from '../utils/pendingReschedule';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -54,7 +55,7 @@ export default function ConsultationsPage() {
   }
 
   const cancelConsultation = async () => {
-    if (!cancelFor || cancellationBusy.current || !['requested', 'scheduled'].includes(cancelFor.status)) return;
+    if (!cancelFor || cancellationBusy.current || !requestCanCancel(cancelFor)) return;
     const target = cancelFor;
     cancellationBusy.current = true; setCancelling(true); setCancelError(''); setCancelNotice('');
     try {
@@ -114,7 +115,7 @@ export default function ConsultationsPage() {
   const statusLabel = (s: string) => {
     const map: Record<string, string> = {
       requested: t('consult.status_requested'), scheduled: t('consult.status_scheduled'), in_progress: t('consult.status_in_progress'),
-      completed: t('consult.status_completed'), cancelled: t('consult.status_cancelled'), no_show: t('consult.status_no_show'),
+      completed: t('consult.status_completed'), cancelled: t('consult.status_cancelled'), no_show: t('consult.status_no_show'), expired: 'Prazo terminado',
     };
     return map[s] || s;
   };
@@ -213,7 +214,7 @@ export default function ConsultationsPage() {
                     <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
                       <div>{specialtyLabel(c.specialty, t)}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
-                        {['requested', 'scheduled'].includes(c.status) && <button className="btn btn-sm" disabled={cancelling || recovery.has(c.id)} onClick={() => { setCancelFor(c); setCancelError(''); setCancelNotice(''); }}>Cancelar consulta</button>}
+                        {requestCanCancel(c) && <button className="btn btn-sm" disabled={cancelling || recovery.has(c.id)} onClick={() => { setCancelFor(c); setCancelError(''); setCancelNotice(''); }}>Cancelar consulta</button>}
                         {(recovery.has(c.id) || canReschedule(c)) && <button className="btn btn-sm" disabled={cancelling} onClick={() => setRescheduleFor(c)}>{recovery.has(c.id) ? 'Recuperar alteração' : 'Alterar horário'}</button>}
                         {recovery.has(c.id) && <small>{recovery.get(c.id) === 'pending' ? 'Confirme a alteração pendente antes de cancelar a consulta.' : 'Não foi possível verificar a referência da alteração. Abra a recuperação antes de continuar.'}</small>}
                         {['scheduled', 'in_progress', 'completed'].includes(c.status) && (
@@ -248,7 +249,7 @@ export default function ConsultationsPage() {
                         {statusIcon(c.status)} {statusLabel(c.status)}
                       </span>
                     </td>
-                    <td>{c.scheduled_at ? formatAppointmentTime(c.scheduled_at, c.timezone || 'UTC', locale) : '—'}</td>
+                    <td>{c.scheduled_at ? formatAppointmentTime(c.scheduled_at, c.timezone || 'UTC', locale) : '—'}{requestExpiryMessage(c) && <p>{requestExpiryMessage(c)}</p>}</td>
                     <td>
                       {c.payment_status === 'paid' ? (
                         <span className="badge badge-success">{t('pay.status_paid')}</span>

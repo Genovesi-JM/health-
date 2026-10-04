@@ -1,0 +1,10 @@
+{
+  "bundle-informational-android.log": "d65feb9758800776f2939b917b4e77d6bf2a2eaecc48c3b1e7f3a02fd90566c6",
+  "bundle-informational-ios.log": "decb082595881497c89e9f91ca4d1999ced280dd2e77377e148b408a8c797f81",
+  "bundle-legacy-android.log": "4f7b974f543de53e397cc0e3579c1382c8c923f3ff5205418b4d962804e673f8",
+  "bundle-legacy-ios.log": "a85af1a4c4a96a44c59c7a55f1c155a9a0e233b70086b2717fce5c94f1205ef0",
+  "mobile-tests.log": "562624caaa848f1a61fca6ac9e182c04267a26942741afeb04c22853ab23d15f",
+  "report.json": "150bed91e1c3685e2500349ac84186e39266ede479e9edcf6b57d3a52f4dd503",
+  "source-manifest.json": "a59a8eeb1e5322685a53ec347fc46a184d9c2baf9bb531ebb86188a3ecc07468",
+  "typecheck.log": "82690030b78088b64f357fdad2af0518e8c303be020a379661c4a158e1bd041f"
+}
