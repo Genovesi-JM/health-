@@ -3,17 +3,14 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { I18nProvider } from './i18n/LanguageContext';
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleRoute } from './RoleRoute';
+import { defaultAccountPath } from './authRouting';
 
 /* Root smart redirect: send logged-in users to their dashboard */
 function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <LandingPage />;
-  if (user.role === 'doctor') return <Navigate to="/doctor/dashboard" replace />;
-  if (user.role === 'nurse') return <Navigate to="/nurse" replace />;
-  if (user.role === 'admin') return <Navigate to="/admin" replace />;
-  if (user.role === 'corporate_admin') return <Navigate to="/corporate" replace />;
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to={defaultAccountPath(user)} replace />;
 }
 
 /* Public pages */

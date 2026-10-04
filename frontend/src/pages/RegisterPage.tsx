@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Stethoscope, HeartPulse } from 'lucide-react';
 import { useAuth } from '../AuthContext';
@@ -8,7 +8,6 @@ import kayaLogo from '/kaya-logo.svg';
 import LanguageSelector from '../components/LanguageSelector';
 import { apiErrorMessage } from '../utils/apiError';
 
-const REQUIRED_CONSENTS = ['terms_of_service', 'privacy_policy', 'medical_disclaimer', 'health_data_processing', 'telemedicine_consent'] as const;
 const COUNTRIES = [
   ['AO', 'Angola'], ['US', 'Estados Unidos'], ['GB', 'Reino Unido'],
   ['PT', 'Portugal'], ['ES', 'Espanha'], ['CU', 'Cuba'],
@@ -26,7 +25,7 @@ const countryName = (code: string) => COUNTRIES.find(([value]) => value === code
 const CountryOptions = () => <>{COUNTRIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</>;
 
 export default function RegisterPage() {
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
   const navigate = useNavigate();
   const { t } = useT();
 
@@ -49,16 +48,8 @@ export default function RegisterPage() {
   const [showCpw, setShowCpw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Consent checkboxes
-  const [consents, setConsents] = useState({
-    terms_of_service: false,
-    privacy_policy: false,
-    medical_disclaimer: false,
-    health_data_processing: false,
-    telemedicine_consent: false,
-  });
-  const allConsentsChecked = REQUIRED_CONSENTS.every(c => consents[c]);
+  const [registeredPath, setRegisteredPath] = useState<string | null>(null);
+  const submitting = useRef(false);
 
   const sectors = [
     { value: '', label: t('register.sector_select') },
@@ -72,51 +63,57 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting.current) return;
     setError('');
-    if (password !== confirmPw) { setError(t('register.pw_mismatch')); return; }
-    if (password.length < 6) { setError(t('register.pw_short')); return; }
-    if (!allConsentsChecked) { setError('Aceite todos os consentimentos obrigatórios para se registar.'); return; }
-    if (role !== 'patient' && (!fullName || !issuingAuthority || !licenceNumber || !diplomaInstitution || !degreeTitle)) {
+    if (!registeredPath && password !== confirmPw) { setError(t('register.pw_mismatch')); return; }
+    if (!registeredPath && password.length < 6) { setError(t('register.pw_short')); return; }
+    if (!registeredPath && role !== 'patient' && (!fullName || !issuingAuthority || !licenceNumber || !diplomaInstitution || !degreeTitle)) {
       setError('Complete os dados profissionais obrigatórios antes de continuar.');
       return;
     }
 
+    submitting.current = true;
     setLoading(true);
+    let nextPath = registeredPath;
     try {
-      const body = {
-        email,
-        password,
-        full_name: fullName || email.split('@')[0],
-        sector_focus: 'health',
-        org_name: 'KAYA',
-        account_name: fullName || email.split('@')[0],
-        entity_type: 'individual',
-        modules_enabled: ['triage', 'teleconsulta'],
-        role,
-        ...(role !== 'patient' ? {
-          practice_country: practiceCountry,
-          licence_country: licenceCountry,
-          diploma_country: diplomaCountry,
-          issuing_authority: issuingAuthority,
-          licence_number: licenceNumber,
-          licence_jurisdiction: licenceJurisdiction || null,
-          diploma_institution: diplomaInstitution,
-          degree_title: degreeTitle,
-          graduation_year: graduationYear ? Number(graduationYear) : null,
-          specialization: sector || 'general',
-        } : {}),
-      };
-      const res = await api.post('/auth/register', body);
-      login(res.data);
-      // Post consents in background (best-effort; ConsentGate will catch any failures)
-      for (const ct of REQUIRED_CONSENTS) {
-        api.post('/api/v1/compliance/consent', { consent_type: ct }).catch(() => {});
+      if (!nextPath) {
+        const body = {
+          email,
+          password,
+          full_name: fullName || email.split('@')[0],
+          sector_focus: 'health',
+          org_name: 'KAYA',
+          account_name: fullName || email.split('@')[0],
+          entity_type: 'individual',
+          modules_enabled: ['triage', 'teleconsulta'],
+          role,
+          ...(role !== 'patient' ? {
+            practice_country: practiceCountry,
+            licence_country: licenceCountry,
+            diploma_country: diplomaCountry,
+            issuing_authority: issuingAuthority,
+            licence_number: licenceNumber,
+            licence_jurisdiction: licenceJurisdiction || null,
+            diploma_institution: diplomaInstitution,
+            degree_title: degreeTitle,
+            graduation_year: graduationYear ? Number(graduationYear) : null,
+            specialization: sector || 'general',
+          } : {}),
+        };
+        const res = await api.post('/auth/register', body);
+        nextPath = role === 'patient' ? '/onboarding/patient' : '/professional-verification';
+        setRegisteredPath(nextPath);
+        login(res.data);
       }
-      sessionStorage.setItem('consents_accepted', 'true');
-      navigate(role === 'patient' ? '/dashboard' : '/professional-verification');
+      // Patient consents are recorded atomically when onboarding is submitted.
+      // Applicants keep a non-clinical account while their dossier is reviewed.
+      await refreshUser();
+      navigate(nextPath);
     } catch (err: any) {
-      setError(apiErrorMessage(err, t('register.error')));
-    } finally { setLoading(false); }
+      setError(nextPath
+        ? 'A conta foi criada. Não foi possível carregar o perfil. Tente continuar novamente ou entre com a sua conta.'
+        : apiErrorMessage(err, t('register.error')));
+    } finally { submitting.current = false; setLoading(false); }
   };
 
   return (
@@ -136,6 +133,7 @@ export default function RegisterPage() {
         <p className="auth-subtitle">{t('register.subtitle')}</p>
 
         <form onSubmit={handleRegister}>
+          <fieldset disabled={loading || Boolean(registeredPath)} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <div className="form-group">
             <label className="form-label">Criar conta como</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.55rem' }}>
@@ -264,73 +262,18 @@ export default function RegisterPage() {
             </select>
           </div>
 
-          {/* ── Required consents ── */}
-          <div style={{ margin: '0.25rem 0 1rem', padding: '1rem', borderRadius: '8px',
-            border: '1px solid var(--border, #e2e8f0)', background: 'var(--bg, #f8fafc)',
-            display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600,
-              color: 'var(--text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Consentimentos obrigatórios
-            </p>
+          <p style={{ fontSize: '.82rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+            {role === 'patient'
+              ? 'Depois de criar a conta, complete o perfil e reveja os consentimentos antes de marcar uma consulta.'
+              : 'Depois de criar a conta, envie os documentos para revisão. O acesso clínico exige aprovação e autenticação em dois passos.'}
+            {' '}<Link to="/privacy" target="_blank" rel="noreferrer">Política de Privacidade</Link>
+            {' · '}<Link to="/terms" target="_blank" rel="noreferrer">Termos de Serviço</Link>
+          </p>
+          </fieldset>
 
-            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
-              <input type="checkbox" checked={consents.terms_of_service}
-                onChange={() => setConsents(p => ({ ...p, terms_of_service: !p.terms_of_service }))}
-                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
-              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                Aceito os{' '}
-                <Link to="/terms" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Termos de Serviço</Link>
-              </span>
-            </label>
-
-            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
-              <input type="checkbox" checked={consents.medical_disclaimer}
-                onChange={() => setConsents(p => ({ ...p, medical_disclaimer: !p.medical_disclaimer }))}
-                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
-              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                Reconheço o{' '}
-                <Link to="/medical-disclaimer" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Aviso Médico</Link>
-                {' '}— esta plataforma não é um serviço de emergência e não substitui o atendimento presencial
-              </span>
-            </label>
-
-            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
-              <input type="checkbox" checked={consents.health_data_processing}
-                onChange={() => setConsents(p => ({ ...p, health_data_processing: !p.health_data_processing }))}
-                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
-              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                Consinto o tratamento dos meus dados de saúde conforme descrito na{' '}
-                <Link to="/privacy" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Política de Privacidade</Link>
-              </span>
-            </label>
-
-            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
-              <input type="checkbox" checked={consents.privacy_policy}
-                onChange={() => setConsents(p => ({ ...p, privacy_policy: !p.privacy_policy }))}
-                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
-              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                Li e aceito a{' '}
-                <Link to="/privacy" target="_blank"
-                  style={{ color: 'var(--accent-teal, #0d9488)' }}>Política de Privacidade</Link>
-              </span>
-            </label>
-
-            <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', cursor: 'pointer' }}>
-              <input type="checkbox" checked={consents.telemedicine_consent}
-                onChange={() => setConsents(p => ({ ...p, telemedicine_consent: !p.telemedicine_consent }))}
-                style={{ marginTop: '2px', accentColor: 'var(--accent-teal, #0d9488)', cursor: 'pointer' }} />
-              <span style={{ fontSize: '0.82rem', color: 'var(--text, #0f172a)', lineHeight: 1.5 }}>
-                Consinto receber serviços de telemedicina através desta plataforma
-              </span>
-            </label>
-          </div>
-
-          <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !allConsentsChecked}
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading}
             style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem' }}>
-            {loading ? t('register.loading') : t('register.submit')}
+            {loading ? t('register.loading') : registeredPath ? 'Continuar para o perfil' : t('register.submit')}
           </button>
 
           <button type="button" className="btn btn-outline btn-lg"

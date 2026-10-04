@@ -7,9 +7,10 @@ import { useT } from '../i18n/LanguageContext';
 import kayaLogo from '/kaya-logo.svg';
 import LanguageSelector from '../components/LanguageSelector';
 import { apiErrorMessage } from '../utils/apiError';
+import { accountPathAfterLogin } from '../authRouting';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useT();
@@ -40,12 +41,11 @@ export default function LoginPage() {
 
   const enrollAuth = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
-  const finishLogin = (data: any) => {
+  const finishLogin = async (data: any) => {
     login(data);
-    const role = data.user?.role;
+    const fresh = await refreshUser();
     const from = (location.state as any)?.from?.pathname;
-    const defaultDest = role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : role === 'nurse' ? '/nurse' : role === 'corporate_admin' ? '/corporate' : '/dashboard';
-    navigate(from || defaultDest, { replace: true });
+    navigate(accountPathAfterLogin(fresh, from), { replace: true });
   };
 
   const handleLogin = async (e: FormEvent) => {
@@ -72,7 +72,7 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      finishLogin(res.data);
+      await finishLogin(res.data);
     } catch (err: any) {
       setError(apiErrorMessage(err, t('login.invalid')));
     } finally { setLoading(false); }
@@ -96,7 +96,7 @@ export default function LoginPage() {
     setError(''); setLoading(true);
     try {
       const res = await api.post('/auth/mfa/challenge', { mfa_token: mfaToken, code: mfaCode.trim() });
-      finishLogin(res.data);
+      await finishLogin(res.data);
     } catch (err: any) {
       setError(apiErrorMessage(err, t('mfa.invalid_code')));
     } finally { setLoading(false); }
@@ -111,6 +111,16 @@ export default function LoginPage() {
     } catch {
       setForgotMsg(t('login.forgot_msg'));
     }
+  };
+
+  const finishEnrollment = async () => {
+    if (!pendingSession) return;
+    setLoading(true); setError('');
+    try {
+      await finishLogin(pendingSession);
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, t('login.invalid')));
+    } finally { setLoading(false); }
   };
 
   const handleOAuth = (provider: 'google' | 'microsoft') => {
@@ -151,9 +161,10 @@ export default function LoginPage() {
               {recoveryCodes.map(c => <span key={c}>{c}</span>)}
             </div>
             <button type="button" className="btn btn-primary auth-submit"
-                    onClick={() => { if (pendingSession) finishLogin(pendingSession); }}>
+                    disabled={loading} onClick={finishEnrollment}>
               Guardei os códigos — Entrar
             </button>
+            {error && <div role="alert" className="auth-error">{error}</div>}
           </div>
         ) : enrollToken ? (
           /* MFA enrollment step — first sign-in for a mandatory-MFA role */

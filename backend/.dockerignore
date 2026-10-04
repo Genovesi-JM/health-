@@ -110,12 +110,16 @@
 !app/seed_data.py
 !app/services/__init__.py
 !app/services/cart.py
+!app/services/clinician_access.py
+!app/services/credential_mutations.py
+!app/services/consultation_lifecycle.py
 !app/services/credential_providers.py
 !app/services/credential_verification.py
 !app/services/document_expiry.py
 !app/services/health_storage.py
 !app/services/mfa.py
 !app/services/orders.py
+!app/services/patient_onboarding.py
 !app/services/payments.py
 !app/services/pdf_generator.py
 !app/services/pem_gateway.py

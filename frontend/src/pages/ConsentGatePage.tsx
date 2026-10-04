@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Shield, CheckCircle2, AlertTriangle, Loader2, Heart } from 'lucide-react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
+import { useAuth } from '../AuthContext';
+import { accountPathAfterLogin } from '../authRouting';
 
 /**
  * ConsentGatePage — shown to authenticated patients who have not yet
@@ -29,6 +31,10 @@ const REQUIRED_CONSENTS = [
 export default function ConsentGatePage() {
   const { t } = useT();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+  const destination = user ? accountPathAfterLogin(user, from) : '/login';
   const [existing, setExisting] = useState<string[]>([]);
   const [checked, setChecked] = useState({
     terms_of_service: false,
@@ -79,9 +85,7 @@ export default function ConsentGatePage() {
           await api.post('/api/v1/compliance/consent', { consent_type: ct });
         }
       }
-      // Mark in sessionStorage so ProtectedRoute skips the gate until next login
-      sessionStorage.setItem('consents_accepted', 'true');
-      navigate('/dashboard', { replace: true });
+      navigate(destination, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || t('cgate.save_error'));
     } finally {
@@ -112,7 +116,7 @@ export default function ConsentGatePage() {
           <p style={{ color: 'var(--text-muted, #64748b)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
             {t('cgate.already_desc')}
           </p>
-          <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>
+          <button className="btn btn-primary" onClick={() => navigate(destination)}>
             {t('cgate.go_dashboard')}
           </button>
         </div>

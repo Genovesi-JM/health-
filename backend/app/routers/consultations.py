@@ -38,6 +38,7 @@ from app.rbac import (
     require_consents, require_verified_doctor,
 )
 from app.services.consultation_lifecycle import record_event, transition
+from app.services.clinician_access import require_current_clinician
 
 # Canonical specialty codes (match Doctor.specialization). Legacy English UI
 # codes and free-text labels are normalised to these so bookings always reach
@@ -107,8 +108,13 @@ def book_consultation(
         doc = db.query(Doctor).filter(Doctor.id == body.doctor_id).first()
         if not doc:
             raise HTTPException(status_code=404, detail="Médico não encontrado.")
-        if doc.verification_status != "verified":
-            raise HTTPException(status_code=400, detail="Este médico ainda não está verificado.")
+        doctor_user = db.get(User, doc.user_id)
+        if not doctor_user:
+            raise HTTPException(status_code=400, detail="Este médico não está disponível para marcação.")
+        try:
+            require_current_clinician(doctor_user, db)
+        except HTTPException:
+            raise HTTPException(status_code=400, detail="Este médico não está autorizado para receber marcações.")
         if normalize_specialty(doc.specialization) != specialty:
             raise HTTPException(status_code=422, detail="O médico não corresponde à especialidade escolhida.")
         assigned_doctor_id = doc.id

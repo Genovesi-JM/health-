@@ -8,13 +8,33 @@ interface AuthCtx {
   login: (data: { access_token: string; refresh_token?: string; user: User }) => void;
   logout: () => void;
   loading: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User>;
 }
 
 const AuthContext = createContext<AuthCtx>({
   user: null, token: null, login: () => {}, logout: () => {},
-  loading: true, refreshUser: async () => {},
+  loading: true, refreshUser: async () => { throw new Error('AuthProvider is missing'); },
 });
+
+function userFromResponse(me: User & { user_id?: string; full_name?: string }): User {
+  return {
+    id: me.id || me.user_id || '',
+    email: me.email,
+    role: me.role,
+    is_active: me.is_active !== false,
+    name: me.name || me.full_name,
+    professional_application: me.professional_application ?? null,
+    patient_onboarding_complete: me.patient_onboarding_complete,
+  };
+}
+
+function cacheUser(user: User) {
+  localStorage.setItem('ht_user', JSON.stringify(user));
+  localStorage.setItem('ht_email', user.email);
+  localStorage.setItem('ht_name', user.name || '');
+  localStorage.setItem('ht_role', user.role);
+  localStorage.setItem('ht_user_id', String(user.id));
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -25,30 +45,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const session = getSession();
     if (session) {
-      setToken(session.token);
-      try {
-        const u = JSON.parse(localStorage.getItem('ht_user') || '{}');
-        setUser(u);
-      } catch { /* ignore */ }
-
-      /* Verify token is still valid by calling /auth/me */
+      // Cached roles and completion flags are not authoritative after a reload.
       api.get('/auth/me')
         .then(r => {
-          const me = r.data;
-          const fresh: User = {
-            id: me.id || me.user_id,
-            email: me.email,
-            role: me.role,
-            is_active: me.is_active !== false,
-            name: me.name || me.full_name,
-          };
+          const fresh = userFromResponse(r.data);
+          setToken(session.token);
           setUser(fresh);
-          localStorage.setItem('ht_user', JSON.stringify(fresh));
-          if (me.email) localStorage.setItem('ht_email', me.email);
-          if (me.name) localStorage.setItem('ht_name', me.name);
-          if (me.role) localStorage.setItem('ht_role', me.role);
+          cacheUser(fresh);
         })
-        .catch(() => { /* token may be expired — interceptor handles 401 */ })
+        .catch(() => {
+          setToken(null);
+          setUser(null);
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -63,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     setToken(data.access_token);
     setUser(data.user);
+    cacheUser(data.user);
   }, []);
 
   const logout = useCallback(() => {
@@ -72,19 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshUser = useCallback(async () => {
-    try {
-      const r = await api.get('/auth/me');
-      const me = r.data;
-      const fresh: User = {
-        id: me.id || me.user_id,
-        email: me.email,
-        role: me.role,
-        is_active: me.is_active !== false,
-        name: me.name || me.full_name,
-      };
-      setUser(fresh);
-      localStorage.setItem('ht_user', JSON.stringify(fresh));
-    } catch { /* ignore */ }
+    const r = await api.get('/auth/me');
+    const fresh = userFromResponse(r.data);
+    setUser(fresh);
+    cacheUser(fresh);
+    return fresh;
   }, []);
 
   return (

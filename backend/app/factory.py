@@ -114,6 +114,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Kaya-Error-Code"],
     )
     application.add_middleware(SecurityHeadersMiddleware)
     application.add_middleware(RateLimitMiddleware)

@@ -43,3 +43,26 @@ The same canonical onboarding state is the single source rendered by web and
 mobile; drafts are minimally scoped and expiring. Recovery paths (expired invite,
 interrupted onboarding, email change, duplicate application, rejected/needs-info)
 are accessible and low-bandwidth.
+
+## Operational journey implementation — 4 October 2026
+
+The existing operational web/native clients now use the eight-step patient
+wizard with explicitly role-scoped API requests. Its submit transaction validates
+and saves the patient profile, five versioned consent grants and a completion
+audit. Submitted drafts without that audit are legacy drafts to resume, not proof
+of completion. The wizard does not verify email/phone ownership or grant family
+record access. Registration leads to this journey instead of attempting consent
+writes before an authenticated session exists.
+
+Professional signup creates a non-clinical applicant. Dossier submission stays
+separate from human credential approval. Authorized approval checks evidence and
+current licence status and records the role/status change with its audit. A fresh
+MFA session is required afterward; an existing applicant session cannot inherit
+clinical authority. Revision checks reject concurrent stale dossier mutations.
+Expired cases require reviewer reopening for renewal; revoked cases stay closed.
+
+These are source implementations behind the existing HOLD entry points. They do
+not establish production organizational privileges or activate clinical services.
+The [technical development record](TECHNICAL_DEVELOPMENT_2026-10-04.md) describes
+the synthetic account-to-consultation test, covered access paths and remaining
+provider, database and native-device validation.

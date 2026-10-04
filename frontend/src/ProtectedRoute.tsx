@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useT } from './i18n/LanguageContext';
 import LanguageSelector from './components/LanguageSelector';
 import api from './api';
+import { isPatientAccount, requiredPathRedirect } from './authRouting';
 
 /** Consent types patients must accept before accessing the portal */
 const REQUIRED_CONSENTS = [
@@ -36,8 +37,11 @@ export function ProtectedRoute() {
     setConsentError(false);
     setCheckedConsentFor(consentIdentity);
 
-    // Doctors and admins are exempt from the patient consent gate
-    if (user.role === 'doctor' || user.role === 'admin') {
+    // Application and onboarding flows collect their own relevant information.
+    // Clinical patient consent must not block an applicant or a staff account.
+    if (!isPatientAccount(user) || location.pathname.startsWith('/onboarding/')
+      || ['/settings', '/security', '/security/mfa'].includes(location.pathname)
+      || location.pathname === '/professional-verification' || requiredPathRedirect(user, location.pathname)) {
       setConsentOk(true);
       return;
     }
@@ -75,6 +79,9 @@ export function ProtectedRoute() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  const accountRedirect = requiredPathRedirect(user, location.pathname);
+  if (accountRedirect) return <Navigate to={accountRedirect} replace />;
+
   // Still checking consents — show spinner
   if (consentOk === null || checkedConsentFor !== consentIdentity) {
     return (
@@ -100,7 +107,7 @@ export function ProtectedRoute() {
     && location.pathname !== '/consent-gate'
     && location.pathname !== '/data-consent'
   ) {
-    return <Navigate to="/consent-gate" replace />;
+    return <Navigate to="/consent-gate" state={{ from: location }} replace />;
   }
 
   /* Map route path to a breadcrumb label */
@@ -167,7 +174,7 @@ export function ProtectedRoute() {
         <main className="app-content">
           <Outlet />
         </main>
-        {(user.role === 'patient' || user.role === 'cliente') && (
+        {isPatientAccount(user) && user.patient_onboarding_complete !== false && (
           <nav className="patient-bottom-nav" aria-label="Navegação principal">
             <NavLink to="/dashboard"><Home size={20} /><span>{t('sidebar.overview')}</span></NavLink>
             <NavLink to="/triage"><Activity size={20} /><span>{t('sidebar.triage')}</span></NavLink>

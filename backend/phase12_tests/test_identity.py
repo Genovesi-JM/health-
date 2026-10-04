@@ -58,8 +58,10 @@ def test_registration_bounds_requested_role():
     assert '{"patient", "doctor", "nurse"}' in AUTH
 
 
-def test_registration_blocks_clinical_roles_via_mfa_gate():
-    assert "if mfa_is_mandatory(role):" in AUTH
+def test_persisted_privileged_roles_require_mfa():
+    # Requested professions stay non-clinical until human review; MFA follows
+    # the persisted role, not the profession supplied on the registration form.
+    assert "if mfa_is_mandatory(user.role):" in AUTH
     # Every privileged clinical/admin role is MFA-mandatory (so the gate covers them).
     for r in ("doctor", "nurse", "pharmacist", "admin", "compliance_reviewer"):
         assert r in MFA_MANDATORY_ROLES, f"{r} must be MFA-mandatory"

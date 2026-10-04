@@ -32,6 +32,7 @@ export default function ProfessionalVerificationScreen({ onVerified }: { onVerif
   const [providerConsent, setProviderConsent] = useState(false);
 
   const load = async () => {
+    setLoading(true);
     try {
       const response = await api.get('/api/v1/credentials/me');
       setData(response.data);
@@ -210,6 +211,9 @@ export default function ProfessionalVerificationScreen({ onVerified }: { onVerif
       </TouchableOpacity>}
       {data.status === 'pending_review' && <Text style={styles.pending}>Your evidence is queued for human review. You may safely close the app.</Text>}
       {data.status === 'verified' && <Text style={styles.verified}>✓ Professional identity verified. Clinical mobile tools will appear as they are released.</Text>}
+      <TouchableOpacity onPress={load} disabled={!!working} style={styles.uploadButton} accessibilityRole="button">
+        <Text style={styles.uploadText}>Refresh review status</Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={logout} style={styles.signOut}><Text style={styles.link}>Sign out</Text></TouchableOpacity>
     </ScrollView>
   );

@@ -15,7 +15,6 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
 from app.health_models import (
-    ClinicianCredential,
     Consultation,
     Doctor,
     Patient,
@@ -25,6 +24,7 @@ from app.health_models import (
 )
 from app.rbac import log_health_audit
 from app.services.consultation_lifecycle import transition
+from app.services.clinician_access import require_current_clinician
 
 
 router = APIRouter(prefix="/api/v1/teleconsultations", tags=["teleconsultation"])
@@ -47,14 +47,11 @@ class PreflightRequest(BaseModel):
 
 
 def _clinician_verified(user: User, db: Session) -> bool:
-    if user.role not in ("doctor", "nurse"):
+    try:
+        require_current_clinician(user, db)
+    except HTTPException:
         return False
-    credential = db.query(ClinicianCredential).filter(
-        ClinicianCredential.user_id == user.id,
-        ClinicianCredential.profession == user.role,
-        ClinicianCredential.status == "verified",
-    ).first()
-    return bool(credential)
+    return True
 
 
 def _authorized_consultation(user: User, consultation_id: str, db: Session) -> Consultation:

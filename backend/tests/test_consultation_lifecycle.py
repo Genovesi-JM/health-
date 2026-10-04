@@ -75,7 +75,7 @@ def people(db_session):
         if mfa_is_mandatory(role):
             db_session.add(MfaCredential(user_id=user.id, secret=generate_secret(), enabled=True))
         db_session.commit()
-        token = create_access_token({"sub": user.email, "uid": user.id, "mfa_verified": True})
+        token = create_access_token({"sub": user.email, "uid": user.id, "role": role, "mfa_verified": True})
         return {"user": user, "profile": profile, "headers": {"Authorization": f"Bearer {token}"}}
     return {
         "patient": person("patient"), "other_patient": person("patient"),

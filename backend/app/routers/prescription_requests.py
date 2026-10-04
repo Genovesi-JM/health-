@@ -29,6 +29,7 @@ from app.health_schemas import (
 )
 from app.routers.notifications import create_notification
 from app.rbac import log_health_audit
+from app.services.clinician_access import require_current_clinician
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["prescription-requests"])
@@ -259,6 +260,7 @@ def list_doctor_prescription_requests(
 ):
     if user.role != "doctor":
         raise HTTPException(status_code=403, detail="Acesso reservado a médicos.")
+    require_current_clinician(user, db)
 
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
@@ -296,6 +298,7 @@ def decide_prescription_request(
         )
     if user.role != "doctor":
         raise HTTPException(status_code=403, detail="Acesso negado.")
+    require_current_clinician(user, db)
 
     if body.action not in VALID_ACTIONS:
         valid_display = sorted({"approve", "adjust", "consult_requested", "exams_requested", "reject"})

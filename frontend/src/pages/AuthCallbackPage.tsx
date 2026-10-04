@@ -1,46 +1,46 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import type { Role } from '../types';
 import kayaLogo from '/kaya-logo.svg';
 import { useT } from '../i18n/LanguageContext';
+import { accountPathAfterLogin } from '../authRouting';
+import { persistSession } from '../api';
 
 export default function AuthCallbackPage() {
   const { t } = useT();
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
+  const { login, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     // Backend sends: ?token=...&email=...&role=...&name=...&redirect=...
     const token = searchParams.get('token') || searchParams.get('access_token');
-    const email = searchParams.get('email') || '';
-    const role = (searchParams.get('role') || 'patient') as Role;
-    const name = searchParams.get('name') || '';
-    const redirect = searchParams.get('redirect') ||
-      (role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/dashboard');
+    const redirect = searchParams.get('redirect') || undefined;
 
     if (token) {
-      try {
-        login({
-          access_token: token,
-          user: {
-            id: searchParams.get('account_id') || '',
-            email,
-            role,
-            name,
-            is_active: true,
-          },
-        });
-        navigate(redirect, { replace: true });
-      } catch {
-        setError(t('authcb.process_error'));
-      }
+      (async () => {
+        try {
+          // URL parameters are not an authority for a clinical role or identity.
+          persistSession({ access_token: token, user: { id: '', email: '', role: 'patient' } });
+          const fresh = await refreshUser();
+          if (!cancelled) {
+            login({ access_token: token, user: fresh });
+            navigate(accountPathAfterLogin(fresh, redirect), { replace: true });
+          }
+        } catch {
+          if (!cancelled) {
+            logout();
+            setError(t('authcb.process_error'));
+          }
+        }
+      })();
     } else {
       setError(searchParams.get('error') || t('authcb.failed'));
     }
-  }, [searchParams, login, navigate, t]);
+    return () => { cancelled = true; };
+  }, [searchParams, login, logout, refreshUser, navigate, t]);
 
   return (
     <div className="auth-shell">

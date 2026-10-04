@@ -27,19 +27,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-logout on 401 (except login/register)
+// Approval can promote an applicant on the server while an older session still
+// lacks MFA. Only explicit server MFA codes on 403 trigger reauthentication.
+export function requiresReauthentication(status: number | undefined, errorCode: unknown, url: string): boolean {
+  const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
+  if (status === 401) return !isAuthRoute;
+  return status === 403 && ['mfa_enrollment_required', 'mfa_verification_required'].includes(String(errorCode));
+}
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
-      const url = err.config?.url || '';
-      const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
-      if (!isAuthRoute) {
-        clearSession();
-        const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-        if (!window.location.pathname.endsWith('/login')) {
-          window.location.href = `${base}/login`;
-        }
+    const url = err.config?.url || '';
+    const errorCode = err.response?.headers?.['x-kaya-error-code'];
+    if (requiresReauthentication(err.response?.status, errorCode, url)) {
+      clearSession();
+      const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+      if (!window.location.pathname.endsWith('/login')) {
+        window.location.href = `${base}/login`;
       }
     }
     return Promise.reject(err);

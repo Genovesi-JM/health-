@@ -155,7 +155,7 @@ API initialization requires an explicit HTTPS endpoint for distribution, with
 local/emulator addresses and embedded credentials rejected. Configuration tests
 also run against the URL parser bundled with the installed Expo SDK.
 
-Current combined-branch validation on 4 October 2026:
+Foundation validation on 4 October 2026 (before the account journey below):
 
 | Check | Result |
 | --- | --- |
@@ -183,9 +183,80 @@ accepted, and platform signing/distribution is unverified. Mobile icons are stil
 placeholders and the installed Expo SDK 52 needs an upgrade review.
 
 The default mobile entry remains informational. Its operational screens are
-preserved but are not yet mounted for patient use. The next product milestone is
-the complete Angola account/consent and clinician provisioning journey, followed
-by an end-to-end consultation flow in an isolated preview. Credential revocation
-must be consistent across the existing professional models before clinical
-activation. Native-device and production PostgreSQL concurrency validation,
-capacity/slot conflicts and clinical closeout remain outstanding.
+preserved but are not yet mounted for patient use. The account journey milestone
+is implemented below. Native-device and production PostgreSQL concurrency
+validation, capacity/slot conflicts and clinical closeout remain outstanding.
+
+## Account, onboarding and professional approval journey
+
+Patient signup now leads to the real, resumable eight-step profile in both the
+web app and the native operational navigator. Angola is the initial country;
+Portugal is also available. Submission validates the account email, birth date,
+contact details and consent choices, then saves the patient record, user profile,
+five versioned consent grants and completion audit in one transaction. Existing
+optional clinical data is preserved when no replacement is supplied. A previously
+submitted draft without this completion evidence resumes for proper completion.
+Completed submissions can be retried without creating duplicate consent grants.
+
+The wizard supports saved progress, back navigation and explicit save failures.
+The registration screens no longer send unauthenticated, best-effort consent
+requests or imply that signup has completed clinical onboarding. Contact
+information is collected here; ownership verification by email or SMS is still
+separate work. Optional family-sharing choices do not grant anyone record access.
+
+Public professional signup creates a patient-role applicant with a professional
+dossier. The applicant can supply credentials and evidence, submit the application,
+and see its review status. Human approval by an administrator or compliance
+reviewer validates the submitted evidence and licence, then commits the role
+grant, professional status and audit together. Provider results alone do not grant
+a clinical role. The previous applicant session cannot inherit the new authority;
+the clinician signs in again and completes mandatory MFA. Native login now handles
+MFA challenges, enrollment and recovery-code acknowledgment.
+
+Approval and other participating dossier mutations use the captured status and
+revision to reject stale writes. An upload racing with approval or revocation
+cannot replace approved evidence; conflicts roll back and remove the newly
+uploaded blob. The legacy doctor verification endpoint follows the same human
+review rules. Revocation is terminal in these transitions.
+
+Clinical access now checks current dossier status and licence expiry in addition
+to the existing role, MFA and patient relationship checks. The covered paths
+include consultation acceptance, doctor portal, video, medication renewal,
+messages, medication and reading access, and prescription/referral download.
+This does not certify every route in the application. Doctor discovery still uses
+the cached profile flag; booking separately rejects a clinician whose authority
+is no longer current.
+
+The synthetic integration journey uses the real API routes for patient signup,
+profile and consents, professional signup, evidence upload, submission, human
+approval, MFA enrollment, booking and doctor acceptance. It verifies that a
+request alone does not grant access to the longitudinal patient summary and that
+the accepted consultation does. All data and evidence in this test are synthetic.
+
+Final local validation for this account milestone:
+
+| Check | Result |
+| --- | --- |
+| Backend application suite, including the complete account journey | 366 passed |
+| Policy, identity, authorization, session and invitation suites (Phases 1, 12, 13, 14, 16) | 153 passed |
+| Web interaction and policy suite | 113 passed |
+| Native endpoint, auth and patient-onboarding tests | 22 passed |
+| Presentation prototype checks | 15 passed |
+| Web production build and web/native TypeScript | Passed |
+| Generated policy consistency | 4 artifacts verified; release HOLD |
+| Git whitespace/error check | Passed |
+
+Backend runs used disposable source copies, synthetic SQLite databases and
+blocked network access. New tests cover patient completion and rollback, lost
+responses, legacy accounts, clinician authority withdrawal, and competing dossier
+writes in separate database sessions. The existing Python deprecation, web bundle
+size/Browserslist and Node module-type warnings remain. These local checks are not
+remote CI, a real-device test or production PostgreSQL concurrency evidence.
+
+The default HOLD entry points and external-provider activation gates remain in
+place. No production service, deployment, provider transmission or payment was
+activated. Next work is document-reading extraction and review in an isolated
+preview, followed by the remaining consultation/video and clinical-closeout
+workflow. Real provider onboarding, notification delivery, PostgreSQL concurrency,
+native-device testing and store distribution still require validation. Payments
+remain last.

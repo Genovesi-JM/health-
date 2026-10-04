@@ -108,13 +108,17 @@ def test_cannot_submit_when_steps_missing(client):
 
 
 def test_submit_freezes_draft(client):
+    from tests.test_patient_onboarding_completion import patient_payload
+
     a = _register_patient(client)
+    email = client.get("/auth/me", headers=_auth(a)).json()["email"]
+    payload = patient_payload(email)
     client.post("/api/v1/onboarding/start", headers=_auth(a), json={"role": "patient"})
     for step in range(1, 9):
         client.put(
             f"/api/v1/onboarding/steps/{step}",
             headers=_auth(a),
-            json={"data": {"step": step}, "completed": True},
+            json={"data": payload[str(step)], "completed": True},
         )
     r = client.post("/api/v1/onboarding/submit", headers=_auth(a))
     assert r.status_code == 200, r.text

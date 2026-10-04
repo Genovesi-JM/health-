@@ -7,6 +7,8 @@ import { View, ActivityIndicator } from 'react-native';
 import ProfessionalVerificationScreen from '../screens/ProfessionalVerificationScreen';
 import api from '../services/api';
 import ClinicianStack from './ClinicianStack';
+import { isProfessionalApplicant } from '../contexts/authSession';
+import PatientOnboardingScreen from '../screens/PatientOnboardingScreen';
 
 function ClinicianRoot({ role }: { role: string }) {
   const [credentialStatus, setCredentialStatus] = useState<string | null>(null);
@@ -31,7 +33,7 @@ function ClinicianRoot({ role }: { role: string }) {
 }
 
 export default function RootNavigation() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
 
   if (loading) {
     return (
@@ -44,8 +46,12 @@ export default function RootNavigation() {
   return (
     <NavigationContainer>
       {user ? (
-        user.role === 'doctor' || user.role === 'nurse'
+        isProfessionalApplicant(user)
+          ? <ProfessionalVerificationScreen onVerified={logout} />
+          : user.role === 'doctor' || user.role === 'nurse'
           ? <ClinicianRoot role={user.role} />
+          : ['patient', 'cliente'].includes(user.role) && user.patient_onboarding_complete === false
+          ? <PatientOnboardingScreen />
           : <AppStack />
       ) : <AuthStack />}
     </NavigationContainer>

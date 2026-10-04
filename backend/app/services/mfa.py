@@ -133,3 +133,10 @@ def assert_mfa_session(user, claims: dict, db) -> None:
             401, detail="Sign in again and complete MFA.",
             headers={"X-Kaya-Error-Code": "mfa_verification_required"},
         )
+    if mfa_is_mandatory(user.role) and claims.get("role") != user.role:
+        # A previously MFA-verified applicant session cannot acquire a newly
+        # approved clinical role without a fresh sign-in for that role.
+        raise HTTPException(
+            401, detail="Your account access changed. Sign in again.",
+            headers={"X-Kaya-Error-Code": "session_role_changed"},
+        )

@@ -25,6 +25,7 @@ from app.health_schemas import (
     FileDownloadResponse, RoleEnum,
 )
 from app.rbac import require_verified_doctor, log_health_audit
+from app.services.clinician_access import require_current_clinician
 from app.services.pdf_generator import generate_prescription_pdf, generate_referral_pdf
 from app.services.health_storage import get_health_storage
 
@@ -252,6 +253,7 @@ def _has_document_access(user: User, consultation, db: Session) -> bool:
         patient = db.query(Patient).filter(Patient.user_id == user.id).first()
         return patient and consultation.patient_id == patient.id
     if user.role == RoleEnum.DOCTOR:
+        require_current_clinician(user, db)
         doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
         return doctor and consultation.doctor_id == doctor.id
     return False

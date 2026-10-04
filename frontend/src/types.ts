@@ -8,6 +8,8 @@ export interface User {
   role: Role;
   is_active: boolean;
   name?: string;
+  professional_application?: { profession: 'doctor' | 'nurse'; status: string } | null;
+  patient_onboarding_complete?: boolean;
 }
 
 export interface AuthResponse {

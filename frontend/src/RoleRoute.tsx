@@ -15,20 +15,13 @@
  */
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { defaultAccountPath } from './authRouting';
 
 type Role = 'patient' | 'cliente' | 'doctor' | 'nurse' | 'admin' | 'support' | 'corporate_admin';
 
 interface Props {
   /** Which roles are allowed to access the wrapped routes. */
   allowedRoles: Role[];
-}
-
-function fallbackPath(role: string | undefined): string {
-  if (role === 'doctor') return '/doctor/dashboard';
-  if (role === 'nurse') return '/nurse';
-  if (role === 'admin') return '/admin';
-  if (role === 'corporate_admin') return '/corporate';
-  return '/dashboard';
 }
 
 export function RoleRoute({ allowedRoles }: Props) {
@@ -49,7 +42,7 @@ export function RoleRoute({ allowedRoles }: Props) {
   const role = user.role as Role;
 
   if (!allowedRoles.includes(role)) {
-    return <Navigate to={fallbackPath(role)} replace />;
+    return <Navigate to={defaultAccountPath(user)} replace />;
   }
 
   return <Outlet />;

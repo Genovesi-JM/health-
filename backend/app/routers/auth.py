@@ -40,7 +40,7 @@ from ..models import (
     User,
     UserProfile,
 )
-from ..health_models import ClinicianCredential, Doctor, Patient
+from ..health_models import ClinicianCredential, Doctor, Patient, OnboardingDraft, HealthAuditLog
 from ..services.credential_verification import normalise_country
 from ..oauth2 import create_access_token, verify_access_token
 from ..schemas import AuthResponse, LoginRequest, RegisterRequest
@@ -262,7 +262,7 @@ def _find_or_link_identity(
 def _build_auth_response(db: Session, user: User, *, mfa_verified: bool = False) -> dict:
     if not user.is_active:
         raise HTTPException(401, "User inactive")
-    assert_mfa_session(user, {"mfa_verified": mfa_verified}, db)
+    assert_mfa_session(user, {"mfa_verified": mfa_verified, "role": user.role}, db)
 
     profile = _ensure_profile(db, user)
     account = _ensure_default_account(db, user)
@@ -319,10 +319,9 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     if requested_role not in {"patient", "doctor", "nurse"}:
         raise HTTPException(status_code=400, detail="Tipo de conta inválido.")
     role = requested_role
-    # Mandatory-MFA (professional) roles may register, but never receive an
-    # unrestricted bootstrap token: the account is created and the caller gets a
-    # short-lived enrollment token (handled after account creation below), so they
-    # must complete MFA before any session is issued.
+    # A requested profession opens an application. Public registration still
+    # creates a non-clinical account; human approval grants the professional
+    # role later, followed by a fresh sign-in and mandatory MFA.
 
     credential_data = None
     if role in {"doctor", "nurse"}:
@@ -370,9 +369,7 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
             "status": "draft",
         }
 
-    # Canonical identity (Phase 12): public registration never persists a
-    # privileged role. Clinical/admin roles hit the MFA gate above; this is
-    # defense-in-depth so the created User is non-privileged regardless.
+    # Canonical identity (Phase 12): a submitted profession is not an access role.
     user = User(email=email, password_hash=hash_password(payload.password),
                 role=canonical_account_role(role), is_active=True)
     db.add(user)
@@ -611,10 +608,30 @@ def get_current_user(
     except Exception:
         pass
 
+    application = db.query(ClinicianCredential).filter(
+        ClinicianCredential.user_id == user.id,
+    ).first()
+    completed_onboarding = db.query(OnboardingDraft.id).join(
+        HealthAuditLog, HealthAuditLog.resource_id == OnboardingDraft.id,
+    ).filter(
+        OnboardingDraft.user_id == user.id,
+        OnboardingDraft.role == "patient",
+        OnboardingDraft.status == "submitted",
+        HealthAuditLog.resource_type == "onboarding_draft",
+        HealthAuditLog.action == "patient_onboarding_completed",
+    ).first()
+
     return {
+        "id": user.id,
+        "is_active": user.is_active,
         "email": user.email,
         "name": getattr(profile, "full_name", None) or "",
         "role": resolve_role(user),
+        "professional_application": {
+            "profession": application.profession,
+            "status": application.status,
+        } if application else None,
+        "patient_onboarding_complete": completed_onboarding is not None,
         "company": getattr(profile, "company", None) or getattr(profile, "org_name", None) or "",
         "account_id": getattr(account, "id", "") if account else "",
         "account_name": getattr(account, "name", "") if account else "",

@@ -13,9 +13,10 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
 from app.health_models import (
-    Patient, Doctor, ClinicianCredential, CorporateAccount, CorporateMember, HealthAuditLog,
+    Patient, Doctor, CorporateAccount, CorporateMember, HealthAuditLog,
 )
 from app.health_schemas import RoleEnum
+from app.services.clinician_access import require_current_clinician, require_doctor_profile_access
 
 import json
 
@@ -63,9 +64,7 @@ def require_verified_doctor(
     """Require the current user to be a verified doctor."""
     if user.role != RoleEnum.DOCTOR:
         raise HTTPException(status_code=403, detail="Acesso restrito a médicos.")
-    doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
-    if not doctor or doctor.verification_status != "verified":
-        raise HTTPException(status_code=403, detail="Médico não verificado.")
+    require_current_clinician(user, db)
     return user
 
 
@@ -74,21 +73,7 @@ def require_verified_clinician(
     db: Session = Depends(get_db),
 ) -> User:
     """Require a doctor or nurse whose credential dossier passed human review."""
-    if user.role not in (RoleEnum.DOCTOR, RoleEnum.NURSE):
-        raise HTTPException(status_code=403, detail="Acesso restrito a profissionais clínicos.")
-    credential = db.query(ClinicianCredential).filter(
-        ClinicianCredential.user_id == user.id,
-        ClinicianCredential.profession == user.role,
-    ).first()
-    if not credential or credential.status != "verified":
-        raise HTTPException(
-            status_code=403,
-            detail={
-                "code": "credential_verification_required",
-                "message": "Conclua a verificação profissional antes de aceder a funções clínicas.",
-                "status": credential.status if credential else "not_started",
-            },
-        )
+    require_current_clinician(user, db)
     return user
 
 
@@ -142,6 +127,8 @@ def get_doctor_for_user(
     """Get the Doctor record linked to the current user."""
     if user.role not in (RoleEnum.DOCTOR, RoleEnum.ADMIN):
         raise HTTPException(status_code=403, detail="Acesso restrito a médicos.")
+    if user.role == RoleEnum.DOCTOR:
+        require_doctor_profile_access(user, db)
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")

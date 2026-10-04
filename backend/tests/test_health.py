@@ -972,9 +972,17 @@ class TestAdminVerification:
         admin = _make_user(db_session, "admin_ver@test.com", "admin")
         d_user = _make_user(db_session, "doc_toverify@test.com", "doctor")
         doc = _make_doctor(db_session, d_user, verified=False)
-        # New business rule: doctor verify requires an already-verified credential dossier
-        # (credentials are reviewed and approved separately in the Credentials workflow).
-        _seed_credential(db_session, d_user, status="verified")
+        # The compatibility endpoint performs the same evidence checks and audit
+        # as final credential review; a cached verified flag is not sufficient.
+        clinician_headers = _token(d_user)
+        for kind in ("professional_card", "diploma"):
+            uploaded = client.post(
+                f"/api/v1/credentials/me/evidence/{kind}", headers=clinician_headers,
+                files={"file": (f"{kind}.pdf", b"%PDF-1.4\nsynthetic-review", "application/pdf")},
+            )
+            assert uploaded.status_code == 200, uploaded.text
+        submitted = client.post("/api/v1/credentials/me/submit", headers=clinician_headers)
+        assert submitted.status_code == 200, submitted.text
 
         r = client.post(
             f"/api/v1/doctors/{doc.id}/verify",

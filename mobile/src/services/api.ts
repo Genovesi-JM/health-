@@ -8,6 +8,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'ax
 import * as SecureStore from 'expo-secure-store';
 import { assertOperationalAccess } from '../phase1/policy';
 import { resolveApiBaseUrl } from '../config/apiUrl';
+import { isMfaSessionError } from '../contexts/authSession';
 
 const BASE_URL = resolveApiBaseUrl(
   process.env.EXPO_PUBLIC_API_URL,
@@ -26,7 +27,7 @@ let refreshPromise: Promise<string> | null = null;
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   assertOperationalAccess();
   const token = await SecureStore.getItemAsync('access_token');
-  if (token && config.headers) {
+  if (token && config.headers && !config.headers.Authorization) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
   return config;
@@ -43,7 +44,8 @@ api.interceptors.response.use(
       error.message = detail;
     }
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
-    if (error.response?.status === 401 && original && !original._retry) {
+    const isAuthStep = ['/auth/login', '/auth/register', '/auth/mfa/'].some(path => original?.url?.includes(path));
+    if (error.response?.status === 401 && original && !original._retry && !isAuthStep && !isMfaSessionError(error)) {
       assertOperationalAccess();
       original._retry = true;
       try {

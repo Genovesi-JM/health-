@@ -20,10 +20,9 @@ from app.health_schemas import (
     DoctorVerifyRequest, AvailabilitySlot, AvailabilityOut, RoleEnum,
 )
 from app.rbac import (
-    require_verified_doctor, get_doctor_for_user,
-    require_admin_or_support, log_health_audit,
+    get_doctor_for_user,
+    require_admin_or_support, require_compliance_reviewer,
 )
-from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)
 
@@ -235,72 +234,28 @@ def list_pending_doctors(db: Session = Depends(get_db)):
     return db.query(Doctor).filter(Doctor.verification_status == "pending").all()
 
 
-@router.post("/{doctor_id}/verify", response_model=DoctorOut,
-             dependencies=[Depends(require_admin_or_support)])
+@router.post("/{doctor_id}/verify", response_model=DoctorOut)
 def verify_doctor(
     doctor_id: str,
     body: DoctorVerifyRequest,
-    user: User = Depends(require_admin_or_support),
+    user: User = Depends(require_compliance_reviewer),
     db: Session = Depends(get_db),
 ):
-    """Verify, reject, or suspend a doctor (admin only)."""
-    from datetime import datetime
+    """Compatibility entry point for the same audited reviewer-only decision."""
+    from app.credential_schemas import CredentialDecision
+    from app.routers.credentials import decide_credential
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
-        raise HTTPException(status_code=404, detail="Médico não encontrado.")
-
-    action_map = {
-        "verify": "verified",
-        "approve": "verified",
-        "reject": "rejected",
-        "suspend": "suspended",
-    }
+        raise HTTPException(404, "Médico não encontrado.")
     credential = db.query(ClinicianCredential).filter(
         ClinicianCredential.user_id == doctor.user_id,
         ClinicianCredential.profession == "doctor",
     ).first()
-    if body.action in ("verify", "approve") and (
-        not credential or credential.status != "verified"
-    ):
-        raise HTTPException(
-            status_code=409,
-            detail="Aprovação bloqueada: reveja e aprove primeiro o processo em Credenciais clínicas.",
-        )
-    doctor.verification_status = action_map[body.action]
-    if body.action in ("verify", "approve"):
-        doctor.verified_at = datetime.utcnow()
-        doctor.verified_by = user.id
-    if credential and body.action in ("reject", "suspend"):
-        credential.status = action_map[body.action]
-        credential.rejection_reason = body.reason if body.action == "reject" else None
-        credential.review_notes = body.reason
-    db.add(doctor)
-    db.commit()
+    if not credential:
+        raise HTTPException(409, "Complete primeiro a candidatura em Credenciais clínicas.")
+    decide_credential(credential.id, CredentialDecision(action=body.action, notes=body.reason),
+                      reviewer=user, db=db)
     db.refresh(doctor)
-
-    log_health_audit(
-        db,
-        action=f"doctor_{body.action}",
-        actor_user_id=user.id,
-        resource_type="doctor",
-        resource_id=doctor.id,
-        metadata={"reason": body.reason},
-    )
-
-    # Notify the doctor of the verification outcome
-    _ver_labels = {
-        "verify":  ("Perfil verificado",  "A sua conta foi verificada. Pode agora receber consultas.", "success"),
-        "approve": ("Perfil verificado",  "A sua conta foi verificada. Pode agora receber consultas.", "success"),
-        "reject":  ("Verificação recusada", f"A sua verificação foi recusada.{' Motivo: ' + body.reason if body.reason else ''}", "error"),
-        "suspend": ("Conta suspensa",     f"A sua conta foi suspensa.{' Motivo: ' + body.reason if body.reason else ''}", "warning"),
-    }
-    if body.action in _ver_labels:
-        title, msg, ntype = _ver_labels[body.action]
-        try:
-            create_notification(db, user_id=doctor.user_id, title=title, message=msg, type=ntype, entity_type="doctor", entity_id=doctor.id)
-        except Exception:
-            pass
-
     return doctor
 
 

@@ -6,28 +6,26 @@ Endpoints
     GET    /api/v1/onboarding/status           current draft for the caller
     PUT    /api/v1/onboarding/steps/{step}     upsert one step's payload
     POST   /api/v1/onboarding/save             partial autosave (any step)
-    POST   /api/v1/onboarding/submit           mark draft submitted (freezes)
+    POST   /api/v1/onboarding/submit           validate and submit (freezes)
     GET    /api/v1/onboarding/review           read-only bundled view
 
-The router owns *persistence and validation of the wizard*, not the domain
-records — a submit only flips the draft's status to ``submitted`` and returns
-the review payload. A follow-up service (patients / professionals / …) is
-responsible for turning the payload into the real profile record. This keeps
-the wizard reusable across roles without leaking role-specific business rules.
+Patient submission materializes its profile and consent evidence atomically.
+Other roles retain their existing draft workflow and separate domain services.
 """
 import json
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.health_models import OnboardingDraft
+from app.health_models import HealthAuditLog, OnboardingDraft
 from app.health_schemas import RoleEnum
 from app.models import User
+from app.services.patient_onboarding import complete_patient_onboarding
 
 router = APIRouter(prefix="/api/v1/onboarding", tags=["onboarding"])
 
@@ -64,8 +62,16 @@ def _load_json(value: str, default: Any) -> Any:
         return default
 
 
-def _serialize(draft: OnboardingDraft) -> dict:
-    return {
+def _patient_completed(db: Session, draft: OnboardingDraft) -> bool:
+    return db.query(HealthAuditLog.id).filter(
+        HealthAuditLog.action == "patient_onboarding_completed",
+        HealthAuditLog.resource_type == "onboarding_draft",
+        HealthAuditLog.resource_id == draft.id,
+    ).first() is not None
+
+
+def _serialize(draft: OnboardingDraft, db: Session) -> dict:
+    result = {
         "id": draft.id,
         "role": draft.role,
         "status": draft.status,
@@ -77,16 +83,26 @@ def _serialize(draft: OnboardingDraft) -> dict:
         "created_at": draft.created_at,
         "updated_at": draft.updated_at,
     }
+    if draft.role == "patient":
+        result["completion_status"] = (
+            "complete" if draft.status == "submitted" and _patient_completed(db, draft) else "incomplete"
+        )
+    return result
 
 
-def _get_or_404(db: Session, user_id: str, role: Optional[str] = None) -> OnboardingDraft:
+def _get_or_404(db: Session, user_id: str, role: Optional[str] = None, *, lock: bool = False) -> OnboardingDraft:
     q = db.query(OnboardingDraft).filter(OnboardingDraft.user_id == user_id)
-    if role:
+    if role is not None:
+        _validate_role(role)
         q = q.filter(OnboardingDraft.role == role)
-    draft = q.order_by(OnboardingDraft.updated_at.desc()).first()
-    if not draft:
+    if lock:
+        q = q.with_for_update()
+    drafts = q.order_by(OnboardingDraft.updated_at.desc()).limit(2).all()
+    if not drafts:
         raise HTTPException(status_code=404, detail="No onboarding draft found.")
-    return draft
+    if len(drafts) > 1:
+        raise HTTPException(status_code=409, detail="Specify the onboarding role to avoid editing another draft.")
+    return drafts[0]
 
 
 # ── Request bodies ──────────────────────────────────────────────────────────
@@ -121,13 +137,29 @@ def start_onboarding(
     existing = (
         db.query(OnboardingDraft)
         .filter(OnboardingDraft.user_id == user.id, OnboardingDraft.role == role)
+        .with_for_update()
         .first()
     )
+
+    if existing and existing.role == "patient" and _patient_completed(db, existing):
+        if body.reset:
+            raise HTTPException(status_code=409, detail="Use profile settings to update completed patient onboarding.")
+        return _serialize(existing, db)
+
+    # Earlier versions only froze patient drafts. Resume their answers without
+    # treating that old status as evidence of a completed profile or consent.
+    if existing and role == "patient" and existing.status == "submitted":
+        existing.status = "draft"
+        existing.submitted_at = None
+        existing.current_step = 1
+        db.commit()
+        db.refresh(existing)
+        return _serialize(existing, db)
 
     if existing and not body.reset:
         if existing.status == "submitted":
             raise HTTPException(status_code=409, detail="Onboarding already submitted for this role.")
-        return _serialize(existing)
+        return _serialize(existing, db)
 
     if existing and body.reset:
         # Preserve id so downstream references stay stable.
@@ -139,7 +171,7 @@ def start_onboarding(
         existing.total_steps = total
         db.commit()
         db.refresh(existing)
-        return _serialize(existing)
+        return _serialize(existing, db)
 
     draft = OnboardingDraft(
         user_id=user.id,
@@ -150,7 +182,7 @@ def start_onboarding(
     db.add(draft)
     db.commit()
     db.refresh(draft)
-    return _serialize(draft)
+    return _serialize(draft, db)
 
 
 @router.get("/status")
@@ -170,13 +202,14 @@ def get_status(
     if role:
         q = q.filter(OnboardingDraft.role == role)
     draft = q.order_by(OnboardingDraft.updated_at.desc()).first()
-    return {"draft": _serialize(draft) if draft else None}
+    return {"draft": _serialize(draft, db) if draft else None}
 
 
 @router.put("/steps/{step}")
 def update_step(
     step: int,
     body: StepBody,
+    role: Optional[str] = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -184,7 +217,7 @@ def update_step(
     if step < 1:
         raise HTTPException(status_code=400, detail="Step must be >= 1.")
 
-    draft = _get_or_404(db, user.id)
+    draft = _get_or_404(db, user.id, role, lock=True)
     if draft.status == "submitted":
         raise HTTPException(status_code=409, detail="Cannot edit a submitted onboarding.")
     if step > draft.total_steps:
@@ -208,17 +241,18 @@ def update_step(
 
     db.commit()
     db.refresh(draft)
-    return _serialize(draft)
+    return _serialize(draft, db)
 
 
 @router.post("/save")
 def autosave(
     body: SaveBody,
+    role: Optional[str] = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Autosave path — writes step data without marking the step complete."""
-    draft = _get_or_404(db, user.id)
+    draft = _get_or_404(db, user.id, role, lock=True)
     if draft.status == "submitted":
         raise HTTPException(status_code=409, detail="Cannot autosave a submitted onboarding.")
     if body.step < 1 or body.step > draft.total_steps:
@@ -233,19 +267,20 @@ def autosave(
 
 @router.post("/submit")
 def submit_onboarding(
+    request: Request,
+    role: Optional[str] = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Freeze the draft — every required step must be complete.
+    """Submit all steps, materializing patient data in the same transaction."""
+    draft = _get_or_404(db, user.id, role, lock=True)
+    if draft.status == "submitted" and (draft.role != "patient" or _patient_completed(db, draft)):
+        return _serialize(draft, db)
 
-    A downstream service (out of scope for this router) turns the frozen
-    draft into the domain record (patient profile, professional dossier, …).
-    """
-    draft = _get_or_404(db, user.id)
-    if draft.status == "submitted":
-        return _serialize(draft)
-
-    completed = set(_load_json(draft.completed_steps_json, []))
+    markers = _load_json(draft.completed_steps_json, [])
+    if not isinstance(markers, list) or any(type(step) is not int for step in markers):
+        raise HTTPException(400, detail="Invalid onboarding progress.")
+    completed = set(markers)
     required = set(range(1, draft.total_steps + 1))
     missing = sorted(required - completed)
     if missing:
@@ -254,18 +289,25 @@ def submit_onboarding(
             detail={"error": "incomplete", "missing_steps": missing},
         )
 
-    draft.status = "submitted"
-    draft.submitted_at = datetime.utcnow()
-    db.commit()
+    try:
+        if draft.role == "patient":
+            complete_patient_onboarding(db, user, draft, request)
+        draft.status = "submitted"
+        draft.submitted_at = datetime.utcnow()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     db.refresh(draft)
-    return _serialize(draft)
+    return _serialize(draft, db)
 
 
 @router.get("/review")
 def review(
+    role: Optional[str] = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Bundled read-only view used by the final review screen."""
-    draft = _get_or_404(db, user.id)
-    return _serialize(draft)
+    draft = _get_or_404(db, user.id, role)
+    return _serialize(draft, db)
