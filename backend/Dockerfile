@@ -11,10 +11,9 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Install Python dependencies (use deploy requirements for production)
-COPY requirements.deploy.txt ./
-RUN pip install --no-cache-dir -r requirements.deploy.txt && \
-    pip install --no-cache-dir psycopg2-binary redis
+# Install the audited runtime dependency graph, including database/cache drivers.
+COPY requirements.deploy.lock ./
+RUN pip install --no-cache-dir --require-hashes -r requirements.deploy.lock
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && chown appuser:appuser /app
@@ -41,7 +40,8 @@ CMD ["gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorke
 FROM runtime AS security-test
 HEALTHCHECK NONE
 USER root
-RUN pip install --no-cache-dir 'pytest>=8.0.0'
+COPY requirements.phase0.lock ./
+RUN pip install --no-cache-dir --require-hashes -r requirements.phase0.lock
 COPY --chown=appuser:appuser security_tests/ ./security_tests/
 USER appuser
 ENV PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \

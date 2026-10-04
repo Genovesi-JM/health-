@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Phase 37 web/PWA client safety: policy predicates plus a contract test that the
  * real Vite/PWA config keeps clinical API responses out of the cache and that

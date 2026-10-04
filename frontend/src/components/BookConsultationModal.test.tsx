@@ -65,10 +65,10 @@ describe('published appointment booking', () => {
 
   it('loads later published periods through explicit bounded date windows', async () => {
     show(); await choose();
-    const first = vi.mocked(api.get).mock.calls.find(call => call[0].endsWith('/slots'))![1]!.params;
+    const first = vi.mocked(api.get).mock.calls.find(call => call[0].endsWith('/slots'))![1]!.params as { from_at: string; to_at: string };
     await userEvent.click(screen.getByRole('button', { name: 'Período seguinte' }));
     await waitFor(() => {
-      const latest = vi.mocked(api.get).mock.calls.filter(call => call[0].endsWith('/slots')).at(-1)![1]!.params;
+      const latest = vi.mocked(api.get).mock.calls.filter(call => call[0].endsWith('/slots')).at(-1)![1]!.params as { from_at: string; to_at: string };
       expect(latest.from_at).toBe(first.to_at);
       expect(Date.parse(latest.to_at) - Date.parse(latest.from_at)).toBe(31 * 86400000);
     });

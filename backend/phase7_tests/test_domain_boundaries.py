@@ -19,7 +19,6 @@ _CROSS_ROUTER = re.compile(r"from\s+app\.routers\.([a-z_]+)\s+import", re.MULTIL
 # outside this baseline fail; the baseline may only shrink as domains extract.
 _BASELINE_CROSS_ROUTER = {
     ("consultations", "notifications"),
-    ("doctors", "notifications"),
     ("doctors", "auth"),
     ("mfa", "auth"),
     ("messages", "notifications"),

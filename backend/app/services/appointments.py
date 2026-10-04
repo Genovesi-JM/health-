@@ -110,6 +110,9 @@ def ensure_capacity(db: Session, *, doctor_id: str | None, patient_id: str | Non
             other_start = other.scheduled_at
             other_end = other.scheduled_end_at or other_start + timedelta(minutes=30)
             if other.status == "in_progress":
+                # Care can start before the reserved time. Keep its actual
+                # interval blocking new reservations as well as new starts.
+                other_start = min(other_start, other.started_at or now)
                 other_end = max(other_end, now + timedelta(minutes=30))
         elif other.status == "in_progress":
             other_start = other.started_at or now

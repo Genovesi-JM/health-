@@ -105,3 +105,18 @@ def test_ci_action_pinning_debt_inventoried():
         if tag_pinned:
             text = doc.read_text(encoding="utf-8", errors="ignore")
             assert "SHA-pin" in text or "SHA pin" in text or "sha-pin" in text.lower()
+
+
+def test_every_workflow_uses_immutable_action_commits():
+    """A later workflow must not silently reintroduce movable action tags."""
+    import re
+    workflows = list((_repo_root() / ".github/workflows").glob("*.yml"))
+    assert workflows
+    references = []
+    for workflow in workflows:
+        for line in workflow.read_text().splitlines():
+            match = re.match(r"\s*(?:-\s*)?uses:\s*([^#\s]+)", line)
+            if match:
+                references.append((workflow.name, match.group(1)))
+    assert references
+    assert all(S.action_ref_is_sha_pinned(reference) for _, reference in references), references

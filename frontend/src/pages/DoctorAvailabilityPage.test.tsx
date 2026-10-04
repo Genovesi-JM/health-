@@ -24,10 +24,10 @@ describe('explicit clinician availability', () => {
 
   it('lets clinicians inspect later date windows without publishing anything', async () => {
     await show();
-    const first = vi.mocked(api.get).mock.calls.find(call => call[0].endsWith('appointment-slots'))![1]!.params;
+    const first = vi.mocked(api.get).mock.calls.find(call => call[0].endsWith('appointment-slots'))![1]!.params as { from_at: string; to_at: string };
     await userEvent.click(screen.getByRole('button', { name: 'Período seguinte' }));
     await waitFor(() => {
-      const latest = vi.mocked(api.get).mock.calls.filter(call => call[0].endsWith('appointment-slots')).at(-1)![1]!.params;
+      const latest = vi.mocked(api.get).mock.calls.filter(call => call[0].endsWith('appointment-slots')).at(-1)![1]!.params as { from_at: string; to_at: string };
       expect(latest.from_at).toBe(first.to_at);
     });
     expect(api.post).not.toHaveBeenCalled();

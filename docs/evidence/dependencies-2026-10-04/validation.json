@@ -1,0 +1,302 @@
+{
+  "initial_expanded_run": {
+    "tests": {
+      "passed": 585,
+      "failed": 0,
+      "skipped": 0
+    },
+    "security_tests": {
+      "passed": 123,
+      "failed": 0,
+      "skipped": 0
+    },
+    "governance_tests": {
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase0_tests": {
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase10_tests": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase11_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase12_tests": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase13_tests": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase14_tests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase15_tests": {
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase16_tests": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase17_tests": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase18_tests": {
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase19_tests": {
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase1_tests": {
+      "passed": 98,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase20_tests": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase21_tests": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase22_tests": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase23_tests": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase24_tests": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase25_tests": {
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase26_tests": {
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase27_tests": {
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase28_tests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase29_tests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase30_tests": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase31_tests": {
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase32_tests": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase33_tests": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase34_tests": {
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase35_tests": {
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase36_tests": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase38_tests": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase39_tests": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase3_tests": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase40_tests": {
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase41_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase4_tests": {
+      "passed": 3,
+      "failed": 3,
+      "skipped": 0
+    },
+    "phase5_tests": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase6_tests": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase7_tests": {
+      "passed": 3,
+      "failed": 2,
+      "skipped": 0
+    },
+    "phase8_tests": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phase9_tests": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR0_tests": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR10_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR11_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR12_tests": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR13_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR14_tests": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR1_tests": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR2_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR3_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR4_tests": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR5_tests": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR6_tests": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR7_tests": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR8_tests": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    "phaseR9_tests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "resolved_failures": {
+    "snapshot_git_and_gitignore": "6 repository hygiene tests passed against actual checkout with portable git",
+    "cross_router_dependencies": "shared services extracted; 92 affected credential, booking and domain boundary tests passed"
+  },
+  "web_dependency_tests": 216,
+  "postgresql_scenarios": 11,
+  "postgresql_forced_races": 40,
+  "no_container_build_result": true
+}

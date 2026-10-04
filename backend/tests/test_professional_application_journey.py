@@ -165,7 +165,8 @@ def test_stale_review_cannot_approve_changed_application(client, db_session, mon
     applicant = _applicant(client)
     case = _submit(client, applicant)
     admin = _admin(client)
-    original_checks = credentials._application_checks
+    from app.services import credential_review
+    original_checks = credential_review.application_checks
 
     def concurrent_revision(credential):
         result = original_checks(credential)
@@ -176,7 +177,7 @@ def test_stale_review_cannot_approve_changed_application(client, db_session, mon
             another.commit()
         return result
 
-    monkeypatch.setattr(credentials, "_application_checks", concurrent_revision)
+    monkeypatch.setattr(credential_review, "application_checks", concurrent_revision)
     response = _decision(client, case, admin)
     assert response.status_code == 409, response.text
     db_session.expire_all()

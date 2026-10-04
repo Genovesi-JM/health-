@@ -12,7 +12,7 @@ from app.deps import get_current_user
 from app.models import User
 from app.health_models import AppointmentSlot, Doctor, HealthAuditLog
 from app.rbac import require_verified_doctor
-from app.routers.consultations import normalize_specialty
+from app.services.specialties import normalize_specialty
 from app.services.appointments import (MARKET_ZONES, current_doctor, ensure_capacity,
     lock_resources, slot_interval, slot_out, window)
 

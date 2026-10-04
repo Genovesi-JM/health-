@@ -23,7 +23,7 @@ def _replay(db, patient_id, key, digest):
 
 
 def create_booking(db, body, patient, user, key):
-    from app.routers.consultations import normalize_specialty
+    from app.services.specialties import normalize_specialty
     if key is not None:
         try:
             key = str(UUID(key))

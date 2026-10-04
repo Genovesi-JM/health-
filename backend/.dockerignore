@@ -5,6 +5,8 @@
 !Dockerfile
 !.dockerignore
 !requirements.deploy.txt
+!requirements.deploy.lock
+!requirements.phase0.lock
 !alembic.ini
 !alembic/env.py
 !alembic/script.py.mako
@@ -142,6 +144,7 @@
 !security_tests/test_azure_sdk_contract.py
 !security_tests/test_docker_allowlist.py
 !security_tests/test_pilot_security.py
+!security_tests/test_locked_dependencies.py
 
 !app/routers/patient_documents.py
 !app/services/patient_documents.py
@@ -159,3 +162,6 @@
 
 !app/services/notifications.py
 !alembic/versions/durable_notifications_v1.py
+
+!app/services/specialties.py
+!app/services/credential_review.py

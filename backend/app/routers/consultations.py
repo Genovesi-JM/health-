@@ -41,29 +41,7 @@ from app.services.consultation_lifecycle import record_event, transition
 from app.services.clinician_access import require_current_clinician
 from app.services.consultation_closeout import finalize_consultation, closeout_result, end_video
 
-# Canonical specialty codes (match Doctor.specialization). Legacy English UI
-# codes and free-text labels are normalised to these so bookings always reach
-# the right doctor's queue.
-_SPECIALTY_ALIASES = {
-    "general": "clinica_geral", "clinica geral": "clinica_geral",
-    "cardiology": "cardiologia", "dermatology": "dermatologia",
-    "pediatrics": "pediatria", "orthopedics": "ortopedia",
-    "neurology": "neurologia", "gynecology": "ginecologia",
-    "ophthalmology": "oftalmologia", "psychiatry": "psiquiatria",
-    "internal": "medicina_interna", "internal medicine": "medicina_interna",
-    "surgery": "cirurgia", "other": "outra",
-}
-
-
-def normalize_specialty(value: Optional[str]) -> str:
-    """Map any specialty input to a canonical snake_case code."""
-    if not value:
-        return "clinica_geral"
-    v = value.strip().lower()
-    if v in _SPECIALTY_ALIASES:
-        return _SPECIALTY_ALIASES[v]
-    snake = v.replace(" ", "_")
-    return _SPECIALTY_ALIASES.get(snake, snake)
+from app.services.specialties import normalize_specialty
 from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)

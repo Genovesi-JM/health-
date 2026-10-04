@@ -10,7 +10,14 @@ from app.oauth2 import verify_access_token
 from app.models import User, AccountMember, Account
 from app.services.mfa import assert_mfa_session
 
-bearer = HTTPBearer()
+
+class LegacyStatusHTTPBearer(HTTPBearer):
+    """Keep the established missing-bearer response during framework upgrades."""
+    def make_not_authenticated_error(self) -> HTTPException:
+        return HTTPException(status_code=403, detail="Not authenticated")
+
+
+bearer = LegacyStatusHTTPBearer(scheme_name="HTTPBearer")
 optional_bearer = HTTPBearer(auto_error=False)
 
 

@@ -12,7 +12,7 @@ CI = (REPO / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 
 def test_version_pins_present():
     assert (REPO / ".python-version").read_text().strip() == "3.12"
-    assert (REPO / ".nvmrc").read_text().strip() == "20"
+    assert (REPO / ".nvmrc").read_text().strip() == "24.21.0"
     assert (REPO / "backend/requirements.phase0.lock").exists()
 
 

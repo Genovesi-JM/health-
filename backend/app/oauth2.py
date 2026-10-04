@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 from typing import Any, Optional, Dict
 
 from fastapi import HTTPException, status
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError
 
 from .config import settings
 
@@ -26,7 +27,7 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
 def verify_access_token(token: str) -> Dict[str, Any]:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-    except JWTError as exc:  # pragma: no cover
+    except PyJWTError as exc:  # pragma: no cover
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
     return payload
 

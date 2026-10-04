@@ -243,7 +243,7 @@ def verify_doctor(
 ):
     """Compatibility entry point for the same audited reviewer-only decision."""
     from app.credential_schemas import CredentialDecision
-    from app.routers.credentials import decide_credential
+    from app.services.credential_review import review_credential
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
         raise HTTPException(404, "Médico não encontrado.")
@@ -253,7 +253,7 @@ def verify_doctor(
     ).first()
     if not credential:
         raise HTTPException(409, "Complete primeiro a candidatura em Credenciais clínicas.")
-    decide_credential(credential.id, CredentialDecision(action=body.action, notes=body.reason),
+    review_credential(credential.id, CredentialDecision(action=body.action, notes=body.reason),
                       reviewer=user, db=db)
     db.refresh(doctor)
     return doctor

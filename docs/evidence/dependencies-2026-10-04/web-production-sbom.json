@@ -1,0 +1,764 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:9aa0c4b2-9b49-4dac-ad10-c651a9f6a1b9",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-04T17:37:46.978Z",
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ],
+    "tools": [
+      {
+        "vendor": "npm",
+        "name": "cli",
+        "version": "11.19.0"
+      }
+    ],
+    "component": {
+      "bom-ref": "frontend@0.0.0",
+      "type": "library",
+      "name": "frontend",
+      "version": "0.0.0",
+      "scope": "required",
+      "purl": "pkg:npm/frontend@0.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
+        }
+      ],
+      "externalReferences": []
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "@tailwindcss/node@4.2.1",
+      "type": "library",
+      "name": "@tailwindcss/node",
+      "version": "4.2.1",
+      "scope": "required",
+      "description": "A utility-first CSS framework for rapidly building custom user interfaces.",
+      "purl": "pkg:npm/%40tailwindcss/node@4.2.1",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tailwindcss/node/-/node-4.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/tailwindlabs/tailwindcss.git"
+        },
+        {
+          "type": "website",
+          "url": "https://tailwindcss.com"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8e5c7ab0b93810ec0eea11ded680869b543800dfecd2b4ab4d33c118f334fd143a532970ab5ec5b94f0878924a123b5ce8ae8ed3bcecbcffa00cee8c316a3ba6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@tailwindcss/oxide@4.2.1",
+      "type": "library",
+      "name": "@tailwindcss/oxide",
+      "version": "4.2.1",
+      "scope": "required",
+      "purl": "pkg:npm/%40tailwindcss/oxide@4.2.1",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/tailwindlabs/tailwindcss.git"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "caff637841569e328223afd3dceab9d324043aa9a99a97f31b585c66c00e6971503dfcd6a6b5ab94749d18f105dd64138bcceef28842f4c87d278ef49d3e6953"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@tailwindcss/oxide-darwin-arm64@4.2.1",
+      "type": "library",
+      "name": "@tailwindcss/oxide-darwin-arm64",
+      "version": "4.2.1",
+      "scope": "optional",
+      "purl": "pkg:npm/%40tailwindcss/oxide-darwin-arm64@4.2.1",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/tailwindlabs/tailwindcss.git"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "abf2c790eb2da09ee9235274aba7637ac2f346f41221f12da35e3ca6901df815502b42588d020548adc98186496be6338b40c36b9d99b10c76aeacad0677fc1f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@tailwindcss/vite@4.2.1",
+      "type": "library",
+      "name": "@tailwindcss/vite",
+      "version": "4.2.1",
+      "scope": "required",
+      "description": "A utility-first CSS framework for rapidly building custom user interfaces.",
+      "purl": "pkg:npm/%40tailwindcss/vite@4.2.1",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tailwindcss/vite/-/vite-4.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/tailwindlabs/tailwindcss.git"
+        },
+        {
+          "type": "website",
+          "url": "https://tailwindcss.com"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4c17f6b098d879bdbc8c3d94fce870756d1b6ceb319163f043b4aba867fdb15728630663eeb917963ae804ef70281badf579e640b5da9ee0d47aa40ad251a0ff"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "agent-base@6.0.2",
+      "type": "library",
+      "name": "agent-base",
+      "version": "6.0.2",
+      "scope": "required",
+      "author": "Nathan Rajlich <nathan@tootallnate.net> (http://n8.io/)",
+      "description": "Turn a function into an `http.Agent` instance",
+      "purl": "pkg:npm/agent-base@6.0.2",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/agent-base/-/agent-base-6.0.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/TooTallNate/node-agent-base.git"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/TooTallNate/node-agent-base/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "45937035c945efe312ffc6c383bd1a9a0df6772799199c620ee42667128b025423af78c6c8bc7ee0a924e7c50eec3d90760148402a2fb92b991129dee911ba5d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "axios@1.20.0",
+      "type": "library",
+      "name": "axios",
+      "version": "1.20.0",
+      "scope": "required",
+      "author": "Matt Zabriskie",
+      "description": "Promise based HTTP client for the browser and node.js",
+      "purl": "pkg:npm/axios@1.20.0",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/axios/-/axios-1.20.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/axios/axios.git"
+        },
+        {
+          "type": "website",
+          "url": "https://axios-http.com"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/axios/axios/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "afc68e87c8fd7062a981002aa73ad41e748873a6b9f58dd77ff72ff2ccb50eb1c29191f340612ea2ad6d01193aa92c8376d4064838296fd90596bbb33efae0c2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "cookie@1.1.1",
+      "type": "library",
+      "name": "cookie",
+      "version": "1.1.1",
+      "scope": "required",
+      "author": "Roman Shtylman <shtylman@gmail.com>",
+      "description": "HTTP server cookie parsing and serialization",
+      "purl": "pkg:npm/cookie@1.1.1",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/cookie/-/cookie-1.1.1.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7a2f00a2cee36b4c1e469173267100f541c9ffb5d09aa8256d1c277f60138dc07d5aaf3be15287f647e38e2acce94854dbf1397c561a77297284595d72a4a275"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "enhanced-resolve@5.19.0",
+      "type": "library",
+      "name": "enhanced-resolve",
+      "version": "5.19.0",
+      "scope": "required",
+      "author": "Tobias Koppers @sokra",
+      "description": "Offers a async require.resolve function. It's highly configurable.",
+      "purl": "pkg:npm/enhanced-resolve@5.19.0",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.19.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/webpack/enhanced-resolve.git"
+        },
+        {
+          "type": "website",
+          "url": "http://github.com/webpack/enhanced-resolve"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a61bf71355e5e2d40e4a1a92b5edba0bb165f3813051d66cc8eb924a4f6ab401b2c90b36b378c9cc2a2687e01b7f8835f3b954500bc7f87dbaa26aea89ad9a1a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "follow-redirects@1.16.0",
+      "type": "library",
+      "name": "follow-redirects",
+      "version": "1.16.0",
+      "scope": "required",
+      "author": "Ruben Verborgh <ruben@verborgh.org> (https://ruben.verborgh.org/)",
+      "description": "HTTP and HTTPS modules that follow redirects.",
+      "purl": "pkg:npm/follow-redirects@1.16.0",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+ssh://git@github.com/follow-redirects/follow-redirects.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/follow-redirects/follow-redirects"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/follow-redirects/follow-redirects/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cb9acdfee3ac69d153fc97d8c21c514b947b41c7be837cc6f7bf89aed159942f64957fd6e610fb8a22f349c2389d9a944bb0cd51d84f830e3123c5b62ee5e553"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "https-proxy-agent@5.0.1",
+      "type": "library",
+      "name": "https-proxy-agent",
+      "version": "5.0.1",
+      "scope": "required",
+      "author": "Nathan Rajlich <nathan@tootallnate.net> (http://n8.io/)",
+      "description": "An HTTP(s) proxy `http.Agent` implementation for HTTPS",
+      "purl": "pkg:npm/https-proxy-agent@5.0.1",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/TooTallNate/node-https-proxy-agent.git"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/TooTallNate/node-https-proxy-agent/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7457008e94d0160a0b3330b657053e0bf09b4bbb912f49569b10c84e6aa6ec2fbb17439d9a3eacf65e9a95973a0042d786b9e080cd827964971c639d5f662dc0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lucide-react@0.575.0",
+      "type": "library",
+      "name": "lucide-react",
+      "version": "0.575.0",
+      "scope": "required",
+      "author": "Eric Fennis",
+      "description": "A Lucide icon library package for React applications.",
+      "purl": "pkg:npm/lucide-react@0.575.0",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lucide-react/-/lucide-react-0.575.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/lucide-icons/lucide.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lucide.dev"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "56e5e0299ae4d2e8839568c619798a57a31293d632e25d74aa056fcc69f6016071d5896dd2205ec4a380a00e88ec93b79be33da1ea2f25ddf260435f9146ce7a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "proxy-from-env@2.1.0",
+      "type": "library",
+      "name": "proxy-from-env",
+      "version": "2.1.0",
+      "scope": "required",
+      "author": "Rob Wu <rob@robwu.nl> (https://robwu.nl/)",
+      "description": "Offers getProxyForUrl to get the proxy URL for a URL, respecting the *_PROXY (e.g. HTTP_PROXY) and NO_PROXY environment variables.",
+      "purl": "pkg:npm/proxy-from-env@2.1.0",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-2.1.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Rob--W/proxy-from-env.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Rob--W/proxy-from-env#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Rob--W/proxy-from-env/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "709fa81d35b554011af1c26c96099466b73eb2344a8002a5dd9cac7baf8f577f2165efd5e99d784db0ae5dc6a7f45f60865cf842b16bd9cf764cd17cd949181c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "react-router@7.18.4",
+      "type": "library",
+      "name": "react-router",
+      "version": "7.18.4",
+      "scope": "required",
+      "author": "Remix Software <hello@remix.run>",
+      "description": "Declarative routing for React",
+      "purl": "pkg:npm/react-router@7.18.4",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/react-router/-/react-router-7.18.4.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/remix-run/react-router"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3d43d070c84c19102c94b72fb653f3fe49b304458f84b7602c5acbee92cd7a904be9d5f49568f8583d9c518560602b93de3c6f82160583cd5c0d38f8e0385eb5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "react-router-dom@7.18.4",
+      "type": "library",
+      "name": "react-router-dom",
+      "version": "7.18.4",
+      "scope": "required",
+      "author": "Remix Software <hello@remix.run>",
+      "description": "Declarative routing for React web applications",
+      "purl": "pkg:npm/react-router-dom@7.18.4",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/react-router-dom/-/react-router-dom-7.18.4.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/remix-run/react-router"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cab7e62472290c6eed682a6a2a34f51b907aab73b62be44df3f7e035fd254e30b088f6d0d1e8babd75fd663411fbb95df13afb679c66c8c9d9f1826ba6159053"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "set-cookie-parser@2.7.2",
+      "type": "library",
+      "name": "set-cookie-parser",
+      "version": "2.7.2",
+      "scope": "required",
+      "author": "Nathan Friedly",
+      "description": "Parses set-cookie headers into objects",
+      "purl": "pkg:npm/set-cookie-parser@2.7.2",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/set-cookie-parser/-/set-cookie-parser-2.7.2.tgz"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/nfriedly/set-cookie-parser"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a1e33596953f52f853c70fa0ddc21fc571f225173fba275ddf22b53f6e368331ddb34b9d401633b37cbc8f8802096f9927b69dd3272d95df1160ef9b76eae5bf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tailwindcss@4.2.1",
+      "type": "library",
+      "name": "tailwindcss",
+      "version": "4.2.1",
+      "scope": "required",
+      "description": "A utility-first CSS framework for rapidly building custom user interfaces.",
+      "purl": "pkg:npm/tailwindcss@4.2.1",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/tailwindlabs/tailwindcss.git"
+        },
+        {
+          "type": "website",
+          "url": "https://tailwindcss.com"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fed06b490dfabc295e26400eb32f646cd4e06b1bc66f239a982df43d178f4d07bfa35305c04287424e029fb04d19a3ed8e9f8fb94ac1c897a1335860c5fab8b3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tapable@2.3.0",
+      "type": "library",
+      "name": "tapable",
+      "version": "2.3.0",
+      "scope": "required",
+      "author": "Tobias Koppers @sokra",
+      "description": "Just a little module for plugins.",
+      "purl": "pkg:npm/tapable@2.3.0",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tapable/-/tapable-2.3.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "http://github.com/webpack/tapable.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/webpack/tapable"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "83d963662c248bf2dfc664000ceddd118d426e99974f91e6d9f27e41a18ac125d4ca53326de3d1effebb616ee33abaef8c480bd459b3e64cf202359558b96e72"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "frontend@0.0.0",
+      "dependsOn": [
+        "@tailwindcss/vite@4.2.1",
+        "axios@1.20.0",
+        "lucide-react@0.575.0",
+        "react-router-dom@7.18.4",
+        "tailwindcss@4.2.1"
+      ]
+    },
+    {
+      "ref": "@tailwindcss/node@4.2.1",
+      "dependsOn": [
+        "enhanced-resolve@5.19.0",
+        "tailwindcss@4.2.1"
+      ]
+    },
+    {
+      "ref": "@tailwindcss/oxide@4.2.1",
+      "dependsOn": [
+        "@tailwindcss/oxide-darwin-arm64@4.2.1"
+      ]
+    },
+    {
+      "ref": "@tailwindcss/oxide-darwin-arm64@4.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "@tailwindcss/vite@4.2.1",
+      "dependsOn": [
+        "@tailwindcss/node@4.2.1",
+        "@tailwindcss/oxide@4.2.1",
+        "tailwindcss@4.2.1"
+      ]
+    },
+    {
+      "ref": "agent-base@6.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "axios@1.20.0",
+      "dependsOn": [
+        "follow-redirects@1.16.0",
+        "https-proxy-agent@5.0.1",
+        "proxy-from-env@2.1.0"
+      ]
+    },
+    {
+      "ref": "cookie@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "enhanced-resolve@5.19.0",
+      "dependsOn": [
+        "tapable@2.3.0"
+      ]
+    },
+    {
+      "ref": "follow-redirects@1.16.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "https-proxy-agent@5.0.1",
+      "dependsOn": [
+        "agent-base@6.0.2"
+      ]
+    },
+    {
+      "ref": "lucide-react@0.575.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "proxy-from-env@2.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "react-router@7.18.4",
+      "dependsOn": [
+        "cookie@1.1.1",
+        "set-cookie-parser@2.7.2"
+      ]
+    },
+    {
+      "ref": "react-router-dom@7.18.4",
+      "dependsOn": [
+        "react-router@7.18.4"
+      ]
+    },
+    {
+      "ref": "set-cookie-parser@2.7.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "tailwindcss@4.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "tapable@2.3.0",
+      "dependsOn": []
+    }
+  ]
+}

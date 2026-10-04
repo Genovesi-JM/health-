@@ -30,6 +30,7 @@ from app.rbac import log_health_audit, assert_doctor_can_access_patient
 from app.services.clinician_access import require_current_clinician
 from app.services.patient_documents import doctor_has_document_relationship
 from app.services.appointments import valid_zone
+from app.services.consultation_closeout import verify_finalization
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["doctor-portal"])
@@ -97,6 +98,16 @@ def _status_label(status: str) -> str:
         "no_show": "no_show",
     }
     return mapping.get(status, status)
+
+
+def _readable_notes(consultation: Consultation) -> Optional[ConsultationNotes]:
+    notes = consultation.notes
+    # Legacy unsigned notes remain available to authorized clinicians. Any
+    # finalization metadata requires full integrity verification before content
+    # is serialized, including a record with one missing finalization field.
+    if notes and any((notes.finalized_at, notes.finalized_by_user_id, notes.finalization_digest)):
+        verify_finalization(notes)
+    return notes
 
 
 # ── GET /api/v1/doctor/dashboard ─────────────────────────────────────────────
@@ -202,6 +213,7 @@ def doctor_agenda_today(
 
     result = []
     for c in consultations:
+        notes = _readable_notes(c)
         patient_name = "Paciente"
         if c.patient:
             patient_name = _get_patient_name(c.patient, db)
@@ -222,7 +234,7 @@ def doctor_agenda_today(
             "patient_id": c.patient_id,
             "type": _consultation_type_label(c),
             "specialty": c.specialty,
-            "reason": c.notes.subjective if c.notes else None,
+            "reason": notes.subjective if notes else None,
             "status": _status_label(c.status),
             "avatar": initials,
         })
@@ -502,6 +514,8 @@ def doctor_patient_clinical_summary(
     if age and age >= 65:
         risk_flags.append("Paciente idoso (≥ 65 anos) — atenção a polifarmácia e quedas")
 
+    consultation_notes = {c.id: _readable_notes(c) for c in last_consultations}
+
     return {
         "identity": {
             "id": patient.id,
@@ -535,12 +549,9 @@ def doctor_patient_clinical_summary(
                 "status": c.status,
                 "specialty": c.specialty,
                 "notes": {
-                    "subjective": c.notes.subjective if c.notes else None,
-                    "objective": c.notes.objective if c.notes else None,
-                    "assessment": c.notes.assessment if c.notes else None,
-                    "plan": c.notes.plan if c.notes else None,
-                    "outcome": c.notes.outcome if c.notes else None,
-                } if c.notes else None,
+                    field: getattr(consultation_notes[c.id], field)
+                    for field in ("subjective", "objective", "assessment", "plan", "outcome")
+                } if consultation_notes[c.id] else None,
             }
             for c in last_consultations
         ],

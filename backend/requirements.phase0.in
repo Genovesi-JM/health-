@@ -1,4 +1,4 @@
-# Phase 0 audit-only dependency input. Does not alter deployment requirements.
+# Validation dependency input, including the complete deployment graph.
 -r requirements.txt
 -r requirements.deploy.txt
 psycopg2-binary

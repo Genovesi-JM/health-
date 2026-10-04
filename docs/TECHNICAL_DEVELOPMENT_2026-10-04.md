@@ -533,3 +533,23 @@ other writes in both transactions, and simultaneous read requests retain one
 first-read timestamp and one audit. The staged backend source matches the full
 suite's isolated tested snapshot. No existing database, external delivery
 provider or real mobile device was used.
+
+## Dependency hardening and independent review
+
+The backend and web dependency update removes the known findings in both audited
+package graphs, introduces a hash-locked Linux runtime graph and aligns CI on
+Node 24.21.0 with immutable Action commits. JWT compatibility, enrollment-only
+sessions and privileged-role approval remain tested. CI now checks isolated test
+results explicitly and includes disposable PostgreSQL races. Deployment stays
+disabled.
+
+Independent review fixed ongoing-care capacity when a consultation starts early
+and blocked corrupt signed notes in older clinician summary routes. Running all
+existing backend phase suites also exposed transport-layer import shortcuts;
+shared specialty and reviewer-decision services now remove them without changing
+the API contract. The exact audit counts, test scopes, resolved harness failures
+and image-build limitation are in
+[the dependency update record](KAYA_DEPENDENCY_UPDATE_2026-10-04.md).
+
+These results establish local engineering behavior. They do not sign the clinical,
+privacy, provider, native-device or production-operations launch gates.

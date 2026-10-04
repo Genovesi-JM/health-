@@ -13,7 +13,7 @@ services:
     rootDir: backend
     # Source freeze only; existing remote deployments require separate review.
     autoDeployTrigger: "off"
-    buildCommand: pip install -r requirements.deploy.txt
+    buildCommand: pip install --require-hashes -r requirements.deploy.lock
     startCommand: >
       gunicorn app.main:app
       --worker-class uvicorn.workers.UvicornWorker

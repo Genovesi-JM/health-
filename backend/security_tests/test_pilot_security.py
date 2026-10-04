@@ -55,22 +55,62 @@ def test_oauth_identity_creation_never_promotes_reserved_email(db):
 
 
 @pytest.mark.parametrize("role", ["doctor", "nurse", "admin", "corporate_admin", "compliance_reviewer", "pharmacist"])
-def test_privileged_login_without_enrollment_denied(client, db, role):
+def test_privileged_login_without_enrollment_has_only_restricted_setup_token(client, db, role):
     user, _ = create_user(db, role)
     response = client.post("/auth/login", json={"email": user.email, "password": "synthetic-password"})
-    assert response.status_code == 403
-    assert response.headers["X-Kaya-Error-Code"] == "mfa_enrollment_required"
-    assert isinstance(response.json()["detail"], str)
-    assert "access_token" not in response.json()
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["mfa_enrollment_required"] is True
+    assert "access_token" not in data and "refresh_token" not in data
+    token = data["enrollment_token"]
+    claims = verify_access_token(token)
+    assert claims["mfa_enroll"] is True
+    assert claims.get("mfa_verified") is not True
+    assert "role" not in claims
+    from datetime import datetime, timezone
+    assert 0 < claims["exp"] - datetime.now(timezone.utc).timestamp() <= 15 * 60
+    denied = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert denied.status_code == 403
+    assert denied.headers["X-Kaya-Error-Code"] == "mfa_enrollment_required"
+    from app.deps import get_current_user, get_optional_user
+    credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+    with pytest.raises(HTTPException):
+        get_current_user(credentials, db)
+    assert get_optional_user(credentials, db) is None
+    # The token allows enrollment, but cannot itself establish a care session.
+    setup = client.post("/auth/mfa/setup", headers={"Authorization": f"Bearer {token}"})
+    assert setup.status_code == 200, setup.text
+    denied = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert denied.status_code == 403
+    assert denied.headers["X-Kaya-Error-Code"] == "mfa_enrollment_required"
 
 
-def test_professional_signup_fails_closed_without_bootstrap_token(client, db):
+def test_incomplete_professional_signup_cannot_create_privileged_account(client, db):
     response = client.post("/auth/register", json={
         "email": "new-clinician@example.com", "password": "synthetic-password",
         "full_name": "Synthetic Clinician", "role": "doctor", "sector_focus": "health",
     })
-    assert response.status_code == 403, response.text
+    assert response.status_code == 422, response.text
     assert db.query(User).filter(User.email == "new-clinician@example.com").first() is None
+
+
+def test_public_professional_application_keeps_nonclinical_role(client, db):
+    from app.health_models import ClinicianCredential, Doctor
+    response = client.post("/auth/register", json={
+        "email": "applicant@example.com", "password": "synthetic-password",
+        "full_name": "Synthetic Clinician", "role": "doctor", "sector_focus": "health",
+        "practice_country": "AO", "licence_country": "AO",
+        "issuing_authority": "Synthetic professional authority", "licence_number": "SYNTHETIC-001",
+        "diploma_country": "AO", "diploma_institution": "Synthetic University",
+        "degree_title": "Medicina",
+    })
+    assert response.status_code == 201, response.text
+    data = response.json()
+    user = db.query(User).filter(User.email == "applicant@example.com").one()
+    assert data["user"]["role"] == user.role == "patient"
+    assert verify_access_token(data["access_token"])["role"] == "patient"
+    assert db.query(ClinicianCredential).filter_by(user_id=user.id).one().status == "draft"
+    assert db.query(Doctor).filter_by(user_id=user.id).one().verification_status == "draft"
 
 
 def test_mfa_login_challenge_and_assured_token(client, db):

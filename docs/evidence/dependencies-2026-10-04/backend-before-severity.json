@@ -1,0 +1,206 @@
+[
+  {
+    "ghsa_id": "GHSA-2c2j-9gv5-cj73",
+    "cve_id": "CVE-2025-54121",
+    "summary": "Starlette has possible denial-of-service vector when parsing large files in multipart forms",
+    "severity": "medium",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "score": 5.3
+    },
+    "html_url": "https://github.com/advisories/GHSA-2c2j-9gv5-cj73",
+    "published_at": "2025-07-21T19:34:23Z"
+  },
+  {
+    "ghsa_id": "GHSA-59g5-xgcq-4qw3",
+    "cve_id": "CVE-2024-53981",
+    "summary": "Denial of service (DoS) via deformation `multipart/form-data` boundary",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "score": 7.5
+    },
+    "html_url": "https://github.com/advisories/GHSA-59g5-xgcq-4qw3",
+    "published_at": "2024-12-02T21:37:04Z"
+  },
+  {
+    "ghsa_id": "GHSA-5rvq-cxj2-64vf",
+    "cve_id": "CVE-2026-53539",
+    "summary": "python-multipart: Quadratic-time querystring parsing with semicolon separators causes CPU denial of service",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "score": 7.5
+    },
+    "html_url": "https://github.com/advisories/GHSA-5rvq-cxj2-64vf",
+    "published_at": "2026-06-15T20:24:09Z"
+  },
+  {
+    "ghsa_id": "GHSA-6c5p-j8vq-pqhj",
+    "cve_id": "CVE-2024-33663",
+    "summary": "python-jose algorithm confusion with OpenSSH ECDSA keys",
+    "severity": "critical",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+      "score": 7.4
+    },
+    "html_url": "https://github.com/advisories/GHSA-6c5p-j8vq-pqhj",
+    "published_at": "2024-04-26T00:30:35Z"
+  },
+  {
+    "ghsa_id": "GHSA-6jv3-5f52-599m",
+    "cve_id": "CVE-2026-53538",
+    "summary": "python-multipart: Semicolon treated as querystring field separator enables parameter smuggling",
+    "severity": "low",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+      "score": 3.7
+    },
+    "html_url": "https://github.com/advisories/GHSA-6jv3-5f52-599m",
+    "published_at": "2026-06-15T20:22:25Z"
+  },
+  {
+    "ghsa_id": "GHSA-82w8-qh3p-5jfq",
+    "cve_id": "CVE-2026-54283",
+    "summary": "Starlette: request.form() limits silently ignored for application/x-www-form-urlencoded enable DoS",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "score": 7.5
+    },
+    "html_url": "https://github.com/advisories/GHSA-82w8-qh3p-5jfq",
+    "published_at": "2026-06-15T20:39:53Z"
+  },
+  {
+    "ghsa_id": "GHSA-86qp-5c8j-p5mr",
+    "cve_id": "CVE-2026-48710",
+    "summary": "Starlette has missing Host header validation that poisons request.url.path, bypassing path-based security checks",
+    "severity": "medium",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+      "score": 6.5
+    },
+    "html_url": "https://github.com/advisories/GHSA-86qp-5c8j-p5mr",
+    "published_at": "2026-06-04T13:15:17Z"
+  },
+  {
+    "ghsa_id": "GHSA-cjwg-qfpm-7377",
+    "cve_id": "CVE-2024-33664",
+    "summary": "python-jose denial of service via compressed JWE content",
+    "severity": "medium",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "score": 5.3
+    },
+    "html_url": "https://github.com/advisories/GHSA-cjwg-qfpm-7377",
+    "published_at": "2024-04-26T00:30:35Z"
+  },
+  {
+    "ghsa_id": "GHSA-f96h-pmfr-66vw",
+    "cve_id": "CVE-2024-47874",
+    "summary": "Starlette Denial of service (DoS) via multipart/form-data",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      "score": null
+    },
+    "html_url": "https://github.com/advisories/GHSA-f96h-pmfr-66vw",
+    "published_at": "2024-10-15T18:12:57Z"
+  },
+  {
+    "ghsa_id": "GHSA-jp82-jpqv-5vv3",
+    "cve_id": "CVE-2026-54282",
+    "summary": "Starlette: Unvalidated request path concatenated into authority poisons request.url.hostname",
+    "severity": "low",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+      "score": 3.7
+    },
+    "html_url": "https://github.com/advisories/GHSA-jp82-jpqv-5vv3",
+    "published_at": "2026-06-15T20:38:08Z"
+  },
+  {
+    "ghsa_id": "GHSA-mj87-hwqh-73pj",
+    "cve_id": "CVE-2026-40347",
+    "summary": "python-multipart affected by Denial of Service via large multipart preamble or epilogue data",
+    "severity": "medium",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "score": 5.3
+    },
+    "html_url": "https://github.com/advisories/GHSA-mj87-hwqh-73pj",
+    "published_at": "2026-04-15T19:45:44Z"
+  },
+  {
+    "ghsa_id": "GHSA-pp6c-gr5w-3c5g",
+    "cve_id": "CVE-2026-42561",
+    "summary": "python-multipart has Denial of Service via unbounded multipart part headers",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "score": 7.5
+    },
+    "html_url": "https://github.com/advisories/GHSA-pp6c-gr5w-3c5g",
+    "published_at": "2026-05-06T21:56:14Z"
+  },
+  {
+    "ghsa_id": "GHSA-v9pg-7xvm-68hf",
+    "cve_id": "CVE-2026-53540",
+    "summary": "python-multipart: Negative Content-Length in parse_form buffers the entire body in memory",
+    "severity": "low",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "score": 3.7
+    },
+    "html_url": "https://github.com/advisories/GHSA-v9pg-7xvm-68hf",
+    "published_at": "2026-06-15T20:23:45Z"
+  },
+  {
+    "ghsa_id": "GHSA-wj6h-64fc-37mp",
+    "cve_id": "CVE-2024-23342",
+    "summary": "Minerva timing attack on P-256 in python-ecdsa",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+      "score": 7.4
+    },
+    "html_url": "https://github.com/advisories/GHSA-wj6h-64fc-37mp",
+    "published_at": "2024-01-22T21:35:27Z"
+  },
+  {
+    "ghsa_id": "GHSA-wp53-j4wj-2cfg",
+    "cve_id": "CVE-2026-24486",
+    "summary": "Python-Multipart has Arbitrary File Write via Non-Default Configuration",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:L",
+      "score": 8.6
+    },
+    "html_url": "https://github.com/advisories/GHSA-wp53-j4wj-2cfg",
+    "published_at": "2026-01-26T23:28:05Z"
+  },
+  {
+    "ghsa_id": "GHSA-wqp7-x3pw-xc5r",
+    "cve_id": "CVE-2026-48818",
+    "summary": "Starlette: SSRF and NTLM credential theft via UNC paths in StaticFiles on Windows",
+    "severity": "high",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "score": 7.5
+    },
+    "html_url": "https://github.com/advisories/GHSA-wqp7-x3pw-xc5r",
+    "published_at": "2026-06-15T20:16:30Z"
+  },
+  {
+    "ghsa_id": "GHSA-x746-7m8f-x49c",
+    "cve_id": "CVE-2026-48817",
+    "summary": "Starlette: Arbitrary HTTP method dispatched to `HTTPEndpoint` attributes via `getattr`",
+    "severity": "medium",
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+      "score": 5.3
+    },
+    "html_url": "https://github.com/advisories/GHSA-x746-7m8f-x49c",
+    "published_at": "2026-06-15T20:16:05Z"
+  }
+]
