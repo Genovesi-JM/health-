@@ -17,7 +17,7 @@ Cancel/Reschedule:
 """
 import logging
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy.orm import Session
@@ -41,6 +41,7 @@ from app.services.consultation_lifecycle import displayed_revision, record_event
 from app.services.clinician_access import require_current_clinician
 from app.services.consultation_closeout import finalize_consultation, closeout_result, end_video
 
+from app.services.consultation_pages import consultation_page, history_query, private_page
 from app.services.specialties import normalize_specialty
 from app.routers.notifications import create_notification
 
@@ -92,6 +93,20 @@ def reschedule_consultation(
     return reschedule(db, consultation, body, patient, user, idempotency_key)
 
 
+@router.get("/api/v1/consultations/me/page")
+def patient_consultation_page(
+    response: Response, view: Literal["all", "upcoming", "past"] = Query("all"),
+    status: Optional[str] = Query(None, max_length=40), limit: int = Query(20, ge=1, le=100),
+    cursor: Optional[str] = Query(None, max_length=1024),
+    patient: Patient = Depends(get_patient_for_user), db: Session = Depends(get_db),
+):
+    query = history_query(db.query(Consultation).filter(Consultation.patient_id == patient.id), view=view, status=status)
+    rows, next_cursor = consultation_page(query, viewer=patient.user_id, owner=patient.id,
+        scope="patient-consultations", limit=limit, cursor=cursor, filters={"view": view, "status": status})
+    private_page(response)
+    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in rows], "next_cursor": next_cursor}
+
+
 @router.get("/api/v1/consultations/me", response_model=List[ConsultationOut])
 def my_consultations(
     status: Optional[str] = Query(None),
@@ -112,13 +127,7 @@ def my_consultations(
 # Doctor endpoints
 # ═══════════════════════════════════════════════════════════════
 
-@router.get("/api/v1/doctor/queue", response_model=List[ConsultationQueueItem])
-def doctor_queue(
-    specialty: Optional[str] = Query(None),
-    user: User = Depends(require_verified_doctor),
-    db: Session = Depends(get_db),
-):
-    """Get eligible shared requests and this doctor's own requests/active cases."""
+def _queue_query(user, db, specialty):
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     credential = require_current_clinician(user, db)
     q = db.query(Consultation).filter(
@@ -139,8 +148,10 @@ def doctor_queue(
         # A display filter can narrow access, never expand it to another specialty.
         q = q.filter(Consultation.specialty == normalize_specialty(specialty))
 
-    consultations = q.order_by(Consultation.created_at.asc()).limit(50).all()
+    return q, doctor
 
+
+def _queue_items(consultations, db):
     items = []
     for c in consultations:
         # Get triage info if available (minimal patient data)
@@ -185,6 +196,46 @@ def doctor_queue(
             created_at=c.created_at,
         ))
     return items
+
+
+@router.get("/api/v1/doctor/queue", response_model=List[ConsultationQueueItem])
+def doctor_queue(
+    specialty: Optional[str] = Query(None), user: User = Depends(require_verified_doctor),
+    db: Session = Depends(get_db),
+):
+    query, _ = _queue_query(user, db, specialty)
+    return _queue_items(query.order_by(Consultation.created_at.asc(), Consultation.id.asc()).limit(50).all(), db)
+
+
+@router.get("/api/v1/doctor/queue/page")
+def doctor_queue_page(
+    response: Response, specialty: Optional[str] = Query(None, max_length=100),
+    limit: int = Query(25, ge=1, le=100), cursor: Optional[str] = Query(None, max_length=1024),
+    user: User = Depends(require_verified_doctor), db: Session = Depends(get_db),
+):
+    query, doctor = _queue_query(user, db, specialty)
+    rows, next_cursor = consultation_page(query, viewer=user.id, owner=doctor.id, scope="doctor-queue",
+        limit=limit, cursor=cursor, ascending=True, filters={"specialty": normalize_specialty(specialty) if specialty else None})
+    private_page(response)
+    return {"items": _queue_items(rows, db), "next_cursor": next_cursor}
+
+
+@router.get("/api/v1/doctor/consultations/page")
+def assigned_consultation_page(
+    response: Response, view: Literal["all", "upcoming", "past"] = Query("all"),
+    status: Optional[str] = Query(None, max_length=40), limit: int = Query(20, ge=1, le=100),
+    cursor: Optional[str] = Query(None, max_length=1024),
+    user: User = Depends(require_verified_doctor), db: Session = Depends(get_db),
+):
+    require_current_clinician(user, db)
+    doctor = db.query(Doctor).filter_by(user_id=user.id).first()
+    if not doctor:
+        raise HTTPException(404, "Perfil de médico não encontrado.")
+    query = history_query(db.query(Consultation).filter(Consultation.doctor_id == doctor.id), view=view, status=status)
+    rows, next_cursor = consultation_page(query, viewer=user.id, owner=doctor.id, scope="doctor-consultations",
+        limit=limit, cursor=cursor, filters={"view": view, "status": status})
+    private_page(response)
+    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in rows], "next_cursor": next_cursor}
 
 
 @router.get("/api/v1/doctor/consultations", response_model=List[ConsultationOut])

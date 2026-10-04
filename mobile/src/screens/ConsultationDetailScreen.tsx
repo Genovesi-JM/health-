@@ -3,7 +3,9 @@ import {
   ActivityIndicator, Alert, AppState, RefreshControl, ScrollView, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
-import { useFocusEffect, useRoute, type RouteProp } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as SecureStore from 'expo-secure-store';
 import type { AppStackParamList } from '../navigation/AppStack';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,10 +15,12 @@ import {
   loadPatientConsultation, patientSummaryPublication, videoAvailabilityMessage, type PatientConsultationDetail,
 } from './consultations';
 import { APPOINTMENT_MARKETS, appointmentDate } from './appointmentAvailability';
+import { canRescheduleConsultation, rescheduleStorageKey } from './appointmentRescheduling';
 
 const TEAL = '#0d9488';
 
 export default function ConsultationDetailScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { user } = useAuth();
   const ownerId = user?.id == null ? null : String(user.id);
   const currentOwner = useRef(ownerId);
@@ -28,6 +32,7 @@ export default function ConsultationDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
+  const [rescheduleRecovery, setRescheduleRecovery] = useState({ present: false, verified: false });
   const active = useRef(false);
   const requestVersion = useRef(0);
   const busy = useRef(false);
@@ -40,8 +45,14 @@ export default function ConsultationDetailScreen() {
     if (!ownerId) { setDetail(null); setLoading(false); return; }
     if (!quiet) setLoading(true);
     try {
-      const latest = await loadPatientConsultation(api, consultationId);
+      const [loadedDetail, recovery] = await Promise.allSettled([
+        loadPatientConsultation(api, consultationId),
+        SecureStore.getItemAsync(rescheduleStorageKey(ownerId, consultationId)),
+      ]);
       if (!active.current || version !== requestVersion.current || currentOwner.current !== ownerId) return;
+      setRescheduleRecovery({ present: recovery.status === 'fulfilled' && recovery.value !== null, verified: recovery.status === 'fulfilled' });
+      if (loadedDetail.status === 'rejected') throw loadedDetail.reason;
+      const latest = loadedDetail.value;
       setDetail({ ownerId, detail: latest });
       currentStatus.current = latest.result.status;
       setError('');
@@ -66,6 +77,7 @@ export default function ConsultationDetailScreen() {
     setError('');
     setCancelling(false);
     setHistoryExpanded(false);
+    setRescheduleRecovery({ present: false, verified: false });
     void load();
     const subscription = AppState.addEventListener('change', state => {
       if (state === 'active' && !busy.current) void load(true);
@@ -86,7 +98,7 @@ export default function ConsultationDetailScreen() {
 
   const cancel = async () => {
     if (!active.current || focusedConsultationId.current !== consultationId ||
-        busy.current || !detail || !canCancelConsultation(detail.result.status)) return;
+        busy.current || !detail || !canCancelConsultation(detail.result.status) || rescheduleRecovery.present || !rescheduleRecovery.verified) return;
     const version = viewVersion.current;
     const sameView = () => active.current && viewVersion.current === version &&
       focusedConsultationId.current === consultationId && currentOwner.current === ownerId;
@@ -138,8 +150,15 @@ export default function ConsultationDetailScreen() {
           {detail.consultation?.ended_at && <Text style={styles.body}>Fim: {consultationDate(detail.consultation.ended_at)}</Text>}
           {detail.metadataUnavailable && <Text style={styles.hint}>Não foi possível atualizar os horários. O estado e o resumo foram atualizados.</Text>}
           <Text style={styles.hint}>A marcação indica o fuso do local de atendimento. Os restantes eventos são apresentados no fuso do seu dispositivo.</Text>
-          {canCancelConsultation(detail.result.status) && <TouchableOpacity accessibilityRole="button"
+          {!rescheduleRecovery.verified && <Text style={styles.hint}>Não foi possível verificar se existe uma alteração de horário pendente. Atualize antes de cancelar.</Text>}
+          {rescheduleRecovery.present && <Text style={styles.hint}>Existe uma alteração de horário por confirmar. Recupere o resultado antes de cancelar ou pedir outra alteração.</Text>}
+          {(rescheduleRecovery.present || !rescheduleRecovery.verified || canRescheduleConsultation(detail.consultation)) && <TouchableOpacity accessibilityRole="button"
             disabled={loading || cancelling || !!error}
+            onPress={() => navigation.navigate('RescheduleConsultation', { consultationId })}>
+            <Text style={styles.link}>{rescheduleRecovery.present ? 'Recuperar alteração de horário' : 'Alterar horário'}</Text>
+          </TouchableOpacity>}
+          {canCancelConsultation(detail.result.status) && <TouchableOpacity accessibilityRole="button"
+            disabled={loading || cancelling || !!error || rescheduleRecovery.present || !rescheduleRecovery.verified}
             onPress={() => Alert.alert('Cancelar consulta?', 'O cancelamento será registado no seu pedido.', [
               { text: 'Manter', style: 'cancel' },
               { text: 'Cancelar consulta', style: 'destructive', onPress: () => void cancel() },

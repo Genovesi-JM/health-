@@ -17,7 +17,7 @@ const visit = { id: 'visit-1', specialty: 'clinica_geral', patient_id: 'patient-
 beforeEach(() => {
   vi.resetAllMocks();
   sessionStorage.clear();
-  vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me') ? [visit] : null }));
+  vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me/page') ? { items: [visit], next_cursor: null } : null }));
   vi.mocked(api.patch).mockResolvedValue({ data: { ...visit, status: 'cancelled' } });
 });
 function show() { return render(<MemoryRouter><I18nProvider><ConsultationsPage /></I18nProvider></MemoryRouter>); }
@@ -59,15 +59,15 @@ describe('patient consultation cancellation', () => {
   it('refreshes the actual consultation after a conflict and removes actions for active care', async () => {
     vi.mocked(api.patch).mockRejectedValue({ response: { status: 409 } });
     show(); const dialog = await confirmation();
-    vi.mocked(api.get).mockResolvedValue({ data: [{ ...visit, status: 'in_progress' }] });
+    vi.mocked(api.get).mockResolvedValue({ data: { items: [{ ...visit, status: 'in_progress' }], next_cursor: null } });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Confirmar cancelamento' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('A consulta mudou');
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancelar consulta' })).not.toBeInTheDocument());
-    expect(api.get).toHaveBeenLastCalledWith('/api/v1/consultations/me');
+    expect(api.get).toHaveBeenLastCalledWith('/api/v1/consultations/me/page', { params: { limit: 20, view: 'all' } });
     expect(screen.queryByText('Consulta cancelada.')).not.toBeInTheDocument();
   });
   it('does not offer patient cancellation for care already in progress or completed', async () => {
-    vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me') ? [{ ...visit, status: 'in_progress' }, { ...visit, id: 'visit-2', status: 'completed' }] : null }));
+    vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me/page') ? { items: [{ ...visit, status: 'in_progress' }, { ...visit, id: 'visit-2', status: 'completed' }], next_cursor: null } : null }));
     show(); await screen.findByRole('table');
     expect(screen.queryByRole('button', { name: 'Cancelar consulta' })).not.toBeInTheDocument();
   });
@@ -75,7 +75,7 @@ describe('patient consultation cancellation', () => {
     vi.mocked(api.patch).mockRejectedValue({ response: { status: 409 } });
     show(); const dialog = await confirmation(); vi.mocked(api.get).mockRejectedValue(new Error('Offline'));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Confirmar cancelamento' }));
-    expect(await screen.findByText(/não foi possível atualizar a lista/)).toBeInTheDocument();
+    expect(await screen.findByText(/Não foi possível carregar as consultas/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cancelar consulta' })).not.toBeInTheDocument();
   });
 });

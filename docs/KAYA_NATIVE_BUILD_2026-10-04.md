@@ -129,3 +129,27 @@ no new advisory IDs; the same two unpatched tooling advisories remain. The froze
 APK uses the earlier 277-route policy mirror. The later 280-route document/
 rescheduling policy belongs to the following source wave and is not retroactively
 claimed as part of this artifact.
+## Native document history and appointment changes
+
+The next source checkpoint adds paginated document metadata, explicit detail
+loading and same-doctor rescheduling with durable request identity. An uncertain
+upload stores only a bounded, owner-scoped cached-file reference, UUID and consent
+in SecureStore. Replacement stays locked during recovery. An authenticated
+request lookup can recover a committed upload after the local cache disappears;
+404 does not prove that an earlier request cannot still commit. Explicitly
+discarding recovery removes only the local reference, after a history-review
+acknowledgement, and never removes a server document.
+
+Persisted booking, upload and rescheduling work captures its initiating session
+before awaiting local storage. A later account switch cannot send the old
+payload with a new account's token. Native clinician accept/start sends the
+displayed appointment revision and refreshes after a conflict without retrying
+against a changed appointment automatically.
+
+This checkpoint passed 157 native tests, TypeScript and four Hermes exports
+(informational and operational-source entries, each on Android and iOS), with
+policy 284. The lockfile and native configuration did not change. Source hashes
+and logs are in [the source validation record](evidence/native-pages-rescheduling-2026-10-04/manifest.json).
+No APK was rebuilt for these JavaScript changes: the existing informational APK
+still represents `09df949` and policy 277. Export success is not an operational
+device test or an iOS native compilation result.

@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Native document metadata pagination, durable upload recovery, and appointment rescheduling",
+  "runtime": {
+    "node": "24.21.0",
+    "npm": "11.18.0"
+  },
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "f78df70c7557fab0c3aba90b58013a91f0cf8c842d859eef46d07902234358a8",
+  "source_manifest_files": 86,
+  "source_manifest_matches_shared_at_validation": true,
+  "policy_routes": 284,
+  "policy_sha256": "1ae9bc818dc3ecdd74407342add1592b57d5915296dba266fb246cf54673ef26",
+  "checks": {
+    "mobile_tests": {
+      "passed": 157,
+      "failed": 0,
+      "log": "mobile-tests.log"
+    },
+    "typecheck": "passed",
+    "git_diff_check": "passed",
+    "hermes_exports": {
+      "informational-ios": {
+        "modules": 592,
+        "hermes_bytes": 1461946,
+        "hermes_sha256": "a077ec9d80c65717372a3f326acba956561deee89168ca54e36cacb9d161b2c0",
+        "log": "bundle-informational-ios.log"
+      },
+      "informational-android": {
+        "modules": 590,
+        "hermes_bytes": 1467012,
+        "hermes_sha256": "a0d60a7c7357707291b467de7b2cb6b62992956373d544cbdb7dce958aa06ac6",
+        "log": "bundle-informational-android.log"
+      },
+      "legacy-ios": {
+        "modules": 1060,
+        "hermes_bytes": 3100418,
+        "hermes_sha256": "c15f7d7e329a4401c7c96f2336157825f09ea8738a6df07f347cdefcb8e6d781",
+        "log": "bundle-legacy-ios.log"
+      },
+      "legacy-android": {
+        "modules": 1013,
+        "hermes_bytes": 3023261,
+        "hermes_sha256": "d2d9ef7cc0aef644788cd3636dc6f4c9c93716665639fa69ee2c8f5e4251f5a1",
+        "log": "bundle-legacy-android.log"
+      }
+    }
+  },
+  "changes": {
+    "document_pages": "Owner metadata pages of20, explicit lazy full-detail fetch, version-aware ID deduplication; retryable page failure preserves loaded rows and edited review; expired cursor requires explicit restart; auth/access failure clears server-loaded content.",
+    "upload_recovery": "Bounded owner-keyed SecureStore record stores cached local URI/name/MIME/size, request UUID and explicit consent only. No document text or bytes are stored in the recovery record. Persist before POST; all uncertain/errors retain exact identity and lock replacement. Committed lookup can recover without a local cached file.404 never proves absence. Explicit local discard requires history-review acknowledgement and never deletes server documents. Existing review drafts survive lookup.",
+    "missing_cache": "Upload retry rejects a missing, empty or size-changed cached file. The original UUID is retained and lookup remains available. A missing lookup leaves uncertainty visible; user may explicitly discard only local recovery after reviewing history. No claim that a404 means the upload failed.",
+    "rescheduling": "New same-doctor/same-country future published slot with expected revision and stable saved UUID. Reservation is changed atomically by backend; result remains requested pending new acceptance. Only explicit structured409 noncommit proof unlocks selection; all other errors retain exact request. Pending recovery remains reachable after lifecycle/payment changes. Cleanup removes only matching UUID.",
+    "clinician_revision": "Native accept/start passes the displayed reschedule_revision, fails closed on missing revision, refreshes on409 without retrying a changed consultation.",
+    "session": "Booking, rescheduling and persisted upload work bind API calls to the session generation captured before asynchronous SecureStore writes; late account switch cannot send under a replacement account."
+  },
+  "native_artifact": {
+    "rebuilt": false,
+    "reason": "Only JS/TS source and canonical policy changed; package lock, native config, assets and HOLD plugin unchanged. Both platform Hermes exports verified.",
+    "existing_apk": "artifacts/native/kaya-sdk57-pdf-informational-test-arm64.apk",
+    "existing_apk_sha256": "5767c8986bcb7e83bb215b24fe0819774afe3bf57f9d5666c7d4786e1826e96f",
+    "snapshot": "Earlier09df949 PDF/auth/HOLD checkpoint, policy277; does not contain this new source wave."
+  },
+  "dependencies": {
+    "lock_sha256": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+    "changed": false,
+    "new_dependencies": 0,
+    "audit_and_sbom": "Previous PDF checkpoint reports remain tied to the unchanged lock. This is not a fresh advisory-database audit. Existing two unpatched tooling advisories remain without risk acceptance."
+  },
+  "limits": [
+    "Clinical entry stays disabled under HOLD; no clinical API activation or live provider traffic.",
+    "New document recovery/rescheduling screens validated by helper/session regressions and iOS/Android Hermes exports; no real-phone or operational emulator workflow claim.",
+    "No new Android native build or APK for this JS-only wave. Existing standalone informational APK is an older source snapshot.",
+    "iOS native compilation remains blocked by unaccepted Xcode license; no license was accepted."
+  ],
+  "repository_actions": "No staging or commits by mobile agent; parent owns documentation/checkpoint."
+}

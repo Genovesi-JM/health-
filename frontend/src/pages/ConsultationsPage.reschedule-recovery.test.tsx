@@ -29,7 +29,7 @@ it.each([{ status: 'in_progress' }, { status: 'completed' }, { payment_status: '
     saveReschedule(identity.userId, visit.id, attempt);
     vi.mocked(api.get).mockImplementation(async url => {
       if (url.includes('/appointments/slots')) throw new Error('Offline slot catalogue');
-      return { data: url.endsWith('/me') ? [current] : null };
+      return { data: url.endsWith('/me/page') ? { items: [current], next_cursor: null } : null };
     });
     vi.mocked(api.post).mockResolvedValue({ data: current });
     show();
@@ -49,7 +49,7 @@ it.each([{ status: 'in_progress' }, { status: 'completed' }, { payment_status: '
 
 it('keeps cancellation unavailable until the pending change is confirmed, without exposing another owner’s attempt', async () => {
   saveReschedule('other-account', visit.id, attempt);
-  vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me') ? [visit] : [] }));
+  vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me/page') ? { items: [visit], next_cursor: null } : [] }));
   const first = show();
   expect(await screen.findByRole('button', { name: 'Cancelar consulta' })).toBeEnabled();
   expect(screen.queryByRole('button', { name: 'Recuperar alteração' })).not.toBeInTheDocument();
@@ -62,7 +62,7 @@ it('keeps cancellation unavailable until the pending change is confirmed, withou
 
 it('keeps a storage failure visible through the recovery dialog and sends no new mutation', async () => {
   sessionStorage.setItem(`kaya_pending_appointment:reschedule:${identity.userId}:${visit.id}`, '{broken');
-  vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me') ? [visit] : [] }));
+  vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me/page') ? { items: [visit], next_cursor: null } : [] }));
   show();
   fireEvent.click(await screen.findByRole('button', { name: 'Recuperar alteração' }));
   await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível ler a referência'));

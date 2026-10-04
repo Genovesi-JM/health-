@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Component, lazy, Suspense, type ReactNode } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { I18nProvider } from './i18n/LanguageContext';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -14,93 +15,115 @@ function RootRedirect() {
 }
 
 /* Public pages */
-import LandingPage from './pages/LandingPage';
-import AboutPage from './pages/AboutPage';
-import ServicesPage from './pages/ServicesPage';
-import EspecialistasPage from './pages/EspecialistasPage';
-import TeleconsultaPage from './pages/TeleconsultaPage';
-import UrgenciaPage from './pages/UrgenciaPage';
-import EmpresasPage from './pages/EmpresasPage';
-import FAQPage from './pages/FAQPage';
-import ContactoPage from './pages/ContactoPage';
-import MapaPage from './pages/MapaPage';
-import PatientsPage from './pages/PatientsPage';
-import ClinicsPage from './pages/ClinicsPage';
-import ChronicCarePage from './pages/ChronicCarePage';
-import DevicesPage from './pages/DevicesPage';
-import PricingPage from './pages/PricingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ChooseAccountTypePage from './pages/ChooseAccountTypePage';
-import PatientOnboardingPage from './pages/PatientOnboardingPage';
-import ProfessionalOnboardingPage from './pages/ProfessionalOnboardingPage';
-import OrganisationOnboardingPage from './pages/OrganisationOnboardingPage';
-import CaregiverOnboardingPage from './pages/CaregiverOnboardingPage';
-import AuthCallbackPage from './pages/AuthCallbackPage';
-import DoctorRegisterPage from './pages/DoctorRegisterPage';
-import DoctorApplyPage from './pages/DoctorApplyPage';
-import DoctorsListPage from './pages/DoctorsListPage';
-import PublicDoctorPage from './pages/PublicDoctorPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsOfServicePage from './pages/TermsOfServicePage';
-import MedicalDisclaimerPage from './pages/MedicalDisclaimerPage';
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ServicesPage = lazy(() => import('./pages/ServicesPage'));
+const EspecialistasPage = lazy(() => import('./pages/EspecialistasPage'));
+const TeleconsultaPage = lazy(() => import('./pages/TeleconsultaPage'));
+const UrgenciaPage = lazy(() => import('./pages/UrgenciaPage'));
+const EmpresasPage = lazy(() => import('./pages/EmpresasPage'));
+const FAQPage = lazy(() => import('./pages/FAQPage'));
+const ContactoPage = lazy(() => import('./pages/ContactoPage'));
+const MapaPage = lazy(() => import('./pages/MapaPage'));
+const PatientsPage = lazy(() => import('./pages/PatientsPage'));
+const ClinicsPage = lazy(() => import('./pages/ClinicsPage'));
+const ChronicCarePage = lazy(() => import('./pages/ChronicCarePage'));
+const DevicesPage = lazy(() => import('./pages/DevicesPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ChooseAccountTypePage = lazy(() => import('./pages/ChooseAccountTypePage'));
+const PatientOnboardingPage = lazy(() => import('./pages/PatientOnboardingPage'));
+const ProfessionalOnboardingPage = lazy(() => import('./pages/ProfessionalOnboardingPage'));
+const OrganisationOnboardingPage = lazy(() => import('./pages/OrganisationOnboardingPage'));
+const CaregiverOnboardingPage = lazy(() => import('./pages/CaregiverOnboardingPage'));
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
+const DoctorRegisterPage = lazy(() => import('./pages/DoctorRegisterPage'));
+const DoctorApplyPage = lazy(() => import('./pages/DoctorApplyPage'));
+const DoctorsListPage = lazy(() => import('./pages/DoctorsListPage'));
+const PublicDoctorPage = lazy(() => import('./pages/PublicDoctorPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
+const MedicalDisclaimerPage = lazy(() => import('./pages/MedicalDisclaimerPage'));
 
 /* Protected pages */
-import DashboardPage from './pages/DashboardPage';
-import PatientProfilePage from './pages/PatientProfilePage';
-import PatientDocumentsPage from './pages/PatientDocumentsPage';
-import TriagePage from './pages/TriagePage';
-import ConsultationsPage from './pages/ConsultationsPage';
-import ConsentsPage from './pages/ConsentsPage';
-import DoctorDashboardPage from './pages/DoctorDashboardPage';
-import DoctorProfileEditPage from './pages/DoctorProfileEditPage';
-import DoctorQueuePage from './pages/DoctorQueuePage';
-import DoctorAgendaPage from './pages/DoctorAgendaPage';
-import DoctorAvailabilityPage from './pages/DoctorAvailabilityPage';
-import DoctorPatientsPage from './pages/DoctorPatientsPage';
-import DoctorLivePage from './pages/DoctorLivePage';
-import DoctorPrescriptionsPage from './pages/DoctorPrescriptionsPage';
-import PatientPrescriptionRequestPage from './pages/PatientPrescriptionRequestPage';
-import DoctorMessagesPage from './pages/DoctorMessagesPage';
-import DoctorFinancePage from './pages/DoctorFinancePage';
-import DoctorReviewsPage from './pages/DoctorReviewsPage';
-import DoctorSecurityPage from './pages/DoctorSecurityPage';
-import DoctorSuportePage from './pages/DoctorSuportePage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import AdminDoctorsPage from './pages/AdminDoctorsPage';
-import AdminPatientsPage from './pages/AdminPatientsPage';
-import AdminApplicationsPage from './pages/AdminApplicationsPage';
-import AdminCredentialsPage from './pages/AdminCredentialsPage';
-import AdminCompliancePage from './pages/AdminCompliancePage';
-import AdminExpiryPage from './pages/AdminExpiryPage';
-import CorporateDashboardPage from './pages/CorporateDashboardPage';
-import NurseDashboardPage from './pages/NurseDashboardPage';
-import StorePage from './pages/StorePage';
-import SettingsPage from './pages/SettingsPage';
-import SecurityMfaPage from './pages/SecurityMfaPage';
-import SecuritySettingsPage from './pages/SecuritySettingsPage';
-import SelfCarePage from './pages/SelfCarePage';
-import FamilyPage from './pages/FamilyPage';
-import NotificationsPage from './pages/NotificationsPage';
-import PatientReadingsPage from './pages/PatientReadingsPage';
-import ConsentGatePage from './pages/ConsentGatePage';
-import ProfessionalVerificationPage from './pages/ProfessionalVerificationPage';
-import NurseDashboardPreviewShell from './pages/NurseDashboardPreviewShell';
-import ClinicianPatientWorkspacePage from './pages/ClinicianPatientWorkspacePage';
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const PatientProfilePage = lazy(() => import('./pages/PatientProfilePage'));
+const PatientDocumentsPage = lazy(() => import('./pages/PatientDocumentsPage'));
+const TriagePage = lazy(() => import('./pages/TriagePage'));
+const ConsultationsPage = lazy(() => import('./pages/ConsultationsPage'));
+const ConsentsPage = lazy(() => import('./pages/ConsentsPage'));
+const DoctorDashboardPage = lazy(() => import('./pages/DoctorDashboardPage'));
+const DoctorProfileEditPage = lazy(() => import('./pages/DoctorProfileEditPage'));
+const DoctorQueuePage = lazy(() => import('./pages/DoctorQueuePage'));
+const DoctorAgendaPage = lazy(() => import('./pages/DoctorAgendaPage'));
+const DoctorAvailabilityPage = lazy(() => import('./pages/DoctorAvailabilityPage'));
+const DoctorPatientsPage = lazy(() => import('./pages/DoctorPatientsPage'));
+const DoctorLivePage = lazy(() => import('./pages/DoctorLivePage'));
+const DoctorPrescriptionsPage = lazy(() => import('./pages/DoctorPrescriptionsPage'));
+const PatientPrescriptionRequestPage = lazy(() => import('./pages/PatientPrescriptionRequestPage'));
+const DoctorMessagesPage = lazy(() => import('./pages/DoctorMessagesPage'));
+const DoctorFinancePage = lazy(() => import('./pages/DoctorFinancePage'));
+const DoctorReviewsPage = lazy(() => import('./pages/DoctorReviewsPage'));
+const DoctorSecurityPage = lazy(() => import('./pages/DoctorSecurityPage'));
+const DoctorSuportePage = lazy(() => import('./pages/DoctorSuportePage'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const AdminDoctorsPage = lazy(() => import('./pages/AdminDoctorsPage'));
+const AdminPatientsPage = lazy(() => import('./pages/AdminPatientsPage'));
+const AdminApplicationsPage = lazy(() => import('./pages/AdminApplicationsPage'));
+const AdminCredentialsPage = lazy(() => import('./pages/AdminCredentialsPage'));
+const AdminCompliancePage = lazy(() => import('./pages/AdminCompliancePage'));
+const AdminExpiryPage = lazy(() => import('./pages/AdminExpiryPage'));
+const CorporateDashboardPage = lazy(() => import('./pages/CorporateDashboardPage'));
+const NurseDashboardPage = lazy(() => import('./pages/NurseDashboardPage'));
+const StorePage = lazy(() => import('./pages/StorePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const SecurityMfaPage = lazy(() => import('./pages/SecurityMfaPage'));
+const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
+const SelfCarePage = lazy(() => import('./pages/SelfCarePage'));
+const FamilyPage = lazy(() => import('./pages/FamilyPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const PatientReadingsPage = lazy(() => import('./pages/PatientReadingsPage'));
+const ConsentGatePage = lazy(() => import('./pages/ConsentGatePage'));
+const ProfessionalVerificationPage = lazy(() => import('./pages/ProfessionalVerificationPage'));
+const NurseDashboardPreviewShell = lazy(() => import('./pages/NurseDashboardPreviewShell'));
+const ClinicianPatientWorkspacePage = lazy(() => import('./pages/ClinicianPatientWorkspacePage'));
 import InstallPrompt from './components/InstallPrompt';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
+
+class RouteLoadBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (this.state.failed) return <div className="page-loading" role="alert" style={{ flexDirection: 'column', gap: '1rem', padding: '1.5rem', textAlign: 'center' }}>
+      <p>Não foi possível abrir esta página. Verifique a ligação e tente recarregar.</p>
+      <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>Recarregar página</button>
+      <a href={BASE}>Voltar ao início</a>
+    </div>;
+    return this.props.children;
+  }
+}
+
+function RouteContent({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  return <RouteLoadBoundary key={location.pathname}>
+    <Suspense fallback={<div className="page-loading" role="status" aria-live="polite" style={{ gap: '1rem' }}><div className="spinner" aria-hidden="true" /><span>A carregar página…</span></div>}>
+      {children}
+    </Suspense>
+  </RouteLoadBoundary>;
+}
 
 export default function App() {
   if (import.meta.env.DEV && window.location.pathname.includes('/preview/')) {
     return (
       <I18nProvider>
         <BrowserRouter basename={BASE}>
-          <Routes>
+          <RouteContent><Routes>
             <Route path="/preview/nurse" element={<NurseDashboardPreviewShell />} />
             <Route path="/preview/clinician/patient" element={<ClinicianPatientWorkspacePage preview />} />
             <Route path="*" element={<Navigate to="/preview/nurse" replace />} />
-          </Routes>
+          </Routes></RouteContent>
         </BrowserRouter>
       </I18nProvider>
     );
@@ -110,7 +133,7 @@ export default function App() {
     <I18nProvider>
     <AuthProvider>
       <BrowserRouter basename={BASE}>
-        <Routes>
+        <RouteContent><Routes>
           {/* Public */}
           <Route path="/" element={<RootRedirect />} />
           <Route path="/about" element={<AboutPage />} />
@@ -214,7 +237,7 @@ export default function App() {
 
           {/* Catch-all → login (preserves destination for redirect after login) */}
           <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+        </Routes></RouteContent>
         <InstallPrompt />
       </BrowserRouter>
     </AuthProvider>

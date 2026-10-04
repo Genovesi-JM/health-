@@ -6,7 +6,7 @@ import { I18nProvider } from '../i18n/LanguageContext';
 import api from '../api';
 import DoctorQueuePage from './DoctorQueuePage';
 
-vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn() }, getSession: () => ({ userId: 'doctor' }) }));
 vi.mock('../components/PatientReadingsPanel', () => ({ default: () => null }));
 vi.mock('../components/TriagePhotoReview', () => ({ default: () => null }));
 
@@ -14,11 +14,11 @@ beforeEach(() => vi.clearAllMocks());
 
 function renderQueue(status: string) {
   vi.mocked(api.get).mockImplementation(async (url) => ({ data:
-    url === '/api/v1/doctor/queue' ? [{
+    url === '/api/v1/doctor/queue/page' ? { items: [{
       id: 'consult-1', patient_name: 'Paciente de teste', specialty: 'clinica_geral',
       status, created_at: '2026-10-04T10:00:00Z', scheduled_at: '2026-10-06T10:00:00Z',
       reschedule_revision: 3, timezone: 'Africa/Luanda',
-    }] : { items: [] },
+    }], next_cursor: null } : { items: [] },
   }));
   render(<MemoryRouter><I18nProvider><DoctorQueuePage /></I18nProvider></MemoryRouter>);
 }

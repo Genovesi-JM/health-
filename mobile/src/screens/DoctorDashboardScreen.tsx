@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text,
   TouchableOpacity, View,
@@ -11,6 +11,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { ClinicianStackParamList } from '../navigation/ClinicianStack';
+import { openDisplayedQueueItem } from './doctorQueue';
 
 type Navigation = NativeStackNavigationProp<ClinicianStackParamList, 'DoctorDashboard'>;
 
@@ -30,6 +31,7 @@ type QueueItem = {
   risk_level?: string | null;
   specialty?: string;
   status: string;
+  reschedule_revision?: number;
 };
 
 type Escalation = {
@@ -62,6 +64,7 @@ export default function DoctorDashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [accepting, setAccepting] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const queueBusy = useRef(false);
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
@@ -73,6 +76,7 @@ export default function DoctorDashboardScreen() {
     ]);
     if (results[0].status === 'fulfilled') setDashboard(results[0].value.data);
     if (results[1].status === 'fulfilled') setQueue(results[1].value.data || []);
+    else setError('Não foi possível atualizar a fila. Puxe para atualizar antes de aceitar ou iniciar uma consulta.');
     if (results[2].status === 'fulfilled') setEscalations(results[2].value.data.items || []);
     if (results.every(result => result.status === 'rejected')) setError(t('clinician.load_error'));
     setLoading(false);
@@ -95,18 +99,17 @@ export default function DoctorDashboardScreen() {
   };
 
   const acceptQueueItem = async (item: QueueItem) => {
-    if (!item.patient_id) return;
+    if (!item.patient_id || queueBusy.current) return;
+    queueBusy.current = true;
     setAccepting(item.id);
     try {
-      if (item.status !== 'in_progress') {
-        const action = item.status === 'scheduled' ? 'start' : 'accept';
-        await api.post(`/api/v1/doctor/queue/${item.id}/${action}`);
-      }
-      navigation.navigate('Patient360', { patientId: item.patient_id });
+      const patientId = await openDisplayedQueueItem(api, item, async () => { setQueue([]); await load(true); });
+      navigation.navigate('Patient360', { patientId });
       void load();
     } catch (requestError: any) {
-      Alert.alert(t('common.error'), requestError?.response?.data?.detail || t('clinician.accept_error'));
+      Alert.alert(t('common.error'), requestError?.response?.data?.detail || requestError?.message || t('clinician.accept_error'));
     } finally {
+      queueBusy.current = false;
       setAccepting(null);
     }
   };
@@ -215,7 +218,7 @@ export default function DoctorDashboardScreen() {
               key={item.id}
               style={styles.queueRow}
               onPress={() => void acceptQueueItem(item)}
-              disabled={!item.patient_id || accepting === item.id}
+              disabled={!item.patient_id || accepting !== null}
               accessibilityRole="button"
             >
               <View style={styles.avatar}>

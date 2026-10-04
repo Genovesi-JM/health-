@@ -172,3 +172,5 @@
 
 !app/services/appointment_rescheduling.py
 !alembic/versions/appointment_reschedules_v1.py
+
+!app/services/consultation_pages.py

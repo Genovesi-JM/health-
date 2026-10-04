@@ -9,7 +9,7 @@ from typing import Literal
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Path, Query, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, StrictInt
 from sqlalchemy import and_, or_, select, update
@@ -184,6 +184,7 @@ def capabilities(user: User = Depends(get_current_user)):
     enabled = processing_configured() and normalize_role(user.role) == "patient"
     return {
         "upload_enabled": enabled, "max_bytes": MAX_BYTES,
+        "request_lookup_enabled": normalize_role(user.role) == "patient",
         "accepted_types": list(ACCEPTED_TYPES), "extraction": "pdf_text",
         "message": None if enabled else "O envio e processamento de documentos ainda não estão disponíveis.",
     }
@@ -216,6 +217,32 @@ def patient_document_page(patient_id: str, limit: int = Query(20, ge=1, le=100),
                           user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     _doctor_patient(patient_id, user, db)
     return _document_page(user, patient_id, db, limit=limit, cursor=cursor, clean_only=True)
+
+
+@router.get("/requests/{idempotency_key}")
+def recover_document_request(idempotency_key: str = Path(..., max_length=64),
+                             user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Find an owner's committed upload without requiring the original file.
+
+    Absence is only a snapshot: a concurrent upload can still commit later.
+    """
+    patient = _patient(user, db)
+    try:
+        key = str(UUID(idempotency_key))
+    except ValueError:
+        raise HTTPException(422, "A identificação do envio é inválida.", headers={"Cache-Control": "private, no-store"}) from None
+    document = db.query(PatientDocument).filter_by(patient_id=patient.id, idempotency_key=key).first()
+    if not document:
+        db.add(HealthAuditLog(actor_user_id=user.id, action="patient_document_request_lookup",
+            resource_type="patient", resource_id=patient.id, metadata_json=json.dumps({"found": False})))
+        _commit(db)
+        raise HTTPException(404, {"code": "document_request_not_found", "request_in_flight_may_commit": True,
+            "message": "O envio ainda não foi encontrado. Um pedido em curso pode ser confirmado mais tarde."},
+            headers={"Cache-Control": "private, no-store"})
+    result = serialize_document(document)
+    _audit(db, user, document, "patient_document_request_recovered")
+    _commit(db)
+    return result
 
 
 @router.post("", status_code=201)

@@ -7,6 +7,10 @@ export type PatientConsultation = {
   slot_id?: string | null;
   country?: 'AO' | 'PT' | null;
   timezone?: string | null;
+  doctor_id?: string | null;
+  payment_status?: string;
+  payment_id?: string | null;
+  reschedule_revision?: number;
   started_at?: string | null;
   ended_at?: string | null;
 };
@@ -156,7 +160,7 @@ export async function loadPatientConsultation(api: ConsultationApi, id: string):
   if (!id.trim()) throw new Error('Consulta não encontrada.');
   const [closeout, list, capabilities] = await Promise.allSettled([
     api.get(`/api/v1/consultations/${encodeURIComponent(id)}/closeout`),
-    api.get('/api/v1/consultations/me'),
+    api.get(`/api/v1/consultations/me?consultation_id=${encodeURIComponent(id)}`),
     api.get('/api/v1/teleconsultations/capabilities'),
   ]);
   if (closeout.status === 'rejected') throw closeout.reason;

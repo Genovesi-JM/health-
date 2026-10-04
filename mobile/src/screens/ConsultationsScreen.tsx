@@ -6,12 +6,17 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
-import api from '../services/api';
+import api, { sessions } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import * as SecureStore from 'expo-secure-store';
+import type { AxiosRequestConfig } from 'axios';
 import { CONSULTATION_STATUS, canCancelConsultation, type PatientConsultation } from './consultations';
 import { APPOINTMENT_MARKETS, appointmentDate } from './appointmentAvailability';
+import { rescheduleStorageKey } from './appointmentRescheduling';
 
 export default function ConsultationsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const { user } = useAuth();
   const [items, setItems] = useState<PatientConsultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -43,13 +48,25 @@ export default function ConsultationsScreen() {
   };
 
   const cancel = async (id: string) => {
-    if (busy.current) return;
+    if (busy.current || !user?.id) return;
+    const version = sessions.version();
     busy.current = true;
     setCancelling(id);
     try {
-      const response = await api.patch<PatientConsultation>(`/api/v1/consultations/${encodeURIComponent(id)}`, {});
+      const pending = await SecureStore.getItemAsync(rescheduleStorageKey(user.id, id));
+      sessions.assertCurrent(version);
+      if (pending !== null) {
+        Alert.alert('Alteração por confirmar', 'Recupere o resultado da alteração de horário antes de cancelar esta consulta.', [
+          { text: 'Fechar', style: 'cancel' },
+          { text: 'Recuperar pedido', onPress: () => { if (sessions.current(version)) navigation.navigate('RescheduleConsultation', { consultationId: id }); } },
+        ]);
+        return;
+      }
+      const config: AxiosRequestConfig & { _sessionVersion: number } = { _sessionVersion: version };
+      const response = await api.patch<PatientConsultation>(`/api/v1/consultations/${encodeURIComponent(id)}`, {}, config);
       setItems(current => current.map(item => item.id === id ? response.data : item));
     } catch {
+      if (!sessions.current(version)) return;
       Alert.alert('Não foi possível cancelar', 'A consulta pode ter mudado de estado. Atualize a lista e tente novamente.');
     } finally {
       busy.current = false;

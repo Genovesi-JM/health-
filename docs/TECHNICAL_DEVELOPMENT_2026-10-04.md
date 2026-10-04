@@ -619,3 +619,37 @@ in [the checkpoint evidence](evidence/documents-rescheduling-2026-10-04/manifest
 The generated policy contains 280 routes with every activation flag false and
 release HOLD. Native screen changes receive a separate validation checkpoint;
 this record includes only their shared generated policy artifact.
+
+## Complete list traversal, directory authority and client loading
+
+Patient consultation history and clinician queues now use signed cursor pages
+with authorization and filters applied before pagination. Patients can select
+all, upcoming or past records without first loading only the newest 100. The
+assigned-clinician history API uses the same bounded traversal. Next-page errors
+preserve loaded rows; access loss clears clinical data and closes derived panels.
+The clinician refresh action also retries nursing escalations without accepting
+a late response after access changes.
+
+Family creation/update now maps the public relationship field to its actual ORM
+column; required fields cannot be cleared to null. Public doctor profiles require
+an active doctor account and current credential/licence, with an explicit AO/PT
+filter and authoritative practice-country output. The owner-only document request
+lookup supports recovery after a device's cached upload file disappears.
+
+Web pages load on demand with an accessible loading/error boundary. The service
+worker precaches only the static shell graph and caches hashed page scripts when
+visited; API/auth/prototype requests remain network-only. The compressed shell
+plus landing route is 246,547 bytes versus the earlier 396,628-byte single bundle
+(about 38% smaller). Previously unvisited pages need a connection. The remaining
+large-shell warning is retained.
+
+This staged backend snapshot passed 1,670 tests in 167.95 seconds, plus 29
+repository checks and 43 subtests. Web passed 307 tests, TypeScript, clean lint,
+15 prototype checks, production build and emitted-service-worker graph checks.
+Native passed 157 tests, TypeScript and four platform/entry Hermes exports;
+its existing APK remains an earlier source checkpoint. See the
+[combined validation evidence](evidence/history-discovery-2026-10-04/manifest.json)
+and [native source evidence](evidence/native-pages-rescheduling-2026-10-04/manifest.json).
+The first expanded run exposed two test fixtures assuming an empty shared queue;
+the corrected fixtures explicitly narrow to their synthetic specialty. No test
+was skipped. Policy remains HOLD with 284 route declarations and no activation.

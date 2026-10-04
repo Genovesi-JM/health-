@@ -4,7 +4,8 @@ import {
   preparePhotoUpload, sendDocumentUpload, newUploadKey, canProcessDocument, canReviewDocument,
   startDocumentReview, reconcileDocumentReview, reviewPayload, saveDocumentReview, manualReviewMessage,
   DOCUMENT_TEXT_LIMIT, DOCUMENT_MAX_BYTES, preparePdfUpload, selectPdfUpload, validateDocumentUpload,
-  documentTypeAvailable, documentUploadLimit,
+  documentTypeAvailable, documentUploadLimit, validateCachedDocumentUpload,
+  documentMetadata, loadDocumentPage, mergeDocumentPage, documentAccessLost, documentCursorExpired,
 } from '../src/screens/patientDocuments.ts';
 
 const LIMIT = 10_485_760;
@@ -15,6 +16,53 @@ const document = (extra = {}) => ({
   status: 'ready_for_review', scan_status: 'clean', version: 2, extraction_method: 'pdf_text',
   extracted_text: 'Resultado extraído', reviewed_text: null, created_at: '2026-10-04T12:00:00Z',
   reviewed_at: null, error_code: null, ...extra,
+});
+
+test('exact upload replay rejects a missing or changed cache without changing the reserved request', () => {
+  const selected = preparePdfUpload(pdf, capabilities, pdf.size, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  const before = JSON.stringify(selected);
+  validateCachedDocumentUpload(selected, pdf.size);
+  for (const size of [0, -1, Number.NaN, pdf.size + 1, LIMIT + 1]) {
+    assert.throws(() => validateCachedDocumentUpload(selected, size), /temporário/);
+    assert.equal(JSON.stringify(selected), before);
+  }
+});
+
+test('document pages load only metadata and encode opaque cursors without sending text into list state', async () => {
+  const paths = [];
+  const api = { get: async path => { paths.push(path); return { data: { items: [document()], next_cursor: 'next/+==' } }; } };
+  const first = await loadDocumentPage(api);
+  await loadDocumentPage({ get: async path => { paths.push(path); return { data: { items: [], next_cursor: null } }; } }, first.next_cursor);
+  assert.deepEqual(paths, ['/api/v1/patient-documents/page?limit=20', '/api/v1/patient-documents/page?limit=20&cursor=next%2F%2B%3D%3D']);
+  assert.equal(Object.hasOwn(first.items[0], 'extracted_text'), false);
+  assert.equal(Object.hasOwn(first.items[0], 'reviewed_text'), false);
+  assert.equal(first.items[0].id, 'document-1');
+});
+
+test('overlapping pages deduplicate without replacing newer metadata or the active edited review', () => {
+  const original = document({ version: 4 });
+  const review = { ...startDocumentReview(original), text: 'A minha correção' };
+  const prior = [documentMetadata(original)];
+  const merged = mergeDocumentPage(prior, [document({ version: 2 }), document({ id: 'older-document' })]);
+  assert.equal(merged.length, 2); assert.equal(merged[0].version, 4);
+  assert.deepEqual(prior, [documentMetadata(original)]);
+  assert.equal(review.text, 'A minha correção'); assert.equal(review.document.version, 4);
+  assert.equal(Object.hasOwn(merged[1], 'extracted_text'), false);
+});
+
+test('failed or invalid pages preserve caller list and cursor; expired cursor requires explicit refresh', async () => {
+  const state = { items: [documentMetadata(document())], next_cursor: 'opaque', review: 'Ainda a corrigir' };
+  const before = structuredClone(state);
+  for (const data of [null, [], { items: [], next_cursor: 'opaque' }, { items: [null], next_cursor: null }, { items: [], next_cursor: 4 }]) {
+    await assert.rejects(() => loadDocumentPage({ get: async () => ({ data }) }, state.next_cursor));
+  }
+  await assert.rejects(() => loadDocumentPage({ get: async () => { throw { response: { status: 422 } }; } }, state.next_cursor));
+  assert.deepEqual(state, before);
+  assert.equal(documentCursorExpired({ response: { status: 422 } }), true);
+  assert.equal(documentCursorExpired({ response: { status: 503 } }), false);
+  assert.equal(documentAccessLost({ response: { status: 401 } }), true);
+  assert.equal(documentAccessLost({ response: { status: 403 } }), true);
+  assert.equal(documentAccessLost({ response: { status: 500 } }), false);
 });
 
 test('native picker accepts only JPG/PNG and rejects HEIC, PDF and oversized photos', () => {

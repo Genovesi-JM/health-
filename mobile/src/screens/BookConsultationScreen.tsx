@@ -8,7 +8,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as SecureStore from 'expo-secure-store';
 import { AppStackParamList } from '../navigation/AppStack';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
+import api, { sessions } from '../services/api';
+import type { AxiosRequestConfig } from 'axios';
 import { consultationError } from './consultations';
 import {
   APPOINTMENT_MARKETS, APPOINTMENT_SPECIALTIES, appointmentRange, appointmentSlotsPath, appointmentWindow, availableSlots,
@@ -128,6 +129,7 @@ export default function BookConsultationScreen() {
     setError('');
     let attempt = pending;
     const previouslySent = !!pending;
+    const sessionVersion = sessions.version();
     try {
       if (!attempt) {
         const slot = slots.find(item => item.id === selectedSlot);
@@ -135,10 +137,14 @@ export default function BookConsultationScreen() {
         attempt = createBookingAttempt(country, specialty, mode === 'slot' ? slot : undefined);
         setPending(attempt);
       }
-      const consultation = await sendRecoverableBooking(api, SecureStore, user.id, attempt, previouslySent);
+      const scopedApi = { post: (path: string, payload: BookingAttempt['payload'], options: { headers: Record<string, string> }) =>
+        api.post(path, payload, { ...options, _sessionVersion: sessionVersion } as AxiosRequestConfig) };
+      const consultation = await sendRecoverableBooking(scopedApi, SecureStore, user.id, attempt, previouslySent);
+      if (!sessions.current(sessionVersion)) return;
       setPending(null);
       if (active.current) navigation.replace('ConsultationDetail', { consultationId: consultation.id });
     } catch (failure) {
+      if (!sessions.current(sessionVersion)) return;
       const definitive = attempt && definitiveBookingFailure(failure, previouslySent);
       if (definitive) setPending(null);
       if (active.current) {

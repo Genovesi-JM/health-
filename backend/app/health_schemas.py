@@ -7,7 +7,7 @@ Corporate, Billing, Compliance, and Dashboard KPIs.
 from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field, StrictBool, StrictInt, field_serializer
+from pydantic import AliasChoices, BaseModel, Field, StrictBool, StrictInt, field_serializer, field_validator
 
 
 # ── Roles ──
@@ -151,6 +151,7 @@ class DoctorPublic(BaseModel):
     price_min: Optional[int] = None
     price_max: Optional[int] = None
     verification_status: str
+    practice_country: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -911,12 +912,19 @@ class FamilyMemberUpdate(BaseModel):
     emergency_contact: Optional[bool] = None
     notes: Optional[str] = None
 
+    @field_validator("full_name", "relationship", "is_minor", "emergency_contact")
+    @classmethod
+    def required_values_cannot_be_cleared(cls, value):
+        if value is None:
+            raise ValueError("Este campo não pode ser removido.")
+        return value
+
 
 class FamilyMemberOut(BaseModel):
     id: str
     owner_patient_id: str
     full_name: str
-    relationship: str
+    relationship: str = Field(validation_alias=AliasChoices("relationship", "relationship_type"))
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
     phone: Optional[str] = None

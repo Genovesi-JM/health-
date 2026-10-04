@@ -6,7 +6,7 @@ import json
 import logging
 import re
 import unicodedata
-from typing import List
+from typing import List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -23,6 +23,7 @@ from app.rbac import (
     get_doctor_for_user,
     require_admin_or_support, require_compliance_reviewer,
 )
+from app.services.clinician_access import licence_is_current
 
 logger = logging.getLogger(__name__)
 
@@ -40,26 +41,44 @@ def _json_list(val):
 
 # ── Public ──
 
+def _public_doctors(db: Session, country: str | None):
+    query = db.query(Doctor, ClinicianCredential).join(User, User.id == Doctor.user_id).join(
+        ClinicianCredential, ClinicianCredential.user_id == Doctor.user_id,
+    ).filter(Doctor.verification_status == "verified", User.is_active.is_(True), User.role == "doctor",
+             ClinicianCredential.profession == "doctor", ClinicianCredential.status == "verified")
+    if country:
+        query = query.filter(ClinicianCredential.practice_country == country)
+    return query
+
+
+def _public_card(doctor: Doctor, credential: ClinicianCredential) -> DoctorPublic:
+    pub = DoctorPublic.model_validate(doctor)
+    pub.practice_country = credential.practice_country or None
+    pub.consultation_types = _json_list(doctor.consultation_types_json)
+    pub.languages = _json_list(doctor.languages_json)
+    pub.education = _json_list(doctor.education_json)
+    return pub
+
 @router.get("/", response_model=List[DoctorPublic])
 def list_verified_doctors(
     specialty: str = Query(None),
     city: str = Query(None),
     consultation_type: str = Query(None),
+    country: Literal["AO", "PT"] | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """List verified doctors (public). Optional filters."""
-    q = db.query(Doctor).filter(Doctor.verification_status == "verified")
+    q = _public_doctors(db, country)
     if specialty:
         q = q.filter(Doctor.specialization == specialty)
     if city:
         q = q.filter(Doctor.location_city.ilike(f"%{city}%"))
     doctors = q.all()
     result = []
-    for d in doctors:
-        pub = DoctorPublic.model_validate(d)
-        pub.consultation_types = _json_list(d.consultation_types_json)
-        pub.languages = _json_list(d.languages_json)
-        pub.education = _json_list(d.education_json)
+    for d, credential in doctors:
+        if not licence_is_current(credential):
+            continue
+        pub = _public_card(d, credential)
         if consultation_type and consultation_type not in (pub.consultation_types or []):
             continue
         result.append(pub)
@@ -67,19 +86,12 @@ def list_verified_doctors(
 
 
 @router.get("/by-slug/{slug}", response_model=DoctorPublic)
-def get_doctor_by_slug(slug: str, db: Session = Depends(get_db)):
+def get_doctor_by_slug(slug: str, country: Literal["AO", "PT"] | None = Query(None), db: Session = Depends(get_db)):
     """Get a single public doctor profile by slug."""
-    doctor = db.query(Doctor).filter(
-        Doctor.slug == slug,
-        Doctor.verification_status == "verified",
-    ).first()
-    if not doctor:
+    record = _public_doctors(db, country).filter(Doctor.slug == slug).first()
+    if not record or not licence_is_current(record[1]):
         raise HTTPException(status_code=404, detail="Médico não encontrado.")
-    pub = DoctorPublic.model_validate(doctor)
-    pub.consultation_types = _json_list(doctor.consultation_types_json)
-    pub.languages = _json_list(doctor.languages_json)
-    pub.education = _json_list(doctor.education_json)
-    return pub
+    return _public_card(*record)
 
 
 # ── Doctor self-management ──

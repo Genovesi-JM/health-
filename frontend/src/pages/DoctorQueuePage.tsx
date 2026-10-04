@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import api, { getSession } from '../api';
 import type { ConsultationQueueItem } from '../types';
 import { ClipboardList, CheckCircle2, Play, X, User, Stethoscope, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
@@ -9,6 +9,7 @@ import { specialtyLabel } from '../constants/specialties';
 import TriagePhotoReview from '../components/TriagePhotoReview';
 import ConsultationCloseout from '../components/ConsultationCloseout';
 import { formatAppointmentTime } from '../utils/appointments';
+import { useConsultationPages } from '../utils/useConsultationPages';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
 
@@ -43,34 +44,48 @@ export default function DoctorQueuePage() {
   const { t, lang } = useT();
   const navigate = useNavigate();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
-  const [queue, setQueue] = useState<ConsultationQueueItem[]>([]);
+  const history = useConsultationPages<ConsultationQueueItem>('/api/v1/doctor/queue/page');
+  const queue = history.items;
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ConsultationQueueItem | null>(null);
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [acceptingEscalation, setAcceptingEscalation] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [escalationError, setEscalationError] = useState('');
   const [closingId, setClosingId] = useState<string | null>(null);
   const [closeoutDirty, setCloseoutDirty] = useState(false);
   const [closeoutBusy, setCloseoutBusy] = useState(false);
+  const escalationSequence = useRef(0);
+  const mounted = useRef(true);
   const dismissCloseout = () => {
     if (!closeoutDirty || window.confirm('Sair e perder o rascunho de conclusão desta sessão?')) { setClosingId(null); setCloseoutDirty(false); }
   };
+  useEffect(() => {
+    if (history.accessLost) { escalationSequence.current += 1; setSelected(null); setClosingId(null); setEscalations([]); setLoading(false); }
+  }, [history.accessLost]);
 
-  useEffect(() => { loadQueue(); }, []);
+  const refreshEscalations = useCallback(async () => {
+    setEscalationError('');
+    const ticket = ++escalationSequence.current;
+    const owner = getSession()?.userId;
+    const current = () => mounted.current && ticket === escalationSequence.current && getSession()?.userId === owner;
+    try {
+      const response = await api.get('/api/v1/clinical-operations/escalations', { params: { status: 'pending' } });
+      if (current()) setEscalations(response.data.items || []);
+    } catch {
+      if (current()) { setEscalations([]); setEscalationError('Não foi possível carregar os encaminhamentos. Atualize a lista.'); }
+    } finally { if (current()) setLoading(false); }
+  }, []);
+  useEffect(() => {
+    mounted.current = true; void refreshEscalations();
+    return () => { mounted.current = false; escalationSequence.current += 1; };
+  }, [refreshEscalations]);
 
   const loadQueue = () => {
-    setLoading(true);
-    Promise.allSettled([
-      api.get('/api/v1/doctor/queue'),
-      api.get('/api/v1/clinical-operations/escalations', { params: { status: 'pending' } }),
-    ])
-      .then(([queueResult, escalationResult]) => {
-        if (queueResult.status === 'fulfilled') setQueue(queueResult.value.data);
-        if (escalationResult.status === 'fulfilled') setEscalations(escalationResult.value.data.items || []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    setSelected(null);
+    void history.refresh();
+    void refreshEscalations();
   };
 
   const acceptEscalation = async (item: Escalation) => {
@@ -86,6 +101,9 @@ export default function DoctorQueuePage() {
   };
 
   const startConsultation = async (item: ConsultationQueueItem) => {
+    if (!Number.isSafeInteger(item.reschedule_revision) || item.reschedule_revision! < 0) {
+      setActionError('Não foi possível confirmar a versão do horário. Atualize a lista.'); return;
+    }
     setPendingAction(item.id);
     setActionError('');
     try {
@@ -103,7 +121,8 @@ export default function DoctorQueuePage() {
   };
 
 
-  if (loading) return <div className="page-loading"><div className="spinner" /></div>;
+  if (loading || history.loading) return <div className="page-loading"><div className="spinner" /></div>;
+  if (history.accessLost) return <><p role="alert">{history.error}</p><button className="btn btn-secondary" onClick={loadQueue}>Atualizar consultas</button></>;
 
   const riskMeta = selected?.risk_level ? RISK_MAP[selected.risk_level.toUpperCase()] : null;
 
@@ -114,6 +133,12 @@ export default function DoctorQueuePage() {
         <p>Consultas diretas e encaminhamentos estruturados da equipa de enfermagem.</p>
       </div>
       {actionError && <p role="alert" className="alert alert-danger">{actionError}</p>}
+      {escalationError && <p role="alert">{escalationError}</p>}
+      {history.error && <p role="alert">{history.error}</p>}
+      {history.moreError && <p role="alert">{history.moreError}</p>}
+      <button className="btn btn-secondary" onClick={loadQueue}>Atualizar consultas</button>
+      {history.nextCursor && <button className="btn btn-secondary" disabled={history.loadingMore} onClick={() => void history.loadMore()}>{history.loadingMore ? 'A carregar…' : 'Carregar mais consultas'}</button>}
+      {history.nextCursor && <p>A fila continua. Carregue mais para ver os restantes pedidos.</p>}
 
       <section className="doctor-escalation-board">
         <header>
@@ -157,11 +182,11 @@ export default function DoctorQueuePage() {
               {t('queue.patients')}
             </h3>
             <span className={`badge ${queue.length > 0 ? 'badge-warning' : 'badge-neutral'}`}>
-              {queue.length} paciente{queue.length !== 1 ? 's' : ''}
+              {queue.length} consulta{queue.length !== 1 ? 's' : ''} carregada{queue.length !== 1 ? 's' : ''}
             </span>
           </div>
 
-          {queue.length === 0 ? (
+          {history.error ? null : queue.length === 0 ? (
             <div className="empty-state" style={{ padding: '3rem' }}>
               <div className="empty-state-icon"><ClipboardList size={24} style={{ color: 'var(--accent-teal)' }} /></div>
               <div className="empty-state-title">{t('queue.empty')}</div>
@@ -303,7 +328,7 @@ export default function DoctorQueuePage() {
         <div className="modal" style={{ width: 'min(760px, 95vw)', maxHeight: '90vh', overflowY: 'auto' }}>
           <div className="modal-header"><h3>Rever e concluir consulta</h3><button type="button" className="btn btn-sm" onClick={dismissCloseout} disabled={closeoutBusy} aria-label="Fechar conclusão"><X size={20} /></button></div>
           <div className="modal-body"><ConsultationCloseout consultationId={closingId} role="doctor" onDirtyChange={setCloseoutDirty} onBusyChange={setCloseoutBusy} onFinalized={() => {
-            setQueue(current => current.filter(item => item.id !== closingId)); setSelected(null);
+            history.setItems(current => current.filter(item => item.id !== closingId)); setSelected(null);
           }} /></div>
         </div>
       </div>}

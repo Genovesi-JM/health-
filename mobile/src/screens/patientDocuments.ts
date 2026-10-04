@@ -16,9 +16,51 @@ export type PatientDocument = {
   reviewed_at: string | null;
   error_code: string | null;
 };
+export type DocumentMetadata = Omit<PatientDocument, 'extracted_text' | 'reviewed_text'>;
+export type DocumentPage = { items: DocumentMetadata[]; next_cursor: string | null };
+
+/** Never retain extracted or reviewed text in the list, even if a server sends extra fields. */
+export function documentMetadata(item: DocumentMetadata): DocumentMetadata {
+  return { id: item.id, original_filename: item.original_filename, content_type: item.content_type,
+    size_bytes: item.size_bytes, status: item.status, scan_status: item.scan_status, version: item.version,
+    extraction_method: item.extraction_method, created_at: item.created_at, reviewed_at: item.reviewed_at,
+    error_code: item.error_code };
+}
+
+export async function loadDocumentPage(
+  api: { get: (path: string) => Promise<{ data: unknown }> }, cursor: string | null = null,
+): Promise<DocumentPage> {
+  const response = await api.get('/api/v1/patient-documents/page?limit=20' + (cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''));
+  const page = response.data as DocumentPage | null;
+  if (!page || !Array.isArray(page.items) || !(page.next_cursor === null || (typeof page.next_cursor === 'string' && page.next_cursor.length > 0)) ||
+      (cursor !== null && page.next_cursor === cursor) || page.items.some(item => !item || typeof item.id !== 'string' || !item.id ||
+        typeof item.original_filename !== 'string' || !Number.isSafeInteger(item.version) || item.version < 1)) {
+    throw new Error('Não foi possível verificar a página de documentos. Tente atualizar a lista.');
+  }
+  return { items: page.items.map(documentMetadata), next_cursor: page.next_cursor };
+}
+
+export function mergeDocumentPage(existing: DocumentMetadata[], page: DocumentMetadata[]): DocumentMetadata[] {
+  const result = existing.map(documentMetadata);
+  for (const item of page) {
+    const index = result.findIndex(previous => previous.id === item.id);
+    if (index < 0) result.push(documentMetadata(item));
+    else if (item.version >= result[index].version) result[index] = documentMetadata(item);
+  }
+  return result;
+}
+
+export function documentAccessLost(error: unknown): boolean {
+  return [401, 403].includes((error as { response?: { status?: number } })?.response?.status ?? 0);
+}
+
+export function documentCursorExpired(error: unknown): boolean {
+  return (error as { response?: { status?: number } })?.response?.status === 422;
+}
 
 export type DocumentCapabilities = {
   upload_enabled: boolean;
+  request_lookup_enabled?: boolean;
   max_bytes: number;
   accepted_types: string[];
   extraction: string;
@@ -31,6 +73,13 @@ export type ReviewDraft = { document: PatientDocument; text: string; conflict: b
 export type PdfAsset = { uri: string; name: string; mimeType?: string | null; size?: number };
 
 export class DocumentSelectionError extends Error {}
+
+export function validateCachedDocumentUpload(upload: DocumentUpload, size: number): void {
+  if (!Number.isSafeInteger(size) || size <= 0 || size > DOCUMENT_MAX_BYTES ||
+      (upload.size !== undefined && size !== upload.size)) {
+    throw new DocumentSelectionError('O ficheiro temporário já não está disponível ou mudou. Verifique o envio guardado e consulte o histórico antes de descartar a recuperação local.');
+  }
+}
 
 export function documentUploadLimit(capabilities: DocumentCapabilities | null): number {
   return capabilities && Number.isSafeInteger(capabilities.max_bytes) && capabilities.max_bytes > 0
@@ -175,6 +224,7 @@ Promise<{ saved: boolean; draft: ReviewDraft }> {
 }
 
 export function documentError(error: unknown, fallback: string): string {
+  if (documentAccessLost(error)) return 'O acesso aos documentos mudou. O conteúdo carregado foi removido. Inicie sessão novamente para continuar.';
   const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   return typeof detail === 'string' ? detail : fallback;
 }

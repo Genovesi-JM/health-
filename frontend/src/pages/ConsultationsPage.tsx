@@ -14,6 +14,7 @@ import { MessageSquare, Star, Video } from 'lucide-react';
 import TeleconsultationControl from '../components/TeleconsultationControl';
 import ConsultationCloseout from '../components/ConsultationCloseout';
 import RescheduleConsultation from '../components/RescheduleConsultation';
+import { useConsultationPages } from '../utils/useConsultationPages';
 import { canReschedule, readReschedule } from '../utils/pendingReschedule';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -21,17 +22,16 @@ const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-F
 export default function ConsultationsPage() {
   const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [patientState, setPatientState] = useState<PatientState | null>(null);
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');
+  const history = useConsultationPages<Consultation>('/api/v1/consultations/me/page', tab);
+  const { items: consultations, setItems: setConsultations, loading, error: loadError } = history;
   const [showBooking, setShowBooking] = useState(false);
   const [payFor, setPayFor] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<Consultation | null>(null);
   const [reviewFor, setReviewFor] = useState<Consultation | null>(null);
   const [videoFor, setVideoFor] = useState<Consultation | null>(null);
   const [summaryFor, setSummaryFor] = useState<Consultation | null>(null);
-  const [loadError, setLoadError] = useState('');
   const [cancelFor, setCancelFor] = useState<Consultation | null>(null);
   const [rescheduleFor, setRescheduleFor] = useState<Consultation | null>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -39,6 +39,12 @@ export default function ConsultationsPage() {
   const [cancelNotice, setCancelNotice] = useState('');
   const cancellationBusy = useRef(false);
   const owner = getSession()?.userId;
+  useEffect(() => {
+    if (history.accessLost) {
+      setShowBooking(false); setPayFor(null); setChatFor(null); setReviewFor(null);
+      setVideoFor(null); setSummaryFor(null); setCancelFor(null); setRescheduleFor(null);
+    }
+  }, [history.accessLost]);
   // Recovery remains available after care or payment changes fresh-move eligibility.
   // Read again on modal close so a newly uncertain attempt is reachable immediately.
   const recovery = new Map<string, 'pending' | 'unavailable'>();
@@ -62,11 +68,9 @@ export default function ConsultationsPage() {
         setCancelFor(null);
         setCancelError('A consulta mudou antes do cancelamento. Consulte o estado atualizado.');
         try {
-          const refreshed = await api.get('/api/v1/consultations/me');
-          setConsultations(refreshed.data); setLoadError('');
+          await history.refresh();
         } catch {
           setCancelError('A consulta mudou, mas não foi possível atualizar a lista. Atualize a página antes de tentar cancelar novamente.');
-          setLoadError('Não foi possível confirmar o estado atual das consultas.');
         }
       } else {
         setCancelError(appointmentError(error, 'Não foi possível confirmar o cancelamento. A consulta mantém o último estado conhecido; tente novamente ou atualize a página.'));
@@ -77,19 +81,14 @@ export default function ConsultationsPage() {
   };
 
   useEffect(() => {
-    Promise.allSettled([
-      api.get('/api/v1/consultations/me'),
-      api.get('/api/v1/dashboard/patient-state'),
-    ]).then(([cRes, sRes]) => {
-      if (cRes.status === 'fulfilled') setConsultations(cRes.value.data);
-      else setLoadError('Não foi possível carregar as consultas. Atualize a página para tentar novamente.');
-      if (sRes.status === 'fulfilled') setPatientState(sRes.value.data);
-    }).finally(() => setLoading(false));
+    let active = true;
+    api.get('/api/v1/dashboard/patient-state').then(response => { if (active) setPatientState(response.data); }).catch(() => {});
+    return () => { active = false; };
   }, []);
 
   const filtered = consultations.filter(c => {
     if (tab === 'upcoming') return ['requested','scheduled','in_progress'].includes(c.status);
-    if (tab === 'past') return ['completed','cancelled','no_show'].includes(c.status);
+    if (tab === 'past') return ['completed','cancelled','no_show','expired'].includes(c.status);
     return true;
   });
 
@@ -121,6 +120,7 @@ export default function ConsultationsPage() {
   };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
+  if (history.accessLost) return <><p role="alert">{loadError}</p><button className="btn btn-secondary" onClick={() => void history.refresh()}>Atualizar consultas</button></>;
 
   return (
     <>
@@ -130,6 +130,10 @@ export default function ConsultationsPage() {
       </div>
 
       {loadError && <p role="alert" className="alert alert-danger">{loadError}</p>}
+      <button className="btn btn-secondary" onClick={() => void history.refresh()}>Atualizar consultas</button>
+      {history.moreError && <p role="alert">{history.moreError}</p>}
+      {history.nextCursor && <button className="btn btn-secondary" disabled={history.loadingMore} onClick={() => void history.loadMore()}>{history.loadingMore ? 'A carregar…' : 'Carregar mais consultas'}</button>}
+      {history.nextCursor && <p>A lista continua. Carregue mais para ver os restantes registos.</p>}
       {!cancelFor && cancelError && <p role="alert">{cancelError}</p>}
       {cancelNotice && <p role="status">{cancelNotice}</p>}
       <div className="tab-nav">

@@ -26,7 +26,7 @@ function makeApi({ result = published, list = history, capabilities = disabledVi
       paths.push(path);
       if (Object.hasOwn(failed, path)) throw failed[path];
       if (path.endsWith('/closeout')) return { data: result };
-      if (path.endsWith('/me')) return { data: list };
+      if (path.includes('/me?consultation_id=')) return { data: list };
       if (path.endsWith('/capabilities')) return { data: capabilities };
       throw new Error(`Unexpected request: ${path}`);
     },
@@ -42,7 +42,7 @@ test('patient detail reads published summary and clinician-owned followup withou
   assert.equal(FOLLOW_UP_STATUS[detail.result.closeout.follow_up.status], 'Pendente');
   assert.deepEqual(api.paths.sort(), [
     '/api/v1/consultations/consultation-1/closeout',
-    '/api/v1/consultations/me',
+    '/api/v1/consultations/me?consultation_id=consultation-1',
     '/api/v1/teleconsultations/capabilities',
   ]);
 });
@@ -63,7 +63,7 @@ test('capability failure does not hide an available summary or create video acce
 });
 
 test('metadata failure preserves authorized closeout and marks missing schedule information', async () => {
-  const api = makeApi({ failed: { '/api/v1/consultations/me': new Error('Offline') } });
+  const api = makeApi({ failed: { '/api/v1/consultations/me?consultation_id=consultation-1': new Error('Offline') } });
   const detail = await loadPatientConsultation(api, 'consultation-1');
   assert.deepEqual(detail.result, published);
   assert.equal(detail.consultation, null);

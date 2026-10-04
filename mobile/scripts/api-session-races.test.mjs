@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as sessionCoordinator from '../src/services/sessionCoordinator.ts';
 import { isMfaSessionError } from '../src/contexts/authSession.ts';
+import { sendRecoverableBooking } from '../src/screens/appointmentAvailability.ts';
 
 const source = ts.transpileModule(readFileSync(new URL('../src/services/api.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
@@ -86,4 +87,21 @@ test('HOLD still blocks operational requests before authentication or token refr
   await assert.rejects(() => f.handlers.request({ url: '/api/v1/patient-documents', headers: {} }), /HOLD/);
   assert.equal(f.exchanges.length, 0);
   assert.equal(f.replayed.length, 0);
+});
+
+test('a booking bound before durable storage cannot send with a replacement account token', async () => {
+  const f = setup(); await f.saveTokens('A-token', 'A-refresh');
+  const generation = f.sessions.version();
+  const writing = deferred(); let waiting = false; let sent = false;
+  const storage = { setItemAsync: async () => { waiting = true; await writing.promise; }, deleteItemAsync: async () => {} };
+  const api = { post: async (url, data, config) => {
+    await f.handlers.request({ url, data, ...config, _sessionVersion: generation });
+    sent = true; return { data: { id: 'should-not-exist' } };
+  } };
+  const attempt = { key: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', payload: { country: 'AO', specialty: 'clinica_geral', next_available: true } };
+  const pending = sendRecoverableBooking(api, storage, 'A', attempt).catch(error => error);
+  await until(() => waiting); await f.saveTokens('B-token', 'B-refresh'); writing.resolve();
+  assert.ok(await pending instanceof sessionCoordinator.SessionChangedError);
+  assert.equal(sent, false);
+  assert.equal(f.values.get('access_token'), 'B-token');
 });
