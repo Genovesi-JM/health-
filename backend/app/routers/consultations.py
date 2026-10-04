@@ -94,37 +94,7 @@ def book_consultation(
             raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
 
     from app.services.appointment_booking import create_booking
-    consultation, created = create_booking(db, body, patient, user, idempotency_key)
-    if not created:
-        return consultation
-    assigned_doctor_id = consultation.doctor_id
-
-    try:
-        create_notification(
-            db,
-            user_id=user.id,
-            title="Pedido de consulta recebido",
-            message="O seu pedido aguarda aceitação do médico. O horário ainda não está confirmado.",
-            type="info",
-            entity_type="consultation",
-            entity_id=consultation.id,
-        )
-    except Exception:
-        pass
-
-    # Notify the selected doctor about the pending request.
-    if assigned_doctor_id:
-        try:
-            doc = db.get(Doctor, assigned_doctor_id)
-            if doc:
-                create_notification(
-                    db, user_id=doc.user_id,
-                    title="Novo pedido de consulta",
-                    message="Um paciente pediu uma consulta consigo. Reveja e aceite o pedido para confirmar.",
-                    type="info", entity_type="consultation", entity_id=consultation.id,
-                )
-        except Exception:
-            pass
+    consultation, _ = create_booking(db, body, patient, user, idempotency_key)
 
     return consultation
 
@@ -267,20 +237,6 @@ def accept_consultation(
     )
     db.commit()
     db.refresh(consultation)
-
-    # Notify the patient that a doctor accepted their consultation.
-    try:
-        pat = db.get(Patient, consultation.patient_id)
-        if pat:
-            create_notification(
-                db, user_id=pat.user_id,
-                title="Consulta aceite",
-                message=("O médico aceitou o seu pedido e confirmou o horário."
-                         if next_status == "scheduled" else "Um médico aceitou a sua consulta."),
-                type="success", entity_type="consultation", entity_id=consultation.id,
-            )
-    except Exception:
-        pass
 
     return consultation
 

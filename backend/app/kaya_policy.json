@@ -921,7 +921,7 @@
     },
     {
       "id": "notifications",
-      "label": "Email, SMS and push notifications",
+      "label": "In-app, email, SMS and push notifications",
       "state": "DISABLED_PENDING_GATE",
       "default_enabled": false,
       "synthetic_test_state": "PRESERVED_SOURCE",
@@ -945,6 +945,14 @@
         {
           "method": "PATCH",
           "path": "/api/v1/notifications/{notification_id}/read"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/capabilities"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/inbox"
         }
       ],
       "ui_routes": [
@@ -1784,7 +1792,7 @@
   "route_inventory": {
     "method": "AST declarations of mounted preserved backend; exact method/path binding, no imports",
     "mounted_router_count": 37,
-    "mounted_route_count": 274,
+    "mounted_route_count": 276,
     "legacy_unmounted_prefixes": [
       "/chat",
       "/status",

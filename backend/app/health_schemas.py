@@ -916,11 +916,21 @@ class NotificationOut(BaseModel):
     message: str
     type: str
     is_read: bool
+    read_at: Optional[datetime] = None
+    channel: str = "in_app"
     related_entity_type: Optional[str] = None
     related_entity_id: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("created_at", "read_at")
+    def serialize_utc(self, value: Optional[datetime]):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
 
 
 class NotificationCreate(BaseModel):

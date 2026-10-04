@@ -385,14 +385,12 @@ def decide_prescription_request(
     label, notif_type = _status_labels.get(req.status, ("Pedido processado", "info"))
     patient_obj = db.query(Patient).filter(Patient.id == req.patient_id).first()
     if patient_obj:
-        msg = f"O seu pedido de {req.medication_name} foi processado."
-        if body.doctor_note:
-            msg += f" Nota: {body.doctor_note}"
+        msg = "O seu pedido foi atualizado. Abra o pedido para consultar os detalhes."
         try:
             create_notification(
                 db,
                 user_id=patient_obj.user_id,
-                title=label,
+                title="Pedido atualizado",
                 message=msg,
                 type=notif_type,
                 entity_type="prescription_request",

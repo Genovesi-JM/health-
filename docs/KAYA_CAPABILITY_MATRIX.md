@@ -30,7 +30,7 @@ States: NOT_BUILT, MOCK, SYNTHETIC_ONLY, DISABLED_PENDING_GATE, PILOT, LIVE. No 
 | Clinical workspaces and care delivery (`clinical_operations=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 23 | `/preview/nurse`, `/preview/clinician/patient`, `/clinician/patients/:patientId`, `/chronic-care`, `/nurse`, `/doctor/dashboard`, `/doctor/profile`, `/doctor/pacientes`, `/doctor/avaliacoes`, `/doctor/suporte` |
 | Health records and measurements (`health_tracking=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 30 | `/patients`, `/dashboard`, `/patient/profile`, `/patient/readings`, `/patient/documents` |
 | Family and caregiver access (`family_caregivers=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 13 | `/family`, `/onboarding/caregiver` |
-| Email, SMS and push notifications (`notifications=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 5 | `/notifications` |
+| In-app, email, SMS and push notifications (`notifications=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/notifications` |
 | Payments and subscriptions (`payments=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 6 | `/pricing`, `/doctor/financeiro` |
 | Device shop and payment status (`device_commerce=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 4 | `/devices`, `/loja` |
 | AI guidance and chatbot (`ai_guidance=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 3 | None declared |
@@ -218,6 +218,8 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | POST | `/api/v1/notifications` | `notifications=false` |
 | PATCH | `/api/v1/notifications/read-all` | `notifications=false` |
 | PATCH | `/api/v1/notifications/{notification_id}/read` | `notifications=false` |
+| GET | `/api/v1/notifications/capabilities` | `notifications=false` |
+| GET | `/api/v1/notifications/inbox` | `notifications=false` |
 | GET | `/api/v1/billing/payment-methods` | `payments=false` |
 | POST | `/api/v1/billing/consultation/checkout` | `payments=false` |
 | GET | `/api/v1/billing/consultation/{consultation_id}/payment-status` | `payments=false` |

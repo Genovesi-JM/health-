@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run synthetic scheduling races in a new Unix-socket-only PostgreSQL cluster.
+"""Run scheduling and inbox races in a new Unix-socket-only PostgreSQL cluster.
 
 Requires local PostgreSQL binaries and backend dependencies plus psycopg2.
 Never reads dotenv or connects to an existing database. The report and stopped

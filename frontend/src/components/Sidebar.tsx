@@ -149,6 +149,8 @@ export function Sidebar({ open, onClose }: Props) {
             </SidebarSection>
           )}
 
+          {role && role !== 'patient' && role !== 'cliente' && <SidebarSection title={t('sidebar.alerts')}><SidebarLink to="/notifications" icon={Bell} label={t('sidebar.alerts')} onClick={onClose} badge={unreadNotifs > 0 ? unreadNotifs : undefined} badgeVariant="alert" /></SidebarSection>}
+
           {/* ── PATIENT ACCOUNT ── */}
           {(role === 'patient' || role === 'cliente') && (
             <SidebarSection title={t('sidebar.account')}>

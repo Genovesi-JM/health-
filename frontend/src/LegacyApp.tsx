@@ -148,6 +148,7 @@ export default function App() {
             <Route path="/onboarding/professional" element={<ProfessionalOnboardingPage />} />
             <Route path="/onboarding/organisation" element={<OrganisationOnboardingPage />} />
             <Route path="/onboarding/caregiver" element={<CaregiverOnboardingPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             {/* Settings — accessible to all roles */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/security/mfa" element={<SecurityMfaPage />} />
@@ -168,7 +169,6 @@ export default function App() {
               <Route path="/prescricoes/pedido" element={<PatientPrescriptionRequestPage />} />
               <Route path="/consents" element={<ConsentsPage />} />
               <Route path="/family" element={<FamilyPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/patient/readings" element={<PatientReadingsPage />} />
               <Route path="/loja" element={<StorePage />} />
             </Route>

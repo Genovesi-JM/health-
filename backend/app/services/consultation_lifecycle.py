@@ -54,3 +54,14 @@ def transition(db: Session, consultation: Consultation, *, actor_id: str,
     db.refresh(consultation)
     if status == "cancelled":
         release_cancelled_slot(db, consultation)
+    from app.services.notifications import consultation_event
+    try:
+        if action == "consultation_accepted":
+            consultation_event(db, consultation, "accepted")
+        if status == "in_progress":
+            consultation_event(db, consultation, "started")
+        if status == "cancelled":
+            consultation_event(db, consultation, "cancelled")
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível guardar a atualização. Tente novamente.") from None

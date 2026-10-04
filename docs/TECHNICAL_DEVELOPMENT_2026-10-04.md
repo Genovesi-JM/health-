@@ -483,3 +483,53 @@ This establishes local PostgreSQL behavior for the covered races, not deployment
 topology, production configuration, native-device behavior or clinical launch
 approval. No existing database was contacted or migrated. Existing deprecation,
 bundle-size, Browserslist and Node module-type warnings remain.
+
+## Durable in-app workflow notifications
+
+Consultation changes and published follow-up tasks now persist their in-app
+notices inside the originating database transaction. Failures roll back the
+workflow instead of silently losing its notice; recipient/event uniqueness
+prevents duplicate notifications on retries. Generic task creation also now
+commits its task, audit and notice together, although separate repeated task
+creation requests still create distinct tasks.
+
+The new authenticated inbox has bounded cursor pagination, unread filtering,
+global counts, explicit UTC dates and audited first-read markers. Web and native
+clients use that contract, expose failed loads and writes, preserve loaded data
+after recoverable errors, and invalidate stale responses across accounts. Native
+home now fetches the actual global unread count. Related-record navigation uses
+fixed internal destinations with independent record authorization.
+
+New workflow notices do not contain clinical-text previews. Patient follow-up
+notices require an exact link from an intact, finalized clinical note; internal
+tasks stay internal. Email, SMS and push remain explicitly unavailable. Inbox
+read status is not clinical acknowledgement or proof of care receipt.
+
+The `durable_notifications_v1` migration preserves historical messages and
+unknown historical read times. The policy inventory includes the inbox and
+capabilities endpoints, with all flags false and release HOLD. The
+[notification record](KAYA_NOTIFICATIONS.md) distinguishes these durable core
+workflows from older best-effort notification callers and describes the external
+delivery work still required. No live message or provider call was made.
+
+Final local validation for the notification checkpoint:
+
+| Check | Result |
+| --- | --- |
+| Full backend application suite | 551 passed |
+| Policy, coordination, video, database and observability suites (Phases 1, 22–25, 32, 36) | 180 passed |
+| Scope and route inventory checks | 23 passed; 43 subtests passed |
+| Web interaction and policy suite | 216 passed |
+| Native helper and API-contract suite | 86 passed |
+| Presentation prototype checks | 15 passed |
+| Web production build and web/native TypeScript | Passed |
+| Generated policy consistency | 4 artifacts verified; 276 API declarations; release HOLD |
+| Disposable PostgreSQL 18.1 API concurrency | 11 scenarios passed, including 40 forced races |
+| Git whitespace/error check | Passed |
+
+The PostgreSQL report adds concurrent duplicate notification inserts and read
+markers to the earlier scheduling scenarios. Duplicate inserts preserve the
+other writes in both transactions, and simultaneous read requests retain one
+first-read timestamp and one audit. The staged backend source matches the full
+suite's isolated tested snapshot. No existing database, external delivery
+provider or real mobile device was used.

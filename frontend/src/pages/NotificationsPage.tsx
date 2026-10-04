@@ -1,224 +1,134 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  Bell, CheckCircle2, AlertTriangle, Info, X,
-  CheckCheck, Loader2, RefreshCw,
-} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
 import api from '../api';
-import { useT, type Lang } from '../i18n/LanguageContext';
+import { useAuth } from '../AuthContext';
+import { useT } from '../i18n/LanguageContext';
+import { notificationDestination, notificationError, notificationTime, notifyInboxChanged, validUnreadCount, type InboxNotification, type NotificationCapabilities, type NotificationInbox } from '../utils/notifications';
 
-const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  is_read: boolean;
-  related_entity_type?: string;
-  related_entity_id?: string;
-  created_at: string;
-}
-
-const TYPE_CONFIG = {
-  info:    { icon: <Info size={17} />,         color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.2)'  },
-  success: { icon: <CheckCircle2 size={17} />,  color: '#059669', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.2)'  },
-  warning: { icon: <AlertTriangle size={17} />, color: '#d97706', bg: 'rgba(234,179,8,0.1)',   border: 'rgba(234,179,8,0.25)'  },
-  error:   { icon: <X size={17} />,            color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)'   },
-};
-
-function timeAgo(iso: string, locale: string): string {
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.round(diff / 60000);
-  if (m < 1) return rtf.format(0, 'minute');
-  if (m < 60) return rtf.format(-m, 'minute');
-  const h = Math.floor(m / 60);
-  if (h < 24) return rtf.format(-h, 'hour');
-  const d = Math.floor(h / 24);
-  if (d < 7) return rtf.format(-d, 'day');
-  return new Date(iso).toLocaleDateString(locale);
-}
+type InboxState = NotificationInbox & { ownerId: string; unreadOnly: boolean; loaded: boolean };
+const emptyInbox = (ownerId: string, unreadOnly: boolean): InboxState => ({ ownerId, unreadOnly, items: [], next_cursor: null, unread_count: 0, loaded: false });
 
 export default function NotificationsPage() {
-  const { t, lang } = useT();
-  const locale = LOCALES[lang] || 'pt-PT';
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [marking, setMarking]   = useState<string | null>(null);
-  const [markingAll, setMarkingAll] = useState(false);
-  const [filter, setFilter]     = useState<'all' | 'unread'>('all');
+  const { user } = useAuth();
+  const { lang } = useT();
+  const ownerId = user?.id || '';
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [inbox, setInbox] = useState<InboxState>(() => emptyInbox(ownerId, unreadOnly));
+  const [capabilities, setCapabilities] = useState<{ ownerId: string; data: NotificationCapabilities } | null>(null);
+  const [capabilityError, setCapabilityError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mutationError, setMutationError] = useState('');
+  const [marking, setMarking] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
+  const current = useRef({ ownerId, unreadOnly });
+  current.current = { ownerId, unreadOnly };
+  const generation = useRef(0);
+  const mutationBusy = useRef(false);
+  const shown = inbox.ownerId === ownerId && inbox.unreadOnly === unreadOnly ? inbox : emptyInbox(ownerId, unreadOnly);
+  const channels = capabilities?.ownerId === ownerId ? capabilities.data.channels : null;
+  const isCurrent = useCallback(() => current.current.ownerId === ownerId && current.current.unreadOnly === unreadOnly, [ownerId, unreadOnly]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (cursor: string | null = null) => {
+    if (!ownerId) return;
+    const request = ++generation.current;
     setLoading(true); setError('');
     try {
-      const { data } = await api.get<Notification[]>('/api/v1/notifications/me');
-      setNotifications(data);
-    } catch (e: any) {
-      setError(e?.response?.data?.detail ?? t('notif.load_error'));
-    } finally {
-      setLoading(false);
+      const { data } = await api.get<NotificationInbox>('/api/v1/notifications/inbox', { params: { limit: 20, unread_only: unreadOnly, ...(cursor ? { cursor } : {}) } });
+      if (!isCurrent() || request !== generation.current) return;
+      if (!validUnreadCount(data.unread_count) || !Array.isArray(data.items)) throw new Error('Invalid inbox');
+      setInbox(previous => {
+        const base = cursor && previous.ownerId === ownerId && previous.unreadOnly === unreadOnly ? previous.items : [];
+        const merged = new Map(base.map(item => [item.id, item]));
+        data.items.forEach(item => merged.set(item.id, item));
+        return { ...data, items: [...merged.values()], ownerId, unreadOnly, loaded: true };
+      });
+      notifyInboxChanged(ownerId, data.unread_count);
+    } catch (failure) {
+      if (isCurrent() && request === generation.current) setError(notificationError(failure, 'Não foi possível carregar as notificações. As mensagens já recebidas continuam disponíveis.'));
+    } finally { if (isCurrent() && request === generation.current) setLoading(false); }
+  }, [ownerId, unreadOnly, isCurrent]);
+
+  const loadCapabilities = useCallback(async () => {
+    if (!ownerId) return;
+    setCapabilityError('');
+    try {
+      const { data } = await api.get<NotificationCapabilities>('/api/v1/notifications/capabilities');
+      if (current.current.ownerId === ownerId) setCapabilities({ ownerId, data });
+    } catch {
+      if (current.current.ownerId === ownerId) setCapabilityError('Não foi possível verificar os canais de notificação.');
     }
-  }, [t]);
+  }, [ownerId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    generation.current += 1; mutationBusy.current = false;
+    setMarking(null); setMutationError(''); setNotice(''); setError('');
+    void load();
+    return () => { generation.current += 1; };
+  }, [load]);
+  useEffect(() => { setCapabilities(null); void loadCapabilities(); }, [loadCapabilities]);
+  useEffect(() => {
+    const refresh = () => { if (!mutationBusy.current) { void load(); void loadCapabilities(); } };
+    const visible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', refresh); document.addEventListener('visibilitychange', visible);
+    return () => { window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', visible); };
+  }, [load, loadCapabilities]);
 
-  const markOne = async (id: string) => {
-    setMarking(id);
+  const mark = async (item: InboxNotification | null) => {
+    if (!ownerId || mutationBusy.current) return;
+    mutationBusy.current = true; generation.current += 1; setLoading(false);
+    setMarking(item?.id || 'all'); setMutationError(''); setNotice('');
     try {
-      const { data } = await api.patch<Notification>(`/api/v1/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n.id === id ? data : n));
-    } catch { /* silent */ }
-    setMarking(null);
+      if (item) {
+        const { data } = await api.patch<InboxNotification>(`/api/v1/notifications/${encodeURIComponent(item.id)}/read`);
+        if (!isCurrent()) return;
+        setInbox(previous => previous.ownerId !== ownerId ? previous : { ...previous, items: previous.items.map(row => row.id === data.id ? data : row).filter(row => !unreadOnly || !row.is_read) });
+        setNotice(data.is_read ? 'Notificação marcada como lida.' : 'O serviço manteve a notificação por ler.');
+        try {
+          const count = await api.get<{ unread: number }>('/api/v1/notifications/unread-count');
+          if (!isCurrent()) return;
+          if (!validUnreadCount(count.data.unread)) throw new Error('Invalid count');
+          setInbox(previous => previous.ownerId === ownerId ? { ...previous, unread_count: count.data.unread } : previous);
+          notifyInboxChanged(ownerId, count.data.unread);
+        } catch {
+          if (isCurrent()) { setError('A leitura foi guardada, mas não foi possível atualizar o total por ler. Atualize a lista.'); notifyInboxChanged(ownerId); }
+        }
+      } else {
+        const { data } = await api.patch<{ ok: boolean; updated_count: number }>('/api/v1/notifications/read-all');
+        if (!isCurrent()) return;
+        if (data.ok !== true) throw new Error('Read-all not confirmed');
+        setNotice(`${data.updated_count} notificações marcadas como lidas. A lista é atualizada para incluir novas mensagens.`);
+        await load();
+        if (isCurrent()) notifyInboxChanged(ownerId);
+      }
+    } catch (failure) {
+      if (isCurrent()) setMutationError(notificationError(failure, 'Não foi possível guardar a leitura. O último estado confirmado foi mantido.'));
+    } finally {
+      if (isCurrent()) { mutationBusy.current = false; setMarking(null); }
+    }
   };
 
-  const markAll = async () => {
-    setMarkingAll(true);
-    try {
-      await api.patch('/api/v1/notifications/read-all');
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    } catch { /* silent */ }
-    setMarkingAll(false);
-  };
-
-  const shown = filter === 'unread'
-    ? notifications.filter(n => !n.is_read)
-    : notifications;
-
-  const unreadCount = notifications.filter(n => !n.is_read).length;
-
-  return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Bell size={20} style={{ color: 'var(--brand-primary)' }} />
-            {t('notif.title')}
-            {unreadCount > 0 && (
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, background: '#ef4444', color: '#fff', borderRadius: 999, padding: '0.15rem 0.55rem', marginLeft: '0.25rem' }}>
-                {unreadCount}
-              </span>
-            )}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.82rem' }}>
-            {t('notif.subtitle')}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <button
-            onClick={load}
-            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.7rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}
-          >
-            <RefreshCw size={13} /> {t('common.refresh')}
-          </button>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAll}
-              disabled={markingAll}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.85rem', borderRadius: '8px', background: 'var(--brand-light)', color: 'var(--brand-primary)', border: '1px solid rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8rem', cursor: markingAll ? 'not-allowed' : 'pointer', opacity: markingAll ? 0.7 : 1 }}
-            >
-              {markingAll ? <Loader2 size={13} /> : <CheckCheck size={13} />}
-              {t('notif.mark_all')}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        {(['all', 'unread'] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{ padding: '0.4rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}
-          >
-            {f === 'all' ? `${t('notif.all')} (${notifications.length})` : `${t('notif.unread')} (${unreadCount})`}
-          </button>
-        ))}
-      </div>
-
-      {/* Loading */}
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
-          <Loader2 size={28} style={{ display: 'block', margin: '0 auto 0.5rem' }} />
-          {t('common.loading')}
-        </div>
-      )}
-
-      {/* Error */}
-      {!loading && error && (
-        <div style={{ padding: '1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', fontSize: '0.85rem' }}>{error}</div>
-      )}
-
-      {/* Empty state */}
-      {!loading && !error && shown.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '5rem 0' }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-            <Bell size={30} style={{ color: 'var(--brand-primary)', opacity: 0.5 }} />
-          </div>
-          <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>
-            {filter === 'unread' ? t('notif.empty_unread_title') : t('notif.empty_title')}
-          </div>
-          <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-            {filter === 'unread' ? t('notif.empty_unread_desc') : t('notif.empty_desc')}
-          </div>
-        </div>
-      )}
-
-      {/* List */}
-      {!loading && !error && shown.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {shown.map(n => {
-            const tc = TYPE_CONFIG[n.type] ?? TYPE_CONFIG.info;
-            const isBusy = marking === n.id;
-            return (
-              <div
-                key={n.id}
-                style={{
-                  display: 'flex',
-                  gap: '0.85rem',
-                  padding: '1rem 1.1rem',
-                  borderRadius: '12px',
-                  background: 'var(--bg-card)',
-                  border: n.is_read ? '1px solid var(--border)' : `1.5px solid ${tc.border}`,
-                  opacity: n.is_read ? 0.72 : 1,
-                  transition: 'opacity 0.2s',
-                  position: 'relative',
-                }}
-              >
-                {/* Unread dot */}
-                {!n.is_read && (
-                  <div style={{ position: 'absolute', top: '0.85rem', right: '0.85rem', width: 8, height: 8, borderRadius: '50%', background: tc.color }} />
-                )}
-
-                {/* Type icon */}
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: tc.bg, color: tc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1.5px solid ${tc.border}` }}>
-                  {tc.icon}
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: n.is_read ? 600 : 800, fontSize: '0.88rem', marginBottom: '0.2rem' }}>{n.title}</div>
-                  <div style={{ fontSize: '0.81rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{n.message}</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>{timeAgo(n.created_at, locale)}</div>
-                </div>
-
-                {!n.is_read && (
-                  <button
-                    onClick={() => markOne(n.id)}
-                    disabled={isBusy}
-                    title={t('notif.mark_read')}
-                    style={{ background: 'none', border: 'none', cursor: isBusy ? 'not-allowed' : 'pointer', color: 'var(--text-muted)', padding: '0.25rem', borderRadius: '6px', flexShrink: 0, alignSelf: 'flex-start', marginTop: '0.1rem' }}
-                  >
-                    {isBusy ? <Loader2 size={15} /> : <CheckCheck size={15} />}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  if (!ownerId) return <p>Inicie sessão para consultar as suas notificações.</p>;
+  return <div style={{ maxWidth: 760, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <header style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between' }}>
+      <div><h1 style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '1.25rem' }}><Bell size={20} /> Notificações</h1><p>{shown.loaded ? `${shown.unread_count} por ler na sua conta` : loading ? 'A consultar o total por ler…' : 'Total por ler indisponível.'}</p></div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}><button className="btn btn-secondary" disabled={loading || marking !== null} onClick={() => { void load(); void loadCapabilities(); }}><RefreshCw size={15} /> Atualizar</button><button className="btn btn-secondary" disabled={!shown.loaded || shown.unread_count === 0 || marking !== null || loading} onClick={() => void mark(null)}><CheckCheck size={15} /> Marcar todas como lidas</button></div>
+    </header>
+    {channels && <div className="card" style={{ padding: '1rem', marginBottom: '1rem' }}><p>Notificações na aplicação: {channels.in_app ? 'disponíveis' : 'indisponíveis'}.</p><p>{[['Email', channels.email], ['SMS', channels.sms], ['Push', channels.push]].map(([name, enabled]) => `${name}: ${enabled ? 'disponível' : 'indisponível'}`).join(' · ')}</p><p>Marcar como lida organiza esta caixa. Não confirma receção de cuidados nem conclui tarefas clínicas.</p></div>}
+    {capabilityError && <p role="alert">{capabilityError}</p>}
+    <nav aria-label="Filtrar notificações" style={{ display: 'flex', gap: 8, margin: '1rem 0' }}><button className="btn btn-secondary" aria-pressed={!unreadOnly} disabled={marking !== null} onClick={() => setUnreadOnly(false)}>Todas</button><button className="btn btn-secondary" aria-pressed={unreadOnly} disabled={marking !== null} onClick={() => setUnreadOnly(true)}>Por ler</button></nav>
+    {error && <p role="alert">{error}</p>}{mutationError && <p role="alert">{mutationError}</p>}{notice && <p role="status">{notice}</p>}
+    {loading && <p role="status">A carregar notificações…</p>}
+    {!loading && !error && shown.loaded && shown.items.length === 0 && <p>{unreadOnly ? shown.unread_count === 0 ? 'Sem notificações por ler.' : 'Sem mensagens nesta página. Atualize ou carregue mais notificações.' : 'Ainda não existem notificações nesta página.'}</p>}
+    <ul style={{ display: 'grid', gap: 12, listStyle: 'none', padding: 0 }}>{shown.items.map(item => {
+      const destination = notificationDestination(item, user?.role);
+      return <li key={item.id} className="card" style={{ padding: '1rem', borderLeft: `4px solid ${item.is_read ? 'var(--border)' : 'var(--brand-primary)'}` }}>
+        <article aria-label={item.title}><h2 style={{ fontSize: '1rem', marginTop: 0 }}>{item.title}</h2><p style={{ whiteSpace: 'pre-wrap' }}>{item.message}</p><p><time dateTime={item.created_at}>{notificationTime(item.created_at, lang)}</time> · {item.is_read ? 'Lida' : 'Por ler'}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>{destination && <Link to={destination.to}>{destination.label}</Link>}{!item.is_read && <button className="btn btn-secondary" disabled={marking !== null || loading} onClick={() => void mark(item)} aria-label={`Marcar como lida: ${item.title}`}>{marking === item.id ? 'A guardar…' : 'Marcar como lida'}</button>}</div>
+        </article>
+      </li>;
+    })}</ul>
+    {shown.next_cursor && <button className="btn btn-secondary" disabled={loading || marking !== null} onClick={() => void load(shown.next_cursor)}>Carregar mais</button>}
+  </div>;
 }

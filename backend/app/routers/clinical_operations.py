@@ -407,13 +407,17 @@ def create_care_task(
         due_at=body.due_at,
     )
     db.add(task)
-    db.commit()
-    db.refresh(task)
-    log_health_audit(
-        db, "clinical_care_task.created", user.id, "clinical_care_task", task.id,
-        {"patient_id": task.patient_id, "assigned_role": task.assigned_role, "priority": task.priority},
-        request,
-    )
+    try:
+        db.flush()
+        db.add(HealthAuditLog(actor_user_id=user.id, action="clinical_care_task.created",
+                             resource_type="clinical_care_task", resource_id=task.id))
+        from app.services.notifications import task_event
+        task_event(db, task, "created")
+        db.commit()
+        db.refresh(task)
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível guardar a tarefa. Tente novamente.") from None
     return _task_out(task, db)
 
 
@@ -502,6 +506,9 @@ def complete_care_task(
             actor_user_id=user.id, action="clinical_care_task.completed",
             resource_type="clinical_care_task", resource_id=task.id,
         ))
+        db.refresh(task)
+        from app.services.notifications import task_event
+        task_event(db, task, "completed")
         db.commit()
     except HTTPException:
         raise

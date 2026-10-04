@@ -31,15 +31,16 @@ from sqlalchemy import event
 from sqlalchemy.orm import Session
 from app.models import User
 from app.health_models import (Patient, Doctor, ClinicianCredential, PatientConsent, MfaCredential,
-                              AppointmentSlot, Consultation, HealthAuditLog)
+                              AppointmentSlot, Consultation, HealthAuditLog, Notification)
 from app.oauth2 import create_access_token
-from app.routers import appointments, consultations
+from app.routers import appointments, consultations, notifications
 from app.services.consultation_lifecycle import transition
 from app.services.mfa import generate_secret
 
 application = FastAPI()
 application.include_router(appointments.router)
 application.include_router(consultations.router)
+application.include_router(notifications.router)
 client = TestClient(application)
 engine = database.engine
 assert engine.dialect.name == 'postgresql'
@@ -93,12 +94,12 @@ def cancel(patient, consultation_id):
     return client.patch(f'/api/v1/consultations/{consultation_id}',headers=patient['headers'],json={})
 
 
-def together(calls, table='doctors'):
+def together(calls, table='doctors', sql_prefix=None):
     """Hold both transactions immediately before their first capacity lock."""
     gate=Barrier(len(calls), timeout=8)
     seen=set(); mutex=Lock(); matched=[]
     def before(conn,cursor,statement,parameters,context,executemany):
-        if not statement.lower().startswith(f'update {table} set'): return
+        if not statement.lower().startswith(sql_prefix or f'update {table} set'): return
         identity=id(conn)
         with mutex:
             if identity in seen: return
@@ -265,11 +266,56 @@ def revocation_during_acceptance_wait():
     return {'status':response.status_code,'revoked_after_auth_before_capacity_lock':True,'requested_state_retained':True}
 
 
+def notification_duplicate_delivery():
+    from app.services.notifications import enqueue_notification
+    patient = person('patient')
+    for _ in range(5):
+        key = 'pg-notification:' + uuid4().hex
+        audit_ids = [str(uuid4()), str(uuid4())]
+        def deliver(audit_id):
+            with Session(engine) as db:
+                db.add(HealthAuditLog(id=audit_id, actor_user_id=patient['uid'],
+                                     action='synthetic_independent_write', resource_type='synthetic'))
+                row = enqueue_notification(db, user_id=patient['uid'], event_key=key,
+                                           title='Synthetic update', message='Synthetic inbox update')
+                identifier = row.id
+                db.commit()
+                return identifier
+        ids = together([lambda: deliver(audit_ids[0]), lambda: deliver(audit_ids[1])],
+                       sql_prefix='insert into notifications')
+        assert ids[0] == ids[1]
+        with Session(engine) as db:
+            assert db.query(Notification).filter_by(user_id=patient['uid'], event_key=key).count() == 1
+            assert db.query(HealthAuditLog).filter(HealthAuditLog.id.in_(audit_ids)).count() == 2
+    return {'forced_races': 5, 'single_event_without_rolling_back_other_transaction_work': True}
+
+
+def notification_concurrent_read():
+    from app.services.notifications import enqueue_notification
+    patient = person('patient')
+    for _ in range(5):
+        with Session(engine) as db:
+            row = enqueue_notification(db, user_id=patient['uid'], event_key='pg-read:' + uuid4().hex,
+                                       title='Synthetic update', message='Synthetic inbox update')
+            identifier = row.id
+            db.commit()
+        def mark():
+            return client.patch(f'/api/v1/notifications/{identifier}/read', headers=patient['headers'])
+        responses = together([mark, mark], table='notifications')
+        assert all(response.status_code == 200 for response in responses)
+        assert responses[0].json()['read_at'] == responses[1].json()['read_at']
+        with Session(engine) as db:
+            assert db.query(HealthAuditLog).filter_by(resource_id=identifier, action='notification_marked_read').count() == 1
+            assert db.get(Notification, identifier).is_read is True
+    return {'forced_races': 5, 'first_read_timestamp_and_single_audit_preserved': True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
                 ('concurrent_exact_idempotent_retry',exact_retry),('cancellation_rebooking_stale_write',cancellation_rebooking_stale_write),
-                ('late_start_and_overrun',late_start_and_overrun),('current_revocation',current_revocation),('revocation_during_acceptance_wait',revocation_during_acceptance_wait)]:
+                ('late_start_and_overrun',late_start_and_overrun),('current_revocation',current_revocation),('revocation_during_acceptance_wait',revocation_during_acceptance_wait),
+                ('notification_duplicate_delivery', notification_duplicate_delivery), ('notification_concurrent_read', notification_concurrent_read)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}

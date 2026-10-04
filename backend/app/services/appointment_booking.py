@@ -88,6 +88,8 @@ def create_booking(db, body, patient, user, key):
             if result.rowcount != 1:
                 raise HTTPException(409, "Este horário acaba de ser reservado. Escolha outro.")
         record_event(db, item, user.id, "consultation_booked", None, "requested")
+        from app.services.notifications import consultation_event
+        consultation_event(db, item, "booked")
         db.commit()
         db.refresh(item)
         return item, True

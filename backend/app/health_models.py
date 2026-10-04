@@ -1095,6 +1095,8 @@ class Notification(Base):
     # info | success | warning | error
     type: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    event_key: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
     # Optional: link back to the entity that triggered this (e.g. consultation, prescription_request)
     related_entity_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     related_entity_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
@@ -1104,6 +1106,8 @@ class Notification(Base):
 
     __table_args__ = (
         Index("ix_notifications_user_created", "user_id", "created_at"),
+        Index("uq_notifications_user_event", "user_id", "event_key", unique=True),
+        Index("ix_notifications_user_unread", "user_id", "is_read", "created_at", "id"),
     )
 
 

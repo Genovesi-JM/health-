@@ -156,3 +156,6 @@
 !app/services/appointments.py
 !alembic/versions/appointment_slots_v1.py
 !app/services/appointment_booking.py
+
+!app/services/notifications.py
+!alembic/versions/durable_notifications_v1.py

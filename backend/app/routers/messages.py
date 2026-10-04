@@ -85,10 +85,9 @@ def send_message(
             recipient = pat.user_id if pat else None
             who = "O seu médico"
         if recipient:
-            preview = msg.body[:60] + ("…" if len(msg.body) > 60 else "")
             create_notification(
                 db, user_id=recipient, title="Nova mensagem",
-                message=f"{who}: {preview}", type="info",
+                message="Tem uma nova mensagem. Abra a consulta para ler.", type="info",
                 entity_type="consultation", entity_id=consultation_id,
             )
     except Exception:

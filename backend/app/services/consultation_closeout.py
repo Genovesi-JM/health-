@@ -150,6 +150,13 @@ def finalize_consultation(db: Session, consultation: Consultation, body: Consult
     db.add(notes)
     db.flush()
     notes.finalization_digest = note_digest(notes)
+    # Persist the disclosure and its exact follow-up link before selecting
+    # patient recipients. Notifications still share this uncommitted transaction.
+    db.flush()
+    from app.services.notifications import consultation_event, task_event
+    consultation_event(db, consultation, "closed")
+    if task:
+        task_event(db, task, "created")
     end_video(db, consultation, user.id, now)
     db.commit()
     db.refresh(consultation)
