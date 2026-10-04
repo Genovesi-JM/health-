@@ -23,6 +23,11 @@ export default defineConfig({
         // they always hit the server and are never stored in cache.
         runtimeCaching: [
           {
+            // The standalone demo must never fall back to the authenticated SPA.
+            urlPattern: /\/prototype(?:\/|$)/,
+            handler: 'NetworkOnly',
+          },
+          {
             // Block all backend API / auth routes from being cached
             urlPattern: /^https?:\/\/.*\/(api|auth|admin|me)(\/|$)/,
             handler: 'NetworkOnly',
@@ -32,10 +37,11 @@ export default defineConfig({
         // Pre-cache the built JS/CSS/HTML shell (safe static assets)
         globPatterns: ['**/*.{js,css,html,woff2,svg,png,ico,webmanifest}'],
         // Exclude anything that could contain patient data
-        globIgnores: ['**/api/**', '**/auth/**'],
+        globIgnores: ['**/api/**', '**/auth/**', '**/prototype/**'],
         // Don't let the SW intercept cross-origin requests (e.g. DO Spaces CDN)
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [
+          /\/prototype(?:\/|$)/,
           /^\/api\//,
           /^\/auth\//,
           /^\/admin\//,
