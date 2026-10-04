@@ -687,3 +687,35 @@ TypeScript and four Hermes exports. See [combined source-hashed evidence](eviden
 Policy remains 284 routes and HOLD. The existing Android APK is the earlier
 09df949 informational source snapshot with policy277; these newer JavaScript
 exports do not update that APK or establish a tested operational device journey.
+
+## Durable payment recovery and correct clinical subject boundaries
+
+Checkout now commits an owned UUID/body identity before dispatch. Unknown
+outcomes retain financial evidence and exact recovery; retries never issue a
+second adapter call. The web preserves recovery after care closes, rejects
+stale-session replies, avoids fabricated methods, shows server currency, and
+refreshes care state only after authoritative payment application. Late or
+inconsistent receipts remain financial-review items without reopening care.
+Refund observations cannot be overwritten by delayed paid callbacks. See the
+[operational billing contract](KAYA_PAYMENTS.md). No real money moved.
+
+A workflow review found that the old dependent/pediatric triage selection wrote
+under the account holder's patient ID. Unsupported subject/guardian/pediatric
+payloads now fail before any clinical or measurement write; web/native no longer
+offer that unsupported path. Family profiles remain separate from verified
+representative authority. Private triage-photo reads also reject unassigned
+nurses and recheck the assigned doctor's current authority, with explicit
+private/no-store and nosniff headers on files and redirects.
+
+Final staged-source validation passed 1,762 backend tests in 183.49 seconds,
+29 repository checks plus 43 subtests, and 34 PostgreSQL scenarios including
+114 forced races. The disposable cluster was stopped. Web passed 389 tests,
+TypeScript, full lint, 15 prototype checks, production build and emitted-PWA
+checks. Native passed 176 tests, TypeScript and four refreshed Hermes exports.
+Evidence is retained in [the combined checkpoint](evidence/payments-subjects-2026-10-04/manifest.json) and [native subject-boundary exports](evidence/native-subject-boundary-2026-10-04/manifest.json).
+
+This checkpoint retains policy284 and HOLD; it excludes the subsequent durable
+consent adoption. The existing Android APK still represents the earlier09df949
+informational/policy277 source. Provider integration, reviewed commercial prices,
+refund/settlement operations, current consent adoption and clinical release
+approvals are not established by these local tests.

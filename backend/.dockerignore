@@ -178,3 +178,6 @@
 
 !app/services/request_expiry.py
 !alembic/versions/consultation_request_expiry_v1.py
+
+!app/services/consultation_payments.py
+!alembic/versions/health_payment_attempts_v1.py

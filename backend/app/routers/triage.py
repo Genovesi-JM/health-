@@ -47,6 +47,11 @@ ALLOWED_PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_VIEW_TYPES = {"orientation", "context", "closeup"}
 MAX_PHOTO_BYTES = 8 * 1024 * 1024
 MAX_PHOTOS_PER_TRIAGE = 3
+PHOTO_RESPONSE_HEADERS = {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
+
+
+def _private_photo_response(response: Response) -> None:
+    response.headers.update(PHOTO_RESPONSE_HEADERS)
 
 
 def _device_readings_from_triage(patient_id: str, triage_id: str, vital_signs) -> list[DeviceReading]:
@@ -143,11 +148,12 @@ def _assert_photo_access(triage_id: str, user: User, db: Session) -> TriageSessi
     if not session:
         raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
 
-    if user.role == RoleEnum.PATIENT:
+    if user.role in (RoleEnum.PATIENT, "cliente"):
         patient = db.query(Patient).filter(Patient.user_id == user.id).first()
         if patient and session.patient_id == patient.id:
             return session
     elif user.role == RoleEnum.DOCTOR:
+        require_verified_doctor(user, db)
         doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
         if doctor:
             linked = db.query(Consultation.id).filter(
@@ -156,13 +162,7 @@ def _assert_photo_access(triage_id: str, user: User, db: Session) -> TriageSessi
             ).first()
             if linked:
                 return session
-    elif user.role == RoleEnum.NURSE:
-        linked = db.query(Consultation.id).filter(
-            Consultation.triage_session_id == triage_id,
-        ).first()
-        if linked:
-            return session
-
+    # A nursing role alone is not an assigned relationship to this triage.
     raise HTTPException(status_code=403, detail="Sem acesso às fotografias desta triagem.")
 
 
@@ -173,6 +173,12 @@ def start_triage(
     db: Session = Depends(get_db),
 ):
     """Start a new triage session. Returns triage ID and questions."""
+    # Delegated/minor intake has no verified subject/representative workflow.
+    # Never silently attach another person's symptoms or measurements to the
+    # authenticated account, including extra selectors from older clients.
+    extras = body.model_extra or {}
+    if body.age_group not in (None, "adult") or body.answered_by_guardian is True or extras:
+        raise HTTPException(409, "A triagem de menores ou em nome de outra pessoa não está disponível. Não envie esses dados na sua conta.")
     session = TriageSession(
         patient_id=patient.id,
         status="in_progress",
@@ -317,7 +323,7 @@ async def upload_triage_photo(
     return _photo_out(photo)
 
 
-@router.get("/{triage_id}/photos", response_model=List[TriagePhotoOut])
+@router.get("/{triage_id}/photos", response_model=List[TriagePhotoOut], dependencies=[Depends(_private_photo_response)])
 def list_triage_photos(
     triage_id: str,
     user: User = Depends(get_current_user),
@@ -350,7 +356,7 @@ def list_pending_photo_requests(
     return [_photo_request_out(item) for item in requests]
 
 
-@router.get("/{triage_id}/photo-requests", response_model=List[TriagePhotoRequestOut])
+@router.get("/{triage_id}/photo-requests", response_model=List[TriagePhotoRequestOut], dependencies=[Depends(_private_photo_response)])
 def list_photo_requests(
     triage_id: str,
     user: User = Depends(get_current_user),
@@ -527,12 +533,14 @@ def get_triage_photo_content(
     if not photo:
         raise HTTPException(status_code=404, detail="Fotografia não encontrada.")
     location = get_health_storage().get_signed_url(photo.storage_key)
+    headers = PHOTO_RESPONSE_HEADERS
     if location.startswith(("http://", "https://")):
-        return RedirectResponse(location)
+        return RedirectResponse(location, headers=headers)
     return FileResponse(
         location,
         media_type=photo.content_type,
         filename=photo.original_filename,
+        headers=headers,
     )
 
 

@@ -923,8 +923,13 @@ class HealthPayment(Base):
     provider_reference: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="{}")
+    checkout_request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    checkout_request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    dispatch_state: Mapped[Optional[str]] = mapped_column(String(24), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (Index("uq_health_payment_checkout_request", "patient_id", "checkout_request_key", unique=True),)
 
 
 # ── Health Audit Log (specific to health actions) ──

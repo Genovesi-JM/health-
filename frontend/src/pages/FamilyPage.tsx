@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { apiErrorMessage } from '../utils/apiError';
 import { useT } from '../i18n/LanguageContext';
 import {
-  Users, Plus, Trash2, Save, X, Edit2, Activity,
+  Users, Plus, Trash2, Save, X, Edit2,
   Phone, Mail, AlertCircle, Loader2,
 } from 'lucide-react';
 
@@ -63,7 +62,6 @@ function calcAge(dob: string): number {
 
 export default function FamilyPage() {
   const { t } = useT();
-  const navigate = useNavigate();
 
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -201,7 +199,7 @@ export default function FamilyPage() {
               <div className="empty-state-icon"><Users size={28} style={{ color: 'var(--accent-teal)' }} /></div>
               <div className="empty-state-title">{t('family.none')}</div>
               <div className="empty-state-desc" style={{ maxWidth: 360, margin: '0 auto 1.25rem' }}>
-                Adicione um membro da família ou dependente para poder realizar triagens em nome deles e acompanhar a sua saúde.
+                Pode guardar perfis de familiares. Estes perfis não autorizam triagem, consultas ou acesso clínico em nome de outra pessoa.
               </div>
               <button className="btn btn-primary btn-sm" onClick={openAdd}>
                 <Plus size={14} /> {t('family.add')}
@@ -245,12 +243,7 @@ export default function FamilyPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={() => navigate('/triage', { state: { dependent: { id: m.id, name: m.full_name, is_minor: m.is_minor } } })}
-                  >
-                    <Activity size={12} /> Triagem
-                  </button>
+                  <span>Triagem para familiares indisponível.</span>
                   <button className="btn btn-sm btn-outline" onClick={() => openEdit(m)}>
                     <Edit2 size={12} />
                   </button>

@@ -1,275 +1,259 @@
-import { useEffect, useRef, useState } from 'react';
-import api from '../api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import api, { getSession } from '../api';
 import { useT } from '../i18n/LanguageContext';
-import { X, CheckCircle2, Copy, Loader2, Smartphone, CreditCard, Landmark, ChevronRight } from 'lucide-react';
+import { X, CheckCircle2, Copy, Loader2, Smartphone, CreditCard, Landmark } from 'lucide-react';
+import { checkoutNotCommitted, clearPendingPayment, formatPaymentAmount, isPaymentKey, isPaymentProvider, parsePaymentReceipt, paymentOutcome, paymentRedirect, readPendingPayment, savePendingPayment } from '../utils/pendingPayment';
+import type { PaymentProvider, PaymentReceipt, PendingPayment } from '../utils/pendingPayment';
 
-interface CheckoutResponse {
-  payment_id: string;
-  status: string;
-  amount: number;              // in centavos
-  currency: string;
-  provider?: string;
-  provider_reference?: string;
-  qr_code?: string;
-  redirect_url?: string;
-  client_secret?: string;
-  transfer_details?: Record<string, string | number>;
-  instructions?: string;
-}
-
-interface PaymentMethod { id: string; label: string; description: string; enabled: boolean; }
-
-interface Props {
-  open: boolean;
-  consultationId: string;
-  onClose: () => void;
-  onPaid: () => void;
-}
-
-function formatAoa(centavos: number): string {
-  const value = centavos / 100;
-  return `${value.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kz`;
-}
-
-const spinStyle: React.CSSProperties = { animation: 'spin 1s linear infinite' };
-
+interface PaymentMethod { id: string; label: string; description: string; enabled: boolean; integration_status?: string }
+interface Props { open: boolean; consultationId: string; country?: string | null; recoveryOnly?: boolean; onClose: () => void; onPaid: () => void }
+type Phase = 'checking' | 'methods' | 'pending' | 'paid' | 'failed' | 'blocked';
+const uncertainty = 'Ainda não foi possível confirmar o resultado. A referência foi guardada nesta conta. Não inicie outro pagamento; verifique o estado ou recupere o mesmo pedido.';
+const statusOf = (error: unknown) => (error as { response?: { status?: number } })?.response?.status;
 const METHOD_ICON: Record<string, React.ReactNode> = {
-  multicaixa_express: <Smartphone size={18} />,
-  visa_mastercard: <CreditCard size={18} />,
-  iban_transfer: <Landmark size={18} />,
+  multicaixa_express: <Smartphone size={18} />, visa_mastercard: <CreditCard size={18} />, iban_transfer: <Landmark size={18} />,
 };
 
 export default function PaymentModal(props: Props) {
-  return props.open ? <PaymentSession key={props.consultationId} {...props} /> : null;
+  const session = getSession();
+  return props.open ? <PaymentSession key={`${session?.userId}:${session?.token}:${props.consultationId}`} {...props} /> : null;
 }
 
-function PaymentSession({ open, consultationId, onClose, onPaid }: Props) {
+function PaymentSession({ consultationId, country, recoveryOnly = false, onClose, onPaid }: Props) {
   const { t } = useT();
+  const [session] = useState(getSession);
+  const owner = session?.userId ?? '';
+  const token = session?.token ?? '';
+  const mounted = useRef(false);
+  const busy = useRef(false);
+  const paidNotified = useRef(false);
+  const onPaidRef = useRef(onPaid);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [phase, setPhase] = useState<Phase>('checking');
+  const [attempt, setAttempt] = useState<PendingPayment | null>(null);
+  const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [chosen, setChosen] = useState<string | null>(null);
+  const [methodsLoaded, setMethodsLoaded] = useState(false);
+  const [methodsError, setMethodsError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checkout, setCheckout] = useState<CheckoutResponse | null>(null);
-  const [status, setStatus] = useState<string>('methods'); // methods, pending, paid, failed
   const [error, setError] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
-  const pollRef = useRef<number | null>(null);
+  const [catalogVersion, setCatalogVersion] = useState(0);
+  const current = useCallback(() => mounted.current && !!owner && !!token && getSession()?.userId === owner && getSession()?.token === token, [owner, token]);
+  const config = useCallback(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+  const statusUrl = `/api/v1/billing/consultation/${consultationId}/payment-status`;
 
-  // Load available methods when opened.
+  useEffect(() => { onPaidRef.current = onPaid; }, [onPaid]);
   useEffect(() => {
-    if (!open) return;
-    let active = true;
-    api.get('/api/v1/billing/payment-methods')
-      .then(r => { if (active) setMethods((r.data.methods || []).filter((m: PaymentMethod) => m.enabled)); })
-      .catch(() => { if (active) setMethods([
-        { id: 'multicaixa_express', label: 'Multicaixa Express', description: '', enabled: true },
-      ]); });
-    return () => { active = false; };
-  }, [open]);
+    mounted.current = true;
+    return () => { mounted.current = false; if (copyTimer.current) clearTimeout(copyTimer.current); };
+  }, []);
 
-  // Start checkout once a method is chosen.
-  const selectMethod = (methodId: string) => {
-    setChosen(methodId);
-    setLoading(true);
+  const applyReceipt = useCallback((value: unknown, pending: PendingPayment) => {
+    const next = parsePaymentReceipt(value, pending);
+    if (!current()) return;
+    setReceipt(previous => previous?.payment_id === next.payment_id && previous.request_key === next.request_key ? { ...previous, ...next } : next);
     setError('');
-    api.post('/api/v1/billing/consultation/checkout', {
-      consultation_id: consultationId,
-      payment_method: methodId,
-    })
-      .then((res) => {
-        const data: CheckoutResponse = res.data;
-        setCheckout(data);
-        setStatus(data.status === 'paid' ? 'paid' : 'pending');
-        if (data.status === 'paid') onPaid();
-      })
-      .catch((err) => {
-        setError(err.response?.data?.detail || t('pay.error_start'));
-        setStatus('failed');
-      })
-      .finally(() => setLoading(false));
-  };
+    const outcome = paymentOutcome(next);
+    if (outcome === 'paid' || outcome === 'failed') {
+      let cleared = false;
+      try { cleared = clearPendingPayment(pending); } catch { /* Keep the saved identity for recovery. */ }
+      if (cleared) setAttempt(null);
+      setPhase(outcome === 'paid' ? 'paid' : cleared ? 'failed' : 'blocked');
+      if (!cleared && outcome === 'failed') setError('O pedido falhou, mas não foi possível atualizar a referência guardada. Verifique novamente antes de escolher outro método.');
+      if (outcome === 'paid' && !paidNotified.current) { paidNotified.current = true; onPaidRef.current(); }
+    } else {
+      setPhase('pending');
+    }
+  }, [current]);
 
-  // Poll status while pending — for auto-confirmable methods only.
-  // Bank transfer (iban_transfer) confirms manually, so we don't poll it.
+  const exactStatus = useCallback(async (pending: PendingPayment) => {
+    try {
+      const result = await api.get(statusUrl, { ...config(), params: { request_key: pending.key } });
+      if (current()) applyReceipt(result.data, pending);
+    } catch (problem) {
+      if (current() && [401, 403].includes(statusOf(problem) ?? 0)) setReceipt(null);
+      throw problem;
+    }
+  }, [statusUrl, config, current, applyReceipt]);
+
+  // Unfiltered status only discovers an existing identity; all actionable receipts use an exact lookup.
+  const discover = useCallback(async (allowEmpty: boolean) => {
+    try {
+      const result = await api.get(statusUrl, config());
+      if (!current()) return;
+      const found = parsePaymentReceipt(result.data);
+      if (!isPaymentKey(found.request_key) || !isPaymentProvider(found.provider)) {
+        setReceipt(found); setPhase('blocked');
+        setError('Este pagamento necessita de revisão pela equipa. Não existe uma referência de pedido recuperável; não inicie outro pagamento.');
+        return;
+      }
+      const recovered = { owner, consultationId, provider: found.provider, key: found.request_key };
+      savePendingPayment(recovered);
+      setAttempt(recovered); setPhase('pending');
+      await exactStatus(recovered);
+    } catch (problem) {
+      if (!current()) return;
+      if ([401, 403].includes(statusOf(problem) ?? 0)) setReceipt(null);
+      // A 404 allows initial selection only if this browser knows of no prior attempt.
+      // Once a prior attempt was discovered, absence never proves that it did not commit.
+      if (statusOf(problem) === 404 && allowEmpty && !readPendingPayment(owner, consultationId)) {
+        setPhase(recoveryOnly ? 'blocked' : 'methods'); setError(recoveryOnly ? 'Não existe um pagamento confirmado para mostrar. Um pedido em curso ainda pode aparecer; pode verificar novamente.' : '');
+      } else { setPhase('blocked'); setError('Não foi possível confirmar o pagamento existente. Verifique novamente; não inicie outro pedido.'); }
+    }
+  }, [statusUrl, config, current, owner, consultationId, exactStatus, recoveryOnly]);
+
   useEffect(() => {
-    if (status !== 'pending' || !checkout) return;
-    if (checkout.provider === 'iban_transfer') return;
     let active = true;
-    const tick = async () => {
+    void (async () => {
+      await Promise.resolve();
+      if (!active || !current()) return;
+      busy.current = true; setLoading(true);
       try {
-        const res = await api.get(`/api/v1/billing/consultation/${consultationId}/payment-status`);
-        if (!active) return;
-        if (res.data.consultation_paid || res.data.status === 'paid') {
-          setStatus('paid'); onPaid();
-        } else if (res.data.status === 'failed') {
-          setStatus('failed'); setError(t('pay.error_failed'));
-        }
-      } catch { /* transient — keep polling */ }
+        const saved = readPendingPayment(owner, consultationId);
+        if (saved) { setAttempt(saved); setPhase('pending'); await exactStatus(saved); }
+        else await discover(true);
+      } catch { if (active && current()) { setPhase('blocked'); setError(uncertainty); } }
+      finally { if (active && current()) { busy.current = false; setLoading(false); } }
+    })();
+    return () => { active = false; };
+  }, [owner, consultationId, current, exactStatus, discover]);
+
+  useEffect(() => {
+    let active = true;
+    if (!['AO', 'PT'].includes(country ?? '') || !owner || !token) return;
+    void api.get('/api/v1/billing/payment-methods', { ...config(), params: { country, currency: country === 'PT' ? 'EUR' : 'AOA', include_planned: true } })
+      .then(result => {
+        if (!active || !current()) return;
+        if (!Array.isArray(result.data?.methods)) throw new Error('Invalid catalog');
+        const list = result.data.methods as PaymentMethod[];
+        if (list.some(item => !item || typeof item.id !== 'string' || typeof item.label !== 'string' || typeof item.description !== 'string' || typeof item.enabled !== 'boolean')) throw new Error('Invalid catalog');
+        setMethods(list); setMethodsLoaded(true); setMethodsError('');
+      }).catch(() => { if (active && current()) { setMethods([]); setMethodsLoaded(false); setMethodsError('Não foi possível carregar os métodos de pagamento.'); } });
+    return () => { active = false; };
+  }, [country, owner, token, catalogVersion, config, current]);
+
+  const checkStatus = useCallback(async () => {
+    if (busy.current || !current()) return;
+    busy.current = true; setLoading(true);
+    try {
+      const saved = readPendingPayment(owner, consultationId);
+      if (saved) { setAttempt(saved); await exactStatus(saved); }
+      else await discover(false);
+    } catch { if (current()) setError(uncertainty); }
+    finally { if (current()) { busy.current = false; setLoading(false); } }
+  }, [current, owner, consultationId, exactStatus, discover]);
+
+  useEffect(() => {
+    if (phase !== 'pending' || !attempt || receipt?.provider === 'iban_transfer') return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      await checkStatus();
+      if (active) timer = setTimeout(poll, 4000);
     };
-    pollRef.current = window.setInterval(tick, 4000);
-    return () => { active = false; if (pollRef.current) window.clearInterval(pollRef.current); };
-  }, [status, checkout, consultationId, onPaid, t]);
+    timer = setTimeout(poll, 4000);
+    return () => { active = false; clearTimeout(timer); };
+  }, [phase, attempt, receipt?.provider, checkStatus]);
 
-  if (!open) return null;
-
-  const copy = (key: string, value?: string) => {
-    if (!value) return;
-    navigator.clipboard?.writeText(value);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 1500);
+  const submit = async (method?: PaymentProvider) => {
+    if (busy.current || !current()) return;
+    busy.current = true; setLoading(true); setError('');
+    let pending: PendingPayment | null = null;
+    let durable = false;
+    try {
+      pending = readPendingPayment(owner, consultationId);
+      durable = !!pending;
+      if (!pending) {
+        if (recoveryOnly || !method || phase !== 'methods' || country !== 'AO' || !methodsLoaded || !methods.some(item => item.id === method && item.enabled)) throw new Error('Escolha indisponível.');
+        pending = { owner, consultationId, provider: method, key: crypto.randomUUID() };
+        savePendingPayment(pending); // Mandatory durable write before the first POST.
+        durable = true;
+      }
+      if (!current()) return;
+      setAttempt(pending); setReceipt(previous => previous?.request_key === pending?.key ? previous : null); setPhase('pending');
+      const result = await api.post('/api/v1/billing/consultation/checkout', { consultation_id: consultationId, payment_method: pending.provider }, { headers: { ...config().headers, 'Idempotency-Key': pending.key } });
+      if (current()) applyReceipt(result.data, pending);
+    } catch (problem) {
+      if (!current()) return;
+      if ([401, 403].includes(statusOf(problem) ?? 0)) setReceipt(null);
+      const absent = checkoutNotCommitted(problem);
+      if (absent && pending) {
+        let cleared = false;
+        try { cleared = clearPendingPayment(pending); } catch { /* Retry exact identity if local persistence is unavailable. */ }
+        if (cleared) {
+          setAttempt(null); setReceipt(null);
+          if (absent.reason === 'existing_payment_attempt') { setPhase('blocked'); await discover(false); }
+          else { setPhase(recoveryOnly ? 'blocked' : 'methods'); setError(absent.message); }
+        } else { setPhase('blocked'); setError(uncertainty); }
+      } else {
+        setPhase(durable ? 'pending' : 'blocked');
+        setError(durable ? uncertainty : 'Não foi possível guardar a referência de recuperação. Nenhum novo pagamento foi enviado. Verifique o estado antes de tentar novamente.');
+      }
+    } finally { if (current()) { busy.current = false; setLoading(false); } }
   };
 
-  const backdrop = (e: React.MouseEvent) => { if (e.target === e.currentTarget) onClose(); };
-  const provider = checkout?.provider;
+  const copy = async (key: string, value?: string) => {
+    if (!value || !current()) return;
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(value);
+      if (!current()) return;
+      setCopied(key); if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => { if (current()) setCopied(null); }, 1500);
+    } catch { if (current()) setError('Não foi possível copiar. Pode selecionar a referência apresentada.'); }
+  };
+  const outcome = receipt ? paymentOutcome(receipt) : null;
+  const redirect = paymentRedirect(receipt?.redirect_url);
+  const instructionsAllowed = !!receipt && outcome === 'pending' && receipt.dispatch_state === 'response_recorded';
+  const reference = receipt?.provider_reference;
 
-  return (
-    <div onClick={backdrop} style={{
-      position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)',
-      backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
-    }}>
-      <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px',
-        width: '100%', maxWidth: '440px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', animation: 'fadeIn 0.2s ease',
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)',
-        }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            {t('pay.title')}
-          </h3>
-          <button onClick={onClose} aria-label={t('common.close')} style={{
-            background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0.25rem',
-          }}>
-            <X size={18} />
-          </button>
+  return <div onClick={event => { if (event.target === event.currentTarget) onClose(); }} className="modal-overlay" style={{ zIndex: 9999 }}>
+    <section role="dialog" aria-modal="true" aria-labelledby="payment-title" className="modal" style={{ width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h2 id="payment-title">{t('pay.title')}</h2><button onClick={onClose} aria-label={t('common.close')} className="btn btn-ghost"><X size={18} /></button>
+      </header>
+      {error && <p role="alert">{error}</p>}
+      {(!owner || !token) && <p role="alert">Inicie sessão na conta desta consulta para recuperar o pagamento.</p>}
+      {loading && <p role="status"><Loader2 size={18} /> A verificar o pagamento…</p>}
+      {phase === 'methods' && <>
+        {country === 'PT' ? <p>Pagamentos em Portugal indisponíveis enquanto a cotação em EUR não estiver aprovada.</p>
+          : country !== 'AO' ? <p>O país desta consulta não está confirmado. Não é possível iniciar o pagamento.</p> : <p>{t('pay.choose_method')}</p>}
+        {methodsError && <p role="alert">{methodsError}</p>}
+        {['AO', 'PT'].includes(country ?? '') && <button className="btn btn-secondary" disabled={loading} onClick={() => setCatalogVersion(value => value + 1)}>Atualizar métodos</button>}
+        {methodsLoaded && !methods.some(method => method.enabled) && <p>Nenhum método de pagamento está disponível neste momento.</p>}
+        <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>{methods.map(method => <button key={method.id} className="btn btn-secondary"
+          disabled={loading || !method.enabled || country !== 'AO' || !isPaymentProvider(method.id)}
+          onClick={() => { if (isPaymentProvider(method.id)) void submit(method.id); }}>
+          {METHOD_ICON[method.id] ?? <CreditCard size={18} />} <span>{method.label}{method.description && <small style={{ display: 'block' }}>{method.description}</small>}{(!method.enabled || country !== 'AO') && <small style={{ display: 'block' }}>Indisponível</small>}</span>
+        </button>)}</div>
+      </>}
+      {phase === 'paid' && <div role="status"><CheckCircle2 size={36} /><h3>Pagamento confirmado</h3><p>O servidor confirmou a aplicação do pagamento à consulta. O estado e o horário da consulta são verificados separadamente.</p></div>}
+      {phase === 'failed' && <><p>O prestador confirmou que este pedido falhou, sem revisão financeira pendente.</p>{!recoveryOnly && <button className="btn btn-secondary" onClick={() => { setPhase('methods'); setReceipt(null); }}>{t('pay.try_other')}</button>}</>}
+      {(phase === 'pending' || phase === 'blocked') && <>
+        {receipt?.amount !== undefined && receipt.currency && <p style={{ fontSize: '1.4rem', fontWeight: 700 }}>{formatPaymentAmount(receipt.amount, receipt.currency)}</p>}
+        {outcome === 'review' || (receipt && !attempt) ? <p role="status">Pagamento em revisão financeira. Ainda não está confirmado como aplicado à consulta. Aguarde a equipa; não efetue outro pagamento.</p>
+          : <p>Pedido por confirmar. Mantenha o mesmo método e a mesma referência até existir um resultado confirmado.</p>}
+        {reference && <ReferenceBox label={t('pay.reference')} value={reference} copied={copied === 'ref'} onCopy={() => void copy('ref', reference)} tCopy={t('pay.copy')} tCopied={t('pay.copied')} />}
+        {instructionsAllowed && <>
+          {receipt?.instructions && <p>{receipt.instructions}</p>}
+          {receipt?.provider === 'iban_transfer' && receipt.transfer_details && <>
+            <TransferRow label={t('pay.bank')} value={String(receipt.transfer_details.bank_name ?? '')} />
+            <TransferRow label={t('pay.beneficiary')} value={String(receipt.transfer_details.beneficiary ?? '')} />
+            <ReferenceBox label="IBAN" value={String(receipt.transfer_details.iban ?? '')} copied={copied === 'iban'} onCopy={() => void copy('iban', String(receipt.transfer_details?.iban ?? ''))} tCopy={t('pay.copy')} tCopied={t('pay.copied')} />
+            <p>{t('pay.transfer_note')}</p>
+          </>}
+          {redirect && ['visa_mastercard', 'paypal'].includes(receipt?.provider ?? '') && <a className="btn btn-primary" href={redirect} target="_blank" rel="noopener noreferrer">Continuar no prestador</a>}
+        </>}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          <button disabled={loading || !owner || !token} className="btn btn-secondary" onClick={() => void checkStatus()}>Verificar estado</button>
+          {attempt && <button disabled={loading} className="btn btn-primary" onClick={() => void submit()}>Recuperar o mesmo pedido</button>}
         </div>
-
-        {/* Body */}
-        <div style={{ padding: '1.5rem' }}>
-          {/* Method selection */}
-          {status === 'methods' && (
-            <>
-              <p style={{ color: 'var(--text-secondary)', marginTop: 0, marginBottom: '1rem', fontSize: '0.9rem' }}>
-                {t('pay.choose_method')}
-              </p>
-              {loading && <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <Loader2 size={18} style={spinStyle} /></p>}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {methods.map(m => (
-                  <button key={m.id} onClick={() => selectMethod(m.id)} disabled={loading}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '0.75rem', textAlign: 'left',
-                      padding: '0.85rem 1rem', borderRadius: 12, border: '1px solid var(--border)',
-                      background: chosen === m.id ? 'rgba(20,184,166,0.08)' : 'var(--bg-card)', cursor: 'pointer',
-                    }}>
-                    <span style={{ color: 'var(--accent-teal)' }}>{METHOD_ICON[m.id] ?? <CreditCard size={18} />}</span>
-                    <span style={{ flex: 1 }}>
-                      <span style={{ display: 'block', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem' }}>{m.label}</span>
-                      {m.description && <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{m.description}</span>}
-                    </span>
-                    <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {status === 'paid' && (
-            <div style={{ padding: '0.5rem 0', textAlign: 'center' }}>
-              <CheckCircle2 size={48} style={{ color: '#22c55e' }} />
-              <h4 style={{ margin: '0.75rem 0 0.25rem', color: 'var(--text-primary)' }}>{t('pay.paid_title')}</h4>
-              <p style={{ color: 'var(--text-secondary)' }}>{t('pay.paid_desc')}</p>
-              <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={onClose}>{t('common.close')}</button>
-            </div>
-          )}
-
-          {status === 'failed' && (
-            <div style={{ padding: '0.5rem 0', textAlign: 'center' }}>
-              <p style={{ color: '#ef4444' }}>{error || t('pay.error_start')}</p>
-              <button className="btn btn-secondary" style={{ marginTop: '0.5rem' }} onClick={() => setStatus('methods')}>
-                {t('pay.try_other')}
-              </button>
-            </div>
-          )}
-
-          {status === 'pending' && checkout && (
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{t('pay.amount')}</p>
-              <p style={{ fontSize: '1.6rem', fontWeight: 700, margin: '0 0 1rem', color: 'var(--text-primary)' }}>
-                {formatAoa(checkout.amount)}
-              </p>
-
-              {/* Multicaixa Express */}
-              {provider === 'multicaixa_express' && (
-                <>
-                  <ReferenceBox label={t('pay.reference')} value={checkout.provider_reference}
-                    copied={copied === 'ref'} onCopy={() => copy('ref', checkout.provider_reference)} tCopy={t('pay.copy')} tCopied={t('pay.copied')} />
-                  <ol style={olStyle}>
-                    <li>{t('pay.step1')}</li><li>{t('pay.step2')}</li><li>{t('pay.step3')}</li>
-                  </ol>
-                  <Waiting text={t('pay.waiting')} />
-                </>
-              )}
-
-              {/* Card */}
-              {provider === 'visa_mastercard' && (
-                <>
-                  {checkout.redirect_url ? (
-                    <a className="btn btn-primary" href={checkout.redirect_url} target="_blank" rel="noreferrer"
-                      style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
-                      <CreditCard size={16} /> {t('pay.card_continue')}
-                    </a>
-                  ) : (
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('pay.card_processing')}</p>
-                  )}
-                  <Waiting text={t('pay.waiting')} />
-                </>
-              )}
-
-              {provider === 'paypal' && (
-                <>
-                  {checkout.redirect_url ? (
-                    <a className="btn btn-primary" href={checkout.redirect_url} target="_blank" rel="noreferrer"
-                      style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
-                      <CreditCard size={16} /> PayPal
-                    </a>
-                  ) : (
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t('pay.card_processing')}</p>
-                  )}
-                  <Waiting text={t('pay.waiting')} />
-                </>
-              )}
-
-              {/* Bank transfer */}
-              {provider === 'iban_transfer' && checkout.transfer_details && (
-                <div style={{ textAlign: 'left' }}>
-                  <TransferRow label={t('pay.bank')} value={String(checkout.transfer_details.bank_name ?? '')} />
-                  <TransferRow label={t('pay.beneficiary')} value={String(checkout.transfer_details.beneficiary ?? '')} />
-                  <ReferenceBox label="IBAN" value={String(checkout.transfer_details.iban ?? '')}
-                    copied={copied === 'iban'} onCopy={() => copy('iban', String(checkout.transfer_details?.iban ?? ''))} tCopy={t('pay.copy')} tCopied={t('pay.copied')} />
-                  <ReferenceBox label={t('pay.reference')} value={checkout.provider_reference}
-                    copied={copied === 'ref'} onCopy={() => copy('ref', checkout.provider_reference)} tCopy={t('pay.copy')} tCopied={t('pay.copied')} />
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: '0.75rem', lineHeight: 1.5 }}>
-                    {t('pay.transfer_note')}
-                  </p>
-                  <button className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%' }} onClick={onClose}>
-                    {t('common.close')}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+        {attempt && <p style={{ fontSize: '0.85rem' }}>Pode fechar esta janela. Ao regressar à mesma conta e consulta neste navegador, a referência guardada permite recuperar este pedido.</p>}
+      </>}
+    </section>
+  </div>;
 }
-
-const olStyle: React.CSSProperties = {
-  textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.9rem',
-  paddingLeft: '1.25rem', lineHeight: 1.6, margin: 0,
-};
 
 function ReferenceBox({ label, value, copied, onCopy, tCopy, tCopied }: {
   label: string; value?: string; copied: boolean; onCopy: () => void; tCopy: string; tCopied: string;
@@ -279,7 +263,7 @@ function ReferenceBox({ label, value, copied, onCopy, tCopy, tCopied }: {
       <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 0.25rem' }}>{label}</p>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
         <code style={{ fontSize: '0.98rem', fontWeight: 600, letterSpacing: '0.5px', color: 'var(--text-primary)', wordBreak: 'break-all' }}>{value}</code>
-        <button className="btn btn-ghost btn-sm" onClick={onCopy} style={{ flexShrink: 0 }}>
+        <button className="btn btn-ghost btn-sm" disabled={!value} onClick={onCopy} style={{ flexShrink: 0 }}>
           <Copy size={14} /> {copied ? tCopied : tCopy}
         </button>
       </div>
@@ -293,13 +277,5 @@ function TransferRow({ label, value }: { label: string; value: string }) {
       <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{label}</span>
       <span style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 600 }}>{value}</span>
     </div>
-  );
-}
-
-function Waiting({ text }: { text: string }) {
-  return (
-    <p style={{ display: 'flex', justifyContent: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '1rem' }}>
-      <Loader2 size={14} style={spinStyle} /> {text}
-    </p>
   );
 }

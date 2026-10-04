@@ -1,11 +1,25 @@
 # Kaya consent model & representative authority (Phase 15)
 
-Evidence date 14 September 2026. Consent is a durable, **server-owned,
-append-only** record of exactly which approved text and language a subject or
-authorized representative saw, why processing is allowed, and what withdrawal
-changes. Enforced by [`backend/app/consent.py`](../backend/app/consent.py); tested
-in [`backend/phase15_tests`](../backend/phase15_tests). Client route guards are
-supplementary only.
+Original domain-model evidence: 14 September 2026. Runtime assessment updated
+4 October 2026. The intended consent contract is a durable, **server-owned,
+append-only** record of the exact approved text and language a subject or
+authorized representative saw, its purpose and the effect of withdrawal.
+[`backend/app/consent.py`](../backend/app/consent.py) implements an in-memory
+domain specification tested in [`backend/phase15_tests`](../backend/phase15_tests).
+It is not the operational ORM ledger or a release approval.
+
+The current operational `PatientConsent` rows contain consent type, time, IP and
+user agent. Booking, document and closeout checks use the presence of relevant
+types. The legacy compliance endpoint deduplicates by patient and type. These
+checks cannot establish acceptance of the current approved version, content
+hash, language or market, and do not enforce withdrawal. Onboarding records its
+wizard version and country in an audit event; that is not adoption of an approved
+document catalog. Durable catalog/ledger adoption and withdrawal UX are remaining
+engineering work. Approved documents, lawful bases and authority rules also need
+named human owners. Clinical release remains HOLD.
+
+The sections below describe the domain contract and its isolated tests, not
+completed runtime enforcement. Client route guards are supplementary only.
 
 ## Document catalog
 

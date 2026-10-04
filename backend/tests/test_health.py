@@ -489,7 +489,7 @@ class TestTriageFlow:
             "/api/v1/triage/start",
             json={
                 "chief_complaint": "Ferida com vermelhidão",
-                "age_group": "pediatric",
+                "age_group": "adult",
                 "category": "skin",
             },
             headers=_token(user),
@@ -501,7 +501,6 @@ class TestTriageFlow:
             "visual_discharge",
             "redness_spreading",
             "visual_red_streaks",
-            "child_appears_unwell",
         }.issubset(keys)
 
     def test_visual_red_flag_cannot_be_downgraded_by_other_answers(

@@ -534,6 +534,11 @@ class ConsultCheckoutRequest(BaseModel):
 
 
 class ConsultCheckoutResponse(BaseModel):
+    consultation_paid: bool = False
+    financial_review_status: Literal["unassessed", "not_required", "required"] = "unassessed"
+    financial_review_reason: Optional[str] = None
+    dispatch_state: Optional[str] = None
+    request_key: Optional[str] = None
     payment_id: str
     status: str                              # pending, paid, failed
     amount: int
@@ -565,12 +570,21 @@ class PaymentMethodsResponse(BaseModel):
 
 
 class PaymentStatusResponse(BaseModel):
+    provider: Optional[str] = None
+    amount: Optional[int] = None
+    currency: Optional[str] = None
+    financial_review_status: Literal["unassessed", "not_required", "required"] = "unassessed"
+    financial_review_reason: Optional[str] = None
+    dispatch_state: Optional[str] = None
+    request_key: Optional[str] = None
     payment_id: str
     status: str          # pending, paid, failed
     consultation_paid: bool
 
 
 class InvoiceOut(BaseModel):
+    financial_review_status: Literal["unassessed", "not_required", "required"] = "unassessed"
+    financial_review_reason: Optional[str] = None
     id: str
     payment_type: str
     amount: int

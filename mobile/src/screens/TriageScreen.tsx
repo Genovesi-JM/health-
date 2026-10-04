@@ -6,7 +6,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -16,6 +15,7 @@ import {
 import TriagePhotoGuide, { type ViewType } from '../components/TriagePhotoGuide';
 import api from '../services/api';
 import { apiErrorMessage } from '../utils/apiError';
+import { SELF_TRIAGE_NOTICE, startSelfTriage } from './selfTriage';
 
 type Step = 'start' | 'questions' | 'result';
 type Answer = string | number | boolean;
@@ -78,8 +78,6 @@ const ACTION_LABELS: Record<string, string> = {
 
 export default function TriageScreen() {
   const [step, setStep] = useState<Step>('start');
-  const [ageGroup, setAgeGroup] = useState<'adult' | 'pediatric'>('adult');
-  const [guardian, setGuardian] = useState(false);
   const [category, setCategory] = useState('general');
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -101,18 +99,14 @@ export default function TriageScreen() {
       setError('Descreva brevemente o principal problema de saúde.');
       return;
     }
-    if (ageGroup === 'pediatric' && !guardian) {
-      setError('Confirme que está a responder como responsável pela criança.');
-      return;
-    }
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/api/v1/triage/start', {
+      const response = await startSelfTriage<{ triage_id: string; session_id: string; questions: TriageQuestion[] }>(api, {
         chief_complaint: complaint.trim(),
-        age_group: ageGroup,
+        age_group: 'adult',
         category,
-        answered_by_guardian: ageGroup === 'pediatric' ? guardian : false,
+        answered_by_guardian: false,
       });
       setSessionId(response.data.triage_id ?? response.data.session_id);
       setQuestions(response.data.questions ?? []);
@@ -231,18 +225,11 @@ export default function TriageScreen() {
 
         {step === 'start' && (
           <StartStep
-            ageGroup={ageGroup}
             category={category}
             complaint={complaint}
-            guardian={guardian}
             loading={loading}
-            onAgeGroup={value => {
-              setAgeGroup(value);
-              if (value === 'adult') setGuardian(false);
-            }}
             onCategory={setCategory}
             onComplaint={setComplaint}
-            onGuardian={setGuardian}
             onStart={() => void startTriage()}
           />
         )}
@@ -300,48 +287,18 @@ export default function TriageScreen() {
 }
 
 type StartStepProps = {
-  ageGroup: 'adult' | 'pediatric';
   category: string;
   complaint: string;
-  guardian: boolean;
   loading: boolean;
-  onAgeGroup: (value: 'adult' | 'pediatric') => void;
   onCategory: (value: string) => void;
   onComplaint: (value: string) => void;
-  onGuardian: (value: boolean) => void;
   onStart: () => void;
 };
 
 function StartStep(props: StartStepProps) {
   return (
     <View>
-      <Text style={styles.sectionTitle}>Para quem é esta triagem?</Text>
-      <View style={styles.segment}>
-        {(['adult', 'pediatric'] as const).map(value => (
-          <TouchableOpacity
-            key={value}
-            style={[styles.segmentButton, props.ageGroup === value && styles.segmentActive]}
-            onPress={() => props.onAgeGroup(value)}
-          >
-            <Text style={[
-              styles.segmentText,
-              props.ageGroup === value && styles.segmentTextActive,
-            ]}>
-              {value === 'adult' ? 'Adulto' : 'Criança'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      {props.ageGroup === 'pediatric' && (
-        <View style={styles.guardianRow}>
-          <Switch
-            value={props.guardian}
-            onValueChange={props.onGuardian}
-            trackColor={{ true: '#5eead4' }}
-          />
-          <Text style={styles.guardianText}>Sou responsável pela criança e respondo por ela.</Text>
-        </View>
-      )}
+      <Text style={styles.disclaimer}>{SELF_TRIAGE_NOTICE}</Text>
 
       <Text style={styles.sectionTitle}>Qual é a área principal?</Text>
       <View style={styles.categoryGrid}>

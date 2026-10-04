@@ -252,11 +252,9 @@ export default function ConsultationsPage() {
                     <td>{c.scheduled_at ? formatAppointmentTime(c.scheduled_at, c.timezone || 'UTC', locale) : '—'}{requestExpiryMessage(c) && <p>{requestExpiryMessage(c)}</p>}</td>
                     <td>
                       {c.payment_status === 'paid' ? (
-                        <span className="badge badge-success">{t('pay.status_paid')}</span>
-                      ) : ['cancelled', 'no_show', 'completed'].includes(c.status) ? (
-                        // Finished/cancelled consultations shouldn't offer a Pagar button —
-                        // they're historical. Show the raw status only.
-                        <span className="badge badge-neutral">{c.payment_status}</span>
+                        <><span className="badge badge-success">{t('pay.status_paid')}</span><button className="btn btn-secondary btn-sm" onClick={() => setPayFor(c.id)}>Verificar pagamento</button></>
+                      ) : ['cancelled', 'no_show', 'completed', 'expired'].includes(c.status) ? (
+                        <><span className="badge badge-neutral">{c.payment_status}</span><button className="btn btn-secondary btn-sm" onClick={() => setPayFor(c.id)}>Verificar pagamento</button></>
                       ) : (
                         <button className="btn btn-primary btn-sm" onClick={() => setPayFor(c.id)}>
                           {t('pay.pay_now')}
@@ -299,9 +297,12 @@ export default function ConsultationsPage() {
       <PaymentModal
         open={payFor !== null}
         consultationId={payFor || ''}
+        country={consultations.find(item => item.id === payFor)?.country ?? null}
+        recoveryOnly={!consultations.some(item => item.id === payFor && item.payment_status !== 'paid' && !['cancelled', 'no_show', 'completed', 'expired'].includes(item.status))}
         onClose={() => setPayFor(null)}
         onPaid={() => {
-          setConsultations(prev => prev.map(c => c.id === payFor ? { ...c, payment_status: 'paid' } : c));
+          setPayFor(null);
+          void history.refresh();
         }}
       />
 

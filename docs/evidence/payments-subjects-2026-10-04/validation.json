@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-04",
+  "scope": "Durable financial recovery and clinical subject/privacy boundaries, synthetic local validation",
+  "backend": {
+    "passed": 1762,
+    "warnings": 36250,
+    "seconds": 183.49,
+    "source_files": 342,
+    "source_matches_index": true,
+    "junit": "backend.xml.gz"
+  },
+  "postgresql": {
+    "passed": 34,
+    "forced_races": 114,
+    "cluster_stopped": true,
+    "report": "postgresql.json"
+  },
+  "web": {
+    "passed": 389,
+    "files": 55,
+    "new_payment_tests": 48,
+    "typescript": "passed",
+    "eslint": "passed",
+    "prototype_checks": 15,
+    "production_build": "passed",
+    "route_graph": "passed",
+    "source_files": 221,
+    "report": "web-report.json"
+  },
+  "native": {
+    "passed": 176,
+    "typescript": "passed",
+    "hermes_exports": 4,
+    "evidence": "../native-subject-boundary-2026-10-04/manifest.json"
+  },
+  "repository": {
+    "passed": 29,
+    "subtests": 43
+  },
+  "policy": {
+    "routes": 284,
+    "release": "HOLD",
+    "all_activation_flags": false
+  },
+  "limits": [
+    "No real provider calls, money movement, production migration or release.",
+    "Current Android APK remains older09df949 informational/policy277 source; source exports only for this newer wave.",
+    "Payment provider integration, commercial quotes, settlement and refunds remain external/adoption work.",
+    "Versioned consent runtime work is not included in this checkpoint.",
+    "Existing Python deprecation, large-shell and native tooling advisory findings remain recorded."
+  ]
+}

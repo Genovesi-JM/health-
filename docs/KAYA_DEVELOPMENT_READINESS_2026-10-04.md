@@ -17,6 +17,7 @@ priority, followed by standalone Kaya apps for Android and iOS.
 | Consultation history | Patient and assigned-clinician cursor pages on web/native, with all/upcoming/past filters and direct access to older completed records | Loaded counts are not total counts; clinician historical closeout is read-only; current authorization is required |
 | Consultation record | Attributed finalized closeout, explicit patient summary, linked follow-up and verified readers | [Retained corrections](KAYA_CLINICAL_AMENDMENTS.md); original note retained with separate, explicitly published amendments |
 | Notifications | Transactional core-workflow notices, owner-scoped cursor inbox and acknowledged read state on web/native | [Notification contract](KAYA_NOTIFICATIONS.md); email/SMS/push are unavailable |
+| Payment recovery | Durable exact checkout identity, uncertain-outcome retention, owner recovery and separation of financial receipts from care eligibility | [Billing contract](KAYA_PAYMENTS.md); synthetic adapters only in validation, no provider activation or approved commercial quote |
 | Web quality | Strict lint, typed error handling, async lifecycle/account isolation, safe map popup rendering | Interaction, build, presentation and TypeScript checks; remote browser/staging validation remains separate |
 | Native packaging | Expo57/RN0.86 standalone branded Android test APK with embedded Hermes; operational navigator exports for both platforms | [Native build record](KAYA_NATIVE_BUILD_2026-10-04.md); packaged entry is informational and test-signed |
 | Dependencies and CI | Hash-locked backend deploy/test graphs, pinned Node, immutable GitHub Action SHAs, backend/web zero-finding package audits, native SBOM | [Dependency record](KAYA_DEPENDENCY_UPDATE_2026-10-04.md); two native tooling advisory IDs remain unresolved |
@@ -44,6 +45,10 @@ These are explicit outstanding items, not hidden behind passing test counts:
   market. Current runtime checks rely on recorded consent types; they do not
   establish acceptance of an approved text hash/version for that market. Family
   profile CRUD does not establish verified guardianship or delegated care.
+  Unsupported dependent/guardian/pediatric triage entry now fails before any
+  clinical record or measurement is created. The draft pilot's invitation,
+  adult eligibility, named-clinic admission limits and staffed coverage still
+  require operational enforcement against the eventually approved scope.
 - Choose and provision approved video, email/SMS/push, private storage/scanning
   and recovery infrastructure. Complete provider adapters, durable external
   delivery, failure handling and real sandbox integration tests. Existing

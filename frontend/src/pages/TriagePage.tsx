@@ -6,7 +6,7 @@ import type { TriageQuestion, TriageResult, TriageHistoryItem } from '../types';
 import {
   Activity, ChevronRight, AlertTriangle, CheckCircle2,
   Clock, ArrowLeft, RotateCcw, Bluetooth, Wifi, Thermometer,
-  Heart, Droplets, Zap, Users, Trash2,
+  Heart, Droplets, Zap, Trash2,
 } from 'lucide-react';
 import {
   DeviceIntegrationError,
@@ -19,7 +19,6 @@ import { apiErrorMessage } from '../utils/apiError';
 
 type Step = 'start' | 'questions' | 'result' | 'history';
 
-type AgeGroup = 'adult' | 'pediatric';
 type TriageCategory =
   | 'general'
   | 'respiratory'
@@ -89,20 +88,19 @@ const QUESTION_LABELS: Record<string, string> = {
   depression_symptoms:      'Tem sentimentos de tristeza persistente ou depressão?',
 };
 
-type InitialDependent = { id: string; is_minor: boolean };
-
 export default function TriagePage() {
   const location = useLocation();
-  return <TriageSession key={location.key} initialDependent={location.state?.dependent as InitialDependent | undefined} />;
+  if (location.state && Object.prototype.hasOwnProperty.call(location.state, 'dependent')) {
+    return <p role="alert">A triagem de menores ou em nome de outra pessoa não está disponível. Não envie esses dados na sua conta.</p>;
+  }
+  return <TriageSession key={location.key} />;
 }
 
-function TriageSession({ initialDependent }: { initialDependent?: InitialDependent }) {
+function TriageSession() {
   const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
-  const [step, setStep] = useState<Step>(initialDependent ? 'start' : 'history');
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>(initialDependent?.is_minor ? 'pediatric' : 'adult');
+  const [step, setStep] = useState<Step>('history');
   const [category, setCategory] = useState<TriageCategory>('general');
-  const [guardian, setGuardian] = useState(!!initialDependent?.is_minor);
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [questions, setQuestions] = useState<TriageQuestion[]>([]);
@@ -114,9 +112,6 @@ function TriageSession({ initialDependent }: { initialDependent?: InitialDepende
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // triage id pending delete
   const [pendingPhotoRequests, setPendingPhotoRequests] = useState<PhotoRequest[]>([]);
 
-  // ── Dependent selector ─────────────────────────────────────
-  const [dependents, setDependents] = useState<{ id: string; name: string; is_minor: boolean }[]>([]);
-  const [selectedDependent, setSelectedDependent] = useState<string>(initialDependent?.id || 'me');
 
   // ── Vitals state ───────────────────────────────────────────
   const [vitals, setVitals] = useState<Partial<VitalReadings>>({});
@@ -214,9 +209,7 @@ function TriageSession({ initialDependent }: { initialDependent?: InitialDepende
   useEffect(() => {
     loadHistory();
     loadPhotoRequests();
-    api.get<{ id: string; full_name: string; is_minor: boolean }[]>('/api/v1/family/me')
-      .then(r => setDependents(r.data.map(m => ({ id: m.id, name: m.full_name, is_minor: m.is_minor }))))
-      .catch(() => {});
+
   }, [loadHistory, loadPhotoRequests]);
 
   const deleteTriage = async (id: string) => {
@@ -238,10 +231,9 @@ function TriageSession({ initialDependent }: { initialDependent?: InitialDepende
         .some(key => vitals[key as keyof VitalReadings] !== undefined);
       const r = await api.post('/api/v1/triage/start', {
         chief_complaint: complaint,
-        age_group: ageGroup,
+        age_group: 'adult',
         category,
-        answered_by_guardian: ageGroup === 'pediatric' ? guardian : false,
-        dependent_id: selectedDependent !== 'me' ? selectedDependent : undefined,
+        answered_by_guardian: false,
         vital_signs: hasVitals ? {
           ...vitals,
           source: vitals.source || 'manual',
@@ -447,59 +439,7 @@ function TriageSession({ initialDependent }: { initialDependent?: InitialDepende
           </div>
           <form onSubmit={startTriage} style={{ padding: '1.25rem' }}>
 
-            {/* Dependent selector */}
-            {dependents.length > 0 && (
-              <div className="form-group">
-                <label className="form-label">
-                  <Users size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />
-                  {t('triage.for_whom')}
-                </label>
-                <select className="form-select" value={selectedDependent}
-                  onChange={e => {
-                    const id = e.target.value;
-                    setSelectedDependent(id);
-                    if (id !== 'me') {
-                      const dep = dependents.find(d => d.id === id);
-                      if (dep?.is_minor) { setAgeGroup('pediatric'); setGuardian(true); }
-                    } else {
-                      setAgeGroup('adult'); setGuardian(false);
-                    }
-                  }}>
-                  <option value="me">{t('triage.for_me')}</option>
-                  {dependents.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}{d.is_minor ? ' (Pediatria)' : ''}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="form-group">
-              <label className="form-label">{t('triage.age_group')}</label>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${ageGroup === 'adult' ? 'btn-primary' : 'btn-outline'}`}
-                  onClick={() => { setAgeGroup('adult'); setGuardian(false); }}
-                >
-                  {t('triage.age_adult')}
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${ageGroup === 'pediatric' ? 'btn-primary' : 'btn-outline'}`}
-                  onClick={() => setAgeGroup('pediatric')}
-                >
-                  {t('triage.age_child')}
-                </button>
-              </div>
-              {ageGroup === 'pediatric' && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    <input type="checkbox" checked={guardian} onChange={e => setGuardian(e.target.checked)} />
-                    {t('triage.answered_by_parent')}
-                  </label>
-                </div>
-              )}
-            </div>
+            <p role="note">Esta triagem destina-se apenas ao próprio titular adulto da conta. A triagem de menores ou em nome de outra pessoa não está disponível.</p>
 
             <div className="form-group">
               <label className="form-label">{t('triage.category')}</label>
@@ -687,7 +627,7 @@ function TriageSession({ initialDependent }: { initialDependent?: InitialDepende
           <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.answer_questions')}</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-              {t('triage.summary')}: <strong style={{ color: 'var(--text-primary)' }}>{(ageGroup === 'adult' ? t('triage.age_adult') : t('triage.age_child'))} • {t(`triage.cat_${category}`)}</strong> — {t('triage.chief_complaint')}: <strong style={{ color: 'var(--text-primary)' }}>{complaint}</strong>
+              {t('triage.summary')}: <strong style={{ color: 'var(--text-primary)' }}>{t('triage.age_adult')} • {t(`triage.cat_${category}`)}</strong> — {t('triage.chief_complaint')}: <strong style={{ color: 'var(--text-primary)' }}>{complaint}</strong>
             </p>
           </div>
           <div style={{ padding: '1.25rem' }}>

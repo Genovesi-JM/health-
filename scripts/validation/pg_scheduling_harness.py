@@ -106,7 +106,7 @@ def together(calls, table='doctors', sql_prefix=None):
         if not statement.lower().startswith(sql_prefix or f'update {table} set'): return
         identity=id(conn)
         with mutex:
-            if identity in seen: return
+            if identity in seen or len(seen) >= len(calls): return
             seen.add(identity); matched.append(identity)
         gate.wait()
     event.listen(engine,'before_cursor_execute',before)
@@ -815,6 +815,181 @@ def request_expiry_linked_payment_review():
     return {'all_linked_financial_history_requires_review_before_release': True}
 
 
+class SyntheticBillingAdapter:
+    def __init__(self):
+        self.calls = []; self.fail = False; self.guard = Lock()
+    async def create_payment(self, intent):
+        from app.services.payments import PaymentResult, PaymentStatus
+        with Session(engine) as db:
+            row = db.get(HealthPayment, intent.id)
+            assert row and row.dispatch_state == 'dispatching' and row.checkout_request_key
+        with self.guard:
+            self.calls.append(intent.id)
+        if self.fail:
+            raise TimeoutError('Synthetic lost provider acknowledgment')
+        return PaymentResult(success=True, payment_id=intent.id, status=PaymentStatus.PENDING,
+                             provider_reference='synthetic-' + intent.id)
+    async def check_status(self, reference):
+        from app.services.payments import PaymentStatus
+        return PaymentStatus.PENDING
+    def verify_webhook(self, raw, signature):
+        return signature == 'synthetic-valid'
+
+
+billing_adapter = SyntheticBillingAdapter()
+from app.routers import health_billing as billing
+from app.services.payments import PaymentProvider
+billing._ADAPTERS = {provider: billing_adapter for provider in PaymentProvider}
+billing._provider_configured = lambda *args: True
+application.include_router(billing.router)
+
+
+def checkout(patient, identifier, key, method='multicaixa_express'):
+    return client.post('/api/v1/billing/consultation/checkout',
+        headers=patient['headers'] | {'Idempotency-Key': key},
+        json={'consultation_id': identifier, 'payment_method': method})
+
+
+def receipt(patient, identifier, key):
+    return client.get(f'/api/v1/billing/consultation/{identifier}/payment-status',
+                      headers=patient['headers'], params={'request_key': key})
+
+
+def paid_callback(payment):
+    return client.post('/api/v1/billing/webhook/multicaixa_express',
+        headers={'X-Signature': 'synthetic-valid'}, json={'payment_id': payment['provider_reference'], 'status': 'completed'})
+
+
+def checkout_same_key():
+    for _ in range(5):
+        p, slots, identifier = move_setup(); key = str(uuid4())
+        responses = together([lambda: checkout(p['p1'], identifier, key), lambda: checkout(p['p1'], identifier, key)])
+        statuses(responses, (200, 200))
+        payment_id = responses[0].json()['payment_id']
+        assert responses[1].json()['payment_id'] == payment_id
+        assert billing_adapter.calls.count(payment_id) == 1
+        with Session(engine) as db:
+            assert db.query(HealthPayment).filter_by(consultation_id=identifier).count() == 1
+            assert db.query(HealthAuditLog).filter_by(resource_id=payment_id, action='health_payment_checkout_requested').count() == 1
+    return {'forced_races': 5, 'one_durable_request_and_provider_dispatch_per_race': True}
+
+
+def checkout_different_keys():
+    for _ in range(5):
+        p, slots, identifier = move_setup()
+        responses = together([lambda: checkout(p['p1'], identifier, str(uuid4())),
+                              lambda: checkout(p['p1'], identifier, str(uuid4()), 'visa_mastercard')])
+        statuses(responses)
+        denied = next(response for response in responses if response.status_code == 409)
+        assert denied.json()['detail']['request_key_committed'] is False
+        with Session(engine) as db:
+            rows = db.query(HealthPayment).filter_by(consultation_id=identifier).all()
+            assert len(rows) == 1 and billing_adapter.calls.count(rows[0].id) == 1
+    return {'forced_races': 5, 'switching_provider_cannot_create_second_unresolved_attempt': True}
+
+
+def checkout_vs_lifecycle():
+    for action in ('accept', 'cancel', 'expire'):
+        for _ in range(3):
+            p, slots, identifier = move_setup(); key = str(uuid4())
+            if action == 'expire': make_request_due(identifier)
+            def mutation():
+                if action == 'accept': return accept(p['d1'], identifier)
+                if action == 'cancel': return cancel(p['p1'], identifier)
+                return expire_request(identifier)
+            responses = together([lambda: checkout(p['p1'], identifier, key), mutation])
+            payment_response, care_response = responses
+            with Session(engine) as db:
+                item = db.get(Consultation, identifier)
+                payment = db.query(HealthPayment).filter_by(consultation_id=identifier).first()
+                if action == 'expire':
+                    assert payment_response.status_code == 409 and care_response is True
+                    assert item.status == 'expired' and payment is None
+                elif action == 'accept':
+                    assert payment_response.status_code == care_response.status_code == 200
+                    assert item.status == 'scheduled' and payment is not None
+                else:
+                    assert care_response.status_code == 200 and payment_response.status_code in (200, 409)
+                    assert item.status == 'cancelled'
+                    assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id is None
+            if payment_response.status_code == 200 and action == 'cancel':
+                assert paid_callback(payment_response.json()).status_code == 200
+                current = receipt(p['p1'], identifier, key).json()
+                assert current['status'] == 'paid' and current['financial_review_status'] == 'required'
+                assert not current['consultation_paid']
+    return {'forced_races': 9, 'checkout_serializes_with_accept_cancel_and_expiry': True,
+            'late_money_does_not_revive_cancelled_care': True}
+
+
+def billing_callback_vs_status():
+    for _ in range(5):
+        p, slots, identifier = move_setup(); key = str(uuid4())
+        response = checkout(p['p1'], identifier, key); assert response.status_code == 200
+        payment = response.json()
+        results = together([lambda: paid_callback(payment), lambda: receipt(p['p1'], identifier, key)])
+        statuses(results, (200, 200))
+        assert receipt(p['p1'], identifier, key).json()['consultation_paid']
+        with Session(engine) as db:
+            row = db.get(HealthPayment, payment['payment_id'])
+            assert row.status == 'paid'
+            assert db.query(HealthAuditLog).filter_by(resource_id=row.id, action='health_payment_confirmed').count() == 1
+    return {'forced_races': 5, 'one_paid_receipt_and_audit_survive_delayed_pending_poll': True}
+
+
+def billing_unknown_and_late_payment():
+    p, slots, identifier = move_setup(); key = str(uuid4())
+    billing_adapter.fail = True
+    try:
+        result = checkout(p['p1'], identifier, key); assert result.status_code == 200, result.text
+    finally:
+        billing_adapter.fail = False
+    payment = result.json()
+    assert payment['dispatch_state'] == 'unknown' and payment['financial_review_status'] == 'required'
+    assert checkout(p['p1'], identifier, key).json()['payment_id'] == payment['payment_id']
+    assert billing_adapter.calls.count(payment['payment_id']) == 1
+    assert checkout(p['p1'], identifier, str(uuid4())).status_code == 409
+    make_request_due(identifier)
+    assert not expire_request(identifier)
+    # A late receipt is retained while the overdue request remains review-required.
+    from app.services.consultation_payments import apply_observation
+    with Session(engine) as db:
+        row = db.get(HealthPayment, payment['payment_id'])
+        apply_observation(db, row, 'paid', source='synthetic_provider_reconciliation')
+        db.commit()
+        assert row.status == 'paid' and db.get(Consultation, identifier).payment_status != 'paid'
+    current = receipt(p['p1'], identifier, key).json()
+    assert current['financial_review_status'] == 'required' and not current['consultation_paid']
+    return {'lost_provider_outcome_never_redispatched': True, 'committed_financial_history_inhibits_expiry': True,
+            'late_paid_receipt_requires_review_without_care_confirmation': True}
+
+
+def billing_migration():
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    spec = importlib.util.spec_from_file_location('pg_billing_migration', pathlib.Path('alembic/versions/health_payment_attempts_v1.py'))
+    migration = importlib.util.module_from_spec(spec); spec.loader.exec_module(migration)
+    with engine.begin() as conn, Operations.context(MigrationContext.configure(conn)):
+        migration.upgrade()
+    schema = 'synthetic_billing_' + uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}')
+        conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        conn.exec_driver_sql('CREATE TABLE health_payments (id VARCHAR(36) PRIMARY KEY, patient_id VARCHAR(36), status VARCHAR(20))')
+        conn.exec_driver_sql("INSERT INTO health_payments VALUES ('legacy','owner','paid')")
+        with Operations.context(MigrationContext.configure(conn)):
+            migration.upgrade(); migration.upgrade()
+            assert conn.execute(text("SELECT dispatch_state FROM health_payments WHERE id='legacy'")).scalar() is None
+            conn.execute(text("UPDATE health_payments SET checkout_request_key=:key WHERE id='legacy'"), {'key': str(uuid4())})
+            try:
+                migration.downgrade(); raise AssertionError('Retained payment identity cannot be removed')
+            except RuntimeError as error:
+                assert 'Retained' in str(error)
+        conn.exec_driver_sql('SET LOCAL search_path TO public')
+        conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'runtime_adoption_and_legacy_unassessed_state': True, 'retained_attempt_downgrade_refused': True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
@@ -832,7 +1007,10 @@ for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_differ
                 ('request_expiry_vs_actions', request_expiry_vs_actions),
                 ('request_expiry_rollback_and_stale_release', request_expiry_rollback_and_stale_release),
                 ('request_expiry_migration', request_expiry_migration),
-                ('request_expiry_linked_payment_review', request_expiry_linked_payment_review)]:
+                ('request_expiry_linked_payment_review', request_expiry_linked_payment_review),
+                ('checkout_same_key', checkout_same_key), ('checkout_different_keys', checkout_different_keys),
+                ('checkout_vs_lifecycle', checkout_vs_lifecycle), ('billing_callback_vs_status', billing_callback_vs_status),
+                ('billing_unknown_and_late_payment', billing_unknown_and_late_payment), ('billing_migration', billing_migration)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}
