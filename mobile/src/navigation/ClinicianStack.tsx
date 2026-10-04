@@ -22,7 +22,7 @@ export default function ClinicianStack({ role }: { role: 'doctor' | 'nurse' }) {
       initialRouteName={role === 'doctor' ? 'DoctorDashboard' : 'NurseDashboard'}
       screenOptions={{
         headerTintColor: TEAL,
-        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: '#f8fafc' },
       }}

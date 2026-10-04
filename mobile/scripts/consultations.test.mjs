@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   loadPatientConsultation, canCancelConsultation, consultationNextStep,
   videoAvailabilityMessage, consultationDate, consultationError, canRetainConsultationAfterError, FOLLOW_UP_STATUS,
+  patientCloseoutResponse, patientSummaryPublication,
 } from '../src/screens/consultations.ts';
 
 const published = {
@@ -134,4 +135,86 @@ test('errors accept readable server details without rendering validation objects
 test('access changes and integrity conflicts clear a previously visible summary while offline errors mark it stale', () => {
   for (const status of [401, 403, 404, 409]) assert.equal(canRetainConsultationAfterError({ response: { status } }), false);
   for (const error of [null, new Error('Offline'), { response: { status: 503 } }]) assert.equal(canRetainConsultationAfterError(error), true);
+});
+
+const updatedSummary = {
+  ...published,
+  closeout: {
+    ...published.closeout,
+    patient_summary: 'Resumo corrigido e publicado.',
+    published_revision: 3,
+    published_history: [
+      { revision: 0, patient_summary: published.closeout.patient_summary, published_at: published.closeout.finalized_at, author_name: 'Médico inicial' },
+      { revision: 3, patient_summary: 'Resumo corrigido e publicado.', published_at: '2026-10-05T15:30:00Z', author_name: 'Médica da correção' },
+    ],
+  },
+};
+
+test('latest patient summary and attribution come from the explicitly published revision', async () => {
+  const detail = await loadPatientConsultation(makeApi({ result: updatedSummary }), 'consultation-1');
+  assert.equal(detail.result.closeout.patient_summary, 'Resumo corrigido e publicado.');
+  assert.deepEqual(patientSummaryPublication(detail.result.closeout), {
+    author_name: 'Médica da correção', published_at: '2026-10-05T15:30:00Z',
+  });
+  assert.equal(detail.result.closeout.finalized_by_name, 'Médico Teste');
+  assert.deepEqual(detail.result.closeout.published_history.map(entry => entry.revision), [0, 3]);
+});
+
+test('patient closeout allowlist excludes accidentally returned clinical fields at every level', async () => {
+  const privateFields = {
+    current_digest: 'PRIVATE_DIGEST', current_revision: 4, current_is_published: false,
+    original: { subjective: 'PRIVATE_ORIGINAL' },
+    amendments: [{ patient_summary: 'PRIVATE_UNPUBLISHED', reason: 'PRIVATE_REASON' }],
+    subjective: 'PRIVATE_SOAP', objective: 'PRIVATE_SOAP', assessment: 'PRIVATE_SOAP', plan: 'PRIVATE_SOAP',
+    reason: 'PRIVATE_REASON',
+  };
+  const response = {
+    ...updatedSummary, ...privateFields,
+    closeout: {
+      ...updatedSummary.closeout, ...privateFields,
+      follow_up: { ...updatedSummary.closeout.follow_up, ...privateFields },
+      published_history: updatedSummary.closeout.published_history.map(entry => ({ ...entry, ...privateFields })),
+    },
+  };
+  const detail = await loadPatientConsultation(makeApi({ result: response }), 'consultation-1');
+  assert.deepEqual(detail.result, updatedSummary);
+  assert.doesNotMatch(JSON.stringify(detail.result), /PRIVATE_|current_digest|current_revision|current_is_published|amendments|subjective|objective|assessment|reason/);
+  assert.equal(response.closeout.current_revision, 4, 'Do not mutate the received server object');
+});
+
+test('published history orders revisions without requiring private intervening amendments', () => {
+  const result = patientCloseoutResponse({
+    ...updatedSummary,
+    closeout: { ...updatedSummary.closeout, published_history: [...updatedSummary.closeout.published_history].reverse() },
+  }, 'consultation-1');
+  assert.deepEqual(result.closeout.published_history.map(entry => entry.revision), [0, 3]);
+});
+
+test('legacy published summaries keep original attribution without fabricating a revision', () => {
+  const result = patientCloseoutResponse(published, 'consultation-1');
+  assert.deepEqual(result, published);
+  assert.equal(result.closeout.published_history, undefined);
+  assert.deepEqual(patientSummaryPublication(result.closeout), {
+    author_name: 'Médico Teste', published_at: published.closeout.finalized_at,
+  });
+});
+
+test('inconsistent publication evidence clears cached summaries instead of exposing an unverified version', () => {
+  const base = updatedSummary.closeout;
+  const variants = [
+    { ...base, published_revision: 2 },
+    { ...base, published_revision: undefined },
+    { ...base, published_history: [] },
+    { ...base, published_history: [base.published_history[1]] },
+    { ...base, published_history: [...base.published_history, base.published_history[1]] },
+    { ...base, patient_summary: 'An unpublished correction must not replace the patient summary.' },
+    { ...base, published_history: [base.published_history[0], { ...base.published_history[1], published_at: '2026-10-05T15:30:00' }] },
+    { ...base, published_history: [...base.published_history, { ...base.published_history[1], revision: 4, patient_summary: 'Not published' }] },
+  ];
+  for (const closeout of variants) {
+    assert.throws(() => patientCloseoutResponse({ ...updatedSummary, closeout }, 'consultation-1'), error => {
+      assert.equal(canRetainConsultationAfterError(error), false);
+      return /resumo publicado/.test(error.message);
+    });
+  }
 });

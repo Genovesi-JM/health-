@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-04",
+  "workspace": "/Users/genovesimaria/Documents/kaya-web/mobile",
+  "node": "24.21.0",
+  "npm": "11.18.0",
+  "migration": "Expo52 ->53 ->54 ->55 ->56 ->57.0.26, normal dependency resolution; no force/legacy-peer-deps",
+  "final_stack": {
+    "expo": "57.0.26",
+    "react_native": "0.86.3",
+    "react": "19.2.3",
+    "typescript": "6.0.3",
+    "navigation_native": "7.5.0",
+    "navigation_native_stack": "7.20.0",
+    "navigation_bottom_tabs": "7.20.0",
+    "background_task": "57.0.21",
+    "axios": "1.20.0"
+  },
+  "source_manifest": "migration-source-manifest.json",
+  "patient_history_manifest": "published-history-source-manifest.json",
+  "assets_and_native_source_match": "shared-native-source-verification.json",
+  "final_checks": {
+    "clean_npm_ci": "passed isolated and shared",
+    "shared_tests": "101 passed, including new published-history and xcode scoped override tests",
+    "shared_typecheck": "passed",
+    "expo_dependency_check": "passed",
+    "expo_doctor_CNG_shared": "21/21 passed",
+    "expo_doctor_generated_native": "20/21; CocoaPods tool check blocked by unaccepted Xcode license",
+    "hermes_exports": "informational iOS583 modules andAndroid581; preserved LegacyApp iOS1034 andAndroid987. Legacy exports preceded published-history-only source changes, which are independently typechecked/tested. No activation occurred.",
+    "prebuild": "iOS+Android clean prebuild passed; scoped uuid patch reverified iOS clean generation",
+    "android_debug": "assembleDebug passed,373 tasks",
+    "android_standalone_local_test": "assembleRelease passed,624 tasks; informational bundle embedded; uses generated test/debug keystore, not production signing",
+    "git_diff_check": "passed"
+  },
+  "hold_verification": {
+    "app_entry_unchanged": true,
+    "clinical_activation": false,
+    "expo_go_used": false,
+    "providers_or_production_credentials_used": false,
+    "ios_protected_usage_keys_removed": true,
+    "ios_health_entitlements": {},
+    "android_packaged_denied_permissions_absent": true
+  },
+  "native_environment": {
+    "android_api_target": 36,
+    "android_min": 26,
+    "java": "Homebrew17.0.19",
+    "gradle": "9.3.1",
+    "ndk": "27.1.12297006 installed in isolated/tmpSDK",
+    "build_tools": "36.0.0 existing +35.0.0 isolated for Expo subprojects",
+    "licenses": "Existing accepted Android SDK licenses copied; no new license accepted. Xcode license not accepted.",
+    "ios_deployment_target": "16.4",
+    "android_original_sdk_mutations": "No packages installed into originalSDK; isolatedSDK uses read-only referenced existingplatforms/tooling.",
+    "ios_native_compile": "blocked; xcodebuild -checkFirstLaunchStatus69; CocoaPods reports Xcode license not accepted",
+    "health_bridges": "PinnedHealthKit8.3.0 unchanged, nativeiOS unverified; HealthConnect3.5.3 compilesAndroid, actualdevicehealthinterop unverified"
+  },
+  "artifacts": {
+    "debug": "/Users/genovesimaria/Documents/kaya-web/artifacts/native/kaya-sdk57-debug-arm64.apk",
+    "standalone_test": "/Users/genovesimaria/Documents/kaya-web/artifacts/native/kaya-sdk57-informational-test-arm64.apk",
+    "standalone_proof": "android-standalone-verification.json",
+    "debug_proof": "android-build-verification.json",
+    "binaries_ignored_by_git": true,
+    "runtime_smoke": "not yet performed; later disposable-emulator attempt planned after PDF picker milestone"
+  },
+  "security": {
+    "audit_summary": "audit-summary.json",
+    "all_audit": "npm-audit-all.json",
+    "production_audit": "npm-audit-production.json",
+    "remaining_high_affected_nodes": 16,
+    "underlying_unpatched_advisories": 2,
+    "risk_accepted": false,
+    "destructive_audit_downgrades_applied": false,
+    "all_sbom": "sbom-all.cdx.json",
+    "production_sbom": "sbom-production.cdx.json",
+    "sbom_method": "sbom-generation.json",
+    "sbom_closure_proof": "production-dependency-closure-verification.json",
+    "sbom_scope": "npm package graphs, not APK content inventories"
+  },
+  "official_sources": [
+    "https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/",
+    "https://expo.dev/changelog/sdk-57",
+    "https://expo.dev/changelog/sdk-55",
+    "https://expo.dev/changelog/sdk-56",
+    "https://docs.expo.dev/versions/latest/sdk/background-task/",
+    "https://reactnavigation.org/docs/upgrading-from-6.x/",
+    "https://github.com/software-mansion/react-native-screens",
+    "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+    "https://github.com/advisories/GHSA-86w9-cpqp-85rv"
+  ],
+  "repository_actions": "13SDKfiles+3published-historyfiles copied/edited in shared tree; no agent staging or commits. Root owns docs/assets/policy and checkpoints."
+}

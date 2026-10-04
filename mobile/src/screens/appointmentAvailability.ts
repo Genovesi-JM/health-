@@ -162,11 +162,15 @@ export function appointmentDate(value: string | null | undefined, timezone?: str
   if (Number.isNaN(date.getTime())) return 'Por definir';
   try {
     const zone = timezone || 'UTC';
-    return `${date.toLocaleString('pt-PT', { timeZone: zone, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} (${zone})`;
+    const offsetName = new Intl.DateTimeFormat('en', { timeZone: zone, timeZoneName: 'longOffset' })
+      .formatToParts(date).find(part => part.type === 'timeZoneName')?.value;
+    if (!offsetName) throw new Error('Timezone offset unavailable');
+    const offset = offsetName === 'GMT' ? 'UTC+00:00' : offsetName.replace('GMT', 'UTC');
+    return `${date.toLocaleString('pt-PT', { timeZone: zone, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} (${zone}; ${offset})`;
   } catch {
     // An older native runtime may lack a timezone. Never silently substitute
     // the device timezone for a clinical appointment's published time.
-    return `${date.toISOString().slice(0, 16).replace('T', ' ')} (UTC)`;
+    return `${date.toISOString().slice(0, 16).replace('T', ' ')} (UTC; UTC+00:00)`;
   }
 }
 

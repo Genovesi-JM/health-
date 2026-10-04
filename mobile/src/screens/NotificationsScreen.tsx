@@ -11,7 +11,7 @@ import api from '../services/api';
 import {
   applyNotificationRead, canRetainNotificationsAfterError, loadNotificationPage, loadUnreadNotificationCount,
   markAllNotificationsRead, markNotificationRead, mergeNotificationPages, notificationChannelsMessage, notificationConsultationTarget,
-  notificationDate, notificationError,
+  notificationDate, notificationEmptyMessage, notificationError,
   type KayaNotification, type NotificationCapabilities,
 } from './notifications';
 
@@ -207,7 +207,7 @@ export default function NotificationsScreen() {
         {loading && !view.loaded && <ActivityIndicator color={TEAL} />}
       </View>}
       ListEmptyComponent={!loading && !error && view.loaded
-        ? <Text style={styles.empty}>{unreadOnly ? 'Não tem notificações por ler.' : 'Ainda não tem notificações.'}</Text>
+        ? <Text style={styles.empty}>{notificationEmptyMessage(unreadOnly, visibleUnreadCount, view.cursor, countStale)}</Text>
         : null}
       ListFooterComponent={view.cursor ? <TouchableOpacity accessibilityRole="button" disabled={disabled}
         style={styles.more} onPress={() => void load(view.cursor)}>

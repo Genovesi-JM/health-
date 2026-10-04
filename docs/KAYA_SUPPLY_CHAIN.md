@@ -3,8 +3,7 @@
 Dependencies and build inputs are pinned and provenance-checked, known-critical
 vulnerabilities are not shipped without a named risk acceptance, and CI consumes
 only pinned actions. `backend/app/supply_chain.py` (domain-pure) holds the rules;
-static checks assert the real lockfiles are pinned and inventory the CI-action
-debt.
+static checks assert the real lockfiles and every external CI action are pinned.
 
 ## Invariants enforced (policy)
 
@@ -22,30 +21,34 @@ debt.
 
 ## Confirmed in source (static checks)
 
-- **Backend lock hash-pinned.** `backend/requirements.phase0.lock` carries
-  per-package hashes.
+- **Backend lock hash-pinned.** `backend/requirements.phase0.lock` and
+  `backend/requirements.deploy.lock` carry per-package hashes. Every runtime
+  version is also present in the tested lock.
 - **Client lockfiles present.** `frontend/package-lock.json` and
   `mobile/package-lock.json` exist (installed with `npm ci`).
 
 ## Owner-bound debt
 
-- **SHA-pin CI actions.** `.github/workflows/ci.yml` currently tag-pins its
-  actions (`actions/checkout@v4`, `actions/setup-python@v5`,
-  `actions/upload-artifact@v4`, `gitleaks/gitleaks-action@v2`). Tags are movable;
-  a named security/CI owner should **SHA-pin** these to immutable commits. Tracked
-  here, not changed in this phase.
-- **Advisory triage (from Phase 0).** The Phase 0 audit reported open advisories
-  (frontend: 1 critical / 8 high / 6 moderate; mobile: 1 critical / 16 high / 25
-  moderate; backend locked audit: 35 advisory entries across 4 packages). Each
-  high/critical must be patched or carry a **named** risk acceptance before
-  release — `vuln_blocks_release` encodes that gate; the triage itself is owner
-  work.
+- **CI action provenance review.** The October 2026 update SHA-pins every action
+  in the safety, technical and frontend packaging workflows. Hashes were resolved
+  from the publishers' existing major-version tags using `git ls-remote`, using
+  the peeled commit for annotated tags. An offline regression rejects movable
+  references in any workflow. Named release-owner provenance review remains open.
+- **Advisory triage (4 October 2026).** Backend validation/runtime package
+  audits and both web dependency audits have no known findings. SDK57 mobile
+  retains16 high affected nodes tracing to two unpatched tooling advisories
+  (braces and node-forge). No residual risk was accepted. Exact counts, graph
+  scope and raw evidence are recorded in the
+  [backend/web dependency update](KAYA_DEPENDENCY_UPDATE_2026-10-04.md) and
+  [native build record](KAYA_NATIVE_BUILD_2026-10-04.md).
 
 ## Human intervention / external gates (owner-bound)
 
-- **SBOM.** Generate and store a Software Bill of Materials as release evidence.
+- **SBOM review.** Backend runtime, web production and full/production mobile
+  CycloneDX inventories are stored with dated hash manifests. Named review and
+  provenance for an exact release artifact remain outstanding.
 - **Dependency-scan triage signed** by a named security owner (patch or accept
   every high/critical).
-- **CI action SHA-pinning** and provenance attestation.
-- No dependencies were upgraded or removed here; Phase 0 advisory counts stand as
-  the baseline. Clinical release HOLD.
+- **CI provenance attestation** for the exact release artifact.
+- The earlier Phase0 counts remain historical evidence, not current scan
+  results. Clinical release remains HOLD.

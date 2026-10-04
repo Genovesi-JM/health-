@@ -62,3 +62,5 @@ htmlcov/
 # Runtime email log (quarantined Phase 4 — keep local, do not track)
 backend/email_log.txt
 *.sqlite
+# Local unsigned/test-signed native build artifacts (never release inputs).
+/artifacts/native/

@@ -214,17 +214,31 @@ test('validation or permission errors on an uncertain retry retain its original 
 });
 
 test('appointment timestamps use the published timezone and respect Portugal seasonal offsets', () => {
-  assert.match(appointmentDate('2026-01-15T09:00:00Z', 'Africa/Luanda'), /10:00 \(Africa\/Luanda\)/);
-  assert.match(appointmentDate('2026-01-15T09:00:00Z', 'Europe/Lisbon'), /09:00 \(Europe\/Lisbon\)/);
-  assert.match(appointmentDate('2026-07-15T09:00:00Z', 'Europe/Lisbon'), /10:00 \(Europe\/Lisbon\)/);
-  assert.match(appointmentDate('2026-01-15T09:00:00Z', 'Atlantic/Azores'), /08:00 \(Atlantic\/Azores\)/);
-  assert.match(appointmentDate('2026-07-15T09:00:00Z', 'Atlantic/Azores'), /09:00 \(Atlantic\/Azores\)/);
-  assert.match(appointmentRange(slot), /10:00 \(Africa\/Luanda\).*10:30 \(Africa\/Luanda\)/);
+  assert.match(appointmentDate('2026-01-15T09:00:00Z', 'Africa/Luanda'), /10:00 \(Africa\/Luanda; UTC\+01:00\)/);
+  assert.match(appointmentDate('2026-01-15T09:00:00Z', 'Europe/Lisbon'), /09:00 \(Europe\/Lisbon; UTC\+00:00\)/);
+  assert.match(appointmentDate('2026-07-15T09:00:00Z', 'Europe/Lisbon'), /10:00 \(Europe\/Lisbon; UTC\+01:00\)/);
+  assert.match(appointmentDate('2026-01-15T09:00:00Z', 'Atlantic/Azores'), /08:00 \(Atlantic\/Azores; UTC-01:00\)/);
+  assert.match(appointmentDate('2026-07-15T09:00:00Z', 'Atlantic/Azores'), /09:00 \(Atlantic\/Azores; UTC\+00:00\)/);
+  assert.match(appointmentRange(slot), /10:00 \(Africa\/Luanda; UTC\+01:00\).*10:30 \(Africa\/Luanda; UTC\+01:00\)/);
+});
+
+test('Portugal repeated-hour slots and consultation timestamps identify distinct instants', () => {
+  for (const timezone of ['Europe/Lisbon', 'Atlantic/Madeira']) {
+    const first = { starts_at: '2026-10-25T00:00:00Z', ends_at: '2026-10-25T00:15:00Z', timezone };
+    const second = { starts_at: '2026-10-25T01:00:00Z', ends_at: '2026-10-25T01:15:00Z', timezone };
+    assert.notEqual(appointmentRange(first), appointmentRange(second));
+    assert.match(appointmentDate(first.starts_at, timezone), /01:00 .*UTC\+01:00/);
+    assert.match(appointmentDate(second.starts_at, timezone), /01:00 .*UTC\+00:00/);
+    assert.match(appointmentRange(first), /01:00 .*UTC\+01:00.*01:15 .*UTC\+01:00/);
+    assert.match(appointmentRange(second), /01:00 .*UTC\+00:00.*01:15 .*UTC\+00:00/);
+    assert.ok(appointmentRange(first).includes(timezone));
+    assert.ok(appointmentRange(second).includes(timezone));
+  }
 });
 
 test('missing or unsupported timezone falls back to explicitly labelled UTC, never device time', () => {
-  assert.match(appointmentDate('2026-10-05T10:00:00+01:00'), /09:00 \(UTC\)/);
-  assert.equal(appointmentDate('2026-10-05T10:00:00+01:00', 'Invalid/Zone'), '2026-10-05 09:00 (UTC)');
+  assert.match(appointmentDate('2026-10-05T10:00:00+01:00'), /09:00 \(UTC; UTC\+00:00\)/);
+  assert.equal(appointmentDate('2026-10-05T10:00:00+01:00', 'Invalid/Zone'), '2026-10-05 09:00 (UTC; UTC+00:00)');
   assert.equal(appointmentDate(null), 'Por definir');
   assert.equal(appointmentDate('bad-time', 'Africa/Luanda'), 'Por definir');
 });

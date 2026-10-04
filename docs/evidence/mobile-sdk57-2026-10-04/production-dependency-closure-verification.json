@@ -1,0 +1,53 @@
+{
+  "algorithm": "Breadth-first traversal from original shared lock root through all resolved non-dev dependency edges, including installed optional and peer dependencies; do not traverse root devDependency edges. Every projected production SBOM component is checked against this closure.",
+  "node_count": 570,
+  "unique_components": 528,
+  "inventory_nodes": 570,
+  "missing": [],
+  "extras": [],
+  "target_paths": {
+    "braces": [
+      [
+        "expo@57.0.26",
+        "@expo/cli@57.0.27",
+        "@expo/metro-file-map@57.0.3",
+        "micromatch@4.0.8",
+        "braces@3.0.3"
+      ]
+    ],
+    "node-forge": [
+      [
+        "expo@57.0.26",
+        "@expo/cli@57.0.27",
+        "node-forge@1.4.0"
+      ]
+    ],
+    "@babel/core": [
+      [
+        "expo@57.0.26",
+        "@expo/metro-config@57.0.12",
+        "@babel/core@7.29.7"
+      ]
+    ],
+    "@types/react": [
+      [
+        "react-native@0.86.3",
+        "@types/react@19.2.18"
+      ]
+    ],
+    "typescript": [
+      [
+        "expo@57.0.26",
+        "@expo/cli@57.0.27",
+        "@expo/require-utils@57.0.5",
+        "typescript@6.0.3"
+      ]
+    ],
+    "babel-preset-expo": [
+      [
+        "expo@57.0.26",
+        "babel-preset-expo@57.0.13"
+      ]
+    ]
+  }
+}

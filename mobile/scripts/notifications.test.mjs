@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   notificationInboxPath, loadNotificationPage, loadUnreadNotificationCount, mergeNotificationPages,
   markNotificationRead, applyNotificationRead, markAllNotificationsRead, notificationConsultationTarget,
-  notificationChannelsMessage, notificationDate, notificationError, canRetainNotificationsAfterError,
+  notificationChannelsMessage, notificationDate, notificationEmptyMessage, notificationError, canRetainNotificationsAfterError,
 } from '../src/screens/notifications.ts';
 
 const consultationId = '76632698-e722-4a09-a73f-0bcc6eb4c5bf';
@@ -96,6 +96,25 @@ test('successful read reconciles all and unread caches without fabricating other
   assert.deepEqual(unread, [other]);
   assert.deepEqual(original, [notice, other]);
   assert.deepEqual(applyNotificationRead([other], readNotice, false), [other]);
+});
+
+test('reading the last loaded unread row does not hide unread notifications on later pages', () => {
+  const items = applyNotificationRead([notice], readNotice, true);
+  assert.deepEqual(items, []);
+  assert.match(notificationEmptyMessage(true, 11, 'next-page'), /Carregue mais/);
+  assert.match(notificationEmptyMessage(true, 11, null), /Atualize a lista/);
+  assert.match(notificationEmptyMessage(true, 0, 'next-page'), /Carregue mais/);
+});
+
+test('empty inbox copy requires a verified zero and no further page before claiming no unread notices', () => {
+  assert.equal(notificationEmptyMessage(true, 0, null), 'Não tem notificações por ler.');
+  assert.equal(notificationEmptyMessage(false, 0, null), 'Ainda não tem notificações.');
+  for (const unreadOnly of [true, false]) {
+    assert.match(notificationEmptyMessage(unreadOnly, null, null), /Atualize a lista/);
+    assert.match(notificationEmptyMessage(unreadOnly, 0, null, true), /Atualize a lista/);
+    assert.match(notificationEmptyMessage(unreadOnly, 11, null), /Atualize a lista/);
+    assert.match(notificationEmptyMessage(unreadOnly, 0, 'next-page', true), /Carregue mais/);
+  }
 });
 
 test('read-all accepts its committed count including zero but does not treat it as global unread', async () => {

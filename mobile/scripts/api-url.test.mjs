@@ -43,7 +43,7 @@ test('development can use simulator, LAN or localhost endpoints', () => {
 
 test('works with the URL implementation installed by the pinned Expo SDK', () => {
   const nativeURL = globalThis.URL;
-  const { URL: ExpoURL } = require('whatwg-url-without-unicode');
+  const { URL: ExpoURL } = require('whatwg-url-minimum');
   try {
     globalThis.URL = ExpoURL;
     assert.equal(resolveApiBaseUrl('https://api.kaya.test/', undefined, false), 'https://api.kaya.test');

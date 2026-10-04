@@ -68,6 +68,14 @@ export function applyNotificationRead(items: KayaNotification[], updated: KayaNo
   return items.map(item => item.id === updated.id ? updated : item).filter(item => !unreadOnly || !item.is_read);
 }
 
+export function notificationEmptyMessage(unreadOnly: boolean, unreadCount: number | null, nextCursor: string | null, countStale = false): string {
+  if (nextCursor) return 'Não há notificações nesta página. Carregue mais para continuar.';
+  if (unreadCount !== 0 || countStale) {
+    return 'Não há notificações nesta página. Atualize a lista para verificar a caixa de entrada.';
+  }
+  return unreadOnly ? 'Não tem notificações por ler.' : 'Ainda não tem notificações.';
+}
+
 export async function markAllNotificationsRead(api: { patch: (path: string) => Promise<{ data: any }> }): Promise<number> {
   const response = await api.patch('/api/v1/notifications/read-all');
   if (response.data?.ok !== true || !Number.isSafeInteger(response.data.updated_count) || response.data.updated_count < 0) {

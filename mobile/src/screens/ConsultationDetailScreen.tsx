@@ -6,19 +6,25 @@ import {
 import { useFocusEffect, useRoute, type RouteProp } from '@react-navigation/native';
 import type { AppStackParamList } from '../navigation/AppStack';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import {
   CONSULTATION_OUTCOME, CONSULTATION_STATUS, FOLLOW_UP_STATUS,
   canCancelConsultation, canRetainConsultationAfterError, consultationDate, consultationError, consultationNextStep,
-  loadPatientConsultation, videoAvailabilityMessage, type PatientConsultationDetail,
+  loadPatientConsultation, patientSummaryPublication, videoAvailabilityMessage, type PatientConsultationDetail,
 } from './consultations';
 import { APPOINTMENT_MARKETS, appointmentDate } from './appointmentAvailability';
 
 const TEAL = '#0d9488';
 
 export default function ConsultationDetailScreen() {
+  const { user } = useAuth();
+  const ownerId = user?.id == null ? null : String(user.id);
+  const currentOwner = useRef(ownerId);
+  currentOwner.current = ownerId;
   const { params: { consultationId } } = useRoute<RouteProp<AppStackParamList, 'ConsultationDetail'>>();
-  const [loadedDetail, setDetail] = useState<PatientConsultationDetail | null>(null);
-  const detail = loadedDetail?.result.consultation_id === consultationId ? loadedDetail : null;
+  const [loaded, setDetail] = useState<{ ownerId: string; detail: PatientConsultationDetail } | null>(null);
+  const detail = loaded?.ownerId === ownerId && loaded?.detail.result.consultation_id === consultationId ? loaded.detail : null;
+  const [historyExpanded, setHistoryExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
@@ -31,23 +37,24 @@ export default function ConsultationDetailScreen() {
 
   const load = useCallback(async (quiet = false) => {
     const version = ++requestVersion.current;
+    if (!ownerId) { setDetail(null); setLoading(false); return; }
     if (!quiet) setLoading(true);
     try {
       const latest = await loadPatientConsultation(api, consultationId);
-      if (!active.current || version !== requestVersion.current) return;
-      setDetail(latest);
+      if (!active.current || version !== requestVersion.current || currentOwner.current !== ownerId) return;
+      setDetail({ ownerId, detail: latest });
       currentStatus.current = latest.result.status;
       setError('');
     } catch (failure) {
-      if (!active.current || version !== requestVersion.current) return;
+      if (!active.current || version !== requestVersion.current || currentOwner.current !== ownerId) return;
       // Clear sensitive cached content if authorization changes. Other failures
       // keep the last view, clearly marked as not refreshed.
       if (!canRetainConsultationAfterError(failure)) setDetail(null);
       setError(consultationError(failure, 'Não foi possível atualizar a consulta. Os dados apresentados podem estar desatualizados.'));
     } finally {
-      if (active.current && version === requestVersion.current) setLoading(false);
+      if (active.current && version === requestVersion.current && currentOwner.current === ownerId) setLoading(false);
     }
-  }, [consultationId]);
+  }, [consultationId, ownerId]);
 
   useFocusEffect(useCallback(() => {
     viewVersion.current++;
@@ -58,6 +65,7 @@ export default function ConsultationDetailScreen() {
     setDetail(null);
     setError('');
     setCancelling(false);
+    setHistoryExpanded(false);
     void load();
     const subscription = AppState.addEventListener('change', state => {
       if (state === 'active' && !busy.current) void load(true);
@@ -80,7 +88,8 @@ export default function ConsultationDetailScreen() {
     if (!active.current || focusedConsultationId.current !== consultationId ||
         busy.current || !detail || !canCancelConsultation(detail.result.status)) return;
     const version = viewVersion.current;
-    const sameView = () => active.current && viewVersion.current === version && focusedConsultationId.current === consultationId;
+    const sameView = () => active.current && viewVersion.current === version &&
+      focusedConsultationId.current === consultationId && currentOwner.current === ownerId;
     busy.current = true;
     setCancelling(true);
     requestVersion.current++;
@@ -100,6 +109,7 @@ export default function ConsultationDetailScreen() {
   };
 
   const closeout = detail?.result.closeout;
+  const publication = closeout ? patientSummaryPublication(closeout) : null;
   const status = detail?.result.status;
 
   return (
@@ -149,7 +159,21 @@ export default function ConsultationDetailScreen() {
           {closeout ? <>
             <Text style={styles.status}>{CONSULTATION_OUTCOME[closeout.outcome] || 'Orientação do médico'}</Text>
             <Text selectable style={styles.body}>{closeout.patient_summary}</Text>
-            <Text style={styles.hint}>Disponibilizado por {closeout.finalized_by_name || 'médico responsável'} em {consultationDate(closeout.finalized_at)}.</Text>
+            <Text style={styles.hint}>Disponibilizado por {publication?.author_name || 'médico responsável'} em {consultationDate(publication?.published_at)}.</Text>
+            {(closeout.published_history?.length || 0) > 1 && <View style={styles.history}>
+              <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: historyExpanded }}
+                onPress={() => setHistoryExpanded(value => !value)}>
+                <Text style={styles.link}>{historyExpanded ? 'Ocultar versões publicadas' : `Ver versões publicadas (${closeout.published_history!.length})`}</Text>
+              </TouchableOpacity>
+              {historyExpanded && <>
+                <Text style={styles.hint}>O resumo acima é a versão publicada mais recente. As versões anteriores ficam disponíveis para consulta.</Text>
+                {closeout.published_history!.map(entry => <View key={entry.revision} style={styles.historyEntry}>
+                  <Text style={styles.label}>{entry.revision === closeout.published_revision ? 'Versão atual' : entry.revision === 0 ? 'Resumo inicial' : 'Versão anterior'}</Text>
+                  <Text selectable style={styles.body}>{entry.patient_summary}</Text>
+                  <Text style={styles.hint}>Disponibilizado por {entry.author_name || 'médico responsável'} em {consultationDate(entry.published_at)}.</Text>
+                </View>)}
+              </>}
+            </View>}
             {!!closeout.follow_up_instructions && <>
               <Text style={styles.label}>Orientações de acompanhamento</Text>
               <Text selectable style={styles.body}>{closeout.follow_up_instructions}</Text>
@@ -189,4 +213,6 @@ const styles = StyleSheet.create({
   link: { color: '#0f766e', paddingVertical: 10, fontWeight: '600' },
   cancel: { color: '#b91c1c', paddingVertical: 8, fontWeight: '600' },
   followup: { padding: 12, gap: 8, backgroundColor: '#f0fdfa', borderRadius: 8 },
+  history: { borderTopWidth: 1, borderTopColor: '#e2e8f0', gap: 10 },
+  historyEntry: { padding: 12, gap: 8, borderRadius: 8, backgroundColor: '#f8fafc' },
 });

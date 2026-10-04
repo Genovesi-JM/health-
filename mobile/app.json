@@ -6,17 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#0d9488"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kayahealth.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0d9488"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       },
       "package": "com.kayahealth.app",
       "permissions": [],
@@ -43,18 +40,39 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       [
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
             "minSdkVersion": 26
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": false,
+          "microphonePermission": false,
+          "photosPermission": false
+        }
+      ],
+      "./plugins/withInformationalHold.cjs"
     ],
     "scheme": "kayahealth",
     "description": "KAYA planning information. No participants or clinical services are available in this version."
