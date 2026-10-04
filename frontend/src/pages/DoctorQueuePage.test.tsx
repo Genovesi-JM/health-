@@ -17,6 +17,7 @@ function renderQueue(status: string) {
     url === '/api/v1/doctor/queue' ? [{
       id: 'consult-1', patient_name: 'Paciente de teste', specialty: 'clinica_geral',
       status, created_at: '2026-10-04T10:00:00Z', scheduled_at: '2026-10-06T10:00:00Z',
+      reschedule_revision: 3, timezone: 'Africa/Luanda',
     }] : { items: [] },
   }));
   render(<MemoryRouter><I18nProvider><DoctorQueuePage /></I18nProvider></MemoryRouter>);
@@ -27,14 +28,14 @@ describe('doctor queue lifecycle actions', () => {
     vi.mocked(api.post).mockResolvedValue({ data: { status: 'scheduled' } });
     renderQueue('requested');
     await userEvent.click(await screen.findByRole('button', { name: 'Aceitar pedido' }));
-    expect(api.post).toHaveBeenCalledWith('/api/v1/doctor/queue/consult-1/accept');
+    expect(api.post).toHaveBeenCalledWith('/api/v1/doctor/queue/consult-1/accept', undefined, { params: { expected_revision: 3 } });
   });
 
   it('starts a scheduled consultation through the start endpoint', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { status: 'in_progress' } });
     renderQueue('scheduled');
     await userEvent.click(await screen.findByRole('button', { name: 'Iniciar' }));
-    expect(api.post).toHaveBeenCalledWith('/api/v1/doctor/queue/consult-1/start');
+    expect(api.post).toHaveBeenCalledWith('/api/v1/doctor/queue/consult-1/start', undefined, { params: { expected_revision: 3 } });
   });
 
   it('surfaces an action failure instead of silently hiding it', async () => {

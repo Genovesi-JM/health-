@@ -12,12 +12,17 @@ const fixture = (updates: Record<string, unknown> = {}) => ({ id: 'doc-1', origi
 function setGet(documents = [fixture()], capabilityUpdates = {}) {
   vi.mocked(api.get).mockImplementation(async (url) => {
     if (url === `${BASE}/capabilities`) return { data: { ...capabilities, ...capabilityUpdates } };
-    if (url === BASE) return { data: documents };
-    if (url === `${BASE}/doc-1`) return { data: documents[0] };
+    if (url === `${BASE}/page`) return { data: { items: documents, next_cursor: null } };
+    const document = documents.find(item => url === `${BASE}/${item.id}`);
+    if (document) return { data: document };
     throw new Error(`Unexpected GET ${url}`);
   });
 }
-async function show() { render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' }); }
+async function openFirst() {
+  const first = screen.getAllByRole('button').find(button => button.hasAttribute('aria-pressed'));
+  if (first) { fireEvent.click(first); await screen.findByRole('button', { name: 'Descarregar original' }); }
+}
+async function show() { render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' }); await openFirst(); }
 function pick(file = new File(['%PDF-1.7 test'], 'novo.pdf', { type: 'application/pdf', lastModified: 10 })) { fireEvent.change(screen.getByLabelText('Ficheiro'), { target: { files: [file] } }); }
 function upload() { fireEvent.click(screen.getByRole('button', { name: 'Enviar e ler documento' })); }
 function confirm() { fireEvent.click(screen.getByRole('button', { name: 'Confirmar texto revisto' })); }
@@ -87,6 +92,7 @@ describe('patient document persistence and review', () => {
     const createUrl = vi.fn(); Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createUrl });
     let finish: (value: unknown) => void = () => {};
     const view = render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' });
+    await openFirst();
     vi.mocked(api.get).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
     fireEvent.click(screen.getByRole('button', { name: 'Descarregar original' }));
     await waitFor(() => expect(api.get).toHaveBeenLastCalledWith(`${BASE}/doc-1/download`, { responseType: 'blob' }));
@@ -118,7 +124,7 @@ describe('patient document persistence and review', () => {
     vi.mocked(api.get).mockImplementationOnce(async () => ({ data: capabilities })).mockRejectedValueOnce(new Error('Offline'));
     await show(); expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível carregar os documentos');
     expect(screen.queryByText('Ainda não há documentos guardados.')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Atualizar documentos' })); await screen.findByLabelText('Texto para rever');
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar documentos' })); await screen.findByRole('button', { name: /analise.pdf/ }); await openFirst(); await screen.findByLabelText('Texto para rever');
   });
   it('confirms only after acknowledgment and preserves edits after failure', async () => {
     vi.mocked(api.put).mockRejectedValueOnce(new Error('Lost response')).mockResolvedValueOnce({ data: fixture({ status: 'confirmed', version: 3, reviewed_text: 'Texto corrigido' }) });
@@ -130,7 +136,7 @@ describe('patient document persistence and review', () => {
   });
   it('reloads a conflicting revision and preserves the patient text', async () => {
     setGet([fixture({ version: 4, extracted_text: 'Texto da sessão atual' })]);
-    vi.mocked(api.get).mockImplementationOnce(async () => ({ data: capabilities })).mockImplementationOnce(async () => ({ data: [fixture()] }));
+    vi.mocked(api.get).mockImplementationOnce(async () => ({ data: capabilities })).mockImplementationOnce(async () => ({ data: { items: [fixture()], next_cursor: null } })).mockResolvedValueOnce({ data: fixture() });
     vi.mocked(api.put).mockRejectedValueOnce({ response: { status: 409 } }).mockResolvedValueOnce({ data: fixture({ status: 'confirmed', version: 5, reviewed_text: 'Minha correção' }) });
     await show(); edit('Minha correção'); confirm(); expect(await screen.findByRole('alert')).toHaveTextContent('O documento mudou noutra sessão');
     expect(screen.getByLabelText('Texto para rever')).toHaveValue('Minha correção'); expect(screen.getByText('Texto da sessão atual')).toBeInTheDocument();
@@ -138,8 +144,8 @@ describe('patient document persistence and review', () => {
   });
   it('preserves local edits when switching documents or refreshing', async () => {
     setGet([fixture(), fixture({ id: 'doc-2', original_filename: 'outro.pdf', extracted_text: 'Outro texto' })]); await show(); edit('Revisão em curso');
-    fireEvent.click(screen.getByRole('button', { name: /outro.pdf/ })); expect(screen.getByLabelText('Texto para rever')).toHaveValue('Outro texto');
-    fireEvent.click(screen.getByRole('button', { name: /analise.pdf/ })); expect(screen.getByLabelText('Texto para rever')).toHaveValue('Revisão em curso');
+    fireEvent.click(screen.getByRole('button', { name: /outro.pdf/ })); await waitFor(() => expect(screen.getByLabelText('Texto para rever')).toHaveValue('Outro texto'));
+    fireEvent.click(screen.getByRole('button', { name: /analise.pdf/ })); await waitFor(() => expect(screen.getByLabelText('Texto para rever')).toHaveValue('Revisão em curso'));
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar documentos' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Atualizar documentos' })).toBeEnabled()); expect(screen.getByLabelText('Texto para rever')).toHaveValue('Revisão em curso');
   });

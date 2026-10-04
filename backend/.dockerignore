@@ -148,6 +148,7 @@
 
 !app/routers/patient_documents.py
 !app/services/patient_documents.py
+!app/services/cursors.py
 !app/services/patient_document_extraction.py
 !app/file_safety.py
 
@@ -168,3 +169,6 @@
 
 !app/services/specialties.py
 !app/services/credential_review.py
+
+!app/services/appointment_rescheduling.py
+!alembic/versions/appointment_reschedules_v1.py

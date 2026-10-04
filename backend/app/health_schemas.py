@@ -7,7 +7,7 @@ Corporate, Billing, Compliance, and Dashboard KPIs.
 from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field, StrictBool, field_serializer
+from pydantic import BaseModel, Field, StrictBool, StrictInt, field_serializer
 
 
 # ── Roles ──
@@ -345,6 +345,7 @@ class ConsultationOut(BaseModel):
     scheduled_at: Optional[datetime] = None
     scheduled_end_at: Optional[datetime] = None
     slot_id: Optional[str] = None
+    reschedule_revision: int = 0
     country: Optional[str] = None
     timezone: Optional[str] = None
     started_at: Optional[datetime] = None
@@ -363,6 +364,12 @@ class ConsultationOut(BaseModel):
         if value.tzinfo is None:
             value = value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc).isoformat()
+
+
+class ConsultationRescheduleRequest(BaseModel):
+    slot_id: str = Field(min_length=1, max_length=36)
+    expected_revision: StrictInt = Field(ge=0)
+    model_config = {"extra": "forbid"}
 
 
 class ConsultationCompleteRequest(BaseModel):
@@ -399,6 +406,9 @@ class ConsultationAmendmentRequest(BaseModel):
 
 
 class ConsultationQueueItem(BaseModel):
+    reschedule_revision: int = 0
+    timezone: Optional[str] = None
+    scheduled_end_at: Optional[datetime] = None
     """Eligible shared request, directed request, or doctor's active consultation."""
     id: str
     patient_id: Optional[str] = None
@@ -413,7 +423,7 @@ class ConsultationQueueItem(BaseModel):
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("scheduled_at")
+    @field_serializer("scheduled_at", "scheduled_end_at")
     def serialize_utc(self, value: Optional[datetime]):
         if value is None:
             return None

@@ -22,13 +22,13 @@ States: NOT_BUILT, MOCK, SYNTHETIC_ONLY, DISABLED_PENDING_GATE, PILOT, LIVE. No 
 | Accounts and invited access (`account_access=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 26 | `/login`, `/register`, `/choose-account-type`, `/auth/callback`, `/settings`, `/security/mfa`, `/security`, `/doctor/security` |
 | Identity, onboarding and consent (`onboarding=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 12 | `/register/doctor`, `/candidatura`, `/consent-gate`, `/data-consent`, `/onboarding/patient`, `/onboarding/professional`, `/onboarding/organisation`, `/consents` |
 | Public clinic and professional directory (`provider_directory=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 12 | `/especialistas`, `/mapa`, `/clinics`, `/medicos`, `/medicos/:slug` |
-| Human-confirmed appointment coordination (`appointment_coordination=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 16 | `/consultations`, `/doctor/queue`, `/doctor/agenda`, `/doctor/disponibilidade` |
+| Human-confirmed appointment coordination (`appointment_coordination=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 17 | `/consultations`, `/doctor/queue`, `/doctor/agenda`, `/doctor/disponibilidade` |
 | Symptom triage and self-care advice (`triage=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 13 | `/triage`, `/self-care` |
 | Video consultations (`teleconsultation=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 8 | `/telemedicina`, `/doctor/consultas` |
 | Prescriptions and referrals (`prescribing_referrals=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/prescricoes/pedido`, `/doctor/prescricoes` |
 | Clinical messaging (`clinical_messaging=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 4 | `/doctor/mensagens` |
 | Clinical workspaces and care delivery (`clinical_operations=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 23 | `/preview/nurse`, `/preview/clinician/patient`, `/clinician/patients/:patientId`, `/chronic-care`, `/nurse`, `/doctor/dashboard`, `/doctor/profile`, `/doctor/pacientes`, `/doctor/avaliacoes`, `/doctor/suporte` |
-| Health records and measurements (`health_tracking=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 30 | `/patients`, `/dashboard`, `/patient/profile`, `/patient/readings`, `/patient/documents` |
+| Health records and measurements (`health_tracking=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 32 | `/patients`, `/dashboard`, `/patient/profile`, `/patient/readings`, `/patient/documents` |
 | Family and caregiver access (`family_caregivers=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 13 | `/family`, `/onboarding/caregiver` |
 | In-app, email, SMS and push notifications (`notifications=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/notifications` |
 | Payments and subscriptions (`payments=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 6 | `/pricing`, `/doctor/financeiro` |
@@ -106,6 +106,7 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | POST | `/api/v1/doctor/appointment-slots` | `appointment_coordination=false` |
 | DELETE | `/api/v1/doctor/appointment-slots/{slot_id}` | `appointment_coordination=false` |
 | POST | `/api/v1/consultations/book` | `appointment_coordination=false` |
+| POST | `/api/v1/consultations/{consultation_id}/reschedule` | `appointment_coordination=false` |
 | GET | `/api/v1/consultations/me` | `appointment_coordination=false` |
 | GET | `/api/v1/doctor/queue` | `appointment_coordination=false` |
 | GET | `/api/v1/doctor/consultations` | `appointment_coordination=false` |
@@ -194,6 +195,8 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | GET | `/api/v1/medications/patient/{patient_id}` | `health_tracking=false` |
 | GET | `/api/v1/patient-documents/capabilities` | `health_tracking=false` |
 | GET | `/api/v1/patient-documents` | `health_tracking=false` |
+| GET | `/api/v1/patient-documents/page` | `health_tracking=false` |
+| GET | `/api/v1/patient-documents/patients/{patient_id}/page` | `health_tracking=false` |
 | GET | `/api/v1/patient-documents/` | `health_tracking=false` |
 | POST | `/api/v1/patient-documents` | `health_tracking=false` |
 | POST | `/api/v1/patient-documents/` | `health_tracking=false` |

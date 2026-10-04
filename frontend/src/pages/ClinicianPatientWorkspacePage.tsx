@@ -10,6 +10,7 @@ import { apiErrorMessage } from '../utils/apiError';
 import { useT } from '../i18n/LanguageContext';
 import TeleconsultationControl from '../components/TeleconsultationControl';
 import ConsultationCloseout, { type CloseoutRecord } from '../components/ConsultationCloseout';
+import ClinicianPatientDocuments from '../components/ClinicianPatientDocuments';
 
 type Patient360 = {
   access: {
@@ -249,7 +250,7 @@ const copy = {
   },
 };
 
-type Tab = 'overview' | 'triage' | 'readings' | 'medications' | 'consultations' | 'coordination';
+type Tab = 'overview' | 'triage' | 'readings' | 'medications' | 'consultations' | 'coordination' | 'documents';
 
 export default function ClinicianPatientWorkspacePage({ preview = false }: { preview?: boolean }) {
   const { patientId } = useParams();
@@ -505,9 +506,11 @@ function PatientWorkspace({ patientId, preview }: { patientId?: string; preview:
             {key === 'triage' && data.latest_triage?.risk_level && <span className="tab-alert" />}
           </button>
         ))}
+        {!preview && data.access.role === 'doctor' && <button type="button" className={activeTab === 'documents' ? 'active' : ''} onClick={() => selectTab('documents')}><FileText size={16} /> Documentos</button>}
       </nav>
 
       <main className="clinician-360-content">
+        {activeTab === 'documents' && !preview && data.access.role === 'doctor' && <ClinicianPatientDocuments patientId={data.identity.id} />}
         {activeTab === 'overview' && (
           <div className="clinician-overview-grid">
             <section className="clinician-panel clinician-panel--span2">

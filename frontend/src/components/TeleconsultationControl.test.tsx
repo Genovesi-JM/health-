@@ -8,7 +8,7 @@ import { approvedServerVideoRoom } from '../utils/video';
 vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 vi.mock('../AuthContext', () => ({ useAuth: () => ({ user: { id: 'current-user' } }) }));
 vi.mock('../utils/video', () => ({ approvedServerVideoRoom: vi.fn((url: string) => url) }));
-const session = { id: 'session-1', consultation_id: 'visit-1', provider: 'Private provider', provider_mode: 'production', status: 'in_progress', preflight: {}, preflight_complete: true,
+const session = { id: 'session-1', consultation_id: 'visit-1', reschedule_revision: 3, provider: 'Private provider', provider_mode: 'production', status: 'in_progress', preflight: {}, preflight_complete: true,
   participants: [{ role: 'doctor', user_id: 'current-user', checked_in_at: '2026-10-04T10:00:00Z' }], provider_notice: 'Fornecedor configurado.' };
 function server(enabled = false, item: typeof session | null = session) {
   vi.mocked(api.get).mockImplementation(async (url) => {
@@ -57,8 +57,22 @@ describe('teleconsultation capability and readiness', () => {
     const checkin = screen.getByRole('button', { name: 'Fazer check-in' }); expect(checkin).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Como está a sua ligação? (avaliação sua)'), { target: { value: 'fair' } }); expect(checkin).toBeDisabled();
     fireEvent.click(screen.getByRole('checkbox')); fireEvent.click(checkin);
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/teleconsultations/visit-1/check-in', { camera_ready: true, microphone_ready: true, network_quality: 'fair', consent_confirmed: true }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/teleconsultations/visit-1/check-in', { camera_ready: true, microphone_ready: true, network_quality: 'fair', consent_confirmed: true }, { params: { expected_revision: 3 } }));
     expect(tracks.every(track => track.stop.mock.calls.length === 1)).toBe(true);
+  });
+  it('binds a saved checklist and start request to the displayed appointment revision', async () => {
+    server(true, { ...session, status: 'waiting' });
+    vi.mocked(api.put).mockResolvedValue({ data: session });
+    const nurse = show('nurse');
+    fireEvent.click(await screen.findByRole('button', { name: 'Guardar checklist' }));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/api/v1/teleconsultations/visit-1/preflight', { preflight_note: undefined }, { params: { expected_revision: 3 } }));
+    nurse.unmount();
+    vi.mocked(api.post).mockRejectedValue({ response: { status: 409, data: { detail: 'A marcação mudou. Atualize a consulta.' } } });
+    show('doctor');
+    fireEvent.click(await screen.findByRole('button', { name: 'Iniciar teleconsulta' }));
+    await screen.findByRole('alert');
+    expect(api.post).toHaveBeenCalledWith('/api/v1/teleconsultations/visit-1/start', undefined, { params: { expected_revision: 3 } });
+    expect(api.post).not.toHaveBeenCalledWith('/api/v1/teleconsultations/visit-1/join');
   });
   it('does not hand an unapproved URL to an iframe callback', async () => {
     server(true); const onEnterRoom = vi.fn(); vi.mocked(api.post).mockResolvedValue({ data: { room_url: 'javascript:bad()' } });

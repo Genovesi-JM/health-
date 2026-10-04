@@ -31,10 +31,11 @@ from sqlalchemy import event
 from sqlalchemy.orm import Session
 from app.models import User
 from app.health_models import (Patient, Doctor, ClinicianCredential, PatientConsent, MfaCredential,
-                              AppointmentSlot, Consultation, ConsultationNotes, ConsultationAmendment,
-                              ClinicalCareTask, HealthAuditLog, Notification)
+                              AppointmentSlot, Consultation, ConsultationNotes, ConsultationAmendment, ConsultationReschedule,
+                              ClinicalCareTask, HealthAuditLog, Notification,
+                              TeleconsultationSession, TeleconsultationParticipant)
 from app.oauth2 import create_access_token
-from app.routers import appointments, consultations, notifications
+from app.routers import appointments, consultations, notifications, teleconsultation
 from app.services.consultation_lifecycle import transition
 from app.services.mfa import generate_secret
 
@@ -42,6 +43,7 @@ application = FastAPI()
 application.include_router(appointments.router)
 application.include_router(consultations.router)
 application.include_router(notifications.router)
+application.include_router(teleconsultation.router)
 client = TestClient(application)
 engine = database.engine
 assert engine.dialect.name == 'postgresql'
@@ -87,8 +89,9 @@ def book(patient, slot=None, key=None):
     return client.post('/api/v1/consultations/book', headers=patient['headers']|{'Idempotency-Key':key or str(uuid4())},json=payload)
 
 
-def accept(doctor, consultation_id):
-    return client.post(f'/api/v1/doctor/queue/{consultation_id}/accept',headers=doctor['headers'])
+def accept(doctor, consultation_id, revision=None):
+    return client.post(f'/api/v1/doctor/queue/{consultation_id}/accept',headers=doctor['headers'],
+                       params={'expected_revision': revision} if revision is not None else {})
 
 
 def cancel(patient, consultation_id):
@@ -457,6 +460,245 @@ def clinical_amendment_migration():
     return {'upgrade_adoption_preserved_original': True, 'destructive_downgrade_refused': True}
 
 
+def move(patient, identifier, target, *, key=None, revision=0):
+    return client.post(f'/api/v1/consultations/{identifier}/reschedule',
+        headers=patient['headers'] | {'Idempotency-Key': key or str(uuid4())},
+        json={'slot_id': target['id'], 'expected_revision': revision})
+
+
+def move_setup():
+    p = people()
+    start = (datetime.now(ZoneInfo('Africa/Luanda')) + timedelta(days=2)).replace(second=0, microsecond=0)
+    slots = [publish(p['d1'], start + timedelta(hours=offset)) for offset in (0, 2, 4)]
+    booked = book(p['p1'], slots[0])
+    assert booked.status_code == 200, booked.text
+    return p, slots, booked.json()['id']
+
+
+def reschedule_competing_revisions():
+    outcomes = []
+    for _ in range(5):
+        p, slots, identifier = move_setup()
+        responses = together([lambda: move(p['p1'], identifier, slots[1]),
+                              lambda: move(p['p1'], identifier, slots[2])])
+        outcomes.append(statuses(responses))
+        winner = next(response.json() for response in responses if response.status_code == 200)
+        rejected = next(response for response in responses if response.status_code == 409)
+        assert rejected.json()['detail']['request_key_committed'] is False
+        with Session(engine) as db:
+            item = db.get(Consultation, identifier)
+            assert item.reschedule_revision == 1 and item.status == 'requested' and item.slot_id == winner['slot_id']
+            assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id is None
+            assert sum(db.get(AppointmentSlot, slot['id']).reserved_consultation_id == identifier for slot in slots) == 1
+            assert db.query(ConsultationReschedule).filter_by(consultation_id=identifier).count() == 1
+            assert db.query(HealthAuditLog).filter_by(resource_id=identifier, action='consultation_rescheduled').count() == 1
+    return {'forced_races': 5, 'statuses': outcomes, 'one_move_one_claim_and_original_released': True}
+
+
+def reschedule_exact_retry():
+    outcomes = []
+    for _ in range(5):
+        p, slots, identifier = move_setup()
+        key = str(uuid4())
+        responses = together([lambda: move(p['p1'], identifier, slots[1], key=key),
+                              lambda: move(p['p1'], identifier, slots[1], key=key)])
+        outcomes.append(statuses(responses, (200, 200)))
+        assert responses[0].json() == responses[1].json()
+        with Session(engine) as db:
+            row = db.query(ConsultationReschedule).filter_by(consultation_id=identifier).one()
+            assert row.revision == 1
+            assert db.query(HealthAuditLog).filter_by(resource_id=identifier, action='consultation_rescheduled').count() == 1
+            assert db.query(Notification).filter_by(event_key=f'reschedule:{row.id}:requested').count() == 2
+        # An older exact retry must return current state, without restoring its
+        # former slot after a later legitimate move.
+        later = move(p['p1'], identifier, slots[2], revision=1)
+        assert later.status_code == 200, later.text
+        retry = move(p['p1'], identifier, slots[1], key=key)
+        assert retry.status_code == 200 and retry.json()['slot_id'] == slots[2]['id']
+        assert retry.json()['reschedule_revision'] == 2
+    return {'forced_races': 5, 'statuses': outcomes, 'one_move_audit_and_notice_per_recipient': True,
+            'old_retry_preserves_later_move': True}
+
+
+def reschedule_competing_target():
+    outcomes = []
+    for _ in range(5):
+        p, slots, first_id = move_setup()
+        second = book(p['p2'], slots[1])
+        assert second.status_code == 200, second.text
+        second_id = second.json()['id']
+        responses = together([lambda: move(p['p1'], first_id, slots[2]),
+                              lambda: move(p['p2'], second_id, slots[2])])
+        outcomes.append(statuses(responses))
+        winner = next(response.json()['id'] for response in responses if response.status_code == 200)
+        with Session(engine) as db:
+            assert db.get(AppointmentSlot, slots[2]['id']).reserved_consultation_id == winner
+            for identifier, original in ((first_id, slots[0]), (second_id, slots[1])):
+                item = db.get(Consultation, identifier)
+                assert item.reschedule_revision == (1 if identifier == winner else 0)
+                assert db.get(AppointmentSlot, original['id']).reserved_consultation_id == (None if identifier == winner else identifier)
+    return {'forced_races': 5, 'statuses': outcomes, 'loser_keeps_original_reservation': True}
+
+
+def reschedule_accept_race():
+    outcomes = []
+    for _ in range(5):
+        p, slots, identifier = move_setup()
+        responses = together([lambda: accept(p['d1'], identifier), lambda: move(p['p1'], identifier, slots[1])])
+        assert responses[1].status_code == 200, responses[1].text
+        assert responses[0].status_code in (200, 409), responses[0].text
+        outcomes.append([response.status_code for response in responses])
+        with Session(engine) as db:
+            item = db.get(Consultation, identifier)
+            assert item.status == 'requested' and item.reschedule_revision == 1 and item.slot_id == slots[1]['id']
+        # A request sent after the move with an old displayed revision is stale
+        # too; an ORM compare-and-set alone cannot cover that client interval.
+        assert accept(p['d1'], identifier).status_code == 409
+        assert accept(p['d1'], identifier, revision=0).status_code == 409
+        assert accept(p['d1'], identifier, revision=1).status_code == 200
+    return {'forced_races': 5, 'statuses_accept_move': outcomes, 'changed_time_requires_fresh_acceptance': True}
+
+
+def reschedule_audit_rollback():
+    p, slots, identifier = move_setup()
+    key = str(uuid4())
+    def fail(mapper, connection, target):
+        if target.action == 'consultation_rescheduled':
+            raise RuntimeError('Synthetic reschedule audit failure')
+    event.listen(HealthAuditLog, 'before_insert', fail)
+    try:
+        failed = move(p['p1'], identifier, slots[1], key=key)
+        assert failed.status_code == 503, failed.text
+    finally:
+        event.remove(HealthAuditLog, 'before_insert', fail)
+    with Session(engine) as db:
+        assert db.get(Consultation, identifier).reschedule_revision == 0
+        assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id == identifier
+        assert db.get(AppointmentSlot, slots[1]['id']).reserved_consultation_id is None
+        assert db.query(ConsultationReschedule).filter_by(consultation_id=identifier).count() == 0
+        assert db.query(Notification).filter(Notification.related_entity_id == identifier,
+                                            Notification.event_key.like('reschedule:%')).count() == 0
+    assert move(p['p1'], identifier, slots[1], key=key).status_code == 200
+    return {'audit_failure_preserves_original_and_rolls_back_claim_history_notices': True,
+            'exact_retry_after_rollback_succeeds': True}
+
+
+def reschedule_migration():
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    spec = importlib.util.spec_from_file_location('pg_reschedule_migration', pathlib.Path('alembic/versions/appointment_reschedules_v1.py'))
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    with engine.begin() as conn, Operations.context(MigrationContext.configure(conn)):
+        retained_before = conn.execute(text("SELECT count(*) FROM pg_trigger WHERE tgname LIKE 'kaya_retain_%' AND NOT tgisinternal")).scalar()
+        module.upgrade()
+        assert retained_before > 0
+        assert conn.execute(text("SELECT count(*) FROM pg_trigger WHERE tgname LIKE 'kaya_retain_%' AND NOT tgisinternal")).scalar() == retained_before
+    schema = 'synthetic_reschedule_' + uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}')
+        conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        conn.exec_driver_sql('CREATE TABLE consultations (id VARCHAR(36) PRIMARY KEY)')
+        conn.exec_driver_sql("INSERT INTO consultations (id) VALUES ('historical')")
+        with Operations.context(MigrationContext.configure(conn)):
+            module.upgrade(); module.upgrade()
+            assert conn.execute(text("SELECT reschedule_revision FROM consultations WHERE id='historical'")).scalar() == 0
+            conn.exec_driver_sql('DROP INDEX uq_consultation_reschedule_revision')
+            try:
+                module.upgrade()
+            except RuntimeError as error:
+                assert 'uniqueness' in str(error)
+            else:
+                raise AssertionError('Adoption accepted a missing uniqueness constraint')
+            conn.exec_driver_sql('CREATE UNIQUE INDEX uq_consultation_reschedule_revision ON consultation_reschedules (consultation_id, revision)')
+            conn.execute(text("INSERT INTO consultation_reschedules (id, consultation_id, revision, request_key, request_digest, actor_user_id, slot_id, previous_status, created_at) VALUES ('request', 'historical', 1, :key, :digest, 'actor', 'slot', 'requested', CURRENT_TIMESTAMP)"), {'key': str(uuid4()), 'digest': 'a' * 64})
+            try:
+                module.downgrade()
+            except RuntimeError as error:
+                assert 'Retained' in str(error)
+            else:
+                raise AssertionError('Migration downgrade erased retry history')
+        conn.exec_driver_sql('SET LOCAL search_path TO public')
+        conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'legacy_revision_zero_and_schema_adoption': True, 'missing_constraint_and_destructive_downgrade_refused': True,
+            'existing_clinical_retention_triggers_preserved': True}
+
+
+def prepared_move_setup():
+    p, slots, identifier = move_setup()
+    assert accept(p['d1'], identifier).status_code == 200
+    with Session(engine) as db:
+        room = TeleconsultationSession(consultation_id=identifier, status='waiting', room_key='SYNTHETIC-'+uuid4().hex,
+            identity_confirmed=True, consent_confirmed=True, vitals_reviewed=True,
+            medication_reviewed=True, clinical_summary_ready=True, preflight_note='Synthetic retained draft')
+        db.add(room); db.flush()
+        session_id = room.id
+        for key, role in [('p1', 'patient'), ('d1', 'doctor')]:
+            db.add(TeleconsultationParticipant(session_id=session_id, user_id=p[key]['uid'], role=role,
+                camera_ready=True, microphone_ready=True, consent_confirmed=True,
+                network_quality='good', checked_in_at=datetime.utcnow()))
+        db.commit()
+    return p, slots, identifier, session_id
+
+
+def reschedule_video_preparation_race():
+    outcomes = []
+    body = {'camera_ready': True, 'microphone_ready': True, 'consent_confirmed': True, 'network_quality': 'good'}
+    for _ in range(5):
+        p, slots, identifier, session_id = prepared_move_setup()
+        key = str(uuid4())
+        url = f'/api/v1/teleconsultations/{identifier}/check-in'
+        results = together([
+            lambda: client.post(url, headers=p['p1']['headers'], json=body, params={'expected_revision': 0}),
+            lambda: move(p['p1'], identifier, slots[1], key=key),
+        ])
+        assert results[0].status_code in (200, 409) and results[1].status_code == 200, [(r.status_code, r.text) for r in results]
+        outcomes.append([r.status_code for r in results])
+        with Session(engine) as db:
+            room = db.get(TeleconsultationSession, session_id)
+            assert room.status == 'scheduled' and room.preflight_note == 'Synthetic retained draft'
+            assert not any((room.identity_confirmed, room.consent_confirmed, room.vitals_reviewed, room.medication_reviewed, room.clinical_summary_ready))
+            assert all(not any((row.checked_in_at, row.camera_ready, row.microphone_ready, row.consent_confirmed, row.network_quality))
+                       for row in db.query(TeleconsultationParticipant).filter_by(session_id=session_id))
+            assert db.query(HealthAuditLog).filter_by(resource_id=session_id, action='teleconsultation.preparation_reset').count() == 1
+        assert accept(p['d1'], identifier, revision=1).status_code == 200
+        assert client.post(url, headers=p['p1']['headers'], json=body).status_code == 409
+        assert client.post(url, headers=p['p1']['headers'], json=body, params={'expected_revision': 1}).status_code == 200
+        assert move(p['p1'], identifier, slots[1], key=key).status_code == 200
+        with Session(engine) as db:
+            participant = db.query(TeleconsultationParticipant).filter_by(session_id=session_id, user_id=p['p1']['uid']).one()
+            assert participant.checked_in_at and participant.camera_ready
+            participant.joined_at = datetime.utcnow(); db.commit()
+        denied = move(p['p1'], identifier, slots[0], revision=1)
+        assert denied.status_code == 409 and denied.json()['detail']['request_key_committed'] is False
+        with Session(engine) as db:
+            assert db.get(AppointmentSlot, slots[1]['id']).reserved_consultation_id == identifier
+            assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id is None
+    return {'forced_races': 5, 'outcomes': outcomes, 'stale_readiness_rejected_after_reacceptance': True,
+            'draft_and_current_readiness_preserved_on_retry': True, 'actual_attendance_prevents_move': True}
+
+
+def reschedule_video_reset_rollback():
+    p, slots, identifier, session_id = prepared_move_setup()
+    key = str(uuid4())
+    def fail(mapper, connection, row):
+        if row.action == 'teleconsultation.preparation_reset':
+            raise RuntimeError('Synthetic preparation audit failure')
+    event.listen(HealthAuditLog, 'before_insert', fail)
+    try:
+        assert move(p['p1'], identifier, slots[1], key=key).status_code == 503
+    finally:
+        event.remove(HealthAuditLog, 'before_insert', fail)
+    with Session(engine) as db:
+        assert db.get(AppointmentSlot, slots[0]['id']).reserved_consultation_id == identifier
+        assert db.get(AppointmentSlot, slots[1]['id']).reserved_consultation_id is None
+        assert db.get(TeleconsultationSession, session_id).clinical_summary_ready
+        assert all(row.checked_in_at for row in db.query(TeleconsultationParticipant).filter_by(session_id=session_id))
+        assert db.query(ConsultationReschedule).filter_by(consultation_id=identifier).count() == 0
+    assert move(p['p1'], identifier, slots[1], key=key).status_code == 200
+    return {'preparation_and_claims_rollback_together': True, 'same_key_retry_succeeds': True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
@@ -464,7 +706,12 @@ for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_differ
                 ('late_start_and_overrun',late_start_and_overrun),('current_revocation',current_revocation),('revocation_during_acceptance_wait',revocation_during_acceptance_wait),
                 ('notification_duplicate_delivery', notification_duplicate_delivery), ('notification_concurrent_read', notification_concurrent_read),
                 ('amendment_competing_writes', amendment_competing_writes), ('amendment_exact_retry', amendment_exact_retry),
-                ('clinical_record_retention', clinical_record_retention), ('clinical_amendment_migration', clinical_amendment_migration)]:
+                ('clinical_record_retention', clinical_record_retention), ('clinical_amendment_migration', clinical_amendment_migration),
+                ('reschedule_competing_revisions', reschedule_competing_revisions), ('reschedule_exact_retry', reschedule_exact_retry),
+                ('reschedule_competing_target', reschedule_competing_target), ('reschedule_accept_race', reschedule_accept_race),
+                ('reschedule_audit_rollback', reschedule_audit_rollback), ('reschedule_migration', reschedule_migration),
+                ('reschedule_video_preparation_race', reschedule_video_preparation_race),
+                ('reschedule_video_reset_rollback', reschedule_video_reset_rollback)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}

@@ -452,6 +452,7 @@ class Consultation(Base):
     timezone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     booking_request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     booking_request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    reschedule_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     cancellation_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -471,6 +472,25 @@ class Consultation(Base):
         Index("ix_consultations_patient_scheduled", "patient_id", "scheduled_at"),
         Index("ix_consultations_doctor_scheduled", "doctor_id", "scheduled_at"),
         Index("ix_consultations_patient_booking_key", "patient_id", "booking_request_key", unique=True),
+    )
+
+
+class ConsultationReschedule(Base):
+    """Retained request identities for atomic, retry-safe appointment moves."""
+    __tablename__ = "consultation_reschedules"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    consultation_id: Mapped[str] = mapped_column(String(36), ForeignKey("consultations.id", ondelete="RESTRICT"), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    previous_slot_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    slot_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    previous_status: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (
+        Index("uq_consultation_reschedule_request", "consultation_id", "request_key", unique=True),
+        Index("uq_consultation_reschedule_revision", "consultation_id", "revision", unique=True),
     )
 
 

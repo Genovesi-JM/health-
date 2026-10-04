@@ -9,6 +9,7 @@ import { apiErrorMessage } from '../utils/apiError';
 type Session = {
   id: string;
   consultation_id: string;
+  reschedule_revision?: number;
   provider: string;
   provider_mode: string;
   status: string;
@@ -171,18 +172,18 @@ export default function TeleconsultationControl({
     applySession((await api.post(`/api/v1/teleconsultations/${consultationId}/check-in`, {
       camera_ready: true, microphone_ready: true, network_quality: networkQuality,
       consent_confirmed: role === 'patient' && consent,
-    })).data);
+    }, { params: { expected_revision: session?.reschedule_revision ?? 0 } })).data);
   });
   const savePreflight = () => action(async () => {
     if (!session) return;
     applySession((await api.put(`/api/v1/teleconsultations/${consultationId}/preflight`, {
       ...session.preflight, preflight_note: session.preflight_note || undefined,
-    })).data);
+    }, { params: { expected_revision: session.reschedule_revision ?? 0 } })).data);
   });
   const startOrJoin = () => action(async () => {
     if (!session) return;
     if (role === 'doctor' && session.status !== 'in_progress') {
-      applySession((await api.post(`/api/v1/teleconsultations/${consultationId}/start`)).data);
+      applySession((await api.post(`/api/v1/teleconsultations/${consultationId}/start`, undefined, { params: { expected_revision: session.reschedule_revision ?? 0 } })).data);
     }
     if (currentId.current !== consultationId) return;
     const response = await api.post(`/api/v1/teleconsultations/${consultationId}/join`);

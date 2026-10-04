@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /Users/genovesimaria/Documents/kaya-web/frontend
+
+
+ Test Files  42 passed (42)
+      Tests  286 passed (286)
+   Start at  20:59:22
+   Duration  16.00s (transform 979ms, setup 1.34s, import 5.03s, tests 9.90s, environment 10.80s)
+

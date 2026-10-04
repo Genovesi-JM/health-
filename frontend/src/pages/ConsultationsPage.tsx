@@ -1,7 +1,7 @@
 import { appointmentError, formatAppointmentTime, isAppointmentConflict } from '../utils/appointments';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../api';
+import api, { getSession } from '../api';
 import type { Consultation, PatientState } from '../types';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap, X } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
@@ -13,6 +13,8 @@ import { specialtyLabel } from '../constants/specialties';
 import { MessageSquare, Star, Video } from 'lucide-react';
 import TeleconsultationControl from '../components/TeleconsultationControl';
 import ConsultationCloseout from '../components/ConsultationCloseout';
+import RescheduleConsultation from '../components/RescheduleConsultation';
+import { canReschedule, readReschedule } from '../utils/pendingReschedule';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
@@ -31,10 +33,19 @@ export default function ConsultationsPage() {
   const [summaryFor, setSummaryFor] = useState<Consultation | null>(null);
   const [loadError, setLoadError] = useState('');
   const [cancelFor, setCancelFor] = useState<Consultation | null>(null);
+  const [rescheduleFor, setRescheduleFor] = useState<Consultation | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
   const [cancelNotice, setCancelNotice] = useState('');
   const cancellationBusy = useRef(false);
+  const owner = getSession()?.userId;
+  // Recovery remains available after care or payment changes fresh-move eligibility.
+  // Read again on modal close so a newly uncertain attempt is reachable immediately.
+  const recovery = new Map<string, 'pending' | 'unavailable'>();
+  if (owner) for (const item of consultations) {
+    try { if (readReschedule(owner, item.id)) recovery.set(item.id, 'pending'); }
+    catch { recovery.set(item.id, 'unavailable'); }
+  }
 
   const cancelConsultation = async () => {
     if (!cancelFor || cancellationBusy.current || !['requested', 'scheduled'].includes(cancelFor.status)) return;
@@ -198,7 +209,9 @@ export default function ConsultationsPage() {
                     <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
                       <div>{specialtyLabel(c.specialty, t)}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
-                        {['requested', 'scheduled'].includes(c.status) && <button className="btn btn-sm" disabled={cancelling} onClick={() => { setCancelFor(c); setCancelError(''); setCancelNotice(''); }}>Cancelar consulta</button>}
+                        {['requested', 'scheduled'].includes(c.status) && <button className="btn btn-sm" disabled={cancelling || recovery.has(c.id)} onClick={() => { setCancelFor(c); setCancelError(''); setCancelNotice(''); }}>Cancelar consulta</button>}
+                        {(recovery.has(c.id) || canReschedule(c)) && <button className="btn btn-sm" disabled={cancelling} onClick={() => setRescheduleFor(c)}>{recovery.has(c.id) ? 'Recuperar alteração' : 'Alterar horário'}</button>}
+                        {recovery.has(c.id) && <small>{recovery.get(c.id) === 'pending' ? 'Confirme a alteração pendente antes de cancelar a consulta.' : 'Não foi possível verificar a referência da alteração. Abra a recuperação antes de continuar.'}</small>}
                         {['scheduled', 'in_progress', 'completed'].includes(c.status) && (
                           <button
                             onClick={() => setChatFor(c)}
@@ -269,6 +282,7 @@ export default function ConsultationsPage() {
       </div>}
 
       {/* Book Consultation Modal */}
+      {rescheduleFor && <RescheduleConsultation key={rescheduleFor.id} consultation={rescheduleFor} onClose={() => setRescheduleFor(null)} onUpdated={item => setConsultations(previous => previous.map(row => row.id === item.id ? item : row))} />}
       <BookConsultationModal
         open={showBooking}
         onClose={() => setShowBooking(false)}

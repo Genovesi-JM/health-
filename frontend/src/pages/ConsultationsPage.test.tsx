@@ -6,7 +6,7 @@ import api from '../api';
 import { I18nProvider } from '../i18n/LanguageContext';
 import ConsultationsPage from './ConsultationsPage';
 
-vi.mock('../api', () => ({ default: { get: vi.fn(), patch: vi.fn() } }));
+vi.mock('../api', () => ({ default: { get: vi.fn(), patch: vi.fn() }, getSession: () => ({ userId: 'patient-user' }) }));
 vi.mock('../components/BookConsultationModal', () => ({ default: () => null }));
 vi.mock('../components/PaymentModal', () => ({ default: () => null }));
 vi.mock('../components/ChatModal', () => ({ default: () => null }));
@@ -16,6 +16,7 @@ vi.mock('../components/ConsultationCloseout', () => ({ default: () => null }));
 const visit = { id: 'visit-1', specialty: 'clinica_geral', patient_id: 'patient-1', status: 'scheduled', scheduled_at: '2026-12-01T08:00:00Z', timezone: 'Africa/Luanda', created_at: '2026-10-01T08:00:00Z', payment_status: 'unpaid' };
 beforeEach(() => {
   vi.resetAllMocks();
+  sessionStorage.clear();
   vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/me') ? [visit] : null }));
   vi.mocked(api.patch).mockResolvedValue({ data: { ...visit, status: 'cancelled' } });
 });

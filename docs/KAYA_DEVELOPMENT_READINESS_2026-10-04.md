@@ -12,8 +12,8 @@ priority, followed by standalone Kaya apps for Android and iOS.
 | --- | --- | --- |
 | AO/PT foundation | Explicit service country, professional authority and clinic timezone; Angola/Luanda and Portugal/Lisbon/Madeira/Azores formatting and DST handling | Market configuration grants no cross-border care permission |
 | Accounts | Patient onboarding, professional enrollment/review and privileged MFA checks; session restoration uses server identity | Account changes invalidate old clinical views and pending identity responses |
-| Documents | Private PDF/JPEG/PNG upload, exact retry identity, scanner gate, local text-PDF extraction, separate patient review and authenticated download | [Document runtime](KAYA_FILE_SAFETY.md); image/scanned-PDF OCR and production scanning are not validated |
-| Scheduling | Published dated slots, pending clinician acceptance, atomic capacity checks and cancellation release | [Scheduling](KAYA_SCHEDULING.md), [booking](KAYA_BOOKING.md); real local PostgreSQL races |
+| Documents | Private PDF/JPEG/PNG upload, exact retry identity, scanner gate, local text-PDF extraction, separate patient review, paginated metadata, lazy details and clinician read-only web view | [Document runtime](KAYA_FILE_SAFETY.md); image/scanned-PDF OCR and production scanning are not validated |
+| Scheduling | Published dated slots, pending clinician acceptance, atomic capacity checks, cancellation release and same-doctor rescheduling with renewed acceptance | [Scheduling](KAYA_SCHEDULING.md), [booking](KAYA_BOOKING.md); real local PostgreSQL races |
 | Consultation record | Attributed finalized closeout, explicit patient summary, linked follow-up and verified readers | [Retained corrections](KAYA_CLINICAL_AMENDMENTS.md); original note retained with separate, explicitly published amendments |
 | Notifications | Transactional core-workflow notices, owner-scoped cursor inbox and acknowledged read state on web/native | [Notification contract](KAYA_NOTIFICATIONS.md); email/SMS/push are unavailable |
 | Web quality | Strict lint, typed error handling, async lifecycle/account isolation, safe map popup rendering | Interaction, build, presentation and TypeScript checks; remote browser/staging validation remains separate |
@@ -34,7 +34,7 @@ inspected or changed by these local checkpoints.
 
 These are explicit outstanding items, not hidden behind passing test counts:
 
-- Finish request expiry/rescheduling, bounded record-list pagination and any
+- Finish request expiry, bounded consultation-history pagination and any
   additional workflows included in the actual invited-pilot scope. Native
   clinician closeout editing, embedded video and scanned-document OCR are not
   implemented by the patient-native/source-export work.

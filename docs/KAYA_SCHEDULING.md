@@ -73,7 +73,40 @@ consultations retain a null country and timezone unless they already have that
 information. Tests use disposable databases; no user database has been migrated.
 
 Remaining scheduling work includes recurring publication, leave/blackout editing,
-rescheduling, expiry of unaccepted requests, pagination of broader consultation
+expiry of unaccepted requests, pagination of broader consultation
 history, deployment-specific PostgreSQL concurrency evidence and device verification.
 Local PostgreSQL API concurrency checks are recorded in [booking](KAYA_BOOKING.md).
 Published slots alone do not establish a clinical service's launch eligibility.
+
+## Patient rescheduling — 4 October 2026
+
+`POST /api/v1/consultations/{id}/reschedule` moves an owned, unpaid requested or
+scheduled visit to another published slot for the same doctor and service
+country. The request carries a UUID `Idempotency-Key`, `slot_id` and integer
+`expected_revision`. The original reservation is retained until the new claim,
+release, revision history, audit and in-app notices commit in one transaction.
+Every successful change returns the visit to `requested`: the new time needs a
+new clinician acceptance. Existing payment references require support review;
+this endpoint does not change a payment or promise a refund.
+
+An identical key and body recover the current consultation even if care has
+subsequently progressed. Changing the body under the same key is rejected.
+Only the structured `reschedule_not_committed` conflict confirms that this
+specific key did not commit after the common resource locks were acquired.
+Clients retain uncertain keys and exact bodies across retries. The web keeps a
+minimal owner-scoped reference in session storage and exposes recovery even
+after the current status would prohibit a fresh move.
+
+Queue, agenda and video-preparation responses include the appointment revision.
+Accept, start, video check-in and preflight writes send that displayed revision;
+stale writes fail before acting on a changed time. For compatibility, an omitted
+revision means zero and cannot approve a rescheduled visit. Rescheduling resets
+unstarted video confirmations and current check-ins, retains authored notes and
+audit history, and rejects any recorded start, completion or room attendance.
+Replaying a committed request cannot erase newly recorded preparation.
+
+`appointment_reschedules_v1` adds the revision and retained retry history after
+`clinical_amendments_v1`, preserving existing clinical-retention triggers. Its
+downgrade refuses to discard nonempty rescheduling history. All migration and
+concurrency validation uses disposable databases; no operational database was
+migrated.

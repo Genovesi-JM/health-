@@ -95,3 +95,24 @@ it('updates the consultation card plan only from the acknowledged amendment', as
   expect(card).toHaveTextContent('Updated displayed plan');
   expect(card).not.toHaveTextContent('Original visible plan');
 });
+
+it('opens doctor document access from the patient workspace and loads a selected original on demand', async () => {
+  show();
+  const tab = await screen.findByRole('button', { name: 'Documentos' });
+  const metadata = { id: 'document', original_filename: 'Exame.pdf', content_type: 'application/pdf', size_bytes: 100, scan_status: 'clean', status: 'confirmed', created_at: '2026-10-04T12:00:00Z' };
+  vi.mocked(api.get).mockImplementation(async url => ({ data: url.endsWith('/page')
+    ? { items: [metadata], next_cursor: null } : { ...metadata, reviewed_text: 'Patient document text' } }));
+  fireEvent.click(tab);
+  fireEvent.click(await screen.findByRole('button', { name: /Exame.pdf/ }));
+  await screen.findByText('Patient document text');
+  expect(api.get).toHaveBeenCalledWith('/api/v1/patient-documents/patients/patient/page', { params: { limit: 20 } });
+  expect(api.get).toHaveBeenLastCalledWith('/api/v1/patient-documents/document');
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('keeps document access out of the nursing workspace', async () => {
+  show({ ...workspace, access: { ...workspace.access, role: 'nurse' } });
+  await screen.findByText('Paciente Exemplo');
+  expect(screen.queryByRole('button', { name: 'Documentos' })).not.toBeInTheDocument();
+  expect(api.get).toHaveBeenCalledTimes(1);
+});

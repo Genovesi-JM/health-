@@ -4,11 +4,21 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Query
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.health_models import Consultation, HealthAuditLog
+
+
+def displayed_revision(expected_revision: str = Query("0", pattern=r"^(0|[1-9][0-9]{0,9})$")) -> int:
+    """HTTP query values are text; reject coercions such as 1.0 or true."""
+    return int(expected_revision)
+
+
+def require_displayed_revision(consultation: Consultation, expected_revision: int) -> None:
+    if consultation.reschedule_revision != expected_revision:
+        raise HTTPException(409, "O horário mudou. Atualize a consulta antes de aceitar ou iniciar.")
 
 
 def record_event(db: Session, consultation: Consultation, actor_id: str,
@@ -35,6 +45,7 @@ def transition(db: Session, consultation: Consultation, *, actor_id: str,
     """
     previous_status = consultation.status
     previous_doctor_id = consultation.doctor_id
+    previous_revision = consultation.reschedule_revision
     if previous_status not in allowed_from:
         raise HTTPException(status_code=409, detail="O estado da consulta não permite esta ação. Atualize a lista.")
     from app.services.appointments import guard_transition, release_cancelled_slot
@@ -45,6 +56,7 @@ def transition(db: Session, consultation: Consultation, *, actor_id: str,
             table.c.id == consultation.id,
             table.c.status == previous_status,
             table.c.doctor_id == previous_doctor_id,
+            table.c.reschedule_revision == previous_revision,
         ).values(status=status, updated_at=datetime.utcnow(), **changes)
     )
     if result.rowcount != 1:

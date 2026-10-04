@@ -84,6 +84,7 @@ export interface Consultation {
   scheduled_at?: string;
   scheduled_end_at?: string;
   slot_id?: string;
+  reschedule_revision?: number;
   timezone?: string;
   country?: string;
   started_at?: string;
@@ -101,6 +102,9 @@ export interface ConsultationQueueItem {
   specialty: string;
   risk_level?: string;
   status: string;
+  reschedule_revision?: number;
+  timezone?: string;
+  scheduled_end_at?: string;
   chief_complaint?: string;
   scheduled_at?: string;
   created_at: string;

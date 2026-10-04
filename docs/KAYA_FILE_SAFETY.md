@@ -81,8 +81,17 @@ attachment, `private, no-store` and `nosniff` headers, and verify the stored has
 again. A patient can review their own documents; doctors need current professional
 authority and the existing accepted-care relationship, and have read-only access.
 Possession of a document ID does not grant access.
-The patient list and clinician metadata summary currently return at most the
-100 most recent documents; pagination remains to be implemented.
+Patients use `/api/v1/patient-documents/page`; the doctor workspace uses
+`/api/v1/patient-documents/patients/{patient_id}/page`. These return metadata and
+an opaque next cursor, with 20 items by default and an enforced maximum of 100.
+The signed cursor is bound to the authenticated viewer, patient and list scope;
+authorization is rechecked on every page and detail request. Ordering uses UTC
+creation time and ID so equal timestamps do not lose records. Metadata queries
+omit extracted text and private storage identifiers. Full text and original
+downloads load only when requested, and clinician details require a clean scan.
+The legacy array endpoint retains its shape with a bounded limit and next-page
+Link header. Older aggregate patient-summary responses still cap document
+metadata at 100; the workspace document tab provides the complete paginated view.
 
 Text-bearing PDFs are read locally with pinned pypdf, without an external model.
 The parser runs in a short-lived process with a 10-second wall timeout and CPU
@@ -96,8 +105,9 @@ OS sandbox or certification of extracted content. See the
 
 Patient confirmation is an attestation of their review, not clinician validation.
 It does not populate diagnoses, medications, device readings or prescriptions.
-Scanned-document/image OCR, production scanner validation, retention/deletion
-operations and clinician-facing review UX remain further work. Existing credential,
+The clinician workspace has a read-only document tab; it does not turn patient
+review into clinical validation. Scanned-document/image OCR, production scanner
+validation and retention/deletion operations remain further work. Existing credential,
 triage-photo and generated-prescription endpoints are outside this runtime
 adoption claim.
 
@@ -107,3 +117,9 @@ or cancelled selection preserves the previous request. A valid replacement needs
 fresh consent. Web and native do not interpret a successful picker or upload as a
 clean malware scan or a clinically validated reading. See
 [native validation](KAYA_NATIVE_BUILD_2026-10-04.md#pdf-selection-session-isolation-and-offline-android-smoke).
+
+On web, an upload with an unknown result locks replacement and consent controls
+until the exact request can be retried. A later generic failure does not prove
+the first attempt was absent. Keep the page open during this recovery: browser
+file bytes are held in memory and are not persisted across reloads. Pagination,
+detail errors and refresh do not discard an unsaved patient-review draft.

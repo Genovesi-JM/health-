@@ -31,13 +31,13 @@ from app.health_models import (
 )
 from app.health_schemas import (
     ConsultationBookRequest, ConsultationOut, ConsultationCompleteRequest, ConsultationAmendmentRequest,
-    ConsultationCancelRequest, ConsultationQueueItem, RoleEnum,
+    ConsultationCancelRequest, ConsultationQueueItem, ConsultationRescheduleRequest, RoleEnum,
 )
 from app.rbac import (
     get_patient_for_user,
     require_consents, require_verified_doctor,
 )
-from app.services.consultation_lifecycle import record_event, transition
+from app.services.consultation_lifecycle import displayed_revision, record_event, require_displayed_revision, transition
 from app.services.clinician_access import require_current_clinician
 from app.services.consultation_closeout import finalize_consultation, closeout_result, end_video
 
@@ -77,9 +77,25 @@ def book_consultation(
     return consultation
 
 
+@router.post("/api/v1/consultations/{consultation_id}/reschedule", response_model=ConsultationOut)
+def reschedule_consultation(
+    consultation_id: str, body: ConsultationRescheduleRequest, response: Response,
+    patient: Patient = Depends(require_consents), user: User = Depends(get_current_user),
+    db: Session = Depends(get_db), idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
+):
+    from app.services.appointment_rescheduling import reschedule
+    consultation = db.query(Consultation).filter_by(id=consultation_id, patient_id=patient.id).first()
+    if not consultation:
+        raise HTTPException(404, "Consulta não encontrada.")
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return reschedule(db, consultation, body, patient, user, idempotency_key)
+
+
 @router.get("/api/v1/consultations/me", response_model=List[ConsultationOut])
 def my_consultations(
     status: Optional[str] = Query(None),
+    consultation_id: Optional[str] = Query(None, max_length=36),
     patient: Patient = Depends(get_patient_for_user),
     db: Session = Depends(get_db),
 ):
@@ -87,6 +103,8 @@ def my_consultations(
     q = db.query(Consultation).filter(Consultation.patient_id == patient.id)
     if status:
         q = q.filter(Consultation.status == status)
+    if consultation_id:
+        q = q.filter(Consultation.id == consultation_id)
     return q.order_by(Consultation.created_at.desc()).limit(100).all()
 
 
@@ -161,6 +179,9 @@ def doctor_queue(
             risk_level=risk_level,
             chief_complaint=chief_complaint,
             scheduled_at=c.scheduled_at,
+            reschedule_revision=c.reschedule_revision,
+            timezone=c.timezone,
+            scheduled_end_at=c.scheduled_end_at,
             created_at=c.created_at,
         ))
     return items
@@ -186,6 +207,7 @@ def doctor_consultations(
 @router.post("/api/v1/doctor/queue/{consultation_id}/accept", response_model=ConsultationOut)
 def accept_consultation(
     consultation_id: str,
+    expected_revision: int = Depends(displayed_revision),
     user: User = Depends(require_verified_doctor),
     db: Session = Depends(get_db),
 ):
@@ -207,6 +229,7 @@ def accept_consultation(
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou já aceite.")
 
+    require_displayed_revision(consultation, expected_revision)
     next_status = "scheduled" if consultation.scheduled_at else "in_progress"
     transition(
         db, consultation, actor_id=user.id, action="consultation_accepted",
@@ -222,6 +245,7 @@ def accept_consultation(
 @router.post("/api/v1/doctor/queue/{consultation_id}/start", response_model=ConsultationOut)
 def start_consultation(
     consultation_id: str,
+    expected_revision: int = Depends(displayed_revision),
     user: User = Depends(require_verified_doctor),
     db: Session = Depends(get_db),
 ):
@@ -238,6 +262,7 @@ def start_consultation(
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou não está no estado agendado.")
 
+    require_displayed_revision(consultation, expected_revision)
     transition(
         db, consultation, actor_id=user.id, action="consultation_started",
         allowed_from=("scheduled",), status="in_progress", started_at=datetime.utcnow(),

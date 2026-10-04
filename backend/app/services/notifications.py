@@ -44,8 +44,10 @@ def consultation_event(db: Session, consultation, event: str) -> None:
     patient = db.get(Patient, consultation.patient_id)
     doctor = db.get(Doctor, consultation.doctor_id) if consultation.doctor_id else None
     recipients = {person.user_id for person in (patient, doctor) if person is not None}
+    revision = consultation.reschedule_revision or 0
+    revision_suffix = f":revision:{revision}" if revision else ""
     for recipient in sorted(recipients):
-        enqueue_notification(db, user_id=recipient, event_key=f"consultation:{consultation.id}:{event}",
+        enqueue_notification(db, user_id=recipient, event_key=f"consultation:{consultation.id}:{event}{revision_suffix}",
                              title=title, message=message, type=level,
                              entity_type="consultation", entity_id=consultation.id)
 

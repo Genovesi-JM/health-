@@ -12,7 +12,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(api.get).mockResolvedValue({ data: [{
     id: 'consult-1', time: '10:00', patient: 'Paciente de teste',
-    type: 'teleconsulta', reason: 'Pedido de teste', status: 'pending',
+    type: 'teleconsulta', reason: 'Pedido de teste', status: 'pending', reschedule_revision: 2,
   }] });
 });
 
@@ -43,7 +43,7 @@ describe('doctor agenda persistence', () => {
     vi.mocked(api.post).mockResolvedValue({ data: { status: 'scheduled' } });
     renderAgenda();
     await userEvent.click(await screen.findByTitle('Confirmar'));
-    expect(api.post).toHaveBeenCalledWith('/api/v1/doctor/queue/consult-1/accept');
+    expect(api.post).toHaveBeenCalledWith('/api/v1/doctor/queue/consult-1/accept', undefined, { params: { expected_revision: 2 } });
     expect(await screen.findByText('Confirmada')).toBeInTheDocument();
   });
 

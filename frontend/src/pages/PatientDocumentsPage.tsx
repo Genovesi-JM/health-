@@ -1,16 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Download, FileText, RefreshCw, Upload } from 'lucide-react';
 import api from '../api';
+import { useAuth } from '../AuthContext';
+import { apiErrorStatus } from '../utils/apiError';
+import { appendDocumentPage, type DocumentMetadata, type DocumentPage, type DocumentStatus as Status, type PatientDocument } from '../utils/patientDocuments';
 
 const BASE = '/api/v1/patient-documents';
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-type Status = 'pending_processing' | 'ready_for_review' | 'needs_manual_review' | 'confirmed' | 'rejected' | 'blocked' | 'processing_failed';
-type PatientDocument = {
-  id: string; original_filename: string; content_type: string; size_bytes: number;
-  status: Status; scan_status: string; version: number; extraction_method: string | null;
-  extracted_text: string | null; reviewed_text: string | null; created_at: string;
-  reviewed_at: string | null; error_code: string | null;
-};
 type Capabilities = { upload_enabled: boolean; max_bytes: number; accepted_types: string[]; extraction: string; message?: string };
 const STATUS_LABELS: Record<Status, string> = {
   pending_processing: 'A aguardar leitura', ready_for_review: 'Rever texto',
@@ -33,13 +29,22 @@ function manualReviewMessage(doc: PatientDocument) {
 }
 
 export default function PatientDocumentsPage() {
+  const { user } = useAuth();
+  return <PatientDocumentWorkspace key={`${user?.id}:${user?.role}`} />;
+}
+
+function PatientDocumentWorkspace() {
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
-  const [documents, setDocuments] = useState<PatientDocument[]>([]);
+  const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
+  const [details, setDetails] = useState<Record<string, PatientDocument>>({});
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [cursorExpired, setCursorExpired] = useState(false);
   const [listLoaded, setListLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
   const uploadKey = useRef<string | null>(null);
+  const [uploadUncertain, setUploadUncertain] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -50,33 +55,73 @@ export default function PatientDocumentsPage() {
   const downloadUrls = useRef(new Set<string>());
   const lifetime = useRef(0);
   const advanceLifetime = useCallback(() => ++lifetime.current, []);
-  const doc = documents.find(item => item.id === selectedId) ?? null;
+  const doc = selectedId ? details[selectedId] ?? null : null;
   const text = doc ? drafts[doc.id] ?? defaultText(doc) : '';
   const canReview = doc?.scan_status === 'clean' && ['ready_for_review', 'needs_manual_review'].includes(doc.status);
   const canProcess = doc && ['pending_processing', 'processing_failed'].includes(doc.status);
 
   const replaceDocument = (updated: PatientDocument) => {
-    setDocuments(previous => [updated, ...previous.filter(item => item.id !== updated.id)]);
+    setDetails(previous => ({ ...previous, [updated.id]: updated }));
+    setDocuments(previous => previous.some(item => item.id === updated.id)
+      ? previous.map(item => item.id === updated.id ? updated : item) : [updated, ...previous]);
+  };
+  const clearDeniedAccess = (failure: unknown) => {
+    if (![401, 403].includes(apiErrorStatus(failure) ?? 0)) return;
+    setDocuments([]); setDetails({}); setSelectedId(null); setNextCursor(null); setListLoaded(false);
+  };
+  const openDocument = async (id: string) => {
+    const version = lifetime.current;
+    try {
+      const response = await api.get<PatientDocument>(`${BASE}/${encodeURIComponent(id)}`);
+      if (version !== lifetime.current) return;
+      if (response.data.id !== id) throw new Error('Unexpected document response');
+      replaceDocument(response.data); setSelectedId(id);
+    } catch (failure) {
+      if (version !== lifetime.current) return;
+      clearDeniedAccess(failure);
+      throw failure;
+    }
   };
   const load = async () => {
     const version = lifetime.current;
     const [capabilityResult, documentResult] = await Promise.allSettled([
-      api.get<Capabilities>(`${BASE}/capabilities`), api.get<PatientDocument[]>(BASE),
+      api.get<Capabilities>(`${BASE}/capabilities`), api.get<DocumentPage>(`${BASE}/page`, { params: { limit: 20 } }),
     ]);
     if (version !== lifetime.current) return;
     const failures: string[] = [];
     if (capabilityResult.status === 'fulfilled') setCapabilities(capabilityResult.value.data);
     else { setCapabilities(null); failures.push('Não foi possível verificar a disponibilidade do envio.'); }
     if (documentResult.status === 'fulfilled') {
-      setDocuments(documentResult.value.data);
+      setDocuments(documentResult.value.data.items);
+      setNextCursor(documentResult.value.data.next_cursor); setCursorExpired(false);
       setListLoaded(true);
-      setSelectedId(previous => documentResult.value.data.some(item => item.id === previous) ? previous : documentResult.value.data[0]?.id ?? null);
-    } else failures.push('Não foi possível carregar os documentos. Tente atualizar.');
+      if (selectedId) {
+        try { await openDocument(selectedId); }
+        catch { failures.push('A lista foi atualizada, mas não foi possível atualizar o documento aberto. O seu texto foi mantido.'); }
+      }
+    } else { clearDeniedAccess(documentResult.reason); failures.push('Não foi possível carregar os documentos. Tente atualizar.'); }
+    if (version !== lifetime.current) return;
     if (failures.length) setError(failures.join(' '));
   };
+  const loadMore = async () => {
+    if (!nextCursor || cursorExpired) return;
+    const version = lifetime.current;
+    try {
+      const { data } = await api.get<DocumentPage>(`${BASE}/page`, { params: { limit: 20, cursor: nextCursor } });
+      if (version !== lifetime.current) return;
+      setDocuments(previous => appendDocumentPage(previous, data.items)); setNextCursor(data.next_cursor);
+    } catch (failure) {
+      if (version !== lifetime.current) return;
+      clearDeniedAccess(failure);
+      if (apiErrorStatus(failure) === 422) {
+        setCursorExpired(true); setError('A continuação da lista expirou. Recomece a lista; o documento aberto e os seus rascunhos serão mantidos.');
+      } else throw failure;
+    }
+  };
+  const initialLoad = useEffectEvent(load);
   useEffect(() => {
     const version = advanceLifetime();
-    void load().finally(() => { if (version === lifetime.current) setLoading(false); });
+    void initialLoad().finally(() => { if (version === lifetime.current) setLoading(false); });
     const urls = downloadUrls.current;
     return () => { advanceLifetime(); urls.forEach(url => URL.revokeObjectURL(url)); urls.clear(); };
   }, [advanceLifetime]);
@@ -115,7 +160,7 @@ export default function PatientDocumentsPage() {
     }
   };
   const chooseFile = (picked: File | undefined) => {
-    if (!picked) return;
+    if (!picked || uploadUncertain) return;
     setError(''); setNotice('');
     if (!ACCEPTED_TYPES.includes(picked.type) || !capabilities?.accepted_types.includes(picked.type)) { setError('Escolha um ficheiro PDF, JPG ou PNG permitido para envio.'); return; }
     if (picked.size === 0 || picked.size > Math.min(capabilities?.max_bytes ?? 10485760, 10485760)) {
@@ -132,13 +177,22 @@ export default function PatientDocumentsPage() {
     const version = lifetime.current;
     uploadKey.current ??= crypto.randomUUID();
     const form = new FormData(); form.append('file', file); form.append('processing_consent', 'true');
-    const response = await api.post<PatientDocument>(BASE, form, {
-      headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': uploadKey.current },
-    });
+    let response;
+    try {
+      response = await api.post<PatientDocument>(BASE, form, {
+        headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': uploadKey.current },
+      });
+    } catch (failure) {
+      if (version === lifetime.current) {
+        const status = apiErrorStatus(failure);
+        if (uploadUncertain || !status || status >= 500 || [408, 409, 429].includes(status)) setUploadUncertain(true);
+      }
+      throw failure;
+    }
     if (version !== lifetime.current) return;
     const uploaded = response.data;
     replaceDocument(uploaded); setSelectedId(uploaded.id);
-    setFile(null); uploadKey.current = null; setConsent(false);
+    setFile(null); uploadKey.current = null; setConsent(false); setUploadUncertain(false);
     if (fileInput.current) fileInput.current.value = '';
     setNotice('Documento guardado.');
     if (uploaded.status === 'pending_processing') await processDocument(uploaded);
@@ -182,19 +236,23 @@ export default function PatientDocumentsPage() {
         {!capabilities?.upload_enabled && <p role="status">O envio de documentos está temporariamente indisponível. Pode consultar os documentos já guardados.</p>}
         <fieldset disabled={!!busy || !capabilities?.upload_enabled} style={{ border: 0, padding: 0 }}>
           <label htmlFor="patient-document-file">Ficheiro</label><br />
-          <input id="patient-document-file" ref={fileInput} type="file" accept={ACCEPTED_TYPES.join(',')} onChange={event => chooseFile(event.target.files?.[0])} />
+          <input id="patient-document-file" ref={fileInput} type="file" disabled={uploadUncertain} accept={ACCEPTED_TYPES.join(',')} onChange={event => chooseFile(event.target.files?.[0])} />
           {file && <p>Selecionado: {file.name}</p>}
-          <label style={{ display: 'block', margin: '1rem 0' }}><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} /> Autorizo o armazenamento e a leitura deste documento para o rever na minha conta.</label>
+          {uploadUncertain && <p role="status">O envio anterior ainda não foi confirmado. O ficheiro e a identificação foram reservados para repetir o mesmo envio. Mantenha esta página aberta até confirmar o resultado.</p>}
+          <label style={{ display: 'block', margin: '1rem 0' }}><input type="checkbox" disabled={uploadUncertain} checked={consent} onChange={event => setConsent(event.target.checked)} /> Autorizo o armazenamento e a leitura deste documento para o rever na minha conta.</label>
           <button className="btn btn-primary" disabled={!file || !consent} onClick={() => void upload()}><Upload size={16} /> {busy === 'upload' ? 'A enviar…' : 'Enviar e ler documento'}</button>
         </fieldset>
       </section>
       <section aria-labelledby="documents-title"><h2 id="documents-title">Documentos guardados</h2>
         {listLoaded && documents.length === 0 && <p>Ainda não há documentos guardados.</p>}
         <ul style={{ listStyle: 'none', padding: 0 }}>{documents.map(item => <li key={item.id} style={{ marginBottom: '.5rem' }}>
-          <button className="btn btn-outline" aria-pressed={selectedId === item.id} disabled={!!busy} onClick={() => { setSelectedId(item.id); setError(''); setNotice(''); }}>
+          <button className="btn btn-outline" aria-pressed={selectedId === item.id} disabled={!!busy} onClick={() => void run('open', () => openDocument(item.id))}>
             <FileText size={16} /> {item.original_filename} — {STATUS_LABELS[item.status] ?? 'Estado desconhecido'}
           </button>
         </li>)}</ul>
+        {busy === 'open' && <p role="status">A abrir documento…</p>}
+        {nextCursor && !cursorExpired && <button className="btn btn-outline" disabled={!!busy} onClick={() => void run('more', loadMore)}>{busy === 'more' ? 'A carregar…' : 'Carregar mais documentos'}</button>}
+        {cursorExpired && <button className="btn btn-outline" disabled={!!busy} onClick={() => void run('refresh', load)}>Recomeçar lista</button>}
       </section>
       {doc && <section className="card" aria-labelledby="review-title" style={{ padding: '1.25rem', margin: '1rem 0' }}>
         <h2 id="review-title">{doc.original_filename}</h2>

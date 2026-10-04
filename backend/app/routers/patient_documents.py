@@ -9,12 +9,12 @@ from typing import Literal
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, StrictInt
-from sqlalchemy import select, update
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from app.database import get_db
 from app.deps import get_current_user
@@ -23,6 +23,7 @@ from app.models import User
 from app.identity import normalize_role
 from app.rbac import assert_doctor_can_access_patient
 from app.services.clinician_access import require_current_clinician
+from app.services.cursors import MAX_CURSOR_LENGTH, decode_position, encode_position, utc_timestamp
 from app.services.health_storage import get_health_storage
 from app.services.patient_document_extraction import extract_document
 from app.services.patient_documents import (
@@ -36,6 +37,10 @@ def _private_response(response: Response) -> None:
 
 
 router = APIRouter(dependencies=[Depends(_private_response)], prefix="/api/v1/patient-documents", tags=["patient-documents"])
+METADATA_FIELDS = (
+    "id", "original_filename", "content_type", "size_bytes", "status", "scan_status",
+    "version", "extraction_method", "created_at", "reviewed_at", "error_code",
+)
 
 
 def serialize_document(document: PatientDocument) -> dict:
@@ -44,6 +49,13 @@ def serialize_document(document: PatientDocument) -> dict:
         "version", "extraction_method", "extracted_text", "reviewed_text", "created_at",
         "reviewed_at", "error_code",
     )}
+
+
+def serialize_metadata(document: PatientDocument) -> dict:
+    result = {name: getattr(document, name) for name in METADATA_FIELDS}
+    for name in ("created_at", "reviewed_at"):
+        result[name] = utc_timestamp(result[name])
+    return result
 
 
 def _patient(user: User, db: Session) -> Patient:
@@ -79,14 +91,47 @@ def _get(document_id: str, user: User, db: Session, *, owner: bool = False) -> P
         return document
     if owner or user.role != "doctor":
         raise HTTPException(403, "Sem acesso a este documento.")
+    _doctor_patient(document.patient_id, user, db)
+    if document.scan_status != "clean":
+        raise HTTPException(409, "O documento ainda não passou a verificação de segurança.")
+    return document
+
+
+def _doctor_patient(patient_id: str, user: User, db: Session) -> None:
+    if user.role != "doctor":
+        raise HTTPException(403, "Sem acesso aos documentos deste paciente.")
     require_current_clinician(user, db)
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
         raise HTTPException(403, "Sem acesso a este documento.")
-    assert_doctor_can_access_patient(doctor, document.patient_id, db)
-    if not doctor_has_document_relationship(doctor.id, document.patient_id, db):
+    assert_doctor_can_access_patient(doctor, patient_id, db)
+    if not doctor_has_document_relationship(doctor.id, patient_id, db):
         raise HTTPException(403, "O acesso ao documento requer uma relação clínica aceite.")
-    return document
+
+
+def _document_page(user: User, patient_id: str, db: Session, *, limit: int, cursor: str | None,
+                   clean_only: bool = False, metadata_only: bool = True) -> dict:
+    scope = "patient_documents:clean" if clean_only else "patient_documents:owner"
+    query = db.query(PatientDocument).filter(PatientDocument.patient_id == patient_id)
+    if clean_only:
+        query = query.filter(PatientDocument.scan_status == "clean")
+    if cursor is not None:
+        stamp, identifier = decode_position(cursor, scope=scope, viewer_id=user.id, owner_id=patient_id)
+        query = query.filter(or_(PatientDocument.created_at < stamp,
+                                 and_(PatientDocument.created_at == stamp, PatientDocument.id < identifier)))
+    if metadata_only:
+        query = query.options(load_only(*(getattr(PatientDocument, field) for field in METADATA_FIELDS)))
+    rows = query.order_by(PatientDocument.created_at.desc(), PatientDocument.id.desc()).limit(limit + 1).all()
+    items = rows[:limit]
+    next_cursor = encode_position(scope=scope, viewer_id=user.id, owner_id=patient_id,
+                                  created_at=items[-1].created_at, identifier=items[-1].id) if len(rows) > limit else None
+    serializer = serialize_metadata if metadata_only else serialize_document
+    # Serialize before committing the read audit, so expiration cannot reload
+    # the large text columns excluded from a metadata-only query.
+    result = {"items": [serializer(item) for item in items], "next_cursor": next_cursor}
+    _audit_list(db, user, patient_id)
+    _commit(db)
+    return result
 
 
 def _audit(db: Session, user: User, document: PatientDocument, action: str) -> None:
@@ -146,14 +191,31 @@ def capabilities(user: User = Depends(get_current_user)):
 
 @router.get("")
 @router.get("/", include_in_schema=False)
-def list_documents(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_documents(response: Response, limit: int = Query(100, ge=1, le=100),
+                   cursor: str | None = Query(None, max_length=MAX_CURSOR_LENGTH),
+                   user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     patient = _patient(user, db)
-    documents = db.query(PatientDocument).filter(
-        PatientDocument.patient_id == patient.id,
-    ).order_by(PatientDocument.created_at.desc()).limit(100).all()
-    _audit_list(db, user, patient.id)
-    _commit(db)
-    return [serialize_document(document) for document in documents]
+    page = _document_page(user, patient.id, db, limit=limit, cursor=cursor, metadata_only=False)
+    response.headers["X-Has-More"] = "true" if page["next_cursor"] else "false"
+    if page["next_cursor"]:
+        response.headers["Link"] = f'<{router.prefix}?limit={limit}&cursor={page["next_cursor"]}>; rel="next"'
+    return page["items"]
+
+
+@router.get("/page")
+def document_page(limit: int = Query(20, ge=1, le=100),
+                  cursor: str | None = Query(None, max_length=MAX_CURSOR_LENGTH),
+                  user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    patient = _patient(user, db)
+    return _document_page(user, patient.id, db, limit=limit, cursor=cursor)
+
+
+@router.get("/patients/{patient_id}/page")
+def patient_document_page(patient_id: str, limit: int = Query(20, ge=1, le=100),
+                          cursor: str | None = Query(None, max_length=MAX_CURSOR_LENGTH),
+                          user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _doctor_patient(patient_id, user, db)
+    return _document_page(user, patient_id, db, limit=limit, cursor=cursor, clean_only=True)
 
 
 @router.post("", status_code=201)

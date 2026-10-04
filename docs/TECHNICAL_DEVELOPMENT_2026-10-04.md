@@ -593,3 +593,29 @@ checks require portable Git because the host Git is behind an unaccepted Xcode
 license. Neither environment correction changed application behavior. Existing
 Python deprecation and JS bundle-size warnings remain visible. No clinical gate
 was signed or live migration performed.
+
+## Paginated documents and atomic rescheduling
+
+Patient document lists now traverse signed, owner-bound metadata pages and load
+full text only on demand. The clinician workspace supplies a read-only paginated
+view, with current professional/relationship checks and clean-scan enforcement
+on details and originals. Unsaved patient reviews survive page failures; uncertain
+web uploads retain the original file and request identity for an exact retry.
+
+Patients can move an unpaid reservation to the same doctor's other published
+slot in the same market. The original claim, new claim, revision, audit and
+notices change atomically. A move requires renewed clinician acceptance. Web
+recovery remains reachable after later state changes; displayed revisions stop
+stale acceptance, start, check-in and preflight writes. Unstarted video
+preparation resets without erasing the authored note or previous audit history.
+See [the scheduling contract](KAYA_SCHEDULING.md#patient-rescheduling--4-october-2026).
+
+The exact staged backend snapshot passed 1,634 expanded tests in 162.53 seconds;
+29 repository checks plus 43 subtests passed. Web passed 286 tests in 42 files,
+TypeScript, zero-warning lint, 15 prototype checks and production build.
+PostgreSQL passed 23 scenarios including 75 forced races and stopped the
+disposable cluster. Source hashes, test reports and retained bundle warning are
+in [the checkpoint evidence](evidence/documents-rescheduling-2026-10-04/manifest.json).
+The generated policy contains 280 routes with every activation flag false and
+release HOLD. Native screen changes receive a separate validation checkpoint;
+this record includes only their shared generated policy artifact.

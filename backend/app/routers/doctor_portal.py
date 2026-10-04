@@ -219,6 +219,7 @@ def doctor_agenda_today(
             "id": c.id,
             "time": instant.astimezone(zone).strftime("%H:%M"),
             "scheduled_at": instant.isoformat(),
+            "reschedule_revision": c.reschedule_revision,
             "scheduled_end_at": end_instant.isoformat() if end_instant else None,
             "duration": duration,
             "country": c.country,

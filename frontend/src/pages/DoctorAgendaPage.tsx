@@ -16,6 +16,7 @@ interface Appointment {
   type: 'teleconsulta' | 'presencial';
   reason: string;
   status: string;   // confirmed | pending | in_progress | completed | cancelled | no_show
+  reschedule_revision?: number;
 }
 
 const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
@@ -71,6 +72,7 @@ export default function DoctorAgendaPage() {
           type: a.type,
           reason: a.reason || '—',
           status: a.status,
+          reschedule_revision: a.reschedule_revision,
         }));
         setAppts(mapped);
       })
@@ -95,7 +97,7 @@ export default function DoctorAgendaPage() {
     setActionError('');
     try {
       const response = status === 'confirmed'
-        ? await api.post(`/api/v1/doctor/queue/${id}/accept`)
+        ? await api.post(`/api/v1/doctor/queue/${id}/accept`, undefined, { params: { expected_revision: appts.find(item => item.id === id)?.reschedule_revision ?? 0 } })
         : await api.patch(`/api/v1/consultations/${id}`, {});
       const serverStatus = response.data.status === 'scheduled' ? 'confirmed' : response.data.status;
       setAppts(prev => prev.map(a => a.id === id ? { ...a, status: serverStatus } : a));

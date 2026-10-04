@@ -23,7 +23,7 @@ from app.health_models import (
     Consultation, Doctor, HealthAuditLog, Patient,
     TeleconsultationParticipant, TeleconsultationSession,
 )
-from app.services.consultation_lifecycle import transition
+from app.services.consultation_lifecycle import displayed_revision, require_displayed_revision, transition
 from app.services.consultation_closeout import end_video, require_episode_consent, utc_stamp
 from app.services.clinician_access import require_current_clinician
 from app.video_boundary import DisabledVideoProvider
@@ -98,6 +98,7 @@ def _lock_active(db: Session, consultation: Consultation) -> None:
     session update after the active-state check.
     """
     from app.services.appointments import lock_resources
+    previous_revision = consultation.reschedule_revision
     lock_resources(db, consultation.doctor_id, consultation.patient_id)
     if consultation.status not in ("scheduled", "in_progress") or not consultation.doctor_id:
         raise HTTPException(409, "A consulta não está aceite e ativa.")
@@ -105,6 +106,7 @@ def _lock_active(db: Session, consultation: Consultation) -> None:
     result = db.execute(update(table).where(
         table.c.id == consultation.id, table.c.status == consultation.status,
         table.c.doctor_id == consultation.doctor_id,
+        table.c.reschedule_revision == previous_revision,
     ).values(updated_at=datetime.utcnow()))
     if result.rowcount != 1:
         db.rollback()
@@ -137,6 +139,7 @@ def _session_out(item: TeleconsultationSession, db: Session, user: User) -> dict
     )}
     result = {
         "id": item.id, "consultation_id": item.consultation_id,
+        "reschedule_revision": db.get(Consultation, item.consultation_id).reschedule_revision,
         "provider": "disabled", "provider_mode": "disabled", "status": item.status,
         "preflight": ready, "preflight_complete": all(ready.values()),
         "participants": [_participant_out(row) for row in query.all()],
@@ -198,9 +201,13 @@ def get_session(consultation_id: str, response: Response, user: User = Depends(g
 
 
 @router.post("/{consultation_id}/check-in")
-def check_in(consultation_id: str, body: CheckInRequest, response: Response, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def check_in(consultation_id: str, body: CheckInRequest, response: Response,
+             expected_revision: int = Depends(displayed_revision),
+             user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     consultation = _authorized_consultation(user, consultation_id, db)
+    require_displayed_revision(consultation, expected_revision)
     _lock_active(db, consultation)
+    require_displayed_revision(consultation, expected_revision)
     require_episode_consent(consultation, db)
     session = _session(consultation_id, db)
     if session.status == "completed":
@@ -227,11 +234,15 @@ def check_in(consultation_id: str, body: CheckInRequest, response: Response, use
 
 
 @router.put("/{consultation_id}/preflight")
-def update_preflight(consultation_id: str, body: PreflightRequest, response: Response, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_preflight(consultation_id: str, body: PreflightRequest, response: Response,
+                     expected_revision: int = Depends(displayed_revision),
+                     user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     consultation = _authorized_consultation(user, consultation_id, db)
     if user.role != "nurse":
         raise HTTPException(403, "Checklist de preparação reservado à enfermagem.")
+    require_displayed_revision(consultation, expected_revision)
     _lock_active(db, consultation)
+    require_displayed_revision(consultation, expected_revision)
     require_episode_consent(consultation, db)
     session = _session(consultation_id, db)
     if session.status not in ("scheduled", "waiting"):
@@ -248,11 +259,14 @@ def update_preflight(consultation_id: str, body: PreflightRequest, response: Res
 
 
 @router.post("/{consultation_id}/start")
-def start_session(consultation_id: str, response: Response, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def start_session(consultation_id: str, response: Response, expected_revision: int = Depends(displayed_revision),
+                  user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     consultation = _authorized_consultation(user, consultation_id, db)
     if user.role != "doctor":
         raise HTTPException(403, "A teleconsulta é iniciada pelo médico.")
+    require_displayed_revision(consultation, expected_revision)
     _lock_active(db, consultation)
+    require_displayed_revision(consultation, expected_revision)
     require_episode_consent(consultation, db)
     session = _session(consultation_id, db)
     if session.status == "completed":

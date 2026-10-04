@@ -8,6 +8,7 @@ import PatientReadingsPanel from '../components/PatientReadingsPanel';
 import { specialtyLabel } from '../constants/specialties';
 import TriagePhotoReview from '../components/TriagePhotoReview';
 import ConsultationCloseout from '../components/ConsultationCloseout';
+import { formatAppointmentTime } from '../utils/appointments';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
 
@@ -89,11 +90,12 @@ export default function DoctorQueuePage() {
     setActionError('');
     try {
       const action = item.status === 'scheduled' ? 'start' : 'accept';
-      await api.post(`/api/v1/doctor/queue/${item.id}/${action}`);
+      await api.post(`/api/v1/doctor/queue/${item.id}/${action}`, undefined, { params: { expected_revision: item.reschedule_revision ?? 0 } });
       setSelected(null);
       loadQueue();
     } catch {
       setActionError(t('queue.action_error'));
+      setSelected(null);
       loadQueue();
     } finally {
       setPendingAction(null);
@@ -200,7 +202,7 @@ export default function DoctorQueuePage() {
                         </span>
                       </td>
                       <td><span className={`badge ${riskBadge(q.risk_level)}`}>{q.risk_level || '—'}</span></td>
-                      <td>{q.scheduled_at ? new Date(q.scheduled_at).toLocaleString(locale) : new Date(q.created_at).toLocaleDateString(locale)}<br /><span>{t(`consult.status_${q.status}`)}</span></td>
+                      <td>{q.scheduled_at ? formatAppointmentTime(q.scheduled_at, q.timezone || 'UTC', locale) : new Date(q.created_at).toLocaleDateString(locale)}{q.scheduled_end_at && <><br />{formatAppointmentTime(q.scheduled_end_at, q.timezone || 'UTC', locale)}</>}<br /><span>{t(`consult.status_${q.status}`)}</span></td>
                       <td onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                           {q.status !== 'in_progress' && (
