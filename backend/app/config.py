@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     azure_storage_managed_identity_client_id: Optional[str] = None
     azure_storage_signed_url_seconds: int = 300
 
+    # Patient document processing is opt-in and requires a private ClamAV service.
+    # No OCR provider is contacted; only local PDF text extraction is supported.
+    patient_documents_enabled: bool = False
+    patient_document_clamav_host: Optional[str] = None
+    patient_document_clamav_port: int = 3310
+
     # DigitalOcean Spaces (S3-compatible storage)
     do_spaces_key: Optional[str] = None
     do_spaces_secret: Optional[str] = None

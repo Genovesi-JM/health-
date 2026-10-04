@@ -48,6 +48,7 @@ import MedicalDisclaimerPage from './pages/MedicalDisclaimerPage';
 /* Protected pages */
 import DashboardPage from './pages/DashboardPage';
 import PatientProfilePage from './pages/PatientProfilePage';
+import PatientDocumentsPage from './pages/PatientDocumentsPage';
 import TriagePage from './pages/TriagePage';
 import ConsultationsPage from './pages/ConsultationsPage';
 import ConsentsPage from './pages/ConsentsPage';
@@ -160,6 +161,7 @@ export default function App() {
             <Route element={<RoleRoute allowedRoles={['patient', 'cliente']} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/patient/profile" element={<PatientProfilePage />} />
+              <Route path="/patient/documents" element={<PatientDocumentsPage />} />
               <Route path="/triage" element={<TriagePage />} />
               <Route path="/consultations" element={<ConsultationsPage />} />
               <Route path="/self-care" element={<SelfCarePage />} />

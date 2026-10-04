@@ -142,3 +142,8 @@
 !security_tests/test_azure_sdk_contract.py
 !security_tests/test_docker_allowlist.py
 !security_tests/test_pilot_security.py
+
+!app/routers/patient_documents.py
+!app/services/patient_documents.py
+!app/services/patient_document_extraction.py
+!app/file_safety.py

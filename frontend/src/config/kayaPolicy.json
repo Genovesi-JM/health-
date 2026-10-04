@@ -778,13 +778,50 @@
         {
           "method": "GET",
           "path": "/api/v1/medications/patient/{patient_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/capabilities"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/patient-documents"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/patient-documents/"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/{document_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/patient-documents/{document_id}/process"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/{document_id}/download"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/patient-documents/{document_id}/review"
         }
       ],
       "ui_routes": [
         "/patients",
         "/dashboard",
         "/patient/profile",
-        "/patient/readings"
+        "/patient/readings",
+        "/patient/documents"
       ],
       "included_in_pilot": false
     },
@@ -1718,8 +1755,8 @@
   },
   "route_inventory": {
     "method": "AST declarations of mounted preserved backend; exact method/path binding, no imports",
-    "mounted_router_count": 35,
-    "mounted_route_count": 258,
+    "mounted_router_count": 36,
+    "mounted_route_count": 267,
     "legacy_unmounted_prefixes": [
       "/chat",
       "/status",

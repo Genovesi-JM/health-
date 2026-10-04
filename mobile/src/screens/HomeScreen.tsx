@@ -59,6 +59,7 @@ export default function HomeScreen() {
     { icon: '✦', label: t('home.triage'), screen: 'Triage' as const },
     { icon: '📅', label: t('home.book'), screen: 'BookConsultation' as const },
     { icon: '📋', label: 'As minhas consultas', screen: 'Consultations' as const },
+    { icon: '📄', label: 'Os meus documentos', screen: 'PatientDocuments' as const },
     { icon: '💊', label: t('home.prescription'), screen: 'PrescriptionRequest' as const },
     { icon: '❤️', label: t('home.measurements'), screen: 'Readings' as const },
     { icon: '👨‍👩‍👧', label: t('home.family'), screen: 'Family' as const },

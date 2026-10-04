@@ -33,6 +33,7 @@ from .routers import auth, admin, me, mfa
 # Health platform routers
 from .routers import (
     patients,
+    patient_documents,
     doctors,
     triage,
     consultations,
@@ -69,7 +70,7 @@ from .seed_data import seed_all
 
 _ALL_ROUTERS = [
     auth, mfa, admin, me,
-    patients, doctors, triage, consultations, prescriptions, prescription_requests,
+    patients, patient_documents, doctors, triage, consultations, prescriptions, prescription_requests,
     messages, nurse, shop_devices, doctor_portal, corporate, health_billing,
     compliance, health_dashboard, chatbot, readings, medications, family,
     notifications, credentials, clinician_workspace, clinical_operations,

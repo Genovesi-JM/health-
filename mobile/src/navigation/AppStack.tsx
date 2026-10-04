@@ -14,6 +14,7 @@ import PrescriptionRequestScreen from '../screens/PrescriptionRequestScreen';
 import FamilyScreen from '../screens/FamilyScreen';
 import ConsentGateScreen from '../screens/ConsentGateScreen';
 import TriageScreen from '../screens/TriageScreen';
+import PatientDocumentsScreen from '../screens/PatientDocumentsScreen';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export type AppStackParamList = {
@@ -26,6 +27,7 @@ export type AppStackParamList = {
   Readings: undefined;
   Notifications: undefined;
   Triage: undefined;
+  PatientDocuments: undefined;
 };
 
 export type TabParamList = {
@@ -86,6 +88,8 @@ export default function AppStack() {
         options={{ title: 'Consentimentos', headerTintColor: TEAL }} />
       <Stack.Screen name="Triage" component={TriageScreen}
         options={{ title: 'Orientação de saúde', headerTintColor: TEAL }} />
+      <Stack.Screen name="PatientDocuments" component={PatientDocumentsScreen}
+        options={{ title: 'Os meus documentos', headerTintColor: TEAL }} />
     </Stack.Navigator>
   );
 }

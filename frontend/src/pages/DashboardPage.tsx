@@ -12,7 +12,7 @@ import {
   Activity, Calendar, ArrowRight, ChevronRight,
   HeartPulse, AlertTriangle, CheckCircle2,
   Clock, Shield, Zap, TrendingUp, Siren, User,
-  Droplets, Thermometer, Brain, Wind,
+  Droplets, Thermometer, Brain, Wind, FileText,
 } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -73,6 +73,7 @@ export default function DashboardPage() {
     { icon: Calendar, label: t('dash.qa_appointments'), color: '#2563eb', bg: '#dbeafe', to: '/consultations' },
     { icon: HeartPulse, label: t('sidebar.readings'), color: '#7c3aed', bg: '#ede9fe', to: '/patient/readings' },
     { icon: User, label: t('dash.qa_profile'), color: '#64748b', bg: '#f1f5f9', to: '/patient/profile' },
+    { icon: FileText, label: 'Os meus documentos', color: '#0d9488', bg: '#e0f7f5', to: '/patient/documents' },
   ];
 
   /* Chronic disease config — icons + colors */

@@ -260,3 +260,77 @@ preview, followed by the remaining consultation/video and clinical-closeout
 workflow. Real provider onboarding, notification delivery, PostgreSQL concurrency,
 native-device testing and store distribution still require validation. Payments
 remain last.
+
+## Patient document reading and review
+
+Patients now have a dedicated document area in the operational web and native
+clients. Web supports PDF/JPEG/PNG originals up to 10 MiB; native selection
+currently supports JPEG/PNG, and can review text from PDFs uploaded on the web.
+Portuguese copy serves the Angola-first and Portugal preparation scope. These
+documents are separate from professional credential evidence and legacy company
+documents.
+
+The flow is upload with explicit processing consent, scan, extract, then review.
+The private original and its hash are retained. Local PDF extraction produces an
+unconfirmed transcription; the patient can correct and confirm it, or reject it.
+The original extracted text is retained separately from reviewed text. Confirmation
+does not update diagnoses, prescriptions, medication lists or device readings,
+and does not imply clinical validation.
+
+Only a clean malware scan allows parsing or original download. The ClamAV adapter
+requires explicit operator configuration and the feature defaults to disabled.
+Scanner failures and infected files remain unavailable for download. Original
+downloads are authenticated responses rather than persistent public URLs.
+Current professional authority and an accepted care relationship are required
+for doctor access. Pending care requests alone do not grant access to these
+documents.
+
+Real PDF text extraction runs locally in a bounded subprocess with no model
+provider call or inherited provider credentials. Images and scanned PDFs need
+OCR/manual transcription; missing-page, encrypted and size/complexity conditions
+are stated explicitly. The supported extraction is text-layer reading, not
+structured laboratory interpretation. The
+[file-safety record](KAYA_FILE_SAFETY.md) describes parser limits and the remaining
+operational prerequisites.
+
+Upload retries retain an owner-scoped idempotency key. Review/version conflicts
+refresh the saved version and preserve the patient's local edits for comparison.
+Database state changes and their content-free audit events commit together.
+A new `patient_documents_v1` migration creates the metadata table and uniqueness
+constraints; it is validated against disposable databases, including the current
+application's `create_all` bootstrap behavior. No user or deployment database was
+migrated during this work.
+
+The canonical policy inventory now includes the new nine API declarations and
+patient page, with all activation flags still false. The existing HOLD entry
+points were preserved. Production scanner provisioning, image OCR, native PDF
+selection/original download, real-device UI testing, clinical document-review UX,
+production PostgreSQL validation and retention/deletion operations remain further
+work. No live provider, scanner, deployment or clinical service was activated.
+
+Final local validation for this document milestone:
+
+| Check | Result |
+| --- | --- |
+| Full backend application suite | 419 passed |
+| Focused patient document API and migration suite | 44 passed |
+| Local PDF extraction subprocess tests (included in the full backend suite) | 9 passed |
+| Policy, file safety and AI safety suites (Phases 1, 29, 30) | 134 passed |
+| Scope and route inventory checks | 23 passed; 43 subtests passed |
+| Web interaction and policy suite | 127 passed |
+| Native endpoint, auth, onboarding and document helper tests | 36 passed |
+| Presentation prototype checks | 15 passed |
+| Web production build and web/native TypeScript | Passed |
+| Generated policy consistency | 4 artifacts verified; release HOLD |
+| Git whitespace/error check | Passed |
+
+Backend checks used disposable source copies and synthetic SQLite databases with
+network access blocked. Synthetic PDFs exercised the actual local extractor;
+scanner tests used controlled responses rather than a live ClamAV installation.
+The final empty-idempotency-key validation adjustment was separately regression
+tested after the full backend run. Tests cover owner isolation, current clinician
+authority and accepted relationships, blocked downloads, stale reviews, audit
+rollback, upload commit/response failures, and migration bootstrap adoption.
+The existing Python deprecation, web bundle size/Browserslist and Node module-type
+warnings remain. These results do not establish production PostgreSQL concurrency,
+scanner operation, real-device UI behavior or deployment readiness.

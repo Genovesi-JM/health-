@@ -33,6 +33,7 @@ from .routers import auth, admin, me, mfa
 # Health platform routers (new)
 from .routers import (
     patients,
+    patient_documents,
     doctors,
     triage,
     consultations,
@@ -157,6 +158,7 @@ def create_application() -> FastAPI:
     application.include_router(me.router)         # /me
 
     # ── Health platform routers ──
+    application.include_router(patient_documents.router)
     application.include_router(patients.router)           # /api/v1/patients/*
     application.include_router(doctors.router)            # /api/v1/doctors/*
     application.include_router(triage.router)             # /api/v1/triage/*

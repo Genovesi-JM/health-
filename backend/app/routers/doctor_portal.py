@@ -22,11 +22,12 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User, UserProfile
 from app.health_models import (
-    Doctor, Patient, Consultation, ConsultationNotes,
+    Doctor, Patient, PatientDocument, Consultation, ConsultationNotes,
     PrescriptionRequest, DeviceReading, PatientMedication, HealthPayment,
 )
 from app.rbac import log_health_audit, assert_doctor_can_access_patient
 from app.services.clinician_access import require_current_clinician
+from app.services.patient_documents import doctor_has_document_relationship
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["doctor-portal"])
@@ -541,7 +542,18 @@ def doctor_patient_clinical_summary(
             for r in prev_rx
         ],
         "risk_flags": risk_flags,
-        "uploaded_files": [],  # Reserved for future file integration
+        "uploaded_files": [
+            {
+                "id": document.id, "original_filename": document.original_filename,
+                "content_type": document.content_type, "size_bytes": document.size_bytes,
+                "status": document.status, "scan_status": document.scan_status,
+                "created_at": document.created_at.isoformat(),
+            }
+            for document in db.query(PatientDocument).filter(
+                PatientDocument.patient_id == patient_id,
+                PatientDocument.scan_status == "clean",
+            ).order_by(PatientDocument.created_at.desc()).limit(100).all()
+        ] if doctor_has_document_relationship(doctor.id, patient_id, db) else [],
     }
 
 

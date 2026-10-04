@@ -67,6 +67,7 @@ export function Sidebar({ open, onClose }: Props) {
             <SidebarSection title={t('sidebar.main')}>
               <SidebarLink to="/dashboard"       icon={Home}        label={t('sidebar.overview')}      onClick={onClose} />
               <SidebarLink to="/patient/profile" icon={User}        label={t('sidebar.my_profile')}    onClick={onClose} />
+              <SidebarLink to="/patient/documents" icon={FileText} label="Os meus documentos" onClick={onClose} />
               <SidebarLink to="/triage"          icon={Activity}    label={t('sidebar.triage')}        onClick={onClose} />
               <SidebarLink to="/consultations"   icon={Calendar}    label={t('sidebar.consultations')} onClick={onClose} />
               <SidebarLink to="/self-care"       icon={HeartPulse}  label={t('sidebar.self_care')}     onClick={onClose} />

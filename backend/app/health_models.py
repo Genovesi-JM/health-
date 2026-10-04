@@ -57,6 +57,35 @@ class Patient(Base):
     consents = relationship("PatientConsent", back_populates="patient", cascade="all, delete-orphan")
 
 
+# ── Patient documents (private original + explicitly reviewed transcription) ──
+
+class PatientDocument(Base):
+    __tablename__ = "patient_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    storage_key: Mapped[str] = mapped_column(Text, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="pending_processing")
+    scan_status: Mapped[str] = mapped_column(String(15), nullable=False, default="pending")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    extraction_method: Mapped[str] = mapped_column(String(30), nullable=False, default="none")
+    extracted_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reviewed_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("uq_patient_document_request", "patient_id", "idempotency_key", unique=True),
+    )
+
+
 # ── Doctor Invite (token-based onboarding) ──
 
 class DoctorInvite(Base):

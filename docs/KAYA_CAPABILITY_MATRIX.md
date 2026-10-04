@@ -28,7 +28,7 @@ States: NOT_BUILT, MOCK, SYNTHETIC_ONLY, DISABLED_PENDING_GATE, PILOT, LIVE. No 
 | Prescriptions and referrals (`prescribing_referrals=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/prescricoes/pedido`, `/doctor/prescricoes` |
 | Clinical messaging (`clinical_messaging=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 4 | `/doctor/mensagens` |
 | Clinical workspaces and care delivery (`clinical_operations=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 23 | `/preview/nurse`, `/preview/clinician/patient`, `/clinician/patients/:patientId`, `/chronic-care`, `/nurse`, `/doctor/dashboard`, `/doctor/profile`, `/doctor/pacientes`, `/doctor/avaliacoes`, `/doctor/suporte` |
-| Health records and measurements (`health_tracking=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 21 | `/patients`, `/dashboard`, `/patient/profile`, `/patient/readings` |
+| Health records and measurements (`health_tracking=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 30 | `/patients`, `/dashboard`, `/patient/profile`, `/patient/readings`, `/patient/documents` |
 | Family and caregiver access (`family_caregivers=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 13 | `/family`, `/onboarding/caregiver` |
 | Email, SMS and push notifications (`notifications=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 5 | `/notifications` |
 | Payments and subscriptions (`payments=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 6 | `/pricing`, `/doctor/financeiro` |
@@ -184,6 +184,15 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | PATCH | `/api/v1/medications/{medication_id}` | `health_tracking=false` |
 | DELETE | `/api/v1/medications/{medication_id}` | `health_tracking=false` |
 | GET | `/api/v1/medications/patient/{patient_id}` | `health_tracking=false` |
+| GET | `/api/v1/patient-documents/capabilities` | `health_tracking=false` |
+| GET | `/api/v1/patient-documents` | `health_tracking=false` |
+| GET | `/api/v1/patient-documents/` | `health_tracking=false` |
+| POST | `/api/v1/patient-documents` | `health_tracking=false` |
+| POST | `/api/v1/patient-documents/` | `health_tracking=false` |
+| GET | `/api/v1/patient-documents/{document_id}` | `health_tracking=false` |
+| POST | `/api/v1/patient-documents/{document_id}/process` | `health_tracking=false` |
+| GET | `/api/v1/patient-documents/{document_id}/download` | `health_tracking=false` |
+| PUT | `/api/v1/patient-documents/{document_id}/review` | `health_tracking=false` |
 | GET | `/api/v1/family/me` | `family_caregivers=false` |
 | POST | `/api/v1/family` | `family_caregivers=false` |
 | PATCH | `/api/v1/family/{family_member_id}` | `family_caregivers=false` |

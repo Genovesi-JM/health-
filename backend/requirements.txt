@@ -30,6 +30,7 @@ alembic>=1.13.0
 
 # PDF generation (prescriptions & referrals)
 reportlab>=4.0.0
+pypdf==6.19.0
 
 # Redis (session/queue — optional for MVP)
 redis>=5.0.0
