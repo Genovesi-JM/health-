@@ -4,13 +4,17 @@ import {
   TouchableOpacity, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/AppStack';
 import api from '../services/api';
 import {
-  DOCUMENT_STATUS, DOCUMENT_TEXT_LIMIT, canProcessDocument, canReviewDocument, documentError, manualReviewMessage,
+  DOCUMENT_STATUS, DOCUMENT_TEXT_LIMIT, DOCUMENT_MAX_BYTES, DocumentSelectionError,
+  canProcessDocument, canReviewDocument, documentError, manualReviewMessage, documentTypeAvailable, documentUploadLimit,
   preparePhotoUpload, reconcileDocumentReview, saveDocumentReview, sendDocumentUpload, startDocumentReview,
+  selectPdfUpload, validateDocumentUpload,
   type DocumentCapabilities, type DocumentUpload, type PatientDocument, type ReviewDraft,
 } from './patientDocuments';
 
@@ -106,14 +110,35 @@ export default function PatientDocumentsScreen() {
       }
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: false, quality: 1 });
       if (result.canceled || !result.assets[0]) return;
-      setUpload(preparePhotoUpload(result.assets[0], capabilities.max_bytes));
+      const asset = result.assets[0];
+      const selected = preparePhotoUpload({ ...asset, fileSize: new File(asset.uri).size }, documentUploadLimit(capabilities));
+      validateDocumentUpload(selected, capabilities);
+      setUpload(selected);
       setConsent(false);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Não foi possível selecionar a imagem.');
+      setError(failure instanceof DocumentSelectionError ? failure.message : 'Não foi possível selecionar a imagem. A seleção anterior foi mantida.');
     } finally { busy.current = false; setWorking(''); }
   };
 
-  const uploadPhoto = async () => {
+  const choosePdf = async () => {
+    if (busy.current || !documentTypeAvailable(capabilities, 'application/pdf')) return;
+    busy.current = true;
+    setWorking('choose-pdf');
+    setError('');
+    setNotice('');
+    try {
+      const selected = await selectPdfUpload(capabilities,
+        () => DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true, multiple: false }),
+        uri => new File(uri).size);
+      if (!selected) return;
+      setUpload(selected);
+      setConsent(false);
+    } catch (failure) {
+      setError(failure instanceof DocumentSelectionError ? failure.message : 'Não foi possível selecionar o PDF. A seleção anterior e o texto da revisão foram mantidos.');
+    } finally { busy.current = false; setWorking(''); }
+  };
+
+  const uploadDocument = async () => {
     if (busy.current || !upload || !consent || capabilities?.upload_enabled !== true) return;
     if (dirty) {
       setError('Guarde ou rejeite a revisão atual antes de enviar outro documento.');
@@ -124,6 +149,7 @@ export default function PatientDocumentsScreen() {
     setError('');
     setNotice('');
     try {
+      validateDocumentUpload(upload, capabilities);
       const document = await sendDocumentUpload(api, upload, consent);
       remember(document);
       setDraft(startDocumentReview(document));
@@ -131,8 +157,8 @@ export default function PatientDocumentsScreen() {
       setConsent(false);
       setNotice(document.status === 'blocked' ? 'O documento foi bloqueado e não pode ser lido.' : 'Documento recebido. Consulte o estado abaixo para continuar.');
     } catch (failure) {
-      setError(documentError(failure, 'Não foi possível confirmar o envio. A imagem foi mantida; pode tentar novamente.'));
-      // Keep the same image and idempotency key after an uncertain response.
+      setError(failure instanceof DocumentSelectionError ? failure.message : documentError(failure, 'Não foi possível confirmar o envio. O documento foi mantido; pode tentar novamente.'));
+      // Keep the same file and idempotency key after an uncertain response.
     } finally { busy.current = false; setWorking(''); }
   };
 
@@ -195,24 +221,29 @@ export default function PatientDocumentsScreen() {
   const document = draft?.document;
   const reviewable = !!document && canReviewDocument(document);
   const uploadAvailable = capabilities?.upload_enabled === true;
+  const photoAvailable = ['image/jpeg', 'image/png'].some(type => documentTypeAvailable(capabilities, type));
+  const pdfAvailable = documentTypeAvailable(capabilities, 'application/pdf');
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Os meus documentos</Text>
       <Text style={styles.body}>Envie exames ou relatórios e reveja o texto. A sua confirmação fica separada do processo clínico e não constitui validação médica.</Text>
       <View style={styles.card}>
         <Text style={styles.heading}>Adicionar documento</Text>
-        <Text style={styles.body}>Nesta aplicação pode selecionar imagens JPG ou PNG, até {Math.floor((capabilities?.max_bytes || 10_485_760) / 1024 / 1024)} MB. Para enviar um PDF, utilize a Kaya na web.</Text>
+        <Text style={styles.body}>Selecione um PDF ou uma imagem JPG ou PNG, até {(documentUploadLimit(capabilities) || DOCUMENT_MAX_BYTES) / 1024 / 1024} MB. O envio depende dos formatos atualmente autorizados pelo serviço.</Text>
         <Text style={styles.body}>A leitura automática está disponível para PDFs com texto. Fotografias e PDFs digitalizados precisam de transcrição manual nesta fase.</Text>
         {!uploadAvailable && <Text accessibilityRole="alert" style={styles.warning}>{capabilities?.message || 'O envio está temporariamente indisponível. Pode consultar e rever os documentos já enviados.'}</Text>}
-        <Action label={upload ? 'Escolher outra imagem' : 'Escolher imagem'} onPress={choosePhoto} disabled={!!working || !uploadAvailable} secondary />
+        <Action label="Escolher PDF" onPress={choosePdf} disabled={!!working || !pdfAvailable} secondary />
+        <Action label="Escolher imagem" onPress={choosePhoto} disabled={!!working || !photoAvailable} secondary />
         {upload && <>
-          <Image source={{ uri: upload.file.uri }} style={styles.preview} accessibilityLabel="Imagem selecionada para envio" resizeMode="contain" />
+          {upload.file.type === 'application/pdf'
+            ? <Text style={styles.status}>PDF selecionado · {Math.ceil((upload.size || 0) / 1024)} KB</Text>
+            : <Image source={{ uri: upload.file.uri }} style={styles.preview} accessibilityLabel="Imagem selecionada para envio" resizeMode="contain" />}
           <Text style={styles.filename}>{upload.file.name}</Text>
           <View style={styles.consentRow}>
             <Switch value={consent} onValueChange={setConsent} disabled={!!working || !uploadAvailable} accessibilityLabel="Autorizar o tratamento deste documento" trackColor={{ true: '#5eead4' }} />
             <Text style={styles.consent}>Autorizo a Kaya a guardar e tratar este documento, que pode conter dados de saúde, para extrair texto e permitir a minha revisão.</Text>
           </View>
-          <Action label="Enviar documento" onPress={uploadPhoto} disabled={!!working || !consent || !uploadAvailable || dirty} />
+          <Action label="Enviar documento" onPress={uploadDocument} disabled={!!working || !consent || !documentTypeAvailable(capabilities, upload.file.type) || dirty} />
         </>}
       </View>
       {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}

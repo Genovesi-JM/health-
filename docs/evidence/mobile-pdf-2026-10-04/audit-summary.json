@@ -1,0 +1,70 @@
+{
+  "captured_at_utc": "2026-10-04",
+  "node": "24.21.0",
+  "npm": "11.18.0",
+  "package_lock_sha256": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+  "package_json_sha256": "69f412d06605a8701be837ed29ad635127530da520108522f5e77ec027f811d8",
+  "npm_audit_counts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 16,
+    "critical": 0,
+    "total": 16
+  },
+  "scope": "npm package dependency graph; not an APK contents inventory",
+  "risk_acceptance": false,
+  "residual_advisories": [
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "cve": "CVE-2026-93687",
+      "package": "braces",
+      "installed_version": "3.0.3",
+      "severity": "high",
+      "affected_versions": "<=3.0.3",
+      "patched_version": null,
+      "latest_registry_version_checked": "3.0.3",
+      "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+      "dependency_chains": [
+        [
+          "expo@57.0.26",
+          "@expo/cli@57.0.27",
+          "@expo/metro-file-map@57.0.3",
+          "micromatch@4.0.8",
+          "braces@3.0.3"
+        ]
+      ],
+      "use": "Metro file matching/build tooling on developer and CI hosts for both Android and iOS. Deeply nested untrusted brace patterns can exhaust the Node.js stack. A runtime exploitability conclusion was not established."
+    },
+    {
+      "id": "GHSA-86w9-cpqp-85rv",
+      "cve": "CVE-2026-85393",
+      "package": "node-forge",
+      "installed_version": "1.4.0",
+      "severity": "high",
+      "affected_versions": "<=1.4.0",
+      "patched_version": null,
+      "latest_registry_version_checked": "1.4.0",
+      "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+      "dependency_chains": [
+        [
+          "expo@57.0.26",
+          "@expo/cli@57.0.27",
+          "node-forge@1.4.0"
+        ],
+        [
+          "expo@57.0.26",
+          "@expo/cli@57.0.27",
+          "@expo/code-signing-certificates",
+          "node-forge@1.4.0"
+        ]
+      ],
+      "use": "Expo CLI certificate/signature tooling on developer and CI hosts for both Android and iOS. RSA PKCS#1 v1.5 verification accepts extra nested DigestAlgorithm elements. No provider signing or remote verification was exercised."
+    }
+  ],
+  "rejected_automatic_remediation": "npm audit proposed Expo44 and ReactNative0.72 downgrades. Not applied. No residual risk accepted.",
+  "new_dependencies": {
+    "node_modules/expo-document-picker": "57.0.3",
+    "node_modules/expo-file-system": "57.0.7"
+  }
+}

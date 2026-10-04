@@ -9,6 +9,7 @@ import api from '../services/api';
 import ClinicianStack from './ClinicianStack';
 import { isProfessionalApplicant } from '../contexts/authSession';
 import PatientOnboardingScreen from '../screens/PatientOnboardingScreen';
+import { navigationIdentity } from '../services/sessionCoordinator';
 
 function ClinicianRoot({ role }: { role: string }) {
   const [credentialStatus, setCredentialStatus] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function RootNavigation() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer key={navigationIdentity(user)}>
       {user ? (
         isProfessionalApplicant(user)
           ? <ProfessionalVerificationScreen onVerified={logout} />

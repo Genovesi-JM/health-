@@ -1,0 +1,122 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Native PDF picker, session isolation, informational Android release permissions and safe area",
+  "node": "24.21.0",
+  "npm": "11.18.0",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "0b49f2412f0be40287e1367f2b6fc19052c5f4c2159cfd05d9b5ee23d761fd70",
+  "source_manifest_files": 79,
+  "source_scope": "Frozen source snapshot for this PDF/auth/HOLD checkpoint. Later policy/pagination work is outside this build. Effective informational APK inputs independently match android-standalone-verification.json.",
+  "changes": {
+    "pdf": "Expo DocumentPicker57.0.3 filters PDF and copies to app cache; direct FileSystem57.0.7 reads actual cached bytes. Require local .pdf plus matching or absent MIME, positive known byte size bounded by min(server max,10MiB), enabled server capability and accepted MIME. Invalid/cancel/failed selection preserves selected file, idempotency key, consent and review text; valid replacement resets consent. JPG/PNG existing flow retained. Backend remains authoritative for signature/scanner/extraction.",
+    "session": "Generation-scoped auth restore/login/refresh/requests and serialized SecureStore commits prevent prior identity/tokens/responses crossing accounts; navigation keyed by id and role. Health permission/read waits, upload batches and cursors remain bound to original authenticated owner. Failed parallel writes settle before allowing replacement login.",
+    "android_permissions": "HOLD plugin merges release-only removals for biometric/fingerprint/overlay/foreground permissions; leaves debug and main manifests unchanged. Existing health/camera/media denylist remains.",
+    "visual": "Existing safe-area-context provider/view replaces deprecated RN SafeAreaView in informational screen; verified Android status/nav insets after scroll."
+  },
+  "checks": {
+    "clean_candidate_npm_ci": "passed",
+    "mobile_tests": {
+      "passed": 130,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "expo_doctor_shared_CNG": "21/21 passed",
+    "git_diff_check": "passed",
+    "prebuild": "iOS + Android generation passed; no iOS native compilation",
+    "hermes_exports": {
+      "informational_ios": {
+        "modules": 592,
+        "hermes_bytes": 1461618,
+        "hermes_sha256": "85472a8dab072c90bdc10c801442f49f70419fd1020b46e224f1632fa284dc36",
+        "log": "bundle-informational-ios.log"
+      },
+      "informational_android": {
+        "modules": 590,
+        "hermes_bytes": 1466684,
+        "hermes_sha256": "9bad27e1cb981414cef44c0a531192ceb1982d48a01df01fa5bfc8161fe6dc7c",
+        "log": "bundle-informational-android.log"
+      },
+      "legacy_ios": {
+        "modules": 1056,
+        "hermes_bytes": 3038165,
+        "hermes_sha256": "17313c28bfc37b17cc0bb49d947bc66888ba1cb11b7effa791d870903c560c48",
+        "log": "bundle-legacy-ios.log"
+      },
+      "legacy_android": {
+        "modules": 1009,
+        "hermes_bytes": 2960924,
+        "hermes_sha256": "3c80b1ced6446e3a070d39f2678a68f1924a1dface1d1df07d4f58dff3e4fedc",
+        "log": "bundle-legacy-android.log"
+      }
+    },
+    "android_native": "release succeeded with all624 tasks after native picker change; final frozen-source replay succeeded624 tasks(9executed615uptodate),29seconds",
+    "native_picker_packaged": "DocumentPicker native class package verified in APK DEX"
+  },
+  "android_artifact": {
+    "artifact_path": "/Users/genovesimaria/Documents/kaya-web/artifacts/native/kaya-sdk57-pdf-informational-test-arm64.apk",
+    "apk_sha256": "5767c8986bcb7e83bb215b24fe0819774afe3bf57f9d5666c7d4786e1826e96f",
+    "apk_bytes": 31027411,
+    "variant": "release, generated debug/test keystore; standalone informational local review only",
+    "production_signed": false,
+    "embedded_bundle_bytes": 1181124,
+    "embedded_bundle_sha256": "22aadaf92e8ab71a8df6988c7c6a00e5ec7accea8a28744b420b49480285a65b",
+    "manifest_debuggable": false,
+    "packaged_permissions": [
+      "android.permission.INTERNET",
+      "android.permission.VIBRATE",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "com.kayahealth.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    ],
+    "blocked_permissions_present": [],
+    "source_matches_shared": {
+      "assets/icon.png": "50b933c309214dd45cdb58c26762357183439039b6a8ff636fce2f6b373ddbd9",
+      "assets/adaptive-icon.png": "5bf1b1f541e14e68d5af1f1f8b282716183a345103ee83760ccb129e532d250e",
+      "assets/splash.png": "2a2a405b3978e0d200392027011be1fcb8dae8ba3dd033b4cc7c89d611d59e45",
+      "assets/favicon.png": "a0af7fe093340d54ac4d0e68446d68c26f9214534921fb37b41a5eb81dd37fbb",
+      "app.json": "c5621ce400851bb8c490414d8718aba8e772d010c38ff43f7858a6579f182990",
+      "package.json": "69f412d06605a8701be837ed29ad635127530da520108522f5e77ec027f811d8",
+      "package-lock.json": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+      "plugins/withInformationalHold.cjs": "725fca6e76225b7be7aab1ab8efcb52194f5d6b3f947c5c361d9346125792183",
+      "App.tsx": "77de87db55fdfeac887ff08d5c5e72746cdfaa70846b20dd1a7375cf577ce2b7",
+      "index.js": "1c6fdead8ecc9dcb31ca67379ac2b0c7c82bb553aafab2a788b1f47b4fdcfec4",
+      "src/config/kayaPolicy.json": "e92b8b0d364c03480d1e68bf51a629a69d98c461cfd080860aaec0c2120a4dd8",
+      "src/phase1/InformationalApp.tsx": "4a59f3d53e6813c826d5aaa75e0bba52b63caac0a71a8ca7d97767e85e2d45f3",
+      "src/phase1/policy.ts": "59662d628defb639ef2d174ebb1d2ac05a1ef784ec782b00fb94ced11553e6a1"
+    },
+    "target_sdk": "36",
+    "min_sdk": "26"
+  },
+  "android_smoke": {
+    "result": "passed",
+    "evidence": "android-emulator-smoke.json",
+    "device": "disposable Android35 arm64 emulator, existing local system image",
+    "network": "Wi-Fi/data disabled; network route list empty; no Metro",
+    "visual": "Branded KAYA splash, Angola-first/Portugal prepared informational copy, HOLD, safe-area scroll checked",
+    "permissions": "No camera/health/runtime permission prompts observed",
+    "cleanup": "Emulator PID exited and isolated ADB stopped; no listeners on ports5580,5581,5039. TCP TIME_WAIT is transient."
+  },
+  "security": {
+    "audit_summary": "audit-summary.json",
+    "new_underlying_advisories": 0,
+    "existing_underlying_unpatched_advisories": 2,
+    "affected_package_nodes_high": 16,
+    "risk_accepted": false,
+    "lock_sha256": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+    "sbom_all": "sbom-all.cdx.json",
+    "sbom_production": "sbom-production.cdx.json",
+    "sbom_components": 529,
+    "sbom_method": "Production root-only dev-dependency projection validated against BFS non-dev dependency closure from original lock; no missing/extra components; package graph not APK inventory."
+  },
+  "limits": [
+    "Informational entry remains shipped; no clinical activation or live provider traffic.",
+    "PDF picker/upload/review and health integration were not exercised on a real phone or clinical runtime; covered by helper/race tests, both Legacy bundles and Android native linkage.",
+    "iOS prebuild and Hermes export pass; iOS native build remains blocked by unaccepted Xcode license. No license accepted.",
+    "Android APK is arm64, signed only with generated local debug/test keystore; not a production/store build.",
+    "Two existing tooling advisories remain unpatched; no risk acceptance."
+  ],
+  "official_sources": [
+    "https://docs.expo.dev/versions/latest/sdk/document-picker/",
+    "https://docs.expo.dev/versions/latest/sdk/filesystem/"
+  ],
+  "repository_actions": "No staging or commits by mobile agent; root owns checkpoint and documentation."
+}

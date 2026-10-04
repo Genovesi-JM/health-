@@ -83,3 +83,49 @@ the original lock verifies all528 unique reachable components (570 installed
 nodes), with no missing or additional components. Some root development tools
 are independently reachable through Expo/RN dependency and peer paths. The
 production and all-dependency inventories are therefore equal at this checkpoint.
+
+## PDF selection, session isolation and offline Android smoke
+
+The subsequent native checkpoint adds PDF selection using DocumentPicker and
+actual cached-file size checks. Only allowed PDF/JPEG/PNG types within the smaller
+of the server's limit and 10 MiB are accepted. Cancellation or a failed/invalid
+selection preserves the previous document, retry identity and review draft;
+selecting a valid replacement resets processing consent. Server-side signature,
+scanner and extraction checks remain authoritative.
+
+Auth restoration, login, refresh and API responses now carry a session generation.
+SecureStore writes are serialized, including completion of all sibling writes
+after one fails. Navigation remounts by account and role. Delayed health permission
+requests, native reads, upload batches and synchronization cursors stay bound to
+the authenticated account that initiated them. Race tests cover switches and
+logout at these boundaries.
+
+The informational Android release additionally removes unused biometric,
+fingerprint, overlay and foreground-service permissions in the release manifest;
+debug tooling retains its separate configuration. The final APK declares only
+Internet, network-state, vibration and its private receiver permission. Actual
+emulator inspection exposed an edge-to-edge status-bar overlap; switching to the
+existing safe-area provider fixed it.
+
+Validation: **130 tests**, TypeScript, Expo Doctor **21/21**, all four Hermes
+exports (informational/operational × Android/iOS), native picker linkage and the
+Android release build passed. The frozen-source rebuild produced identical APK
+bytes. A disposable Android 35 arm64 emulator, offline with no network routes or
+Metro, showed Kaya's splash and informational HOLD screens without permission
+prompts. Its process and isolated ADB service were stopped afterwards. This is
+emulator evidence; the native PDF/clinical/health journeys were not exercised on
+a real phone.
+
+The latest test artifact is
+`artifacts/native/kaya-sdk57-pdf-informational-test-arm64.apk` (31,027,411 bytes),
+SHA256 `5767c8986bcb7e83bb215b24fe0819774afe3bf57f9d5666c7d4786e1826e96f`.
+It is arm64, informational and locally test-signed. iOS native compilation remains
+blocked by the unaccepted Xcode license; no agreement was accepted.
+
+[The new evidence manifest](evidence/mobile-pdf-2026-10-04/manifest.json) includes
+source hashes, native configuration, package audits, verified 529-component SBOMs,
+build/export results and actual emulator screenshots. The added dependency creates
+no new advisory IDs; the same two unpatched tooling advisories remain. The frozen
+APK uses the earlier 277-route policy mirror. The later 280-route document/
+rescheduling policy belongs to the following source wave and is not retroactively
+claimed as part of this artifact.

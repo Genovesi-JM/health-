@@ -2,11 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 const { getPrebuildConfigAsync } = require('@expo/prebuild-config');
 const { compileModsAsync } = require('expo/config-plugins');
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
+const { applyReleasePermissionPolicy } = require('../plugins/withInformationalHold.cjs');
 
 test('all resolved native plugins preserve the informational HOLD permissions', async () => {
   const { exp } = await getPrebuildConfigAsync(projectRoot, { platforms: ['ios', 'android'] });
@@ -33,4 +37,33 @@ test('all resolved native plugins preserve the informational HOLD permissions', 
     const entry = permissions.find((item) => item['android:name'] === `android.permission.${name}`);
     assert.equal(entry?.['tools:node'], 'remove', `${name} must be denied during manifest merging`);
   }
+});
+
+test('release HOLD removes optional biometric, overlay and foreground permissions without changing debug tooling', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'kaya-hold-manifest-'));
+  const debug = '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /></manifest>';
+  const main = '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET" /></manifest>';
+  try {
+    for (const [variant, content] of [['debug', debug], ['main', main]]) {
+      await mkdir(path.join(root, `app/src/${variant}`), { recursive: true });
+      await writeFile(path.join(root, `app/src/${variant}/AndroidManifest.xml`), content);
+    }
+    await applyReleasePermissionPolicy(root);
+    const release = path.join(root, 'app/src/release/AndroidManifest.xml');
+    const first = await readFile(release, 'utf8');
+    await applyReleasePermissionPolicy(root);
+    assert.equal(await readFile(release, 'utf8'), first);
+    const { AndroidConfig } = require('expo/config-plugins');
+    const manifest = await AndroidConfig.Manifest.readAndroidManifestAsync(release);
+    assert.equal(manifest.manifest.$['xmlns:tools'], 'http://schemas.android.com/tools');
+    for (const name of ['USE_BIOMETRIC', 'USE_FINGERPRINT', 'SYSTEM_ALERT_WINDOW', 'FOREGROUND_SERVICE']) {
+      assert.equal(manifest.manifest['uses-permission'].find(entry => entry.$['android:name'] === `android.permission.${name}`)?.$['tools:node'], 'remove');
+    }
+    manifest.manifest.application = [{ $: { 'android:usesCleartextTraffic': 'false' } }];
+    await AndroidConfig.Manifest.writeAndroidManifestAsync(release, manifest);
+    await applyReleasePermissionPolicy(root);
+    assert.equal((await AndroidConfig.Manifest.readAndroidManifestAsync(release)).manifest.application[0].$['android:usesCleartextTraffic'], 'false');
+    assert.equal(await readFile(path.join(root, 'app/src/debug/AndroidManifest.xml'), 'utf8'), debug);
+    assert.equal(await readFile(path.join(root, 'app/src/main/AndroidManifest.xml'), 'utf8'), main);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });

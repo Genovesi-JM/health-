@@ -100,3 +100,10 @@ Scanned-document/image OCR, production scanner validation, retention/deletion
 operations and clinician-facing review UX remain further work. Existing credential,
 triage-photo and generated-prescription endpoints are outside this runtime
 adoption claim.
+
+The native patient client now selects PDF as well as JPG/PNG. A cached-file byte
+size check enforces the narrower server/10 MiB limit before upload, and invalid
+or cancelled selection preserves the previous request. A valid replacement needs
+fresh consent. Web and native do not interpret a successful picker or upload as a
+clean malware scan or a clinically validated reading. See
+[native validation](KAYA_NATIVE_BUILD_2026-10-04.md#pdf-selection-session-isolation-and-offline-android-smoke).

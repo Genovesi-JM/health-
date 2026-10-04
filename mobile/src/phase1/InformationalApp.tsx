@@ -1,8 +1,13 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, View, Text, StyleSheet, StatusBar } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { displayCapabilityState, displayState, policy } from './policy';
 
 export default function InformationalApp() {
+  return <SafeAreaProvider><InformationalContent /></SafeAreaProvider>;
+}
+
+function InformationalContent() {
   const location = `${policy.planning.city}, ${policy.planning.country_name ?? policy.planning.country_code}`;
 
   return (

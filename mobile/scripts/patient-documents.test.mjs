@@ -3,10 +3,13 @@ import assert from 'node:assert/strict';
 import {
   preparePhotoUpload, sendDocumentUpload, newUploadKey, canProcessDocument, canReviewDocument,
   startDocumentReview, reconcileDocumentReview, reviewPayload, saveDocumentReview, manualReviewMessage,
-  DOCUMENT_TEXT_LIMIT,
+  DOCUMENT_TEXT_LIMIT, DOCUMENT_MAX_BYTES, preparePdfUpload, selectPdfUpload, validateDocumentUpload,
+  documentTypeAvailable, documentUploadLimit,
 } from '../src/screens/patientDocuments.ts';
 
 const LIMIT = 10_485_760;
+const capabilities = { upload_enabled: true, max_bytes: LIMIT, accepted_types: ['application/pdf', 'image/jpeg', 'image/png'], extraction: 'pdf_text' };
+const pdf = { uri: 'file:///cache/exame.pdf', name: 'Exame.PDF', mimeType: 'application/pdf', size: 1234 };
 const document = (extra = {}) => ({
   id: 'document-1', original_filename: 'exame.pdf', content_type: 'application/pdf', size_bytes: 100,
   status: 'ready_for_review', scan_status: 'clean', version: 2, extraction_method: 'pdf_text',
@@ -23,6 +26,92 @@ test('native picker accepts only JPG/PNG and rejects HEIC, PDF and oversized pho
   assert.throws(() => preparePhotoUpload({ uri: 'file:///photo.jpg', fileSize: LIMIT + 1 }, LIMIT), /10 MB/);
   assert.throws(() => preparePhotoUpload({ uri: 'file:///photo.jpg', fileSize: 0 }, LIMIT), /10 MB/);
   assert.throws(() => preparePhotoUpload({ uri: 'file:///unknown' }, LIMIT), /JPG ou PNG/);
+});
+
+test('PDF selection accepts explicit or inferred PDF type and a local file at the 10 MiB boundary', () => {
+  const upload = preparePdfUpload({ ...pdf, name: 'folder/Exame.PDF', mimeType: undefined }, capabilities, LIMIT, 'stable-key');
+  assert.deepEqual(upload, { key: 'stable-key', file: { uri: pdf.uri, name: 'Exame.PDF', type: 'application/pdf' }, size: LIMIT });
+  assert.equal(preparePdfUpload(pdf, capabilities).file.type, 'application/pdf');
+});
+
+test('PDF selection rejects mismatched MIME, non-PDF names, missing bytes and inaccessible files', () => {
+  for (const asset of [
+    { ...pdf, mimeType: 'image/png' }, { ...pdf, mimeType: 'application/octet-stream' },
+    { ...pdf, name: 'exame.exe' }, { ...pdf, uri: 'https://example.test/document.pdf' },
+    { ...pdf, uri: 'content://document.pdf' }, { ...pdf, size: undefined },
+    { ...pdf, size: 0 }, { ...pdf, size: NaN }, { ...pdf, size: -1 },
+    { ...pdf, size: LIMIT + 1 }, { ...pdf, size: 1.5 },
+  ]) assert.throws(() => preparePdfUpload(asset, capabilities));
+});
+
+test('PDF upload obeys a lower server limit and never accepts a raised limit above 10 MiB', () => {
+  assert.equal(documentUploadLimit({ ...capabilities, max_bytes: LIMIT * 4 }), DOCUMENT_MAX_BYTES);
+  assert.throws(() => preparePdfUpload(pdf, { ...capabilities, max_bytes: 1000 }));
+  assert.throws(() => preparePdfUpload({ ...pdf, size: LIMIT + 1 }, { ...capabilities, max_bytes: LIMIT * 4 }));
+  for (const caps of [null, { ...capabilities, max_bytes: NaN }, { ...capabilities, max_bytes: -1 },
+    { ...capabilities, upload_enabled: false }, { ...capabilities, accepted_types: ['image/png'] },
+    { ...capabilities, accepted_types: null }]) {
+    assert.equal(documentTypeAvailable(caps, 'application/pdf'), false);
+    assert.throws(() => preparePdfUpload(pdf, caps));
+  }
+});
+
+test('cancelled PDF picker does not replace selection, consent, key or review edits', async () => {
+  const state = { upload: preparePhotoUpload({ uri: 'file:///photo.jpg' }, LIMIT), consent: true, review: 'A minha correção' };
+  const before = structuredClone(state);
+  const replacement = await selectPdfUpload(capabilities, async () => ({ canceled: true, assets: null }), () => { throw new Error('Unexpected stat'); });
+  if (replacement) { state.upload = replacement; state.consent = false; }
+  assert.deepEqual(state, before);
+});
+
+test('PDF picker failure or invalid selection preserves draft and can be corrected on the next selection', async () => {
+  const state = { upload: preparePdfUpload(pdf, capabilities), consent: true, review: 'Texto corrigido' };
+  const before = structuredClone(state);
+  const replace = async (pick, stat = () => 1234) => {
+    const selected = await selectPdfUpload(capabilities, pick, stat);
+    if (selected) { state.upload = selected; state.consent = false; }
+  };
+  await assert.rejects(() => replace(async () => { throw new Error('Provider unavailable'); }));
+  await assert.rejects(() => replace(async () => ({ canceled: false, assets: [] })));
+  await assert.rejects(() => replace(async () => ({ canceled: false, assets: [pdf] }), () => LIMIT + 1));
+  await assert.rejects(() => replace(async () => ({ canceled: false, assets: [pdf] }), () => { throw new Error('File missing'); }));
+  assert.deepEqual(state, before);
+  await replace(async () => ({ canceled: false, assets: [{ ...pdf, name: 'Correção.pdf', size: undefined }] }));
+  assert.equal(state.upload.file.name, 'Correção.pdf');
+  assert.equal(state.upload.size, 1234);
+  assert.notEqual(state.upload.key, before.upload.key);
+  assert.equal(state.consent, false);
+  assert.equal(state.review, before.review);
+});
+
+test('actual cached PDF bytes determine size and a disabled capability never opens the picker', async () => {
+  await assert.rejects(() => selectPdfUpload(capabilities,
+    async () => ({ canceled: false, assets: [{ ...pdf, size: 1 }] }), () => LIMIT + 1));
+  await assert.rejects(() => selectPdfUpload({ ...capabilities, upload_enabled: false },
+    async () => { assert.fail('Picker must remain closed'); }, () => 1));
+  const upload = preparePdfUpload(pdf, capabilities);
+  assert.throws(() => validateDocumentUpload(upload, { ...capabilities, accepted_types: ['image/png'] }));
+});
+
+test('PDF retry sends the same private multipart file and key, with explicit processing consent', async () => {
+  const upload = preparePdfUpload(pdf, capabilities);
+  const requests = [];
+  const api = { post: async (path, body, options) => {
+    requests.push({ path, body, options });
+    if (requests.length === 1) throw new Error('Response lost');
+    return { data: document({ status: 'pending_processing' }) };
+  } };
+  const makeForm = () => ({ values: {}, append(key, value) { this.values[key] = value; } });
+  await assert.rejects(() => sendDocumentUpload(api, upload, false, makeForm), /Autorize/);
+  assert.equal(requests.length, 0);
+  await assert.rejects(() => sendDocumentUpload(api, upload, true, makeForm), /Response lost/);
+  await sendDocumentUpload(api, upload, true, makeForm);
+  for (const request of requests) {
+    assert.equal(request.path, '/api/v1/patient-documents');
+    assert.deepEqual(request.body.values.file, upload.file);
+    assert.equal(request.body.values.processing_consent, 'true');
+    assert.equal(request.options.headers['Idempotency-Key'], upload.key);
+  }
 });
 
 test('upload key is a UUID and remains stable for retries after an uncertain upload', async () => {

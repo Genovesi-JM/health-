@@ -1,4 +1,5 @@
 export const DOCUMENT_TEXT_LIMIT = 100_000;
+export const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 
 export type PatientDocument = {
   id: string;
@@ -25,8 +26,60 @@ export type DocumentCapabilities = {
 };
 
 export type PhotoAsset = { uri: string; fileName?: string | null; mimeType?: string | null; fileSize?: number };
-export type DocumentUpload = { key: string; file: { uri: string; name: string; type: 'image/jpeg' | 'image/png' }; size?: number };
+export type DocumentUpload = { key: string; file: { uri: string; name: string; type: 'image/jpeg' | 'image/png' | 'application/pdf' }; size?: number };
 export type ReviewDraft = { document: PatientDocument; text: string; conflict: boolean };
+export type PdfAsset = { uri: string; name: string; mimeType?: string | null; size?: number };
+
+export class DocumentSelectionError extends Error {}
+
+export function documentUploadLimit(capabilities: DocumentCapabilities | null): number {
+  return capabilities && Number.isSafeInteger(capabilities.max_bytes) && capabilities.max_bytes > 0
+    ? Math.min(capabilities.max_bytes, DOCUMENT_MAX_BYTES) : 0;
+}
+
+export function documentTypeAvailable(capabilities: DocumentCapabilities | null, type: string): boolean {
+  return capabilities?.upload_enabled === true && documentUploadLimit(capabilities) > 0 &&
+    Array.isArray(capabilities.accepted_types) && capabilities.accepted_types.includes(type);
+}
+
+export function validateDocumentUpload(upload: DocumentUpload, capabilities: DocumentCapabilities | null): void {
+  if (!documentTypeAvailable(capabilities, upload.file.type)) {
+    throw new DocumentSelectionError('O envio deste tipo de documento não está disponível neste momento. Atualize a lista e tente novamente.');
+  }
+  const limit = documentUploadLimit(capabilities);
+  if ((upload.file.type === 'application/pdf' && upload.size === undefined) ||
+      (upload.size !== undefined && (!Number.isSafeInteger(upload.size) || upload.size <= 0 || upload.size > limit))) {
+    throw new DocumentSelectionError(`Escolha um documento não vazio com até ${limit / 1024 / 1024} MB.`);
+  }
+}
+
+export function preparePdfUpload(asset: PdfAsset, capabilities: DocumentCapabilities | null, size = asset.size, key = newUploadKey()): DocumentUpload {
+  const name = asset.name.split(/[\\/]/).pop() || '';
+  const mime = asset.mimeType?.trim().toLowerCase();
+  if (!name.toLowerCase().endsWith('.pdf') || (mime && mime !== 'application/pdf')) {
+    throw new DocumentSelectionError('Escolha um ficheiro PDF. Para fotografias, utilize Escolher imagem.');
+  }
+  if (!asset.uri.startsWith('file://')) throw new DocumentSelectionError('Não foi possível obter uma cópia local do PDF. Tente selecionar o ficheiro novamente.');
+  const upload: DocumentUpload = { key, file: { uri: asset.uri, name, type: 'application/pdf' }, size };
+  validateDocumentUpload(upload, capabilities);
+  return upload;
+}
+
+/** Return a replacement only after successful selection and validation; cancellation preserves all drafts. */
+export async function selectPdfUpload(
+  capabilities: DocumentCapabilities | null,
+  pick: () => Promise<{ canceled: boolean; assets: PdfAsset[] | null }>,
+  localSize: (uri: string) => number,
+): Promise<DocumentUpload | null> {
+  if (!documentTypeAvailable(capabilities, 'application/pdf')) {
+    throw new DocumentSelectionError('O envio de PDFs não está disponível neste momento.');
+  }
+  const result = await pick();
+  if (result.canceled) return null;
+  const asset = result.assets?.[0];
+  if (!asset) throw new DocumentSelectionError('Nenhum PDF foi selecionado. Tente novamente.');
+  return preparePdfUpload(asset, capabilities, localSize(asset.uri));
+}
 
 /** An upload identifier only, never an authentication or access token. */
 export function newUploadKey(): string {
@@ -42,11 +95,11 @@ export function preparePhotoUpload(asset: PhotoAsset, maxBytes: number, key = ne
   const extension = (asset.fileName || asset.uri.split('?')[0]).split('.').pop()?.toLowerCase();
   const mime = asset.mimeType?.toLowerCase() || (extension === 'png' ? 'image/png' : ['jpg', 'jpeg'].includes(extension || '') ? 'image/jpeg' : '');
   if (mime !== 'image/jpeg' && mime !== 'image/png') {
-    throw new Error('Escolha uma imagem JPG ou PNG. Para enviar um PDF, utilize a Kaya na web.');
+    throw new DocumentSelectionError('Escolha uma imagem JPG ou PNG. Para PDFs, utilize Escolher PDF.');
   }
-  if (!asset.uri || !Number.isFinite(maxBytes) || maxBytes <= 0) throw new Error('Não foi possível preparar a imagem. Tente novamente.');
+  if (!asset.uri || !Number.isFinite(maxBytes) || maxBytes <= 0) throw new DocumentSelectionError('Não foi possível preparar a imagem. Tente novamente.');
   if (asset.fileSize !== undefined && (!Number.isFinite(asset.fileSize) || asset.fileSize <= 0 || asset.fileSize > maxBytes)) {
-    throw new Error(`Escolha uma imagem com até ${Math.floor(maxBytes / 1024 / 1024)} MB.`);
+    throw new DocumentSelectionError(`Escolha uma imagem com até ${Math.floor(maxBytes / 1024 / 1024)} MB.`);
   }
   return {
     key,

@@ -1,0 +1,37 @@
+{
+  "platform": "Android35 arm64 disposable emulator KayaPdfSmoke",
+  "adb_server_port": 5039,
+  "emulator_port": 5580,
+  "existing_system_image_used": true,
+  "real_devices_or_existing_avds_used": false,
+  "wifi_and_mobile_data_disabled": true,
+  "network_routes": [],
+  "embedded_bundle_runs_without_metro": true,
+  "branded_splash_visually_verified": true,
+  "informational_angola_portugal_copy_verified": true,
+  "hold_verified": true,
+  "camera_or_health_permission_dialogs_seen": false,
+  "app_crash_seen": false,
+  "initial_visual_issue": "Fixed by using existing react-native-safe-area-context provider and view.",
+  "final_safe_area_smoke": "passed: header and scrolled text remain within Android status/navigation insets; deprecated RN SafeAreaView runtime warning removed",
+  "screenshots": [
+    "launch.png",
+    "informational-top.png",
+    "informational-hold.png"
+  ],
+  "runtime_scope": "Android35 arm64 emulator, informational entry only. No native PDF selection/upload, authenticated clinical requests, health permission/data exchange, real device, or iOS native runtime was exercised.",
+  "apk_sha256": "5767c8986bcb7e83bb215b24fe0819774afe3bf57f9d5666c7d4786e1826e96f",
+  "screenshots_sha256": {
+    "launch.png": "aac1413675fc8ceef5e9f9621030ba356d075b8152d47a0a0e988bfb38cdeb3d",
+    "informational-top.png": "4c525ad5176c4a529e71e7fddfa0c3719e4e31e29ab4f6a8d4e9dc225a4a949c",
+    "informational-hold.png": "63308f0c4451aa4ff395fd5c5f2d64b093b74e621a3a8edafde952bee464ac87"
+  },
+  "disposable_emulator_stopped": true,
+  "isolated_adb_server_stopped": true,
+  "listening_ports_closed": [
+    5580,
+    5581,
+    5039
+  ],
+  "cleanup_verification": "adb emu kill and isolated kill-server succeeded; emulator PID absent and all three TCP connection attempts refused. Immediate bind saw TIME_WAIT, not a surviving listener."
+}
