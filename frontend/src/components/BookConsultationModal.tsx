@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import api, { getSession } from '../api';
 import { clearPendingAppointment, readPendingAppointment, savePendingAppointment, type PendingAppointment } from '../utils/pendingAppointment';
 import { useT } from '../i18n/LanguageContext';
@@ -90,7 +91,7 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
   const submit = async () => {
     if (!ready || busy.current || result) return;
     busy.current = true; setSubmitting(true); setError('');
-    const payload: PendingAppointment['payload'] = uncertain && request.current ? request.current.payload : { specialty, country, ...(mode === 'slots' ? { slot_id: selected } : { next_available: true }),
+    const payload: PendingAppointment['payload'] = uncertain && request.current ? request.current.payload : { specialty, country, consent_language: 'pt', ...(mode === 'slots' ? { slot_id: selected } : { next_available: true }),
       ...(patientState?.last_triage_session_id ? { triage_session_id: patientState.last_triage_session_id } : {}) };
     const fingerprint = JSON.stringify(payload);
     if (request.current?.fingerprint !== fingerprint) request.current = { fingerprint, key: crypto.randomUUID(), payload };
@@ -130,6 +131,7 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
         <fieldset disabled={submitting || uncertain} style={{ border: 0, padding: 0, margin: 0 }}>
           <label className="form-label" htmlFor="booking-country">País do atendimento</label>
           <select id="booking-country" className="form-input" value={country} onChange={e => { setCountry(e.target.value); setDoctor(''); resetSelection(); }}>{APPOINTMENT_MARKETS.map(code => <option key={code} value={code}>{marketName(code)}</option>)}</select>
+          <p><Link to={`/consents?country=${country}`}>Rever os consentimentos para este país</Link>. O servidor confirma as decisões atuais antes de criar um novo pedido.</p>
           <label className="form-label" htmlFor="booking-specialty">{t('booking.specialty')}</label>
           <select id="booking-specialty" className="form-input" value={specialty} onChange={e => { setSpecialty(e.target.value); setDoctor(''); resetSelection(); }}><option value="">{t('booking.specialty_select')}</option>{SPECIALTY_CODES.map(s => <option key={s} value={s}>{t(`spec.${s}`)}</option>)}</select>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '1rem 0' }}><button type="button" aria-pressed={mode === 'slots'} className="btn btn-secondary" onClick={() => { setMode('slots'); resetSelection(); }}>Escolher horário</button><button type="button" aria-pressed={mode === 'queue'} className="btn btn-secondary" onClick={() => { setMode('queue'); resetSelection(); }}>Pedido sem hora marcada</button></div>

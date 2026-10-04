@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -15,7 +16,7 @@ beforeEach(() => {
   vi.mocked(api.post).mockResolvedValue({ data: { id: 'consult-1', status: 'requested', scheduled_at: slot.starts_at, timezone: slot.timezone } });
 });
 function show(open = true, onBooked = vi.fn()) {
-  return render(<I18nProvider><BookConsultationModal open={open} onClose={vi.fn()} patientState={null} onBooked={onBooked} /></I18nProvider>);
+  return render(<MemoryRouter><I18nProvider><BookConsultationModal open={open} onClose={vi.fn()} patientState={null} onBooked={onBooked} /></I18nProvider></MemoryRouter>);
 }
 async function choose() {
   await userEvent.selectOptions(screen.getByLabelText('Especialidade'), 'clinica_geral');
@@ -79,7 +80,7 @@ describe('published appointment booking', () => {
     const onBooked = vi.fn(); show(true, onBooked); await choose();
     expect(screen.queryByDisplayValue('2026-12-01T08:00')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Enviar pedido' }));
-    expect(api.post).toHaveBeenCalledWith('/api/v1/consultations/book', { country: 'AO', specialty: 'clinica_geral', slot_id: 'slot-1' }, { headers: { 'Idempotency-Key': expect.any(String) } });
+    expect(api.post).toHaveBeenCalledWith('/api/v1/consultations/book', { country: 'AO', consent_language: 'pt', specialty: 'clinica_geral', slot_id: 'slot-1' }, { headers: { 'Idempotency-Key': expect.any(String) } });
     expect(await screen.findByRole('status')).toHaveTextContent('aguarda aceitação');
     expect(onBooked).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Ver as minhas consultas' }));
@@ -109,7 +110,7 @@ describe('published appointment booking', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pedido sem hora marcada' }));
     expect(screen.getByText(/sem hora reservada/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Enviar pedido' }));
-    expect(api.post).toHaveBeenCalledWith('/api/v1/consultations/book', { country: 'PT', specialty: 'clinica_geral', next_available: true }, expect.any(Object));
+    expect(api.post).toHaveBeenCalledWith('/api/v1/consultations/book', { country: 'PT', consent_language: 'pt', specialty: 'clinica_geral', next_available: true }, expect.any(Object));
   });
   it('distinguishes slot load failure from a confirmed empty list', async () => {
     vi.mocked(api.get).mockImplementation(async url => { if (url.endsWith('capabilities')) return { data: capabilities }; throw new Error('Offline'); });

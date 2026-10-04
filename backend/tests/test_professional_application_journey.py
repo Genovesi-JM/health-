@@ -311,13 +311,13 @@ def _assert_booking_rejected(client, db_session, doctor_user):
     patient = Patient(user_id=patient_user.id)
     db_session.add(patient)
     db_session.flush()
-    for kind in ("privacy_policy", "telemedicine_consent", "terms_of_service"):
-        db_session.add(PatientConsent(patient_id=patient.id, consent_type=kind))
+    from consent_fixtures import grant_all
+    grant_all(db_session, patient)
     db_session.commit()
     doctor = db_session.query(Doctor).filter_by(user_id=doctor_user.id).one()
     token = create_access_token({"uid": patient_user.id, "sub": patient_user.email, "role": "patient"})
     response = client.post("/api/v1/consultations/book", headers={"Authorization": f"Bearer {token}"}, json={
-        "doctor_id": doctor.id, "specialty": "clinica_geral",
+        "doctor_id": doctor.id, "specialty": "clinica_geral", "country": "AO",
         "scheduled_at": (date.today() + timedelta(days=2)).isoformat() + "T10:00:00Z",
     })
     assert response.status_code == 400, response.text

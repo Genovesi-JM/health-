@@ -17,7 +17,8 @@ describe('server account state determines the entry flow', () => {
 
   it('requires new patient onboarding even when login has a saved booking destination', () => {
     expect(accountPathAfterLogin(patient, '/consultations')).toBe('/onboarding/patient');
-    expect(requiredPathRedirect(patient, '/consent-gate')).toBe('/onboarding/patient');
+    expect(requiredPathRedirect(patient, '/consent-gate')).toBeNull();
+    expect(requiredPathRedirect(patient, '/consents')).toBeNull();
     expect(requiredPathRedirect(patient, '/onboarding/patient')).toBeNull();
   });
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import type { User } from './types';
@@ -15,11 +15,6 @@ vi.mock('./components/Sidebar', () => ({ Sidebar: () => null }));
 vi.mock('./components/ChatWidget', () => ({ default: () => null }));
 vi.mock('./components/LanguageSelector', () => ({ default: () => null }));
 
-const consents = [
-  'terms_of_service', 'privacy_policy', 'medical_disclaimer',
-  'health_data_processing', 'telemedicine_consent',
-].map(consent_type => ({ consent_type }));
-
 function mount(pathname = '/dashboard') {
   return render(
     <MemoryRouter initialEntries={[pathname]}>
@@ -29,6 +24,7 @@ function mount(pathname = '/dashboard') {
           <Route path="/consent-gate" element={<div>Consent form</div>} />
           <Route path="/onboarding/patient" element={<div>Patient onboarding form</div>} />
           <Route path="/professional-verification" element={<div>Application evidence</div>} />
+          <Route path="/consents" element={<div>Consent controls</div>} />
           <Route path="/settings" element={<div>Account settings</div>} />
           <Route path="/security" element={<div>Account security</div>} />
           <Route path="/security/mfa" element={<div>MFA settings</div>} />
@@ -38,44 +34,27 @@ function mount(pathname = '/dashboard') {
   );
 }
 
-describe('patient consent fails closed', () => {
+describe('consent decisions do not block personal records', () => {
   beforeEach(() => {
     get.mockReset();
     sessionStorage.clear();
     auth.user = { id: 'synthetic-patient', role: 'patient', email: 'patient@example.test', is_active: true, patient_onboarding_complete: true };
   });
 
-  it('blocks protected content when the consent service fails', async () => {
-    get.mockRejectedValue(new Error('synthetic network failure'));
+  it.each([new Error('Consent catalog offline'), null])('keeps authenticated personal reads reachable when consent is missing or unavailable', async failure => {
+    if (failure) get.mockRejectedValue(failure); else get.mockResolvedValue({ data: [] });
+    sessionStorage.setItem('consents_accepted', 'true');
     mount();
-    expect(await screen.findByRole('alert')).toHaveTextContent('consent.check_error');
-    expect(screen.getByRole('alert')).toHaveClass('consent-check-error');
-    expect(screen.queryByText('Protected clinical content')).not.toBeInTheDocument();
+    expect(await screen.findByText('Protected clinical content')).toBeInTheDocument();
+    expect(get).not.toHaveBeenCalled();
     expect(screen.queryByText('Consent form')).not.toBeInTheDocument();
   });
 
-  it('does not trust a client-controlled acceptance cache', async () => {
-    sessionStorage.setItem('consents_accepted', 'true');
-    get.mockResolvedValue({ data: [] });
-    mount();
-    expect(await screen.findByText('Consent form')).toBeInTheDocument();
-    expect(get).toHaveBeenCalledWith('/api/v1/compliance/consents');
-    expect(screen.queryByText('Protected clinical content')).not.toBeInTheDocument();
-  });
-
-  it('allows retry only after the server confirms all required consents', async () => {
-    get.mockRejectedValueOnce(new Error('synthetic failure')).mockResolvedValueOnce({ data: consents });
-    mount();
-    fireEvent.click(await screen.findByRole('button', { name: 'common.retry' }));
-    expect(await screen.findByText('Protected clinical content')).toBeInTheDocument();
-    expect(get).toHaveBeenCalledTimes(2);
-  });
-
-  it('does not flash protected content while the check is pending', async () => {
-    get.mockReturnValue(new Promise(() => undefined));
-    mount();
-    await waitFor(() => expect(get).toHaveBeenCalledTimes(1));
-    expect(screen.queryByText('Protected clinical content')).not.toBeInTheDocument();
+  it('allows unfinished patients to review consent controls without a redirect loop', async () => {
+    auth.user.patient_onboarding_complete = false;
+    mount('/consents');
+    expect(await screen.findByText('Consent controls')).toBeInTheDocument();
+    expect(get).not.toHaveBeenCalled();
   });
 
   it('routes a new patient to onboarding before checking clinical consents', async () => {

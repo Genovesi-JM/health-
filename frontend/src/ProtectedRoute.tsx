@@ -3,53 +3,16 @@ import { useAuth } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
 import ChatWidget from './components/ChatWidget';
 import { Activity, Calendar, Home, Menu, User } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useT } from './i18n/LanguageContext';
 import LanguageSelector from './components/LanguageSelector';
-import api from './api';
 import { isPatientAccount, requiredPathRedirect } from './authRouting';
-
-/** Consent types patients must accept before accessing the portal */
-const REQUIRED_CONSENTS = [
-  'terms_of_service',
-  'privacy_policy',
-  'medical_disclaimer',
-  'health_data_processing',
-  'telemedicine_consent',
-];
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { t } = useT();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [consentAttempt, setConsentAttempt] = useState(0);
-  const [consentResult, setConsentResult] = useState<{ identity: string; ok: boolean; error: boolean } | null>(null);
-  const consentIdentity = `${user?.id ?? ''}:${user?.role ?? ''}:${location.pathname}:${consentAttempt}`;
-  const needsConsent = !!user && isPatientAccount(user) && !location.pathname.startsWith('/onboarding/')
-    && !['/settings', '/security', '/security/mfa', '/professional-verification', '/consent-gate', '/data-consent'].includes(location.pathname)
-    && !requiredPathRedirect(user, location.pathname);
-  const consentOk = !needsConsent ? true : consentResult?.identity === consentIdentity ? consentResult.ok : null;
-  const consentError = needsConsent && consentResult?.identity === consentIdentity && consentResult.error;
-
-  useEffect(() => {
-    if (!needsConsent) return;
-    let cancelled = false;
-
-    api.get('/api/v1/compliance/consents')
-      .then(r => {
-        if (cancelled) return;
-        const types: string[] = r.data.map((c: { consent_type: string }) => c.consent_type);
-        const allAccepted = REQUIRED_CONSENTS.every(ct => types.includes(ct));
-        setConsentResult({ identity: consentIdentity, ok: allAccepted, error: false });
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setConsentResult({ identity: consentIdentity, ok: false, error: true });
-      });
-    return () => { cancelled = true; };
-  }, [needsConsent, consentIdentity]);
-
   if (loading) {
     return (
       <div className="page-loading">
@@ -64,34 +27,6 @@ export function ProtectedRoute() {
 
   const accountRedirect = requiredPathRedirect(user, location.pathname);
   if (accountRedirect) return <Navigate to={accountRedirect} replace />;
-
-  // Still checking consents — show spinner
-  if (consentOk === null) {
-    return (
-      <div className="page-loading">
-        <div className="spinner" />
-      </div>
-    );
-  }
-
-  if (consentError) {
-    return (
-      <div className="page-loading consent-check-error" role="alert">
-        <p>{t('consent.check_error')}</p>
-        <button className="btn btn-primary" type="button" onClick={() => setConsentAttempt(value => value + 1)}>
-          {t('common.retry')}
-        </button>
-      </div>
-    );
-  }
-
-  // Redirect to consent gate (except if already there)
-  if (consentOk === false
-    && location.pathname !== '/consent-gate'
-    && location.pathname !== '/data-consent'
-  ) {
-    return <Navigate to="/consent-gate" state={{ from: location }} replace />;
-  }
 
   /* Map route path to a breadcrumb label */
   const crumbs: Record<string, string> = {

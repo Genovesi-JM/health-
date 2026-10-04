@@ -77,6 +77,12 @@ requires configured recipient details and a valid IBAN checksum; the previous
 hardcoded beneficiary account is no longer a fallback. No provider credentials
 were supplied or enabled by this work.
 
+Bank-transfer references now use the full attempt UUID, remain stable for an
+exact replay and differ across attempts for the same order. A provider/reference
+lookup that matches more than one retained legacy row fails for review before
+applying a receipt; status checks repeat this check after a provider await. This
+is not a guarantee of an external provider's reference contract.
+
 Signed provider-event contracts, amount/reference matching, external sandbox
 journeys, operator-reviewed quotes, charge consent, refunds, disputes, settlement
 and tax/invoice adoption remain payment-launch work. These local recovery checks

@@ -136,6 +136,8 @@ def prepare_checkout(db, *, patient_id, actor_id, consultation_id, method, key, 
             raise _not_committed('quote_unavailable', 'O preço e a moeda deste mercado ainda aguardam aprovação.')
         try:
             checkout_guard(db, item, patient_id)
+            from app.services.consent_runtime import require_effective
+            require_effective(db, patient_id, item.country, item.consent_language)
             provider_gate(provider)
         except HTTPException as error:
             reason = error.detail.get('reason', error.detail.get('code', 'payment_unavailable')) if isinstance(error.detail, dict) else 'payment_unavailable'

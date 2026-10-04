@@ -158,6 +158,11 @@ def _session(consultation_id: str, db: Session) -> TeleconsultationSession:
     return item
 
 
+def require_live_consent(consultation, db):
+    from app.services.consent_runtime import require_effective
+    require_effective(db, consultation.patient_id, consultation.country, consultation.consent_language)
+
+
 @router.get("/capabilities")
 def capabilities(response: Response, user: User = Depends(get_current_user)):
     if user.role not in ("patient", "cliente", "doctor", "nurse"):
@@ -172,7 +177,7 @@ def prepare_session(consultation_id: str, response: Response, user: User = Depen
     if user.role not in ("doctor", "nurse"):
         raise HTTPException(403, "A preparação requer um profissional clínico.")
     _lock_active(db, consultation)
-    require_episode_consent(consultation, db)
+    require_live_consent(consultation, db)
     existing = db.query(TeleconsultationSession).filter_by(consultation_id=consultation.id).first()
     if existing:
         _private(response)
@@ -208,7 +213,7 @@ def check_in(consultation_id: str, body: CheckInRequest, response: Response,
     require_displayed_revision(consultation, expected_revision)
     _lock_active(db, consultation)
     require_displayed_revision(consultation, expected_revision)
-    require_episode_consent(consultation, db)
+    require_live_consent(consultation, db)
     session = _session(consultation_id, db)
     if session.status == "completed":
         raise HTTPException(409, "Teleconsulta já encerrada.")
@@ -243,7 +248,7 @@ def update_preflight(consultation_id: str, body: PreflightRequest, response: Res
     require_displayed_revision(consultation, expected_revision)
     _lock_active(db, consultation)
     require_displayed_revision(consultation, expected_revision)
-    require_episode_consent(consultation, db)
+    require_live_consent(consultation, db)
     session = _session(consultation_id, db)
     if session.status not in ("scheduled", "waiting"):
         raise HTTPException(409, "A preparação já foi encerrada ou a sessão está em curso.")
@@ -267,7 +272,7 @@ def start_session(consultation_id: str, response: Response, expected_revision: i
     require_displayed_revision(consultation, expected_revision)
     _lock_active(db, consultation)
     require_displayed_revision(consultation, expected_revision)
-    require_episode_consent(consultation, db)
+    require_live_consent(consultation, db)
     session = _session(consultation_id, db)
     if session.status == "completed":
         raise HTTPException(409, "A sessão de vídeo já foi encerrada.")
@@ -296,7 +301,7 @@ def join_session(consultation_id: str, user: User = Depends(get_current_user), d
     consultation = _authorized_consultation(user, consultation_id, db)
     if consultation.status != "in_progress":
         raise HTTPException(409, "A consulta não está em curso.")
-    require_episode_consent(consultation, db)
+    require_live_consent(consultation, db)
     session = _session(consultation_id, db)
     if session.status != "in_progress":
         raise HTTPException(409, "Aguarde que o médico inicie a teleconsulta.")

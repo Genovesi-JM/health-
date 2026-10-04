@@ -69,6 +69,8 @@ class PatientDocument(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     content_type: Mapped[str] = mapped_column(String(80), nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -317,6 +319,8 @@ class AppointmentSlot(Base):
 
 class TriageSession(Base):
     __tablename__ = "triage_sessions"
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(
@@ -456,6 +460,7 @@ class Consultation(Base):
     scheduled_end_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     slot_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("appointment_slots.id"), nullable=True)
     country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True, default="pt")
     timezone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     booking_request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     booking_request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
@@ -904,6 +909,57 @@ class PatientConsent(Base):
     user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     patient = relationship("Patient", back_populates="consents")
+
+
+class ConsentCatalogDocument(Base):
+    """Immutable approved text or a newer inactive version that blocks fallback."""
+    __tablename__ = "consent_catalog_documents"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    document_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    language: Mapped[str] = mapped_column(String(10), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(80), nullable=False)
+    kind: Mapped[str] = mapped_column(String(50), nullable=False)
+    required: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    approved_source: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    effective_from: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    effective_to: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    __table_args__ = (Index("uq_consent_catalog_version", "country", "language", "purpose", "version", unique=True),)
+
+
+class PatientConsentEvent(Base):
+    __tablename__ = "patient_consent_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
+    actor_user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    document_id: Mapped[str] = mapped_column(String(36), ForeignKey("consent_catalog_documents.id", ondelete="RESTRICT"), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    action: Mapped[str] = mapped_column(String(12), nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (
+        Index("uq_consent_event_request", "patient_id", "request_key", unique=True),
+        Index("uq_consent_event_sequence", "patient_id", "sequence", unique=True),
+    )
+
+
+class ConsultationConsentSnapshot(Base):
+    __tablename__ = "consultation_consent_snapshots"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    consultation_id: Mapped[str] = mapped_column(String(36), ForeignKey("consultations.id", ondelete="RESTRICT"), unique=True, nullable=False)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    language: Mapped[str] = mapped_column(String(10), nullable=False)
+    grant_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    content_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 # ── Health Payment (extends existing Payment concept) ──
@@ -1584,3 +1640,5 @@ class ContactMessage(Base):
 # Fresh synthetic databases have the same record protections as migrated ones.
 from .services.clinical_retention import register_retention_guards
 register_retention_guards(Base.metadata)
+from .services.consent_retention import register_consent_guards
+register_consent_guards(Base.metadata)

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Loader2, Save } from 'lucide-react';
-import api from '../api';
+import api, { getSession } from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { apiErrorMessage } from '../utils/apiError';
 
@@ -19,6 +19,7 @@ export interface OnboardingStepDef {
 
 export interface StepRenderContext {
   data: Record<string, unknown>;
+  stepsData: Record<string, Record<string, unknown>>;
   setField: (key: string, value: unknown) => void;
   setData: (data: Record<string, unknown>) => void;
   error: string | null;
@@ -44,9 +45,28 @@ interface Props {
 
 const AUTOSAVE_DEBOUNCE_MS = 900;
 
-export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Props) {
+export default function OnboardingShell(props: Props) {
+  const session = getSession();
+  return <OnboardingSession key={`${session?.userId}:${session?.token}`} {...props} />;
+}
+
+function OnboardingSession({ role, steps, onSubmitted, onExit }: Props) {
   const { t } = useT();
   const navigate = useNavigate();
+  const [session] = useState(getSession);
+  const active = useRef(false);
+  const current = useCallback(() => active.current && !!session?.userId && !!session.token
+    && getSession()?.userId === session.userId && getSession()?.token === session.token, [session]);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
+  const scopedApi = useMemo(() => {
+    const assertCurrent = () => { if (!current()) throw new Error('A sessão mudou. Reabra o formulário na conta atual.'); };
+    const headers = { Authorization: `Bearer ${session?.token ?? ''}` };
+    return {
+      get: async (url: string) => { assertCurrent(); const result = await api.get(url, { headers }); assertCurrent(); return result; },
+      post: async (url: string, data?: unknown) => { assertCurrent(); const result = await api.post(url, data, { headers }); assertCurrent(); return result; },
+      put: async (url: string, data: unknown) => { assertCurrent(); const result = await api.put(url, data, { headers }); assertCurrent(); return result; },
+    };
+  }, [current, session]);
   const [draft, setDraft] = useState<DraftShape | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
   const [stepData, setStepData] = useState<Record<string, unknown>>({});
@@ -71,14 +91,14 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
     let cancelled = false;
     (async () => {
       try {
-        const status = await api.get(`/api/v1/onboarding/status${scope}`);
+        const status = await scopedApi.get(`/api/v1/onboarding/status${scope}`);
         const existing = status.data.draft as DraftShape | null;
         if (existing?.status === 'submitted' && (role !== 'patient' || existing.completion_status === 'complete')) {
-          if (!cancelled) await onSubmittedRef.current(existing);
+          if (!cancelled && current()) await onSubmittedRef.current(existing);
           return;
         }
-        const started = await api.post('/api/v1/onboarding/start', { role });
-        if (cancelled) return;
+        const started = await scopedApi.post('/api/v1/onboarding/start', { role });
+        if (cancelled || !current()) return;
         const d = started.data as DraftShape;
         setDraft(d);
         const targetIdx = Math.min(Math.max(0, d.current_step - 1), steps.length - 1);
@@ -88,7 +108,7 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
         setStepData({ ...stepDefaults, ...stored });
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        if (!cancelled) setLoadError(msg);
+        if (!cancelled && current()) setLoadError(msg);
       }
     })();
     return () => { cancelled = true; };
@@ -105,14 +125,14 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
     autosaveTimer.current = window.setTimeout(() => {
       setSaveStatus('saving');
       pendingSave.current = pendingSave.current.catch(() => undefined)
-        .then(() => api.post(`/api/v1/onboarding/save${scope}`, { step: stepNumber, data: stepData }))
-        .then(() => { if (revision.current === currentRevision) setSaveStatus('saved'); })
-        .catch(() => { if (revision.current === currentRevision) setSaveStatus('error'); });
+        .then(() => scopedApi.post(`/api/v1/onboarding/save${scope}`, { step: stepNumber, data: stepData }))
+        .then(() => { if (current() && revision.current === currentRevision) setSaveStatus('saved'); })
+        .catch(() => { if (current() && revision.current === currentRevision) setSaveStatus('error'); });
     }, AUTOSAVE_DEBOUNCE_MS);
     return () => {
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
-  }, [stepData, stepNumber, draft, scope]);
+  }, [stepData, stepNumber, draft, scope, scopedApi, current]);
 
   const setField = useCallback((key: string, value: unknown) => {
     setStepData(prev => ({ ...prev, [key]: value }));
@@ -134,7 +154,7 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
     if (!submissionUncertain.current) return false;
     // A lost response may hide a committed submission. Read its state before
     // any retry, autosave, or back navigation can write to the frozen draft.
-    const response = await api.get(`/api/v1/onboarding/status${scope}`);
+    const response = await scopedApi.get(`/api/v1/onboarding/status${scope}`);
     const persisted = response.data.draft as DraftShape | null;
     if (!persisted || persisted.role !== role) throw new Error(t('onboarding.save_failed'));
     if (persisted.status === 'submitted' && (role !== 'patient' || persisted.completion_status === 'complete')) {
@@ -145,10 +165,10 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
     }
     submissionUncertain.current = false;
     return false;
-  }, [scope, role, onSubmitted, t]);
+  }, [scope, role, onSubmitted, t, scopedApi]);
 
   const advance = useCallback(async () => {
-    if (!draft || !stepDef || busy.current) return;
+    if (!draft || !stepDef || busy.current || !current()) return;
     busy.current = true;
     setSubmitting(true);
     ++revision.current;
@@ -162,7 +182,7 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
       }
       const validationError = stepDef.validate?.(stepData) ?? null;
       if (validationError) { setError(validationError); return; }
-      const res = await api.put(`/api/v1/onboarding/steps/${stepNumber}${scope}`, {
+      const res = await scopedApi.put(`/api/v1/onboarding/steps/${stepNumber}${scope}`, {
         data: stepData,
         completed: true,
       });
@@ -173,12 +193,13 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
       } else {
         // Last step marked complete — trigger submit.
         submissionUncertain.current = true;
-        const submitRes = await api.post(`/api/v1/onboarding/submit${scope}`);
+        const submitRes = await scopedApi.post(`/api/v1/onboarding/submit${scope}`);
         submissionUncertain.current = false;
         setDraft(submitRes.data as DraftShape);
         await onSubmitted(submitRes.data as DraftShape);
       }
     } catch (e: unknown) {
+      if (!current()) return;
       const err = e as { response?: { status?: number; data?: { detail?: unknown } }; message?: string };
       // Validation/permission rejections are definite failures; only uncertain
       // transport/server failures need readback before another write.
@@ -194,47 +215,46 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
         ? Object.values((detail as { fields: Record<string, string> }).fields).join(' ') : '';
       setError(fields || apiErrorMessage(e, t('onboarding.save_failed')));
     } finally {
-      busy.current = false;
-      setSubmitting(false);
+      if (current()) { busy.current = false; setSubmitting(false); }
     }
-  }, [draft, stepDef, stepData, stepNumber, stepIdx, steps.length, goToStep, onSubmitted, t, scope, reconcileSubmission]);
+  }, [draft, stepDef, stepData, stepNumber, stepIdx, steps.length, goToStep, onSubmitted, t, scope, reconcileSubmission, scopedApi, current]);
 
   const saveAndExit = useCallback(async () => {
-    if (busy.current) return;
+    if (busy.current || !current()) return;
     busy.current = true;
     setSubmitting(true);
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     try {
       await pendingSave.current;
       if (await reconcileSubmission()) return;
-      await api.post(`/api/v1/onboarding/save${scope}`, { step: stepNumber, data: stepData });
+      await scopedApi.post(`/api/v1/onboarding/save${scope}`, { step: stepNumber, data: stepData });
       if (onExit) onExit(); else navigate('/settings');
     } catch (e) {
+      if (!current()) return;
       setSaveStatus('error');
       setError(apiErrorMessage(e, t('onboarding.save_failed')));
     } finally {
-      busy.current = false;
-      setSubmitting(false);
+      if (current()) { busy.current = false; setSubmitting(false); }
     }
-  }, [stepNumber, stepData, navigate, onExit, scope, t, reconcileSubmission]);
+  }, [stepNumber, stepData, navigate, onExit, scope, t, reconcileSubmission, scopedApi, current]);
 
   const goBack = async () => {
-    if (busy.current || stepIdx === 0) return;
+    if (busy.current || stepIdx === 0 || !current()) return;
     busy.current = true;
     setSubmitting(true);
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     try {
       await pendingSave.current;
       if (await reconcileSubmission()) return;
-      await api.post(`/api/v1/onboarding/save${scope}`, { step: stepNumber, data: stepData });
+      await scopedApi.post(`/api/v1/onboarding/save${scope}`, { step: stepNumber, data: stepData });
       const updated = { ...draft!, data: { ...draft!.data, [String(stepNumber)]: stepData } };
       setDraft(updated);
       goToStep(stepIdx - 1, updated);
     } catch (e) {
+      if (!current()) return;
       setError(apiErrorMessage(e, t('onboarding.save_failed')));
     } finally {
-      busy.current = false;
-      setSubmitting(false);
+      if (current()) { busy.current = false; setSubmitting(false); }
     }
   };
 
@@ -310,7 +330,7 @@ export default function OnboardingShell({ role, steps, onSubmitted, onExit }: Pr
       {/* ── Step body ───────────────────────────────────────────────── */}
       <div className="card" style={{ padding: '1.5rem', marginBottom: '1.25rem' }}>
         <fieldset disabled={submitting || draft.status === 'submitted'} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-          {stepDef.render({ data: stepData, setField, setData: setStepData, error })}
+          {stepDef.render({ data: stepData, stepsData: draft.data, setField, setData: setStepData, error })}
         </fieldset>
         {error && (
           <div

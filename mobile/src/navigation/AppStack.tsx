@@ -27,7 +27,7 @@ export type AppStackParamList = {
   RescheduleConsultation: { consultationId: string };
   PrescriptionRequest: undefined;
   Family: undefined;
-  ConsentGate: undefined;
+  ConsentGate: { country?: 'AO' | 'PT' } | undefined;
   Readings: undefined;
   Notifications: undefined;
   Triage: undefined;

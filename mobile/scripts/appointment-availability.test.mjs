@@ -74,7 +74,7 @@ test('available slots exclude stale, reserved, withdrawn and mismatched results 
 
 test('slot booking sends only the published slot identity, country and specialty', () => {
   assert.deepEqual(createBookingAttempt('AO', 'clinica_geral', slot, key, now), {
-    key, payload: { country: 'AO', specialty: 'clinica_geral', slot_id: 'slot-1' },
+    key, payload: { country: 'AO', consent_language: 'pt', specialty: 'clinica_geral', slot_id: 'slot-1' },
   });
   const portugal = { ...slot, country: 'PT', timezone: 'Atlantic/Azores' };
   assert.equal(createBookingAttempt('PT', 'clinica_geral', portugal, key, now).payload.country, 'PT');
@@ -82,7 +82,7 @@ test('slot booking sends only the published slot identity, country and specialty
 
 test('unscheduled queue is explicit and never supplies a fabricated doctor or timestamp', () => {
   assert.deepEqual(createBookingAttempt('AO', 'pediatria', undefined, key, now), {
-    key, payload: { country: 'AO', specialty: 'pediatria', next_available: true },
+    key, payload: { country: 'AO', consent_language: 'pt', specialty: 'pediatria', next_available: true },
   });
 });
 
@@ -241,4 +241,10 @@ test('missing or unsupported timezone falls back to explicitly labelled UTC, nev
   assert.equal(appointmentDate('2026-10-05T10:00:00+01:00', 'Invalid/Zone'), '2026-10-05 09:00 (UTC; UTC+00:00)');
   assert.equal(appointmentDate(null), 'Por definir');
   assert.equal(appointmentDate('bad-time', 'Africa/Luanda'), 'Por definir');
+});
+
+test('legacy booking recovery preserves an absent language field rather than rewriting an uncertain request', () => {
+  const legacy = {key, payload:{country:'AO',specialty:'clinica_geral',next_available:true}};
+  assert.deepEqual(restoreBookingAttempt(JSON.stringify(legacy)), legacy);
+  assert.equal(createBookingAttempt('AO','clinica_geral',undefined,key,now).payload.consent_language,'pt');
 });

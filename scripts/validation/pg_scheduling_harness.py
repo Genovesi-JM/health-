@@ -35,7 +35,7 @@ from app.health_models import (Patient, Doctor, ClinicianCredential, PatientCons
                               ClinicalCareTask, HealthAuditLog, HealthPayment, Notification,
                               TeleconsultationSession, TeleconsultationParticipant)
 from app.oauth2 import create_access_token
-from app.routers import appointments, consultations, notifications, teleconsultation
+from app.routers import appointments, consultations, notifications, teleconsultation, compliance
 from app.services.consultation_lifecycle import transition
 from app.services.mfa import generate_secret
 
@@ -44,6 +44,9 @@ application.include_router(appointments.router)
 application.include_router(consultations.router)
 application.include_router(notifications.router)
 application.include_router(teleconsultation.router)
+application.include_router(compliance.router)
+sys.path.insert(0, str(pathlib.Path.cwd()/"tests"))
+from consent_fixtures import grant_all, references, seed_episode
 client = TestClient(application)
 engine = database.engine
 assert engine.dialect.name == 'postgresql'
@@ -57,8 +60,7 @@ def person(role):
         if role == 'patient':
             profile = Patient(user_id=user.id)
             session.add(profile); session.flush()
-            for kind in ('privacy_policy', 'telemedicine_consent', 'terms_of_service'):
-                session.add(PatientConsent(patient_id=profile.id, consent_type=kind))
+            grant_all(session, profile)
         else:
             profile = Doctor(user_id=user.id, license_number=f'TEST-{uuid4().hex}', specialization='clinica_geral', verification_status='verified')
             session.add(profile)
@@ -990,6 +992,151 @@ def billing_migration():
     return {'runtime_adoption_and_legacy_unassessed_state': True, 'retained_attempt_downgrade_refused': True}
 
 
+def consent_body(patient, action='withdraw'):
+    from app.services import consent_runtime
+    with Session(engine) as db:
+        reference = references(db)[0]
+        return reference | {'action': action, 'expected_revision': consent_runtime.revision(db, patient['id'])}
+
+
+def decide(patient, body, key=None):
+    return client.post('/api/v1/compliance/consent', headers=patient['headers'] | {'Idempotency-Key': key or str(uuid4())}, json=body)
+
+
+def consent_duplicate_and_stale_actions():
+    from app.health_models import PatientConsentEvent
+    for same in (True, False):
+        for _ in range(5):
+            p = person('patient'); body = consent_body(p); key = str(uuid4())
+            results = together([lambda: decide(p, body, key),
+                lambda: decide(p, body if same else body | {'action': 'grant'}, key if same else str(uuid4()))], table='patients')
+            statuses(results, (200, 200) if same else (200, 409))
+            with Session(engine) as db:
+                assert db.query(PatientConsentEvent).filter_by(patient_id=p['id']).count() == 6
+                assert db.query(HealthAuditLog).filter_by(resource_type='consent_event',
+                    resource_id=next(result.json()['event']['id'] for result in results if result.status_code == 200)).count() == 1
+            if same:
+                assert results[0].json()['event']['id'] == results[1].json()['event']['id']
+    return {'forced_races': 10, 'exact_uuid_one_event_audit': True, 'stale_decision_cannot_undo_other_device': True}
+
+
+def consent_withdrawal_vs_booking():
+    for _ in range(5):
+        p = people(); slot = publish(p['d1']); key = str(uuid4()); body = consent_body(p['p1'])
+        result, withdrawal = together([lambda: book(p['p1'], slot, key), lambda: decide(p['p1'], body)], table='patients')
+        assert withdrawal.status_code == 200 and result.status_code in (200, 403)
+        if result.status_code == 200:
+            assert book(p['p1'], slot, key).json()['id'] == result.json()['id']
+            assert accept(p['d1'], result.json()['id']).status_code == 403
+        with Session(engine) as db:
+            rows = db.query(Consultation).filter_by(patient_id=p['p1']['id']).all()
+            assert len(rows) == (1 if result.status_code == 200 else 0)
+    return {'forced_races': 5, 'withdrawal_serialized_with_new_booking': True, 'outcome_recovery_survives_withdrawal': True}
+
+
+def consent_withdrawal_vs_start():
+    from app.health_models import ConsultationConsentSnapshot
+    from app.services.consent_runtime import require_episode
+    for _ in range(5):
+        p = people(); slot = publish(p['d1']); item = book(p['p1'], slot).json()
+        assert accept(p['d1'], item['id']).status_code == 200
+        body = consent_body(p['p1'])
+        result, withdrawal = together([
+            lambda: client.post(f'/api/v1/doctor/queue/{item["id"]}/start', headers=p['d1']['headers']),
+            lambda: decide(p['p1'], body)], table='patients')
+        assert withdrawal.status_code == 200 and result.status_code in (200, 403), [(r.status_code, r.text) for r in (result, withdrawal)]
+        with Session(engine) as db:
+            row = db.get(Consultation, item['id'])
+            snapshot = db.query(ConsultationConsentSnapshot).filter_by(consultation_id=item['id']).first()
+            assert bool(snapshot) == (result.status_code == 200)
+            if snapshot:
+                assert row.status == 'in_progress'
+                require_episode(db, row)
+            else: assert row.status == 'scheduled'
+    return {'forced_races': 5, 'new_start_requires_current_grant_under_patient_lock': True,
+            'already_started_episode_retains_exact_authorization': True}
+
+
+
+def consent_state_revision_prefix():
+    from app.services import consent_runtime
+    from unittest.mock import patch
+    for denial_language in ('pt', 'en'):
+        for _ in range(3):
+            p = person('patient')
+            with Session(engine) as db:
+                if denial_language != 'pt':
+                    grant_all(db, db.get(Patient, p['id']), language=denial_language); db.commit()
+                body = references(db, language=denial_language)[0] | {
+                    'action': 'withdraw', 'expected_revision': consent_runtime.revision(db, p['id'])}
+                displayed_revision = body['expected_revision']
+            original = consent_runtime.latest_events
+            injected = False
+            def append_after_revision(db, patient_id, country, language, **kwargs):
+                nonlocal injected
+                if kwargs.get('max_sequence') is not None and not injected:
+                    injected = True
+                    with ThreadPoolExecutor(max_workers=1) as pool:
+                        result = pool.submit(decide, p, body).result(timeout=8)
+                    assert result.status_code == 200, result.text
+                return original(db, patient_id, country, language, **kwargs)
+            with patch.object(consent_runtime, 'latest_events', append_after_revision):
+                result = client.get('/api/v1/compliance/consent-state', headers=p['headers'], params={'country': 'AO'})
+            assert result.status_code == 200, result.text
+            state = result.json()
+            assert state['revision'] == displayed_revision and all(row['effective'] for row in state['states'])
+            stale = decide(p, body | {'action': 'grant'})
+            assert stale.status_code == 409 and stale.json()['detail']['request_key_committed'] is False
+            current = client.get('/api/v1/compliance/consent-state', headers=p['headers'], params={'country': 'AO'}).json()
+            assert current['revision'] == displayed_revision + 1
+            assert next(row for row in current['states'] if row['purpose'] == 'privacy_policy')['status'] == 'withdrawn'
+    return {'forced_races': 6, 'read_committed_state_uses_immutable_revision_prefix': True,
+            'same_and_other_language_denial_cannot_supply_unseen_revision': True}
+
+
+def consent_retention_and_migration():
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from app.health_models import PatientConsentEvent
+    spec = importlib.util.spec_from_file_location('pg_consent_migration', pathlib.Path('alembic/versions/consent_runtime_v1.py'))
+    migration = importlib.util.module_from_spec(spec); spec.loader.exec_module(migration)
+    with engine.begin() as conn, Operations.context(MigrationContext.configure(conn)):
+        migration.upgrade()
+        try:
+            migration.downgrade(); raise AssertionError('Consent history cannot be removed')
+        except RuntimeError as error: assert 'Retained' in str(error)
+    p = person('patient')
+    with Session(engine) as db:
+        row = db.query(PatientConsentEvent).filter_by(patient_id=p['id']).first(); event_id, document_id = row.id, row.document_id
+    for statement, identifier in [('DELETE FROM patient_consent_events WHERE id=:id', event_id),
+        ("UPDATE consent_catalog_documents SET content='changed' WHERE id=:id", document_id),
+        ('DELETE FROM patients WHERE id=:id', p['id'])]:
+        try:
+            with engine.begin() as conn: conn.execute(text(statement), {'id': identifier})
+            raise AssertionError('Immutable evidence was changed')
+        except Exception as error: assert 'consent_evidence_is_retained' in str(error)
+    schema = 'synthetic_consent_' + uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}')
+        conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        conn.exec_driver_sql('CREATE TABLE users (id VARCHAR(36) PRIMARY KEY, email VARCHAR(200) UNIQUE)')
+        conn.exec_driver_sql('CREATE TABLE patients (id VARCHAR(36) PRIMARY KEY, user_id VARCHAR(36) UNIQUE)')
+        conn.exec_driver_sql('CREATE TABLE consultations (id VARCHAR(36) PRIMARY KEY, patient_id VARCHAR(36), doctor_id VARCHAR(36), country VARCHAR(2), booking_request_key VARCHAR(36))')
+        conn.exec_driver_sql('CREATE TABLE patient_documents (id VARCHAR(36) PRIMARY KEY)')
+        conn.exec_driver_sql('CREATE TABLE triage_sessions (id VARCHAR(36) PRIMARY KEY)')
+        conn.exec_driver_sql("INSERT INTO consultations (id) VALUES ('legacy')")
+        with Operations.context(MigrationContext.configure(conn)):
+            migration.upgrade(); migration.upgrade()
+            assert conn.execute(text("SELECT consent_language FROM consultations WHERE id='legacy'")).scalar() is None
+            assert conn.execute(text('SELECT COUNT(*) FROM consent_catalog_documents')).scalar() == 0
+            migration.downgrade()
+        conn.exec_driver_sql('SET LOCAL search_path TO public')
+        conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'exact_schema_adoption': True, 'no_implicit_market_or_approval_backfill': True,
+            'sql_immutability_and_retention': True, 'retained_history_downgrade_refused': True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
@@ -1010,7 +1157,12 @@ for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_differ
                 ('request_expiry_linked_payment_review', request_expiry_linked_payment_review),
                 ('checkout_same_key', checkout_same_key), ('checkout_different_keys', checkout_different_keys),
                 ('checkout_vs_lifecycle', checkout_vs_lifecycle), ('billing_callback_vs_status', billing_callback_vs_status),
-                ('billing_unknown_and_late_payment', billing_unknown_and_late_payment), ('billing_migration', billing_migration)]:
+                ('billing_unknown_and_late_payment', billing_unknown_and_late_payment), ('billing_migration', billing_migration),
+                ('consent_duplicate_and_stale_actions', consent_duplicate_and_stale_actions),
+                ('consent_withdrawal_vs_booking', consent_withdrawal_vs_booking),
+                ('consent_withdrawal_vs_start', consent_withdrawal_vs_start),
+                ('consent_retention_and_migration', consent_retention_and_migration),
+                ('consent_state_revision_prefix', consent_state_revision_prefix)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}

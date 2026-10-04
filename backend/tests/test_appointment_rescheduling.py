@@ -137,7 +137,8 @@ def test_patient_conflict_with_other_clinician_keeps_original(api, people):
 def test_current_authority_is_required_for_new_move(api, people, db_session, mutation):
     _, second, item = pair(api, people)
     if mutation == "consent":
-        db_session.query(PatientConsent).filter_by(patient_id=people["patient"]["profile"].id, consent_type="telemedicine_consent").delete()
+        from consent_fixtures import withdraw
+        withdraw(db_session, people["patient"]["profile"], "telemedicine_consent")
     else:
         db_session.query(ClinicianCredential).filter_by(user_id=people["doctor"]["user"].id).update({"status": "revoked"})
     db_session.commit()

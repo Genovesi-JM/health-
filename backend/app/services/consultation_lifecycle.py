@@ -51,6 +51,9 @@ def transition(db: Session, consultation: Consultation, *, actor_id: str,
         raise HTTPException(status_code=409, detail="O estado da consulta não permite esta ação. Atualize a lista.")
     from app.services.appointments import guard_transition, release_cancelled_slot
     guard_transition(db, consultation, status, changes.get("doctor_id", previous_doctor_id))
+    if status == "in_progress":
+        from app.services.consent_runtime import capture_episode
+        capture_episode(db, consultation)
     table = Consultation.__table__
     predicates = []
     if patient_cancel:

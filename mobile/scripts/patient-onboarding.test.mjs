@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   patientDataForDraft, validatePatientStep, patientDraftComplete, submitPatientDraft,
-  PATIENT_CONSENT_VERSION, REQUIRED_PATIENT_CONSENTS,
+  REQUIRED_PATIENT_CONSENTS,
 } from '../src/screens/patientOnboarding.ts';
 
 const identity = { email: 'patient@example.test', full_name: 'Ana Teste' };
@@ -13,7 +13,7 @@ const validPayload = (country = 'AO') => ({
   '4': { country, city: country === 'AO' ? 'Luanda' : 'Porto' },
   '5': { blood_type: 'O+', allergies: 'penicilina, marisco', chronic: 'hipertensão' },
   '6': { ec_name: 'Pessoa de Teste', ec_phone: '+244900000222', ec_consent: true },
-  '7': { ...Object.fromEntries(REQUIRED_PATIENT_CONSENTS.map(key => [key, true])), consent_version: PATIENT_CONSENT_VERSION, c_marketing: false },
+  '7': { catalog_country: country, catalog_language: 'pt', consent_expected_revision: 0, consent_acceptances: REQUIRED_PATIENT_CONSENTS.map((purpose, index) => ({ document_id: `doc-${index}`, version: 1, content_hash: 'a'.repeat(64), country, language: 'pt' })) },
   '8': {},
 });
 const draft = (overrides = {}) => ({ id: 'draft-1', role: 'patient', status: 'draft', completion_status: 'incomplete', current_step: 8,
@@ -27,8 +27,9 @@ test('new drafts have eight steps without inventing health information or accept
   assert.equal(data['4'].country, 'AO');
   assert.equal(data['2'].email, identity.email);
   assert.equal(data['3'].full_name, identity.full_name);
-  assert.equal(data['7'].consent_version, 'patient-onboarding-v1');
-  for (const key of REQUIRED_PATIENT_CONSENTS) assert.equal(data['7'][key], false);
+  assert.deepEqual(data['7'].consent_acceptances, []);
+  assert.equal(data['7'].catalog_country, 'AO');
+  assert.equal(data['7'].catalog_language, 'pt');
 });
 
 test('resuming preserves saved answers, explicit false choices and untouched health fields', () => {
@@ -41,20 +42,18 @@ test('resuming preserves saved answers, explicit false choices and untouched hea
   assert.equal(result['3'].full_name, 'Nome guardado');
   assert.equal(result['2'].email, identity.email);
   assert.deepEqual(result['5'], saved['5']);
-  assert.equal(result['7'].c_terms, true);
-  assert.equal(result['7'].c_family_share, false);
+  assert.deepEqual(result['7'].consent_acceptances, saved['7'].consent_acceptances);
+  assert.equal(result['7'].c_family_share, undefined);
   result['3'].full_name = 'Edited';
   assert.equal(saved['3'].full_name, 'Nome guardado');
 });
 
-test('an outdated or unversioned draft requires consent to be reviewed again', () => {
-  for (const version of [undefined, 'old-version']) {
-    const stored = validPayload();
-    stored['7'].consent_version = version;
-    const resumed = patientDataForDraft(identity, stored);
-    for (const key of REQUIRED_PATIENT_CONSENTS) assert.equal(resumed['7'][key], false);
-    assert.equal(resumed['7'].consent_version, PATIENT_CONSENT_VERSION);
-  }
+test('legacy boolean declarations are discarded and never converted to exact consent references', () => {
+  const stored = validPayload(); stored['7'] = { c_terms: true, c_privacy: true, c_health: true, c_telemedicine: true, c_medical_disclaimer: true, consent_version: 'patient-onboarding-v1' };
+  const resumed = patientDataForDraft(identity, stored);
+  assert.deepEqual(resumed['7'].consent_acceptances, []);
+  assert.equal(resumed['7'].c_terms, undefined);
+  assert.notEqual(validatePatientStep(7, resumed, identity), null);
 });
 
 test('Angola and Portugal payloads match the eight-step server contract', () => {
@@ -80,17 +79,14 @@ test('account email, dates, country and SMS contact fail before submission', () 
   assert.equal(validatePatientStep(2, payload, identity), null);
 });
 
-test('all five consent fields and emergency permission must be booleans true', () => {
-  for (const key of REQUIRED_PATIENT_CONSENTS) {
-    for (const value of [false, 'true', 1, null]) {
-      const payload = validPayload(); payload['7'][key] = value;
-      assert.notEqual(validatePatientStep(7, payload, identity), null);
-    }
+test('exact five approved references, matching market, hash/version and revision are required independently of optional choices', () => {
+  for (const alteration of [fields => fields.consent_acceptances.pop(), fields => fields.consent_acceptances[0].content_hash = 'wrong',
+    fields => fields.consent_acceptances[0].version = 0, fields => fields.consent_acceptances[0].country = 'PT',
+    fields => fields.catalog_country = 'PT', fields => fields.consent_expected_revision = -1,
+    fields => fields.consent_acceptances[1] = fields.consent_acceptances[0], fields => fields.c_marketing = true]) {
+    const payload = validPayload(); alteration(payload['7']); assert.notEqual(validatePatientStep(7, payload, identity), null);
   }
-  const payload = validPayload(); payload['6'].ec_consent = 'true';
-  assert.notEqual(validatePatientStep(6, payload, identity), null);
-  payload['7'].c_marketing = 'false';
-  assert.notEqual(validatePatientStep(7, payload, identity), null);
+  const payload = validPayload(); payload['6'].ec_consent = 'true'; assert.notEqual(validatePatientStep(6, payload, identity), null);
 });
 
 test('an old frozen draft is not proof that profile and consent completion occurred', () => {
@@ -139,4 +135,12 @@ test('save or submit errors never report a completed profile', async () => {
   assert.equal(submits, 0);
   api.put = async () => ({ data: draft() });
   await assert.rejects(() => submitPatientDraft(api, {}), /confirmar/);
+});
+
+test('a session-bound onboarding client prevents a later profile mutation after ownership changes during status lookup', async () => {
+  let owner = 'A'; const expected = owner; let writes = 0;
+  const assertCurrent = () => { if (owner !== expected) throw new Error('Session changed'); };
+  const api = { get: async () => { owner = 'B'; return {data: {draft:draft()}}; },
+    put: async () => {assertCurrent(); writes++;}, post: async () => {assertCurrent(); writes++;} };
+  await assert.rejects(() => submitPatientDraft(api, {}), /Session changed/); assert.equal(writes, 0);
 });

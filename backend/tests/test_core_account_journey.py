@@ -21,12 +21,14 @@ def test_angola_registration_onboarding_review_booking_and_record_access(client,
     assert account['professional_application'] is None
     assert account['patient_onboarding_complete'] is False
     blocked = client.post('/api/v1/consultations/book', headers=patient_headers,
-                          json={'specialty': 'clinica_geral', 'next_available': True})
+                          json={'country': 'AO', 'specialty': 'clinica_geral', 'next_available': True})
     assert blocked.status_code == 403, blocked.text
 
     started = client.post('/api/v1/onboarding/start', headers=patient_headers, json={'role': 'patient'})
     assert started.status_code == 200, started.text
-    for step, answers in patient_payload(account['email'], 'AO').items():
+    payload = patient_payload(account['email'], 'AO', db=db_session)
+    db_session.commit()
+    for step, answers in payload.items():
         saved = client.put(f'/api/v1/onboarding/steps/{step}?role=patient', headers=patient_headers,
                            json={'data': answers, 'completed': True})
         assert saved.status_code == 200, saved.text

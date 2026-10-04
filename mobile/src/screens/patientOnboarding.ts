@@ -1,9 +1,5 @@
-export const PATIENT_CONSENT_VERSION = 'patient-onboarding-v1';
 export const PATIENT_SCOPE = '?role=patient';
-export const REQUIRED_PATIENT_CONSENTS = [
-  'c_terms', 'c_privacy', 'c_health', 'c_telemedicine', 'c_medical_disclaimer',
-] as const;
-export const OPTIONAL_PATIENT_CONSENTS = ['c_family_share', 'c_analytics', 'c_marketing', 'c_research'] as const;
+export const REQUIRED_PATIENT_CONSENTS = ['privacy_policy', 'telemedicine_consent', 'terms_of_service', 'health_data_processing', 'medical_disclaimer'] as const;
 
 export type PatientStep = Record<string, unknown>;
 export type PatientData = Record<string, PatientStep>;
@@ -30,15 +26,16 @@ export function patientDataForDraft(identity: PatientIdentity, stored: unknown):
     '2': { email: identity.email },
     '3': { full_name: identity.full_name },
     '4': { country: 'AO' }, '5': {}, '6': {},
-    '7': { consent_version: PATIENT_CONSENT_VERSION }, '8': {},
+    '7': { catalog_language: 'pt', consent_acceptances: [] }, '8': {},
   };
   const data = Object.fromEntries(Object.keys(defaults).map(step => [step, { ...defaults[step], ...asStep(source[step]) }]));
   // Account email changes belong to security settings, never this form.
   data['2'].email = identity.email;
-  if (asStep(source['7']).consent_version !== PATIENT_CONSENT_VERSION) {
-    for (const key of [...REQUIRED_PATIENT_CONSENTS, ...OPTIONAL_PATIENT_CONSENTS]) data['7'][key] = false;
-    data['7'].consent_version = PATIENT_CONSENT_VERSION;
-  }
+  const consent = asStep(source['7']);
+  // Old boolean declarations and optional choices never become exact-text authorization.
+  data['7'] = { catalog_country: consent.catalog_country ?? data['4'].country, catalog_language: 'pt',
+    consent_expected_revision: Number.isSafeInteger(consent.consent_expected_revision) ? consent.consent_expected_revision : 0,
+    consent_acceptances: Array.isArray(consent.consent_acceptances) ? consent.consent_acceptances : [] };
   return data;
 }
 
@@ -71,8 +68,14 @@ export function validatePatientStep(step: number, data: PatientData, identity: P
     if (fields.ec_consent !== true) return 'Confirme a autorização do contacto de emergência.';
   }
   if (step === 7) {
-    if (fields.consent_version !== PATIENT_CONSENT_VERSION || REQUIRED_PATIENT_CONSENTS.some(key => fields[key] !== true)) return 'Reveja e aceite os cinco consentimentos obrigatórios.';
-    if (OPTIONAL_PATIENT_CONSENTS.some(key => key in fields && typeof fields[key] !== 'boolean')) return 'Confirme as suas escolhas opcionais.';
+    const refs = fields.consent_acceptances;
+    if (Object.keys(fields).some(key => !['catalog_country', 'catalog_language', 'consent_expected_revision', 'consent_acceptances'].includes(key))
+      || fields.catalog_country !== data['4']?.country || !['AO', 'PT'].includes(String(fields.catalog_country)) || fields.catalog_language !== 'pt'
+      || !Number.isSafeInteger(fields.consent_expected_revision) || (fields.consent_expected_revision as number) < 0
+      || !Array.isArray(refs) || refs.length !== 5 || new Set(refs.map(item => asStep(item).document_id)).size !== 5
+      || refs.some(value => { const item = asStep(value); return typeof item.document_id !== 'string' || !item.document_id
+        || !Number.isSafeInteger(item.version) || (item.version as number) < 1 || typeof item.content_hash !== 'string' || !/^[a-f0-9]{64}$/.test(item.content_hash)
+        || item.country !== fields.catalog_country || item.language !== 'pt' || Object.keys(item).some(key => !['document_id', 'version', 'content_hash', 'country', 'language'].includes(key)); })) return 'Leia os cinco textos aprovados do país selecionado e registe as suas escolhas para continuar.';
   }
   return null;
 }

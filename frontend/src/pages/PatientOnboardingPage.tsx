@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import OnboardingShell, { type OnboardingStepDef, type StepRenderContext } from '../components/OnboardingShell';
 import { useT } from '../i18n/LanguageContext';
 import { useAuth } from '../AuthContext';
+import OnboardingConsentStep from '../components/OnboardingConsentStep';
+import { REQUIRED_CONSENT_PURPOSES, isConsentCountry } from '../utils/consent';
 
 /* ── Small building blocks ────────────────────────────────────────────── */
 
@@ -66,6 +68,7 @@ export default function PatientOnboardingPage() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [done, setDone] = useState(false);
+  const consentReady = useRef(false);
 
   const steps: OnboardingStepDef[] = useMemo(() => [
     // Step 1 — Language + communication
@@ -253,42 +256,14 @@ export default function PatientOnboardingPage() {
       },
     },
 
-    // Step 7 — Consent (separate toggles, not bundled)
+    // Exact server references are persisted with the draft; final submission rechecks them atomically.
     {
-      key: 'consent',
-      title: t('pob.s7_title'),
-      subtitle: t('pob.s7_sub'),
-      defaults: { consent_version: 'patient-onboarding-v1' },
-      render: (ctx) => (
-        <>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
-            Obrigatórios para usar o serviço
-          </div>
-          <Toggle ctx={ctx} k="c_terms" label="Aceito os Termos de Serviço." />
-          <Toggle ctx={ctx} k="c_privacy" label="Aceito a Política de Privacidade." />
-          <Toggle ctx={ctx} k="c_health" label="Autorizo o processamento dos meus dados de saúde para fins clínicos." />
-          <Toggle ctx={ctx} k="c_telemedicine" label="Aceito receber cuidados por teleconsulta." />
-          <Toggle ctx={ctx} k="c_medical_disclaimer" label="Li o Aviso Médico e compreendo que o KAYA não é um serviço de emergência." />
-          <p style={{ fontSize: '0.82rem' }}>
-            <Link to="/terms" target="_blank" rel="noreferrer">Termos de Serviço</Link>{' · '}
-            <Link to="/privacy" target="_blank" rel="noreferrer">Política de Privacidade</Link>{' · '}
-            <Link to="/medical-disclaimer" target="_blank" rel="noreferrer">Aviso Médico</Link>
-          </p>
-
-          <div style={{ height: '1rem' }} />
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
-            Opcionais — pode mudar mais tarde
-          </div>
-          <Toggle ctx={ctx} k="c_family_share" label="Permito partilhar informação com familiares que eu autorize." />
-          <Toggle ctx={ctx} k="c_analytics" label="Autorizo estatísticas anónimas para melhorar o serviço." />
-          <Toggle ctx={ctx} k="c_marketing" label="Aceito receber comunicações de marketing." />
-          <Toggle ctx={ctx} k="c_research" label="Autorizo o uso anonimizado dos meus dados em investigação." />
-        </>
-      ),
-      validate: (d) => {
-        for (const k of ['c_terms', 'c_privacy', 'c_health', 'c_telemedicine', 'c_medical_disclaimer']) {
-          if (d[k] !== true) return 'Todos os consentimentos obrigatórios devem ser aceites.';
-        }
+      key: 'consent', title: t('pob.s7_title'), subtitle: t('pob.s7_sub'),
+      render: ctx => <OnboardingConsentStep ctx={ctx} readyRef={consentReady} />,
+      validate: data => {
+        if (!consentReady.current) return 'Confirme a disponibilidade dos documentos aprovados antes de continuar.';
+        if (!isConsentCountry(data.catalog_country) || data.catalog_language !== 'pt' || !Number.isSafeInteger(data.consent_expected_revision)
+          || !Array.isArray(data.consent_acceptances) || data.consent_acceptances.length !== REQUIRED_CONSENT_PURPOSES.length) return 'Leia e decida sobre cada documento obrigatório.';
         return null;
       },
     },

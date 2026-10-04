@@ -299,7 +299,9 @@ class IBANTransferAdapter(PaymentAdapter):
         return int(numeric) % 97 == 1
 
     async def create_payment(self, intent: PaymentIntent) -> PaymentResult:
-        reference = f"KAYA-{intent.order_id[-8:].upper()}"
+        # Identify the whole payment attempt, even when an order is retried.
+        # Eight UUID hex digits alone have an avoidable collision risk.
+        reference = f"KAYA-{intent.id.replace('-', '').upper()}"
         if not self.recipient_configured(intent.currency.value):
             return PaymentResult(success=False, payment_id=intent.id, status=PaymentStatus.FAILED,
                 error_code='bank_recipient_not_configured', error_message='Transferência bancária indisponível: destinatário por configurar.')

@@ -70,11 +70,8 @@ def verify_finalization(notes: ConsultationNotes) -> None:
 
 
 def require_episode_consent(consultation: Consultation, db: Session) -> None:
-    if not db.query(PatientConsent.id).filter(
-        PatientConsent.patient_id == consultation.patient_id,
-        PatientConsent.consent_type == "telemedicine_consent",
-    ).first():
-        raise HTTPException(409, "O consentimento de telemedicina deve estar ativo antes de continuar.")
+    from app.services.consent_runtime import require_episode
+    require_episode(db, consultation)
 
 
 def end_video(db: Session, consultation: Consultation, actor_id: str, now: datetime) -> None:

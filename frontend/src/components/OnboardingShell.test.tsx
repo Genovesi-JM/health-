@@ -5,7 +5,9 @@ import { I18nProvider } from '../i18n/LanguageContext';
 import api from '../api';
 import OnboardingShell, { type OnboardingStepDef } from './OnboardingShell';
 
-vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
+const identity = vi.hoisted(() => ({ userId: 'owner-A', token: 'token-A' }));
+const credentials = { headers: { Authorization: 'Bearer token-A' } };
+vi.mock('../api', () => ({ getSession: () => ({ ...identity }), default: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 const submitted = vi.fn();
 const exited = vi.fn();
 const draft = (extra = {}) => ({ id: 'draft-1', role: 'patient', status: 'draft', current_step: 1,
@@ -20,7 +22,7 @@ function show(definitions = steps) {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.clearAllMocks(); identity.userId = 'owner-A'; identity.token = 'token-A';
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.mocked(api.get).mockResolvedValue({ data: { draft: null } });
   vi.mocked(api.post).mockImplementation(async url => ({ data: String(url).includes('/submit')
@@ -54,7 +56,7 @@ describe('onboarding persistence', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Ana');
     expect(api.post).toHaveBeenCalledWith('/api/v1/onboarding/save?role=patient', {
       step: 2, data: { name: 'Stored second answer' },
-    });
+    }, credentials);
   });
 
   it('uses the selected role on every write and submits only once while pending', async () => {
@@ -68,11 +70,11 @@ describe('onboarding persistence', () => {
     fireEvent.click(screen.getByTestId('onboarding-primary'));
     fireEvent.click(screen.getByTestId('onboarding-primary'));
     await waitFor(() => expect(api.put).toHaveBeenCalledTimes(1));
-    expect(api.put).toHaveBeenCalledWith('/api/v1/onboarding/steps/1?role=patient', { data: { name: 'Ana' }, completed: true });
+    expect(api.put).toHaveBeenCalledWith('/api/v1/onboarding/steps/1?role=patient', { data: { name: 'Ana' }, completed: true }, credentials);
     expect(screen.getByTestId('onboarding-primary')).toBeDisabled();
     await act(async () => release());
     await waitFor(() => expect(submitted).toHaveBeenCalledTimes(1));
-    expect(api.post).toHaveBeenCalledWith('/api/v1/onboarding/submit?role=patient');
+    expect(api.post).toHaveBeenCalledWith('/api/v1/onboarding/submit?role=patient', undefined, credentials);
   });
 
   it('reopens completed onboarding without attempting to create another draft', async () => {
@@ -87,7 +89,7 @@ describe('onboarding persistence', () => {
     vi.mocked(api.get).mockResolvedValue({ data: { draft: draft({ status: 'submitted' }) } });
     show();
     await screen.findByLabelText('Name');
-    expect(api.post).toHaveBeenCalledWith('/api/v1/onboarding/start', { role: 'patient' });
+    expect(api.post).toHaveBeenCalledWith('/api/v1/onboarding/start', { role: 'patient' }, credentials);
     expect(submitted).not.toHaveBeenCalled();
   });
 
@@ -116,7 +118,7 @@ describe('onboarding persistence', () => {
     fireEvent.click(screen.getByRole('button', { name: /Guardar e continuar depois|Save and continue later/ }));
     await screen.findByRole('alert');
     expect(exited).not.toHaveBeenCalled();
-    expect(api.post).toHaveBeenCalledWith('/api/v1/onboarding/save?role=patient', { step: 1, data: {} });
+    expect(api.post).toHaveBeenCalledWith('/api/v1/onboarding/save?role=patient', { step: 1, data: {} }, credentials);
   });
 
   it('retries account refresh after a successful submit without writing a frozen draft', async () => {
@@ -227,7 +229,26 @@ describe('onboarding persistence', () => {
     await act(async () => release());
     expect(api.put).toHaveBeenCalledWith('/api/v1/onboarding/steps/1?role=patient', {
       data: { name: 'Ana Maria' }, completed: true,
-    });
+    }, credentials);
     expect(submitted).toHaveBeenCalledTimes(1);
   });
 });
+
+ it('does not chain a submit into a replacement account after the prior step save resolves', async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(api.put).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  show(); await screen.findByLabelText('Name'); fireEvent.click(screen.getByTestId('onboarding-primary'));
+  await waitFor(() => expect(api.put).toHaveBeenCalledTimes(1));
+  identity.userId = 'owner-B'; identity.token = 'token-B';
+  await act(async () => finish({ data: draft({ completed_steps: [1] }) }));
+  expect(vi.mocked(api.post).mock.calls.some(([url]) => url.includes('/submit'))).toBe(false);
+  expect(submitted).not.toHaveBeenCalled();
+ });
+ it('does not start a draft after a prior account status lookup resolves', async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(api.get).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  show(); await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+  identity.userId = 'owner-B'; identity.token = 'token-B';
+  await act(async () => finish({ data: { draft: null } }));
+  expect(api.post).not.toHaveBeenCalled();
+ });

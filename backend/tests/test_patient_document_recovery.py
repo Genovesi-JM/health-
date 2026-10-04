@@ -19,7 +19,8 @@ def test_owner_recovers_committed_upload_without_bytes_and_current_version(clien
     document = upload(client, documents, key=key).json()
     row = db_session.get(PatientDocument, document['id'])
     row.reviewed_text = 'Synthetic reviewed text'; row.version = 3
-    db_session.query(PatientConsent).filter_by(patient_id=documents['patient'].id).delete()
+    from consent_fixtures import withdraw
+    withdraw(db_session, documents['patient'], 'health_data_processing')
     db_session.commit()
     monkeypatch.setattr(settings, 'patient_documents_enabled', False)
     result = lookup(client, documents['headers'], key.upper())

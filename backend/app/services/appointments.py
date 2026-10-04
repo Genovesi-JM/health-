@@ -134,6 +134,11 @@ def guard_transition(db: Session, consultation: Consultation, status: str, docto
         current_doctor(db, doctor_id, consultation.country)
         from app.services.request_expiry import require_open_request
         require_open_request(db, consultation)
+        from app.services.consent_runtime import require_effective, require_episode
+        if consultation.status == "in_progress":
+            require_episode(db, consultation)
+        else:
+            require_effective(db, consultation.patient_id, consultation.country, consultation.consent_language)
         if consultation.slot_id:
             slot = db.get(AppointmentSlot, consultation.slot_id, populate_existing=True)
             if not slot or slot.withdrawn or slot.reserved_consultation_id != consultation.id:

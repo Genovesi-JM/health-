@@ -199,12 +199,19 @@ def clinician_patient_360(
     referrals = []
     credential = require_current_clinician(user, db)
     own_doctor = db.query(Doctor).filter_by(user_id=user.id).first() if user.role == "doctor" else None
-    has_episode_consent = any(consent.consent_type == "telemedicine_consent" for consent in consents)
     for consultation in consultations:
         notes = effective_clinician_notes(db, consultation)
         can_read_closeout = bool(own_doctor and consultation.doctor_id == own_doctor.id
                                 and consultation.status == "completed" and consultation.notes
                                 and consultation.notes.finalized_at)
+        has_episode_consent = False
+        if can_read_closeout:
+            from app.services.consent_runtime import require_episode
+            try:
+                require_episode(db, consultation)
+                has_episode_consent = True
+            except HTTPException:
+                pass  # Reading retained records never requires a new grant.
         messages_count = (
             db.query(ConsultationMessage.id)
             .filter(ConsultationMessage.consultation_id == consultation.id)
@@ -434,7 +441,8 @@ def clinician_patient_360(
             for item in escalations
         ],
         "consents": [
-            {"type": consent.consent_type, "accepted_at": _iso(consent.accepted_at)}
+            {"type": consent.consent_type, "accepted_at": _iso(consent.accepted_at),
+             "effective": False, "evidence_status": "legacy_unversioned"}
             for consent in consents
         ],
         "emergency_family": [

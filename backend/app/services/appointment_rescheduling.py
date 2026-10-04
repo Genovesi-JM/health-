@@ -41,8 +41,6 @@ def reschedule(db, consultation, body, patient, user, key):
             if previous.actor_user_id != user.id or not hmac.compare_digest(previous.request_digest, digest):
                 raise HTTPException(409, "Esta chave já foi usada com outra alteração. Recupere o pedido original.")
             return consultation
-        from app.rbac import require_consents
-        require_consents(patient, db)
         if consultation.reschedule_revision != body.expected_revision:
             raise _not_committed("O horário mudou noutra sessão. Atualize a consulta antes de escolher novamente.")
         if consultation.status not in ("requested", "scheduled"):
@@ -61,6 +59,8 @@ def reschedule(db, consultation, body, patient, user, key):
             raise _not_committed("Existem registos de uma teleconsulta iniciada. A consulta requer revisão antes de alterar o horário.")
         if not doctor_id or consultation.doctor_id != doctor_id or consultation.country not in MARKET_ZONES:
             raise _not_committed("A alteração requer um médico e país de atendimento definidos.")
+        from app.services.consent_runtime import require_effective
+        require_effective(db, patient.id, consultation.country, consultation.consent_language)
         if consultation.payment_status == "paid" or db.query(Consultation.id).filter(
                 Consultation.id == consultation_id, payment_link_sql()).first():
             raise _not_committed("Esta consulta requer apoio para rever o pagamento antes de alterar o horário.")

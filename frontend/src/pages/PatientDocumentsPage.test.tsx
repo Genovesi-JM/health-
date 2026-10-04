@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import api from '../api';
@@ -6,7 +7,7 @@ import PatientDocumentsPage from './PatientDocumentsPage';
 vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 const BASE = '/api/v1/patient-documents';
 const capabilities = { upload_enabled: true, max_bytes: 10485760, accepted_types: ['application/pdf', 'image/jpeg', 'image/png'], extraction: 'pdf_text' };
-const fixture = (updates: Record<string, unknown> = {}) => ({ id: 'doc-1', original_filename: 'analise.pdf', content_type: 'application/pdf', size_bytes: 1024,
+const fixture = (updates: Record<string, unknown> = {}) => ({ id: 'doc-1', original_filename: 'analise.pdf', content_type: 'application/pdf', size_bytes: 1024, country: 'AO', consent_language: 'pt',
   status: 'ready_for_review', scan_status: 'clean', version: 2, extraction_method: 'pdf_text', extracted_text: 'Resultado original: 12', reviewed_text: null,
   created_at: '2026-10-04T10:00:00Z', reviewed_at: null, error_code: null, ...updates });
 function setGet(documents = [fixture()], capabilityUpdates = {}) {
@@ -22,7 +23,7 @@ async function openFirst() {
   const first = screen.getAllByRole('button').find(button => button.hasAttribute('aria-pressed'));
   if (first) { fireEvent.click(first); await screen.findByRole('button', { name: 'Descarregar original' }); }
 }
-async function show() { render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' }); await openFirst(); }
+async function show() { render(<MemoryRouter><PatientDocumentsPage /></MemoryRouter>); await screen.findByRole('heading', { name: 'Adicionar documento' }); await openFirst(); }
 function pick(file = new File(['%PDF-1.7 test'], 'novo.pdf', { type: 'application/pdf', lastModified: 10 })) { fireEvent.change(screen.getByLabelText('Ficheiro'), { target: { files: [file] } }); }
 function upload() { fireEvent.click(screen.getByRole('button', { name: 'Enviar e ler documento' })); }
 function confirm() { fireEvent.click(screen.getByRole('button', { name: 'Confirmar texto revisto' })); }
@@ -82,7 +83,7 @@ describe('patient document persistence and review', () => {
     setGet([]);
     let finish: (value: unknown) => void = () => {};
     vi.mocked(api.post).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
-    const view = render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' });
+    const view = render(<MemoryRouter><PatientDocumentsPage /></MemoryRouter>); await screen.findByRole('heading', { name: 'Adicionar documento' });
     pick(); fireEvent.click(screen.getByRole('checkbox')); upload();
     await waitFor(() => expect(api.post).toHaveBeenCalledOnce()); view.unmount();
     await act(async () => { finish({ data: fixture({ status: 'pending_processing' }) }); });
@@ -91,7 +92,7 @@ describe('patient document persistence and review', () => {
   it('does not download private bytes after the owning account view unmounts', async () => {
     const createUrl = vi.fn(); Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createUrl });
     let finish: (value: unknown) => void = () => {};
-    const view = render(<PatientDocumentsPage />); await screen.findByRole('heading', { name: 'Adicionar documento' });
+    const view = render(<MemoryRouter><PatientDocumentsPage /></MemoryRouter>); await screen.findByRole('heading', { name: 'Adicionar documento' });
     await openFirst();
     vi.mocked(api.get).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
     fireEvent.click(screen.getByRole('button', { name: 'Descarregar original' }));
@@ -169,4 +170,22 @@ describe('patient document persistence and review', () => {
     expect(api.get).toHaveBeenLastCalledWith(`${BASE}/doc-1/download`, { responseType: 'blob' }); expect(createUrl).toHaveBeenCalledWith(bytes);
     await waitFor(() => expect(revokeUrl).toHaveBeenCalledWith('blob:private-document'), { timeout: 1500 }); click.mockRestore();
   });
+});
+
+it('binds an uncertain upload to the explicitly selected market and language', async () => {
+  await show(); fireEvent.change(screen.getByLabelText('País deste envio'), { target: { value: 'PT' } });
+  pick(); fireEvent.click(screen.getByRole('checkbox')); vi.mocked(api.post).mockRejectedValueOnce(new Error('lost response')).mockRejectedValueOnce({ response: { status: 403 } });
+  upload(); await screen.findByRole('alert');
+  const first = vi.mocked(api.post).mock.calls[0]; const body = first[1] as FormData;
+  expect(body.get('country')).toBe('PT'); expect(body.get('consent_language')).toBe('pt');
+  expect(screen.getByLabelText('País deste envio')).toBeDisabled(); expect(screen.getByRole('checkbox')).toBeDisabled();
+  upload(); await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
+  const second = vi.mocked(api.post).mock.calls[1]; expect(second[2]).toEqual(first[2]);
+  expect((second[1] as FormData).get('country')).toBe('PT'); expect(screen.getByLabelText('País deste envio')).toBeDisabled();
+});
+it('keeps a legacy original readable without offering a new process under an inferred market', async () => {
+  setGet([fixture({ country: null, consent_language: null, status: 'pending_processing' })]); await show();
+  expect(screen.getByRole('button', { name: 'Descarregar original' })).toBeEnabled();
+  expect(screen.getByText(/O país deste documento anterior não foi confirmado/)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Tentar ler novamente|Ler documento/ })).not.toBeInTheDocument(); expect(api.post).not.toHaveBeenCalled();
 });

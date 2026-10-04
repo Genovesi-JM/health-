@@ -266,3 +266,15 @@ def test_migration_preserves_legacy_unassessed_state_and_retains_new_attempts():
             connection.execute(text("UPDATE health_payments SET checkout_request_key=:key WHERE id='legacy'"), {'key': str(uuid4())})
             with pytest.raises(RuntimeError, match='Retained'): module.downgrade()
     database.dispose()
+
+
+def test_checkout_recovery_survives_withdrawal_but_fresh_attempt_cannot_dispatch(api, people, db_session):
+    from consent_fixtures import withdraw
+    item = appointment(api, people); key = str(uuid4()); payment = checkout(api, people, item, key).json()
+    withdraw(db_session, people['patient']['profile'], 'health_data_processing'); db_session.commit()
+    recovered = checkout(api, people, item, key)
+    assert recovered.status_code == 200 and recovered.json()['payment_id'] == payment['payment_id']
+    denied = checkout(api, people, item, str(uuid4()))
+    assert denied.status_code == 409 and denied.json()['detail']['request_key_committed'] is False
+    assert denied.json()['detail']['reason'] == 'consent_required'
+    assert len(api.adapter.calls) == 1

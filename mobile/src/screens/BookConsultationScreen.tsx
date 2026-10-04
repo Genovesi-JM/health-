@@ -188,6 +188,7 @@ export default function BookConsultationScreen() {
         <Text style={styles.body}>Existe um pedido por confirmar: {APPOINTMENT_MARKETS[pending.payload.country]}, {APPOINTMENT_SPECIALTIES.find(item => item.code === pending.payload.specialty)?.label}. {pending.payload.slot_id ? 'Foi escolhido um horário.' : 'Pedido sem horário.'}</Text>
         <Text style={styles.body}>Repita o mesmo pedido para recuperar o resultado. O país, a especialidade e o horário ficam guardados até confirmar o resultado.</Text>
       </View>}
+      <TouchableOpacity disabled={saving} onPress={() => navigation.navigate('ConsentGate', { country })}><Text style={styles.link}>Rever consentimentos · {APPOINTMENT_MARKETS[country]} · Português</Text></TouchableOpacity>
       <Text style={styles.label}>País de atendimento</Text>
       <View style={styles.chips}>
         {(Object.entries(APPOINTMENT_MARKETS) as [AppointmentCountry, string][]).map(([code, label]) => <TouchableOpacity key={code}

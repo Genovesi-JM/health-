@@ -19,6 +19,7 @@ export type AppointmentCapabilities = {
   max_publish_days?: number;
 };
 export type BookingPayload = {
+  consent_language?: 'pt';
   country: AppointmentCountry;
   specialty: string;
   slot_id?: string;
@@ -85,7 +86,7 @@ export function createBookingAttempt(country: AppointmentCountry, specialty: str
   if (slot && availableSlots([slot], country, specialty, now).length !== 1) {
     throw new Error('Este horário já não está disponível. Atualize os horários.');
   }
-  return { key, payload: { country, specialty, ...(slot ? { slot_id: slot.id } : { next_available: true }) } };
+  return { key, payload: { country, consent_language: 'pt', specialty, ...(slot ? { slot_id: slot.id } : { next_available: true }) } };
 }
 
 /** Kept in SecureStore per patient before sending, so a lost response or app
@@ -100,12 +101,13 @@ export function restoreBookingAttempt(value: string | null): BookingAttempt | nu
     const attempt = JSON.parse(value) as BookingAttempt;
     const payload = attempt.payload;
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attempt.key) ||
-        !payload || !Object.hasOwn(APPOINTMENT_MARKETS, payload.country) ||
+        !payload || (payload.consent_language !== undefined && payload.consent_language !== 'pt') || !Object.hasOwn(APPOINTMENT_MARKETS, payload.country) ||
         !APPOINTMENT_SPECIALTIES.some(item => item.code === payload.specialty) ||
         (typeof payload.slot_id === 'string' && payload.slot_id.length > 0 ? payload.next_available !== undefined : payload.next_available !== true || payload.slot_id !== undefined)) {
       throw new Error('Invalid attempt');
     }
     return { key: attempt.key, payload: { country: payload.country, specialty: payload.specialty,
+      ...(payload.consent_language === undefined ? {} : { consent_language: payload.consent_language }),
       ...(payload.slot_id ? { slot_id: payload.slot_id } : { next_available: true }) } };
   } catch {
     throw new Error('Não foi possível recuperar o pedido anterior. Verifique As minhas consultas antes de fazer outro pedido.');

@@ -93,7 +93,6 @@ def append_amendment(db: Session, consultation: Consultation, body: Consultation
     doctor = current_doctor(db, doctor_id, consultation.country)
     if doctor.user_id != actor_id:
         raise HTTPException(404, "Consulta não encontrada ou não atribuída a si.")
-    require_episode_consent(consultation, db)
     notes = db.query(ConsultationNotes).filter_by(consultation_id=consultation.id).first()
     if not notes or not notes.finalized_at:
         raise HTTPException(409, "Apenas um registo finalizado pode receber uma correção.")
@@ -109,6 +108,7 @@ def append_amendment(db: Session, consultation: Consultation, body: Consultation
         if retry.author_user_id == actor_id and hmac.compare_digest(retry.request_digest, request_digest):
             return retry
         raise HTTPException(409, "Esta chave já foi usada com outro conteúdo. Recupere a correção guardada.")
+    require_episode_consent(consultation, db)
     previous = history[-1][0].digest if history else notes.finalization_digest
     if not hmac.compare_digest(previous, body.expected_digest):
         # Emitted only after the retained chain and request key were checked

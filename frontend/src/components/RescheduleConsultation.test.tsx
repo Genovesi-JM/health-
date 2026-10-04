@@ -75,7 +75,9 @@ describe('reservation moves', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar marcação atual' }));
     await waitFor(() => expect(screen.getByRole('radio')).toBeEnabled());
     expect(api.get).toHaveBeenCalledWith('/api/v1/consultations/me', { params: { consultation_id: visit.id } });
-    expect(screen.getByRole('checkbox')).not.toBeChecked(); choose(); submit();
+    expect(screen.getByRole('checkbox')).not.toBeChecked(); choose();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar novo horário' })).toBeEnabled());
+    submit();
     await waitFor(() => expect(view.onUpdated).toHaveBeenLastCalledWith({ ...saved, reschedule_revision: 4 }));
     expect(vi.mocked(api.post).mock.calls[1][1]).toEqual({ slot_id: 'new-slot', expected_revision: 3 });
     expect(vi.mocked(api.post).mock.calls[1][2]?.headers?.['Idempotency-Key']).not.toBe(originalKey);

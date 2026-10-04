@@ -11,6 +11,7 @@ from app.deps import get_current_user
 from app.health_models import ClinicianCredential, Consultation, DeviceReading, Doctor, Patient, TriagePhoto, TriageSession
 from app.models import User
 from app.routers import triage
+from tests.consent_fixtures import grant_all
 
 
 @pytest.fixture
@@ -26,7 +27,7 @@ def context(db, monkeypatch, tmp_path):
         licence_expiry_date=(date.today() + timedelta(days=30)).isoformat(), diploma_country="AO",
         diploma_institution="Synthetic University", degree_title="Medicine", status="verified")
     db.add_all([patient, doctor, credential]); db.flush()
-    session = TriageSession(patient_id=patient.id, chief_complaint="Synthetic self complaint", status="completed")
+    session = TriageSession(patient_id=patient.id, chief_complaint="Synthetic self complaint", status="completed", country="AO", consent_language="pt")
     db.add(session); db.flush()
     visit = Consultation(patient_id=patient.id, doctor_id=doctor.id, triage_session_id=session.id, status="scheduled", country="AO")
     photo = TriagePhoto(triage_session_id=session.id, view_type="context", original_filename="synthetic.png",
@@ -54,7 +55,7 @@ def context(db, monkeypatch, tmp_path):
 ])
 def test_unsupported_subject_never_creates_triage_or_readings(context, db, context_fields):
     before = (db.query(TriageSession).count(), db.query(DeviceReading).count())
-    response = context.client.post("/api/v1/triage/start", json={"chief_complaint": "Synthetic other-person complaint",
+    response = context.client.post("/api/v1/triage/start", json={"country": "AO", "chief_complaint": "Synthetic other-person complaint",
         "age_group": "adult", "answered_by_guardian": False, "vital_signs": {"temperature": 39}, **context_fields})
     assert response.status_code == 409
     assert "não está disponível" in response.json()["detail"]
@@ -62,7 +63,9 @@ def test_unsupported_subject_never_creates_triage_or_readings(context, db, conte
 
 
 def test_explicit_self_adult_preserves_subject_for_session_and_measurement(context, db):
-    response = context.client.post("/api/v1/triage/start", json={"chief_complaint": "Synthetic self complaint",
+    grant_all(db, context.patient)
+    db.commit()
+    response = context.client.post("/api/v1/triage/start", json={"country": "AO", "chief_complaint": "Synthetic self complaint",
         "age_group": "adult", "answered_by_guardian": False, "vital_signs": {"temperature": 37}})
     assert response.status_code == 200
     session = db.get(TriageSession, response.json()["triage_id"])

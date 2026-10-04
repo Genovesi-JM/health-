@@ -242,6 +242,8 @@ class TriageVitalSigns(BaseModel):
 
 
 class TriageStartRequest(BaseModel):
+    country: Literal["AO", "PT"]
+    consent_language: str = Field(default="pt", pattern=r"^[a-z]{2}(-[A-Z]{2})?$", max_length=10)
     chief_complaint: Optional[str] = None
 
     # Optional context for better question selection / downstream analytics.
@@ -327,13 +329,14 @@ class TriagePhotoRequestOut(BaseModel):
 # ── Consultation ──
 
 class ConsultationBookRequest(BaseModel):
+    consent_language: str = Field(default="pt", pattern=r"^[a-z]{2}(-[A-Z]{2})?$", max_length=10)
     triage_session_id: Optional[str] = None
     specialty: str = Field(default="clinica_geral")
     scheduled_at: Optional[datetime] = None
     next_available: bool = False
     doctor_id: Optional[str] = None   # preferred doctor; remains requested until accepted
     slot_id: Optional[str] = None
-    country: Literal["AO", "PT"] = "AO"
+    country: Literal["AO", "PT"]
 
 
 class ConsultationOut(BaseModel):
@@ -599,16 +602,19 @@ class InvoiceOut(BaseModel):
 # ── Compliance / Consent ──
 
 class ConsentRequest(BaseModel):
-    consent_type: str = Field(
-        ...,
-        pattern=(
-            "^(privacy_policy|telemedicine_consent|terms_of_service"
-            "|medical_disclaimer|health_data_processing)$"
-        ),
-    )
+    document_id: str = Field(min_length=1, max_length=36)
+    version: StrictInt = Field(ge=1)
+    content_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    country: Literal["AO", "PT"]
+    language: str = Field(pattern=r"^[a-z]{2}(-[A-Z]{2})?$", max_length=10)
+    action: Literal["grant", "refuse", "withdraw"]
+    expected_revision: StrictInt = Field(ge=0)
+    model_config = {"extra": "forbid"}
 
 
 class ConsentOut(BaseModel):
+    effective: bool = False
+    evidence_status: str = "legacy_unversioned"
     id: str
     consent_type: str
     accepted_at: datetime

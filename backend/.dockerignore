@@ -181,3 +181,7 @@
 
 !app/services/consultation_payments.py
 !alembic/versions/health_payment_attempts_v1.py
+
+!app/services/consent_runtime.py
+!app/services/consent_retention.py
+!alembic/versions/consent_runtime_v1.py

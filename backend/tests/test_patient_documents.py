@@ -50,8 +50,8 @@ def documents(db_session, monkeypatch):
     patient = Patient(user_id=user.id, allergies_json='["existing allergy"]')
     db_session.add(patient)
     db_session.flush()
-    consent = PatientConsent(patient_id=patient.id, consent_type="health_data_processing")
-    db_session.add(consent)
+    from consent_fixtures import grant_all
+    consent, = grant_all(db_session, patient, purposes=("health_data_processing",))
     db_session.commit()
 
     class Storage:
@@ -80,7 +80,7 @@ def documents(db_session, monkeypatch):
 
 def upload(client, documents, *, data=None, name="synthetic.pdf", kind="application/pdf", key=None, consent="true"):
     return client.post(ROOT, headers={**documents["headers"], "Idempotency-Key": key or str(uuid4())},
-                       data={"processing_consent": consent},
+                       data={"processing_consent": consent, "country": "AO"},
                        files={"file": (name, pdf_bytes() if data is None else data, kind)})
 
 
@@ -187,7 +187,7 @@ def test_idempotent_retry_and_conflicting_file(client, documents, db_session):
     assert upload(client, documents, key=key, data=data + b"\nchanged").status_code == 409
     assert upload(client, documents, key="invalid", data=data).status_code == 422
     assert client.post(ROOT, headers={**documents["headers"], "Idempotency-Key": ""},
-                       data={"processing_consent": "true"},
+                       data={"processing_consent": "true", "country": "AO"},
                        files={"file": ("synthetic.pdf", data, "application/pdf")}).status_code == 422
     assert db_session.query(PatientDocument).filter_by(patient_id=documents["patient"].id).count() == 1
 
@@ -205,7 +205,8 @@ def test_feature_configuration_and_explicit_consent_fail_closed(client, document
 def test_health_consent_required_for_upload_process_and_review(client, documents, db_session):
     first = upload(client, documents).json()
     second = process(client, documents, upload(client, documents).json()).json()
-    db_session.delete(documents["consent"])
+    from consent_fixtures import withdraw
+    withdraw(db_session, documents["patient"], "health_data_processing")
     db_session.commit()
     assert upload(client, documents).status_code == 403
     assert process(client, documents, first).status_code == 403
@@ -445,7 +446,8 @@ def test_document_migration_round_trip_on_disposable_database(tmp_path):
         migration.op = Operations(MigrationContext.configure(connection))
         migration.upgrade()
         inspector = inspect(connection)
-        assert {c["name"] for c in inspector.get_columns("patient_documents")} == set(PatientDocument.__table__.columns.keys())
+        # This historical migration predates explicit processing market scope.
+        assert {c["name"] for c in inspector.get_columns("patient_documents")} == set(PatientDocument.__table__.columns.keys()) - {"country", "consent_language"}
         assert any(index["name"] == "uq_patient_document_request" and index["unique"] for index in inspector.get_indexes("patient_documents"))
         migration.upgrade()  # An application-bootstrapped table is adopted unchanged.
         migration.downgrade()

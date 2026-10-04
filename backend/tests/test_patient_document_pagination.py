@@ -69,7 +69,7 @@ def test_complete_history_crosses_old_100_limit_with_ties_and_metadata_only_sql(
             data = result.json()
             assert set(data) == {"items", "next_cursor"}
             for row in data["items"]:
-                assert set(row) == {"id", "original_filename", "content_type", "size_bytes", "status", "scan_status",
+                assert set(row) == {"country", "consent_language", "id", "original_filename", "content_type", "size_bytes", "status", "scan_status",
                                     "version", "extraction_method", "created_at", "reviewed_at", "error_code"}
                 assert row["created_at"].endswith("+00:00") and row["reviewed_at"].endswith("+00:00")
             assert "PRIVATE" not in result.text
@@ -144,7 +144,8 @@ def test_cursor_signing_fails_closed_without_usable_secret(monkeypatch, key):
 def test_empty_page_and_patient_read_after_consent_withdrawal(client, documents, db_session):
     assert page(client, documents).json() == {"items": [], "next_cursor": None}
     seed_rows(db_session, documents["patient"].id, 1, clean=False)
-    db_session.delete(documents["consent"]); db_session.commit()
+    from consent_fixtures import withdraw
+    withdraw(db_session, documents["patient"], "health_data_processing"); db_session.commit()
     result = page(client, documents)
     assert result.status_code == 200 and result.json()["items"][0]["scan_status"] == "pending"
     assert result.json()["items"][0]["reviewed_at"] is None

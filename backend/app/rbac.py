@@ -152,27 +152,14 @@ def get_corporate_for_user(
 # Consent enforcement
 # ═══════════════════════════════════════════════════════════════
 
-REQUIRED_CONSENTS = ["privacy_policy", "telemedicine_consent", "terms_of_service"]
+from app.services.consent_runtime import REQUIRED_PURPOSES
+REQUIRED_CONSENTS = list(REQUIRED_PURPOSES)
 
 
-def require_consents(
-    patient: Patient = Depends(get_patient_for_user),
-    db: Session = Depends(get_db),
-) -> Patient:
-    """Ensure the patient has accepted all required consents before booking."""
-    from app.health_models import PatientConsent
-    existing = (
-        db.query(PatientConsent.consent_type)
-        .filter(PatientConsent.patient_id == patient.id)
-        .all()
-    )
-    accepted = {row[0] for row in existing}
-    missing = set(REQUIRED_CONSENTS) - accepted
-    if missing:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Consentimentos obrigatórios em falta: {', '.join(sorted(missing))}",
-        )
+def require_consents(patient: Patient, db: Session, *, country: str | None = None, language: str = "pt") -> Patient:
+    """Explicit scope is mandatory; old type-only declarations confer no grant."""
+    from app.services.consent_runtime import require_effective
+    require_effective(db, patient.id, country, language)
     return patient
 
 

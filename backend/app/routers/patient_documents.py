@@ -38,6 +38,7 @@ def _private_response(response: Response) -> None:
 
 router = APIRouter(dependencies=[Depends(_private_response)], prefix="/api/v1/patient-documents", tags=["patient-documents"])
 METADATA_FIELDS = (
+    "country", "consent_language",
     "id", "original_filename", "content_type", "size_bytes", "status", "scan_status",
     "version", "extraction_method", "created_at", "reviewed_at", "error_code",
 )
@@ -45,6 +46,7 @@ METADATA_FIELDS = (
 
 def serialize_document(document: PatientDocument) -> dict:
     return {name: getattr(document, name) for name in (
+        "country", "consent_language",
         "id", "original_filename", "content_type", "size_bytes", "status", "scan_status",
         "version", "extraction_method", "extracted_text", "reviewed_text", "created_at",
         "reviewed_at", "error_code",
@@ -67,12 +69,11 @@ def _patient(user: User, db: Session) -> Patient:
     return patient
 
 
-def _consent(patient_id: str, db: Session) -> None:
-    if not db.query(PatientConsent.id).filter(
-        PatientConsent.patient_id == patient_id,
-        PatientConsent.consent_type == "health_data_processing",
-    ).first():
-        raise HTTPException(403, "Aceite o consentimento para tratamento de dados de saúde.")
+def _consent(patient_id: str, db: Session, country: str | None, language: str | None) -> None:
+    from app.services.consent_runtime import require_effective
+    from app.services.appointments import lock_resources
+    lock_resources(db, None, patient_id)
+    require_effective(db, patient_id, country, language, purposes=('health_data_processing',))
 
 
 def _configured() -> None:
@@ -250,14 +251,12 @@ def recover_document_request(idempotency_key: str = Path(..., max_length=64),
 async def upload_document(
     file: UploadFile = File(...),
     processing_consent: bool = Form(...),
+    country: Literal["AO", "PT"] = Form(...),
+    consent_language: str = Form("pt", pattern=r"^[a-z]{2}(-[A-Z]{2})?$", max_length=10),
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
     user: User = Depends(get_current_user), db: Session = Depends(get_db),
 ):
-    _configured()
     patient = _patient(user, db)
-    _consent(patient.id, db)
-    if not processing_consent:
-        raise HTTPException(422, "Confirme o processamento deste documento.")
     if idempotency_key is not None:
         try:
             idempotency_key = str(UUID(idempotency_key))
@@ -270,7 +269,8 @@ async def upload_document(
     content_type = file.content_type or ""
     validate_upload(data, content_type, filename)
     content_hash = hashlib.sha256(data).hexdigest()
-    digest = hashlib.sha256((content_hash + "\0" + content_type + "\0" + filename).encode()).hexdigest()
+    original_digest = hashlib.sha256((content_hash + "\0" + content_type + "\0" + filename).encode()).hexdigest()
+    digest = hashlib.sha256(json.dumps([original_digest, country, consent_language, processing_consent], separators=(',', ':')).encode()).hexdigest()
 
     def existing_request():
         return db.query(PatientDocument).filter(
@@ -280,9 +280,20 @@ async def upload_document(
 
     existing = existing_request()
     if existing:
-        if existing.request_digest != digest:
+        if existing.request_digest != digest and not (existing.country is None and existing.consent_language is None and existing.request_digest == original_digest):
             raise HTTPException(409, "A identificação do envio já pertence a outro documento.")
         return serialize_document(existing)
+    from app.services.appointments import lock_resources
+    lock_resources(db, None, patient.id)
+    existing = existing_request()
+    if existing:
+        if existing.request_digest != digest and not (existing.country is None and existing.consent_language is None and existing.request_digest == original_digest):
+            raise HTTPException(409, "A identificação do envio já pertence a outro documento.")
+        return serialize_document(existing)
+    _configured()
+    _consent(patient.id, db, country, consent_language)
+    if not processing_consent:
+        raise HTTPException(422, "Confirme o processamento deste documento.")
     identifier = str(uuid4())
     storage = get_health_storage()
     try:
@@ -293,7 +304,7 @@ async def upload_document(
     except Exception:
         raise HTTPException(503, "Não foi possível guardar o ficheiro. Tente novamente.") from None
     document = PatientDocument(
-        id=identifier, patient_id=patient.id, original_filename=filename,
+        id=identifier, patient_id=patient.id, original_filename=filename, country=country, consent_language=consent_language,
         content_type=content_type, size_bytes=len(data), storage_key=key,
         sha256=content_hash, idempotency_key=idempotency_key, request_digest=digest,
         status="pending_processing", scan_status="pending", version=1, extraction_method="none",
@@ -357,7 +368,7 @@ def process_document(document_id: str, body: ProcessRequest,
                      user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     _configured()
     document = _get(document_id, user, db, owner=True)
-    _consent(document.patient_id, db)
+    _consent(document.patient_id, db, document.country, document.consent_language)
     _verify_version(document, body.version)
     if document.status not in {"pending_processing", "processing_failed"}:
         raise HTTPException(409, "Este documento já foi processado.")
@@ -417,7 +428,7 @@ class ReviewRequest(BaseModel):
 def review_document(document_id: str, body: ReviewRequest,
                     user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     document = _get(document_id, user, db, owner=True)
-    _consent(document.patient_id, db)
+    _consent(document.patient_id, db, document.country, document.consent_language)
     _verify_version(document, body.version)
     if document.scan_status != "clean" or document.status not in {"ready_for_review", "needs_manual_review"}:
         raise HTTPException(409, "Este documento não está disponível para revisão.")

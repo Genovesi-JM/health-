@@ -39,6 +39,7 @@ export default function PatientDocumentsScreen() {
   const [draft, setDraft] = useState<ReviewDraft | null>(null);
   const [upload, setUpload] = useState<DocumentUpload | null>(null);
   const [consent, setConsent] = useState(false);
+  const [country, setCountry] = useState<'AO' | 'PT'>('AO');
   const [pendingUpload, setPendingUpload] = useState<PendingDocumentUpload | null>(null);
   const [recoveryError, setRecoveryError] = useState('');
   const [recoveryChecked, setRecoveryChecked] = useState(false);
@@ -209,7 +210,7 @@ export default function PatientDocumentsScreen() {
     setError('');
     setNotice('');
     const version = sessions.version();
-    const selected = pendingUpload?.upload ?? upload;
+    const selected = pendingUpload?.upload ?? { ...upload, country, consent_language: 'pt' as const };
     try {
       validateDocumentUpload(selected, capabilities);
       const cached = new File(selected.file.uri);
@@ -375,13 +376,17 @@ export default function PatientDocumentsScreen() {
         <Text style={styles.heading}>Adicionar documento</Text>
         <Text style={styles.body}>Selecione um PDF ou uma imagem JPG ou PNG, até {(documentUploadLimit(capabilities) || DOCUMENT_MAX_BYTES) / 1024 / 1024} MB. O envio depende dos formatos atualmente autorizados pelo serviço.</Text>
         <Text style={styles.body}>A leitura automática está disponível para PDFs com texto. Fotografias e PDFs digitalizados precisam de transcrição manual nesta fase.</Text>
-        {!uploadAvailable && <Text accessibilityRole="alert" style={styles.warning}>{capabilities?.message || 'O envio está temporariamente indisponível. Pode consultar e rever os documentos já enviados.'}</Text>}
+        {!uploadAvailable && <Text accessibilityRole="alert" style={styles.warning}>{capabilities?.message || 'O envio está temporariamente indisponível. Pode consultar os documentos já enviados; novas alterações dependem das autorizações vigentes.'}</Text>}
         {recoveryError ? <Text accessibilityRole="alert" style={styles.error}>{recoveryError}</Text> : null}
         {pendingUpload && <>
+          <Text style={styles.warning}>{pendingUpload.upload.country ? `País do envio original: ${pendingUpload.upload.country === 'AO' ? 'Angola' : 'Portugal'} · Português.` : 'Este envio antigo não tem país confirmado. Utilize Verificar envio; não é possível alterar ou repetir o conteúdo original.'}</Text>
           <Text style={styles.warning}>Existe um envio por confirmar. O ficheiro e o pedido original estão reservados nesta conta. Pode verificar o resultado mesmo que o ficheiro temporário já não exista.</Text>
           <Action label="Verificar envio guardado" onPress={checkUpload} disabled={!!working} />
           <Action label="Descartar recuperação local após rever o histórico" onPress={discardRecovery} disabled={!!working || !!listError} secondary />
         </>}
+        <Text style={styles.status}>País do novo documento · Idioma dos consentimentos: português</Text>
+        <View style={{ flexDirection: 'row', gap: 10 }}>{(['AO', 'PT'] as const).map(code => <Action key={code} label={`${country === code ? '✓ ' : ''}${code === 'AO' ? 'Angola' : 'Portugal'}`} onPress={() => { setCountry(code); setConsent(false); }} disabled={!!working || uploadLocked} secondary />)}</View>
+        <Action label="Rever consentimentos deste país" onPress={() => navigation.navigate('ConsentGate', { country })} disabled={!!working} secondary />
         <Action label="Escolher PDF" onPress={choosePdf} disabled={!!working || uploadLocked || !pdfAvailable} secondary />
         <Action label="Escolher imagem" onPress={choosePhoto} disabled={!!working || uploadLocked || !photoAvailable} secondary />
         {upload && <>
@@ -393,7 +398,7 @@ export default function PatientDocumentsScreen() {
             <Switch value={consent} onValueChange={setConsent} disabled={!!working || uploadLocked || !uploadAvailable} accessibilityLabel="Autorizar o tratamento deste documento" trackColor={{ true: '#5eead4' }} />
             <Text style={styles.consent}>Autorizo a Kaya a guardar e tratar este documento, que pode conter dados de saúde, para extrair texto e permitir a minha revisão.</Text>
           </View>
-          <Action label={pendingUpload ? 'Repetir o envio original' : 'Enviar documento'} onPress={uploadDocument} disabled={!!working || !recoveryChecked || !!recoveryError || !consent || !documentTypeAvailable(capabilities, upload.file.type) || dirty} />
+          <Action label={pendingUpload ? 'Repetir o envio original' : 'Enviar documento'} onPress={uploadDocument} disabled={!!working || !recoveryChecked || !!recoveryError || !consent || !documentTypeAvailable(capabilities, upload.file.type) || !!pendingUpload && !pendingUpload.upload.country || dirty} />
         </>}
       </View>
       {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
@@ -411,13 +416,15 @@ export default function PatientDocumentsScreen() {
       {document && draft && <View style={styles.card}>
         <Text style={styles.heading}>{document.original_filename}</Text>
         <Text style={styles.status}>{DOCUMENT_STATUS[document.status] || 'Estado indisponível'}</Text>
+        {document.country && <><Text style={styles.meta}>País do documento: {document.country === 'AO' ? 'Angola' : 'Portugal'} · idioma: {document.consent_language ?? 'não confirmado'}</Text><Action label="Rever autorizações deste documento" onPress={() => navigation.navigate('ConsentGate', { country: document.country! })} disabled={!!working} secondary /></>}
         {document.status === 'blocked' && <Text style={styles.warning}>O ficheiro não passou a verificação de segurança e não pode ser lido ou revisto.</Text>}
         {document.status === 'processing_failed' && <Text style={styles.warning}>A leitura não foi concluída. Nenhum resultado foi confirmado. Pode tentar novamente.</Text>}
         {document.status === 'needs_manual_review' && <Text style={styles.warning}>{manualReviewMessage(document)}</Text>}
         {document.status === 'confirmed' && <Text style={styles.body}>Este texto foi confirmado por si. Um profissional ainda não o validou clinicamente.</Text>}
         {document.status === 'rejected' && <Text style={styles.body}>A revisão foi rejeitada. Este texto não foi confirmado para utilização.</Text>}
         <Text style={styles.meta}>O ficheiro original pode ser consultado através da sua conta na Kaya na web.</Text>
-        {canProcessDocument(document) && <Action label={document.status === 'processing_failed' ? 'Tentar ler novamente' : 'Ler documento'} onPress={processDocument} disabled={!!working || !uploadAvailable} />}
+        {canProcessDocument(document) && (!document.country || document.consent_language !== 'pt') && <Text style={styles.warning}>País e idioma de origem não confirmados. A releitura está indisponível; o documento guardado continua acessível.</Text>}
+        {canProcessDocument(document) && document.country && document.consent_language === 'pt' && <Action label={document.status === 'processing_failed' ? 'Tentar ler novamente' : 'Ler documento'} onPress={processDocument} disabled={!!working || !uploadAvailable} />}
         {document.extracted_text ? <><Text style={styles.label}>Texto extraído automaticamente</Text><Text selectable style={styles.extracted}>{document.extracted_text}</Text></> : null}
         {(reviewable || document.reviewed_text !== null || draft.conflict) && <>
           <Text style={styles.label}>{reviewable ? 'Reveja e corrija o texto' : draft.conflict ? 'O seu texto não guardado' : 'Texto da sua revisão'}</Text>

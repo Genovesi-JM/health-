@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Durable exact-text consent, withdrawal, episode evidence and coherent decision recovery",
+  "source": "staged index; excludes next unstaged readings/triage work",
+  "backend": {
+    "passed": 1789,
+    "seconds": 186.52,
+    "warnings": 68928,
+    "source_files": 348,
+    "report": "backend.xml.gz"
+  },
+  "web": {
+    "passed": 431,
+    "files": 58,
+    "typecheck": "passed via build",
+    "lint": "passed",
+    "prototype_checks": 15,
+    "production_build": "passed",
+    "emitted_pwa_graph": "passed",
+    "source_files": 224
+  },
+  "browser": {
+    "passed": 6,
+    "kind": "built UI with synthetic HTTP replies, fresh Chrome154 context, all external traffic blocked",
+    "production_integration": false,
+    "screenshots_inspected": true
+  },
+  "native": {
+    "passed": 199,
+    "source_files": 99,
+    "typecheck": "passed",
+    "hermes_exports": 4,
+    "evidence": "../native-consent-2026-10-04/report.json",
+    "native_apk_rebuilt": false
+  },
+  "postgresql": {
+    "version": "18.1",
+    "scenarios": 39,
+    "forced_races": 140,
+    "cluster_stopped": true,
+    "network": "Unix socket only; no TCP"
+  },
+  "repository": {
+    "passed": 29,
+    "subtests": 43,
+    "policy_routes": 288,
+    "release": "HOLD",
+    "activation_flags": false
+  },
+  "source_verification": "All backend/web/native source-manifest hashes match the staged index; newer worktree edits are a separate cohort.",
+  "limitations": [
+    "No approved real consent text or publication approval supplied; fixtures synthetic only.",
+    "No live database migration, provider activation, real patient enrollment or deployment.",
+    "Existing native APK still earlier09df949/policy277 source; current exports are JavaScript proof, not operational device journeys.",
+    "Broader legacy reading/renewal/prescription paths still require separate runtime adoption before activation; next wave is not included in these counts.",
+    "Two native tooling advisory IDs remain unresolved; no new dependency changes/audit-database run."
+  ]
+}

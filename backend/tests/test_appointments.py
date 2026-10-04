@@ -93,7 +93,7 @@ def test_invalid_request_key_cannot_create(api, people, key):
 
 
 def test_unpublished_directed_time_cannot_bypass_capacity(api, people):
-    payload = {"doctor_id": people["doctor"]["profile"].id, "scheduled_at": slot_payload()["starts_at"]}
+    payload = {"country": "AO", "doctor_id": people["doctor"]["profile"].id, "scheduled_at": slot_payload()["starts_at"]}
     response = api.post("/api/v1/consultations/book", json=payload, headers=people["patient"]["headers"])
     assert response.status_code == 409
 
@@ -176,6 +176,8 @@ def test_repeated_portugal_hour_is_unambiguous_with_explicit_offset(monkeypatch)
 
 @pytest.mark.parametrize("zone", ["Europe/Lisbon", "Atlantic/Madeira", "Atlantic/Azores"])
 def test_portugal_slots_use_their_own_timezone_and_market(api, people, db_session, zone):
+    from consent_fixtures import grant_all
+    grant_all(db_session, people["patient"]["profile"], country="PT")
     credential = db_session.query(ClinicianCredential).filter_by(user_id=people["doctor"]["user"].id).one()
     credential.practice_country = "PT"
     db_session.commit()
@@ -258,6 +260,9 @@ def test_committed_booking_response_failure_recovers_same_request(api, people, d
 
 
 def test_queue_discovery_and_acceptance_observe_market(api, people, db_session):
+    from consent_fixtures import grant_all
+    grant_all(db_session, people["patient"]["profile"], country="PT")
+    db_session.commit()
     request = book(api, people, country="PT").json()
     queue = api.get("/api/v1/doctor/queue", headers=people["doctor"]["headers"]).json()
     assert request["id"] not in {item["id"] for item in queue}

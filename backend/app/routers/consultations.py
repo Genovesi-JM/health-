@@ -58,21 +58,12 @@ router = APIRouter(tags=["consultations"])
 @router.post("/api/v1/consultations/book", response_model=ConsultationOut)
 def book_consultation(
     body: ConsultationBookRequest,
-    patient: Patient = Depends(require_consents),
+    patient: Patient = Depends(get_patient_for_user),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
     """Book a consultation. Requires all consents to be accepted."""
-    # Validate triage reference if provided
-    if body.triage_session_id:
-        triage = db.query(TriageSession).filter(
-            TriageSession.id == body.triage_session_id,
-            TriageSession.patient_id == patient.id,
-        ).first()
-        if not triage:
-            raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
-
     from app.services.appointment_booking import create_booking
     consultation, _ = create_booking(db, body, patient, user, idempotency_key)
 
@@ -82,7 +73,7 @@ def book_consultation(
 @router.post("/api/v1/consultations/{consultation_id}/reschedule", response_model=ConsultationOut)
 def reschedule_consultation(
     consultation_id: str, body: ConsultationRescheduleRequest, response: Response,
-    patient: Patient = Depends(require_consents), user: User = Depends(get_current_user),
+    patient: Patient = Depends(get_patient_for_user), user: User = Depends(get_current_user),
     db: Session = Depends(get_db), idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
     from app.services.appointment_rescheduling import reschedule

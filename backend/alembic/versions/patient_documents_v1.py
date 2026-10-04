@@ -25,7 +25,9 @@ def upgrade():
         columns = {column["name"] for column in inspector.get_columns("patient_documents")}
         unique_request = any(index["unique"] and index["column_names"] == ["patient_id", "idempotency_key"]
                              for index in inspector.get_indexes("patient_documents"))
-        if columns != expected or not unique_request:
+        # A current application bootstrap may include later explicit consent
+        # scope columns. Their own migration validates types and nullability.
+        if columns - {"country", "consent_language"} != expected or not unique_request:
             raise RuntimeError("Existing patient_documents schema does not match this migration")
         return
     op.create_table(

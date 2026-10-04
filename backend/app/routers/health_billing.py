@@ -202,6 +202,17 @@ def _checkout_provider_gate(provider):
         raise HTTPException(503, {"code": "provider_unavailable", "message": "O método de pagamento ainda não está configurado."})
 
 
+def _payment_for_reference(db, provider, reference):
+    matches = db.query(HealthPayment).filter(
+        HealthPayment.provider_reference == reference, HealthPayment.provider == provider,
+    ).limit(2).all()
+    if len(matches) > 1:
+        # A signed callback cannot choose between legacy duplicated references.
+        raise HTTPException(409, {"code": "payment_reference_ambiguous",
+            "message": "A referência do prestador necessita de reconciliação pela equipa."})
+    return matches[0] if matches else None
+
+
 @router.get("/payment-methods", response_model=PaymentMethodsResponse)
 def payment_methods(
     country: str = Query(default="AO", min_length=2, max_length=2),
@@ -304,9 +315,11 @@ async def consultation_payment_status(
     # Unknown dispatch outcomes require verified reconciliation. Adapter
     # fallback "pending" is not proof that an ambiguous dispatch succeeded.
     if payment.status == "pending" and payment.provider_reference and payment.dispatch_state == "response_recorded":
+        _payment_for_reference(db, payment.provider, payment.provider_reference)
         provider = PaymentProvider(payment.provider)
         adapter = _ADAPTERS[provider]
         provider_status = await adapter.check_status(payment.provider_reference)
+        _payment_for_reference(db, payment.provider, payment.provider_reference)
         new_status = _to_health_status(provider_status)
         # The provider await can overlap a callback. Reconcile even an
         # unchanged observation under the shared locks and refresh the row;
@@ -386,11 +399,7 @@ async def billing_webhook(
     if not provider_ref or not new_status:
         return {"status": "ignored"}
 
-    payment = (
-        db.query(HealthPayment)
-        .filter(HealthPayment.provider_reference == provider_ref, HealthPayment.provider == provider_enum.value)
-        .first()
-    )
+    payment = _payment_for_reference(db, provider_enum.value, provider_ref)
     if not payment:
         return {"status": "no_match"}
 

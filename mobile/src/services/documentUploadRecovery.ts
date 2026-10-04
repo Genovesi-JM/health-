@@ -39,12 +39,16 @@ function validated(value: unknown, ownerId: string): PendingDocumentUpload {
       (upload.size !== undefined && (!Number.isSafeInteger(upload.size) || upload.size <= 0 || upload.size > DOCUMENT_MAX_BYTES)) ||
       (file.type === 'application/pdf' && upload.size === undefined) ||
       Object.keys(pending).some(key => !['ownerId', 'upload', 'consent'].includes(key)) ||
-      Object.keys(upload).some(key => !['key', 'file', 'size'].includes(key)) ||
+      (upload.country !== undefined && !['AO', 'PT'].includes(upload.country)) ||
+      (upload.consent_language !== undefined && upload.consent_language !== 'pt') ||
+      ((upload.country === undefined) !== (upload.consent_language === undefined)) ||
+      Object.keys(upload).some(key => !['key', 'file', 'size', 'country', 'consent_language'].includes(key)) ||
       Object.keys(file).some(key => !['uri', 'name', 'type'].includes(key))) {
     throw new Error('Não foi possível verificar a referência do envio anterior. Verifique esse envio antes de escolher outro ficheiro.');
   }
   return { ownerId, upload: { key: upload.key, file: { uri: file.uri, name: file.name, type: file.type },
-    ...(upload.size === undefined ? {} : { size: upload.size }) }, consent: true };
+    ...(upload.size === undefined ? {} : { size: upload.size }),
+    ...(upload.country ? { country: upload.country, consent_language: upload.consent_language } : {}) }, consent: true };
 }
 
 async function readStored(storage: RecoveryStorage, key: string, ownerId: string): Promise<PendingDocumentUpload | null> {
@@ -91,6 +95,7 @@ export async function sendRecoverableUpload(
 ): Promise<PatientDocument> {
   if (!consent) throw new Error('Autorize o tratamento deste documento antes de o enviar.');
   const pending = validated({ ownerId, upload, consent: true }, ownerId);
+  if (!pending.upload.country || pending.upload.consent_language !== 'pt') throw new Error('O envio anterior não inclui país e idioma confirmados. Recupere pelo identificador original; não modifique o pedido.');
   const key = recoveryStorageKey(ownerId);
   await serialize(storage, key, async () => {
     const current = await readStored(storage, key, ownerId);

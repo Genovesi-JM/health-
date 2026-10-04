@@ -15,6 +15,7 @@ Covers:
 import io
 import json
 import zipfile
+from uuid import uuid4
 from datetime import datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
@@ -22,11 +23,13 @@ from fastapi.testclient import TestClient
 from app.database import get_db, SessionLocal
 from app.models import User
 from app.health_models import (
-    Consultation, DeviceReading, Patient, Doctor, PatientConsent, TriagePhoto,
+    Consultation, DeviceReading, Patient, Doctor, TriagePhoto,
     TriagePhotoRequest, TriageSession,
 )
 from app.oauth2 import create_access_token
 from app.utils import hash_password
+from app.services import consent_runtime
+from tests.consent_fixtures import grant_all, references
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -138,14 +141,8 @@ def _seed_credential(db, user: User, status: str = "verified"):
 
 
 def _accept_consents(db, patient: Patient):
-    """Accept all required consents for a patient."""
-    for ct in ["privacy_policy", "telemedicine_consent", "terms_of_service"]:
-        existing = db.query(PatientConsent).filter(
-            PatientConsent.patient_id == patient.id,
-            PatientConsent.consent_type == ct,
-        ).first()
-        if not existing:
-            db.add(PatientConsent(patient_id=patient.id, consent_type=ct))
+    """Explicit synthetic exact-text decisions for an eligible test patient."""
+    grant_all(db, patient)
     db.commit()
 
 
@@ -195,10 +192,11 @@ class TestPatientProfile:
 class TestTriageFlow:
     def test_start_triage(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_user@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
         r = client.post(
             "/api/v1/triage/start",
-            json={"chief_complaint": "Dor de cabeça intensa"},
+            json={"country": "AO", "chief_complaint": "Dor de cabeça intensa"},
             headers=_token(user),
         )
         assert r.status_code == 200, r.text
@@ -209,9 +207,11 @@ class TestTriageFlow:
     def test_start_triage_persists_validated_device_vitals(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_vitals@test.com", "patient")
         patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
         response = client.post(
             "/api/v1/triage/start",
             json={
+                "country": "AO",
                 "chief_complaint": "Tonturas",
                 "vital_signs": {
                     "systolic": 122,
@@ -249,6 +249,7 @@ class TestTriageFlow:
         response = client.post(
             "/api/v1/triage/start",
             json={
+                "country": "AO",
                 "chief_complaint": "Febre",
                 "vital_signs": {"temperature": 82, "source": "manual"},
             },
@@ -424,13 +425,14 @@ class TestTriageFlow:
 
     def test_full_triage_flow(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_full@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
         headers = _token(user)
 
         # Start
         r = client.post(
             "/api/v1/triage/start",
-            json={"chief_complaint": "Febre alta"},
+            json={"country": "AO", "chief_complaint": "Febre alta"},
             headers=headers,
         )
         assert r.status_code == 200
@@ -463,13 +465,14 @@ class TestTriageFlow:
 
     def test_triage_history(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_hist@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
         headers = _token(user)
 
         # Complete one triage first
         r = client.post(
             "/api/v1/triage/start",
-            json={"chief_complaint": "Tosse persistente"},
+            json={"country": "AO", "chief_complaint": "Tosse persistente"},
             headers=headers,
         )
         sid = r.json()["session_id"]
@@ -484,10 +487,12 @@ class TestTriageFlow:
 
     def test_skin_triage_includes_guided_visual_questions(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_skin@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
         r = client.post(
             "/api/v1/triage/start",
             json={
+                "country": "AO",
                 "chief_complaint": "Ferida com vermelhidão",
                 "age_group": "adult",
                 "category": "skin",
@@ -507,16 +512,17 @@ class TestTriageFlow:
         self, client: TestClient, db_session
     ):
         user = _make_user(db_session, "triage_visual_flag@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
         headers = _token(user)
         start = client.post(
             "/api/v1/triage/start",
-            json={"chief_complaint": "Lesão na perna", "category": "skin"},
+            json={"country": "AO", "chief_complaint": "Lesão na perna", "category": "skin"},
             headers=headers,
         )
         sid = start.json()["session_id"]
         answers = {question["key"]: False for question in start.json()["questions"]}
-        answers.update({"age": 8, "pain_level": 1, "visual_red_streaks": True})
+        answers.update({"age": 38, "pain_level": 1, "visual_red_streaks": True})
         assert client.post(
             f"/api/v1/triage/{sid}/answers",
             json={"answers": answers},
@@ -529,11 +535,14 @@ class TestTriageFlow:
 
     def test_patient_can_upload_private_triage_photo(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_photo@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
+        grant_all(db_session, patient, purposes=("images",))
+        db_session.commit()
         headers = _token(user)
         start = client.post(
             "/api/v1/triage/start",
-            json={"chief_complaint": "Alteração na pele", "category": "skin"},
+            json={"country": "AO", "chief_complaint": "Alteração na pele", "category": "skin"},
             headers=headers,
         )
         sid = start.json()["session_id"]
@@ -612,9 +621,12 @@ class TestTriageFlow:
     def test_only_linked_doctor_can_list_triage_photos(self, client: TestClient, db_session):
         patient_user = _make_user(db_session, "triage_photo_link_patient@test.com", "patient")
         patient = _make_patient(db_session, patient_user)
+        _accept_consents(db_session, patient)
+        grant_all(db_session, patient, purposes=("images",))
+        db_session.commit()
         start = client.post(
             "/api/v1/triage/start",
-            json={"chief_complaint": "Ferida", "category": "skin"},
+            json={"country": "AO", "chief_complaint": "Ferida", "category": "skin"},
             headers=_token(patient_user),
         )
         sid = start.json()["session_id"]
@@ -634,6 +646,7 @@ class TestTriageFlow:
             patient_id=patient.id,
             doctor_id=linked_doctor.id,
             triage_session_id=sid,
+            country="AO", consent_language="pt",
             specialty="clinica_geral",
             status="scheduled",
         ))
@@ -709,11 +722,14 @@ class TestTriageFlow:
 
     def test_triage_photo_rejects_unsupported_content(self, client: TestClient, db_session):
         user = _make_user(db_session, "triage_bad_photo@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        _accept_consents(db_session, patient)
+        grant_all(db_session, patient, purposes=("images",))
+        db_session.commit()
         headers = _token(user)
         start = client.post(
             "/api/v1/triage/start",
-            json={"chief_complaint": "Alteração na pele", "category": "skin"},
+            json={"country": "AO", "chief_complaint": "Alteração na pele", "category": "skin"},
             headers=headers,
         )
         sid = start.json()["session_id"]
@@ -733,41 +749,48 @@ class TestTriageFlow:
 class TestConsents:
     def test_accept_and_list_consents(self, client: TestClient, db_session):
         user = _make_user(db_session, "consent_user@test.com", "patient")
-        _make_patient(db_session, user)
+        patient = _make_patient(db_session, user)
+        documents = references(db_session)
+        db_session.commit()
         headers = _token(user)
-
-        for ct in ["privacy_policy", "telemedicine_consent", "terms_of_service"]:
-            r = client.post(
+        for document in documents:
+            response = client.post(
                 "/api/v1/compliance/consent",
-                json={"consent_type": ct},
-                headers=headers,
+                json={**document, "action": "grant", "expected_revision": consent_runtime.revision(db_session, patient.id)},
+                headers={**headers, "Idempotency-Key": str(uuid4())},
             )
-            assert r.status_code == 200
-
-        r = client.get("/api/v1/compliance/consents", headers=headers)
-        assert r.status_code == 200
-        types = {c["consent_type"] for c in r.json()}
-        assert "privacy_policy" in types
-        assert "telemedicine_consent" in types
+            assert response.status_code == 200, response.text
+            assert response.json()["event"]["document_id"] == document["document_id"]
+        state = client.get("/api/v1/compliance/consent-state?country=AO&language=pt", headers=headers)
+        assert state.status_code == 200, state.text
+        assert state.json()["available"] is True
+        assert state.json()["revision"] == len(documents)
+        assert all(item["effective"] for item in state.json()["states"] if item["purpose"] in state.json()["required_purposes"])
+        history = client.get("/api/v1/compliance/consent-history/page", headers=headers)
+        assert history.status_code == 200
+        assert len(history.json()["items"]) == len(documents)
+        # Exact-text decisions do not mint legacy type-only acceptance rows.
+        assert client.get("/api/v1/compliance/consents", headers=headers).json() == []
 
     def test_duplicate_consent_is_idempotent(self, client: TestClient, db_session):
         user = _make_user(db_session, "consent_idem@test.com", "patient")
-        _make_patient(db_session, user)
-        headers = _token(user)
+        patient = _make_patient(db_session, user)
+        document = references(db_session, purposes=("privacy_policy",))[0]
+        db_session.commit()
+        headers = {**_token(user), "Idempotency-Key": str(uuid4())}
+        body = {**document, "action": "grant", "expected_revision": 0}
+        first = client.post("/api/v1/compliance/consent", json=body, headers=headers)
+        second = client.post("/api/v1/compliance/consent", json=body, headers=headers)
+        assert first.status_code == second.status_code == 200
+        assert first.json()["event"]["id"] == second.json()["event"]["id"]
+        assert consent_runtime.revision(db_session, patient.id) == 1
 
-        r1 = client.post(
-            "/api/v1/compliance/consent",
-            json={"consent_type": "privacy_policy"},
-            headers=headers,
-        )
-        r2 = client.post(
-            "/api/v1/compliance/consent",
-            json={"consent_type": "privacy_policy"},
-            headers=headers,
-        )
-        assert r1.status_code == 200
-        assert r2.status_code == 200
-        assert r1.json()["id"] == r2.json()["id"]
+    def test_type_only_acceptance_cannot_authorize_care(self, client: TestClient, db_session):
+        user = _make_user(db_session, "consent_legacy@test.com", "patient")
+        patient = _make_patient(db_session, user)
+        response = client.post("/api/v1/compliance/consent", json={"consent_type": "privacy_policy"}, headers=_token(user))
+        assert response.status_code == 422
+        assert consent_runtime.revision(db_session, patient.id) == 0
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -780,11 +803,11 @@ class TestConsultations:
         _make_patient(db_session, user)
         r = client.post(
             "/api/v1/consultations/book",
-            json={"specialty": "clinica_geral"},
+            json={"country": "AO", "specialty": "clinica_geral"},
             headers=_token(user),
         )
         assert r.status_code == 403
-        assert "Consentimentos" in r.json()["detail"]
+        assert r.json()["detail"]["code"] == "consent_required"
 
     def test_booking_with_consents_succeeds(self, client: TestClient, db_session):
         user = _make_user(db_session, "cons_ok@test.com", "patient")
@@ -793,7 +816,7 @@ class TestConsultations:
 
         r = client.post(
             "/api/v1/consultations/book",
-            json={"specialty": "clinica_geral"},
+            json={"country": "AO", "specialty": "clinica_geral"},
             headers=_token(user),
         )
         assert r.status_code == 200, r.text
@@ -810,7 +833,7 @@ class TestConsultations:
         # Book one
         client.post(
             "/api/v1/consultations/book",
-            json={"specialty": "clinica_geral"},
+            json={"country": "AO", "specialty": "clinica_geral"},
             headers=headers,
         )
 
@@ -860,7 +883,7 @@ class TestDoctorFlow:
 
         book_r = client.post(
             "/api/v1/consultations/book",
-            json={"specialty": "clinica_geral"},
+            json={"country": "AO", "specialty": "clinica_geral"},
             headers=_token(p_user),
         )
         assert book_r.status_code == 200
@@ -889,7 +912,7 @@ class TestDoctorFlow:
 
         book_r = client.post(
             "/api/v1/consultations/book",
-            json={"specialty": "clinica_geral"},
+            json={"country": "AO", "specialty": "clinica_geral"},
             headers=_token(p_user),
         )
         consult_id = book_r.json()["id"]
@@ -936,7 +959,7 @@ class TestRBAC:
         _accept_consents(db_session, patient)
         book_r = client.post(
             "/api/v1/consultations/book",
-            json={"specialty": "clinica_geral"},
+            json={"country": "AO", "specialty": "clinica_geral"},
             headers=_token(p_user),
         )
         consult_id = book_r.json()["id"]

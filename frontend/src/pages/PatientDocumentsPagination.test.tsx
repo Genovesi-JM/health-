@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import api from '../api';
@@ -9,7 +10,7 @@ vi.mock('../AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('../api', () => ({ default: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 const BASE = '/api/v1/patient-documents';
 const capabilities = { upload_enabled: true, max_bytes: 10485760, accepted_types: ['application/pdf'] };
-const document = (id: string): PatientDocument => ({ id, original_filename: `${id}.pdf`, content_type: 'application/pdf', size_bytes: 1024,
+const document = (id: string): PatientDocument => ({ id, original_filename: `${id}.pdf`, content_type: 'application/pdf', size_bytes: 1024, country: 'AO', consent_language: 'pt',
   status: 'ready_for_review', scan_status: 'clean', version: 2, extraction_method: 'pdf_text', extracted_text: `Private text ${id}`, reviewed_text: null,
   created_at: '2026-10-04T10:00:00Z', reviewed_at: null, error_code: null });
 const metadata = (id: string) => { const result: Partial<PatientDocument> = { ...document(id) }; delete result.extracted_text; delete result.reviewed_text; return result; };
@@ -23,7 +24,7 @@ function setup() {
     return { data: document(url.split('/').pop()!) };
   });
 }
-async function show() { const view = render(<PatientDocumentsPage />); await screen.findByRole('button', { name: /one.pdf/ }); return view; }
+async function show() { const view = render(<MemoryRouter><PatientDocumentsPage /></MemoryRouter>); await screen.findByRole('button', { name: /one.pdf/ }); return view; }
 async function open(id = 'one') { fireEvent.click(screen.getByRole('button', { name: new RegExp(`${id}.pdf`) })); await screen.findByLabelText('Texto para rever'); }
 beforeEach(() => { vi.resetAllMocks(); auth.user = { id: 'patient-A', role: 'patient' }; setup(); });
 
@@ -117,7 +118,7 @@ it('discards private detail arriving after the authenticated account changes', a
   vi.mocked(api.get).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
   fireEvent.click(screen.getByRole('button', { name: /one.pdf/ }));
   auth.user = { id: 'patient-B', role: 'patient' };
-  view.rerender(<PatientDocumentsPage />);
+  view.rerender(<MemoryRouter><PatientDocumentsPage /></MemoryRouter>);
   await act(async () => finish({ data: document('one') }));
   await screen.findByRole('button', { name: /one.pdf/ });
   expect(screen.queryByLabelText('Texto para rever')).not.toBeInTheDocument();

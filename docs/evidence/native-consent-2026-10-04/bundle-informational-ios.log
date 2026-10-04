@@ -1,0 +1,11 @@
+Starting Metro Bundler
+
+iOS Bundled 3363ms index.js (592 modules)
+
+› ios bundles (1):
+_expo/static/js/ios/index-ecf0479b57ffa68d2eb0a2211c9f9140.hbc (1.5MB)
+
+› Files (1):
+metadata.json (142B)
+
+Exported: /tmp/kaya-sdk-audit-jr3x01ly/export-native-consent-informational-ios

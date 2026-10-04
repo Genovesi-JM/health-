@@ -13,7 +13,11 @@ import {
 } from 'react-native';
 
 import TriagePhotoGuide, { type ViewType } from '../components/TriagePhotoGuide';
-import api from '../services/api';
+import api, { sessions } from '../services/api';
+import type { AxiosRequestConfig } from 'axios';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../navigation/AppStack';
 import { apiErrorMessage } from '../utils/apiError';
 import { SELF_TRIAGE_NOTICE, startSelfTriage } from './selfTriage';
 
@@ -77,6 +81,8 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export default function TriageScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const [country, setCountry] = useState<'AO' | 'PT'>('AO');
   const [step, setStep] = useState<Step>('start');
   const [category, setCategory] = useState('general');
   const [complaint, setComplaint] = useState('');
@@ -99,10 +105,13 @@ export default function TriageScreen() {
       setError('Descreva brevemente o principal problema de saúde.');
       return;
     }
+    const version = sessions.version();
+    const client = { post: (path: string, body: unknown) => api.post(path, body, { _sessionVersion: version } as AxiosRequestConfig) };
     setLoading(true);
     setError('');
     try {
-      const response = await startSelfTriage<{ triage_id: string; session_id: string; questions: TriageQuestion[] }>(api, {
+      const response = await startSelfTriage<{ triage_id: string; session_id: string; questions: TriageQuestion[] }>(client, {
+        country, consent_language: 'pt',
         chief_complaint: complaint.trim(),
         age_group: 'adult',
         category,
@@ -113,9 +122,10 @@ export default function TriageScreen() {
       setAnswers({});
       setStep('questions');
     } catch (startError) {
+      if (!sessions.current(version)) return;
       setError(apiErrorMessage(startError, 'Não foi possível iniciar a triagem.'));
     } finally {
-      setLoading(false);
+      if (sessions.current(version)) setLoading(false);
     }
   };
 
@@ -130,6 +140,8 @@ export default function TriageScreen() {
       );
       return;
     }
+    const version = sessions.version();
+    const client = { post: (path: string, body: unknown) => api.post(path, body, { _sessionVersion: version } as AxiosRequestConfig) };
     setLoading(true);
     setError('');
     try {
@@ -137,14 +149,15 @@ export default function TriageScreen() {
         question_key,
         answer,
       }));
-      await api.post(`/api/v1/triage/${sessionId}/answers`, { answers: answerList });
-      const response = await api.post(`/api/v1/triage/${sessionId}/complete`, {});
+      await client.post(`/api/v1/triage/${sessionId}/answers`, { answers: answerList });
+      const response = await client.post(`/api/v1/triage/${sessionId}/complete`, {});
       setResult(response.data);
       setStep('result');
     } catch (submitError) {
+      if (!sessions.current(version)) return;
       setError(apiErrorMessage(submitError, 'Não foi possível concluir a triagem.'));
     } finally {
-      setLoading(false);
+      if (sessions.current(version)) setLoading(false);
     }
   };
 
@@ -223,6 +236,8 @@ export default function TriageScreen() {
           </View>
         )}
 
+        <TouchableOpacity disabled={loading} onPress={() => navigation.navigate('ConsentGate', { country })} style={{ paddingVertical: 12 }}><Text>Rever consentimentos · {country === 'AO' ? 'Angola' : 'Portugal'} · Português</Text></TouchableOpacity>
+        {step === 'start' && <View style={{ marginVertical: 12 }}><Text style={{ marginBottom: 8 }}>País desta triagem</Text><View style={{ flexDirection: 'row', gap: 12 }}>{(['AO', 'PT'] as const).map(code => <TouchableOpacity key={code} disabled={loading} onPress={() => setCountry(code)} accessibilityRole="radio" accessibilityState={{ selected: country === code }} style={{ padding: 12, borderWidth: 1, borderColor: country === code ? '#0d9488' : '#94a3b8', borderRadius: 8 }}><Text>{code === 'AO' ? 'Angola' : 'Portugal'}</Text></TouchableOpacity>)}</View></View>}
         {step === 'start' && (
           <StartStep
             category={category}

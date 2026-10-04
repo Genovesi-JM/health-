@@ -1,71 +1,104 @@
-# Kaya consent model & representative authority (Phase 15)
+# Kaya consent evidence and runtime enforcement
 
-Original domain-model evidence: 14 September 2026. Runtime assessment updated
-4 October 2026. The intended consent contract is a durable, **server-owned,
-append-only** record of the exact approved text and language a subject or
-authorized representative saw, its purpose and the effect of withdrawal.
-[`backend/app/consent.py`](../backend/app/consent.py) implements an in-memory
-domain specification tested in [`backend/phase15_tests`](../backend/phase15_tests).
-It is not the operational ORM ledger or a release approval.
+Updated 4 October 2026. **Clinical release remains HOLD.** The operational API now
+stores exact-text consent evidence; this is an engineering implementation, not
+approval of a legal document or a lawful basis for processing. There is no
+runtime-seeded approved catalog. An empty catalog cannot authorize new care.
 
-The current operational `PatientConsent` rows contain consent type, time, IP and
-user agent. Booking, document and closeout checks use the presence of relevant
-types. The legacy compliance endpoint deduplicates by patient and type. These
-checks cannot establish acceptance of the current approved version, content
-hash, language or market, and do not enforce withdrawal. Onboarding records its
-wizard version and country in an audit event; that is not adoption of an approved
-document catalog. Durable catalog/ledger adoption and withdrawal UX are remaining
-engineering work. Approved documents, lawful bases and authority rules also need
-named human owners. Clinical release remains HOLD.
+## Catalog and decision ledger
 
-The sections below describe the domain contract and its isolated tests, not
-completed runtime enforcement. Client route guards are supplementary only.
+`ConsentCatalogDocument` stores immutable UTF-8 text, SHA-256, integer version,
+country (AO/PT), language, purpose, kind, required flag, title, approved source and
+effective interval. The latest effective version for that purpose/language/market
+wins. A newer draft, retired or revoked version blocks fallback to an older
+approved version. Publish corrections or retirement as new rows; do not mutate
+old accepted text. The migration neither approves text nor upgrades legacy data.
 
-## Document catalog
+`PatientConsentEvent` appends the exact document reference, owner/actor, action
+(grant/refuse/withdraw), global patient sequence, UUID, request digest and time.
+Decisions require the displayed revision. A patient lock serializes competing
+choices; an old in-flight grant cannot overwrite a later withdrawal. Exact-key
+replay returns the original event plus current state, even if the catalog changes.
+Withdrawal or refusal prevents older grants for the same purpose in any language
+of that market from remaining effective. A later explicit grant must still match
+the currently displayed text and language; AO and PT are separate scopes.
+A lookup 404 explicitly does not prove an in-flight request cannot commit. Only a
+locked `consent_not_committed` response permits discarding that exact request.
 
-Each consent/legal document is versioned with an **immutable content hash**,
-jurisdiction, language, purpose, audience, kind, required-vs-optional flag,
-effective dates, supersession, and an **approved source** (a document with no
-approved source fails closed). Kinds are kept distinct and never bundled:
-necessary — clinical informed consent, privacy notice, contract; optional — AI,
-images, recording, marketing, research, devices, vendor transfer.
+SQLite/PostgreSQL guards retain catalog, decisions and episode snapshots against
+update/delete and replacement collisions, including parent identity changes.
+`PatientConsent` type-only rows remain historical, nonauthoritative evidence;
+new exact-text decisions do not mint those rows. Client checkboxes and local
+storage never provide server authority.
 
-## Append-only ledger
+The five currently required purposes are `privacy_policy`,
+`telemedicine_consent`, `terms_of_service`, `health_data_processing` and
+`medical_disclaimer`. Optional purposes remain separate; uploading a triage
+photo additionally requires `images`. Counsel and clinical owners must approve
+whether these purposes/kinds and their lawful-basis mapping are appropriate.
 
-Every record captures subject, representative (if any), channel/actor, exact
-document id + version + hash, language, notice evidence, action
-(grant/refuse/withdraw), timestamp, and resulting capability state. Records are
-never mutated; the effective state is derived from the log.
+## Operational coverage
 
-## Fail-closed effectiveness
+Fresh onboarding completion records the displayed five exact references and
+profile changes in one transaction. Booking, rescheduling, acceptance/start,
+triage start/answers/completion, private document upload/processing/review and
+fresh consultation checkout validate the applicable server state. New bookings,
+triage and document uploads explicitly select AO or PT; no historical market is
+inferred from a current profile. The language of the evidence is distinct from a
+user's communication preference.
 
-`has_effective_consent` returns true only for a current, matching, non-withdrawn
-**grant** of the exact version, hash and language, within the effective window,
-from an approved source. Missing, refused, withdrawn, stale, mismatched,
-untranslated, unapproved, or expired ⇒ **fail closed**. Refusal never masquerades
-as acceptance.
+At actual consultation start, `ConsultationConsentSnapshot` retains the exact
+valid grant IDs and a digest bound to the episode. A later withdrawal does not
+erase that episode or prevent its retained closeout/correction workflow. Legacy
+started episodes without evidence require explicit review; later grants do not
+silently manufacture past authority. Personal document detail/download/export,
+consultation history, cancellation and consent history remain available subject
+to the user's normal ownership/session checks after withdrawal.
 
-## Withdrawal, supersession, legal hold
+This is coverage of the listed operational routes. It does not certify all legacy
+features, third-party delivery, device bridges, AI/OCR, recording or vendor
+transfer, nor does it enable any of them. The default API entrypoint is still
+HOLD and the native entrypoint informational.
 
-Withdrawal stops future **optional** processing without deleting legally-required
-records (`existing_required_records_deleted` is always false; required documents
-stay under legal hold). Re-consent and supersession append new versions.
+## Web and native behavior
 
-## Representative / minor authority
+Both clients display exact server text, title, purpose and version, with separate
+choices and visible AO/PT selection (Angola first). Missing documents are shown
+as unavailable. Onboarding does not prefill approvals from old checkboxes.
+History and settings remain reachable; a blanket consent redirect is not used
+to withhold personal records.
 
-Representative authority is an explicit, bounded record (relationship, scope,
-verification, expiry, revocation) — **never inferred from shared contact
-details**. `can_represent` denies an unverified, expired, revoked, or
-out-of-scope representative. Jurisdictional age/capacity and child-participation
-rules are counsel-owned (below).
+Before an action is sent, web localStorage or native SecureStore saves only its
+owner, UUID and exact reference/body. Ambiguous replies preserve this identity;
+recovery never substitutes a newer document, revision or account. Access loss
+clears displayed evidence and rejects late sibling replies. These are recovery
+references, not copies of legal text or evidence that a grant is effective.
 
-## Server gating
+## API contract
 
-Server operations gate on the applicable effective record or a documented
-alternate lawful basis (from the [data inventory](KAYA_DATA_INVENTORY.md) /
-[legal matrix](KAYA_LEGAL_ISSUE_MATRIX.md)); a client checkbox is never the basis.
+- `GET /api/v1/compliance/catalog?country=AO&language=pt`: available documents and
+  missing required purposes; authenticated read.
+- `GET /api/v1/compliance/consent-state?country=AO&language=pt`: current patient
+  revision and purpose states; a profile may not exist yet during onboarding.
+- `POST /api/v1/compliance/consent`: UUID `Idempotency-Key` and exact
+  `document_id`, `version`, `content_hash`, `country`, `language`, `action` and
+  `expected_revision`. Legacy type-only submissions are rejected.
+- `GET /api/v1/compliance/consent-requests/{request_key}`: owner-only exact receipt
+  recovery; absence is not proof of failure.
+- `GET /api/v1/compliance/consent-history/page`: bounded owner cursor history.
+- `GET /api/v1/compliance/consents`: legacy records, explicitly ineffective.
 
-## Human / external gate
+The additive `consent_runtime_v1` migration leaves historical scope unknown and
+creates no grants. Its downgrade refuses to destroy retained evidence. Run the
+migration in reviewed staging before a real rollout; no live schema was changed
+by this checkpoint. Tests use explicitly labelled synthetic text fixtures only.
 
-Counsel and the clinical owner must approve the consent catalog, lawful-basis
-mapping, minor/capacity rules, and retention effects. BLOCKED_EXTERNAL.
+## Remaining authority and release work
+
+The Phase 15 `backend/app/consent.py` module remains a separately tested domain
+specification, including representative authority. Family profile CRUD does not
+implement that verified authority. Dependent/guardian/pediatric triage is
+rejected before clinical writes. Real representative/minor/capacity rules,
+operator-controlled catalog publication/review, approved texts, lawful bases and
+retention obligations remain owner-bound release work. No real catalog, clinic,
+clinical lead or release approval is invented by these tests.

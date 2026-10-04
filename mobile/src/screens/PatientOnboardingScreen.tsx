@@ -1,30 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Keyboard, KeyboardAvoidingView, Linking, Platform,
+  ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
+import api, { sessions } from '../services/api';
+import type { AxiosRequestConfig } from 'axios';
+import { consentQuery, consentReference, parseConsentCatalog, parseConsentState, type ConsentCatalog, type ConsentCountry } from './consents';
 import {
   PATIENT_SCOPE, patientDataForDraft, patientDraftComplete, submitPatientDraft,
   validatePatientStep, type PatientData, type PatientDraft,
 } from './patientOnboarding';
 
 const TITLES = ['Idioma e contacto', 'Os seus contactos', 'Dados pessoais', 'Localização', 'Informação de saúde', 'Contacto de emergência', 'Consentimentos', 'Rever e concluir'];
-const REQUIRED_CHOICES = [
-  ['c_terms', 'Aceito os Termos de Serviço.'],
-  ['c_privacy', 'Aceito a Política de Privacidade.'],
-  ['c_health', 'Autorizo o processamento dos meus dados de saúde para fins clínicos.'],
-  ['c_telemedicine', 'Aceito receber cuidados por teleconsulta.'],
-  ['c_medical_disclaimer', 'Li o Aviso Médico e compreendo que o KAYA não é um serviço de emergência.'],
-] as const;
-const OPTIONAL_CHOICES = [
-  ['c_family_share', 'Permito partilhar informação com familiares que eu autorize.'],
-  ['c_analytics', 'Autorizo estatísticas anónimas para melhorar o serviço.'],
-  ['c_marketing', 'Aceito receber comunicações de marketing.'],
-  ['c_research', 'Autorizo o uso anonimizado dos meus dados em investigação.'],
-] as const;
-
 export default function PatientOnboardingScreen() {
   const { user, refreshUser, logout } = useAuth();
   const [draft, setDraft] = useState<PatientDraft | null>(null);
@@ -34,6 +22,19 @@ export default function PatientOnboardingScreen() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [catalog, setCatalog] = useState<ConsentCatalog | null>(null);
+  const [catalogError, setCatalogError] = useState('');
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogRefresh, setCatalogRefresh] = useState(0);
+  const mounted = useRef(true);
+  const operationVersion = useRef(sessions.version());
+  const current = (version: number) => mounted.current && sessions.current(version);
+  const scopedApi = (version: number) => ({
+    get: (url: string) => api.get(url, { _sessionVersion: version } as AxiosRequestConfig),
+    put: (url: string, body: unknown) => api.put(url, body, { _sessionVersion: version } as AxiosRequestConfig),
+    post: (url: string, body?: unknown) => api.post(url, body, { _sessionVersion: version } as AxiosRequestConfig),
+  });
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const busy = useRef(false);
   const scroll = useRef<ScrollView>(null);
   const identity = { email: user?.email || '', full_name: user?.full_name || '' };
@@ -56,21 +57,24 @@ export default function PatientOnboardingScreen() {
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
+    const version = sessions.version(); const client = scopedApi(version);
     try {
-      const status = await api.get(`/api/v1/onboarding/status${PATIENT_SCOPE}`);
+      const status = await client.get(`/api/v1/onboarding/status${PATIENT_SCOPE}`);
+      if (!current(version)) return;
       if (patientDraftComplete(status.data.draft)) {
         setDraft(status.data.draft);
         await refreshUser();
         return;
       }
-      const response = await api.post('/api/v1/onboarding/start', { role: 'patient' });
-      const current = response.data as PatientDraft;
-      setDraft(current);
-      setData(patientDataForDraft(identity, current.data));
-      setStep(Math.max(1, Math.min(current.current_step, 8)));
-      if (patientDraftComplete(current)) await refreshUser();
-    } catch (err) { reportError(err); }
-    finally { setLoading(false); }
+      const response = await client.post('/api/v1/onboarding/start', { role: 'patient' });
+      if (!current(version)) return;
+      const returnedDraft = response.data as PatientDraft;
+      setDraft(returnedDraft);
+      setData(patientDataForDraft(identity, returnedDraft.data));
+      setStep(Math.max(1, Math.min(returnedDraft.current_step, 8)));
+      if (patientDraftComplete(returnedDraft)) await refreshUser();
+    } catch (err) { if (current(version)) reportError(err); }
+    finally { if (current(version)) setLoading(false); }
     // Re-initialize only when the signed-in account changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
@@ -83,9 +87,14 @@ export default function PatientOnboardingScreen() {
   const text = (key: string, number = step) => typeof data[String(number)]?.[key] === 'string' ? data[String(number)][key] as string : '';
 
   const saveCurrent = async (completed: boolean) => {
-    const response = await api.put(`/api/v1/onboarding/steps/${step}${PATIENT_SCOPE}`, {
+    if (step === 7) {
+      await scopedApi(operationVersion.current).put(`/api/v1/onboarding/steps/4${PATIENT_SCOPE}`, { data: data['4'] || {}, completed: true });
+      if (!current(operationVersion.current)) return;
+    }
+    const response = await scopedApi(operationVersion.current).put(`/api/v1/onboarding/steps/${step}${PATIENT_SCOPE}`, {
       data: data[String(step)] || {}, completed,
     });
+    if (!current(operationVersion.current)) return;
     setDraft(response.data);
     setData(patientDataForDraft(identity, response.data.data));
     setSaved(true);
@@ -93,14 +102,16 @@ export default function PatientOnboardingScreen() {
 
   const act = async (operation: () => Promise<void>) => {
     if (busy.current) return;
+    operationVersion.current = sessions.version();
     busy.current = true; setWorking(true); setError(''); Keyboard.dismiss();
     try { await operation(); }
-    catch (err) { setSaved(false); reportError(err); }
-    finally { busy.current = false; setWorking(false); }
+    catch (err) { if (current(operationVersion.current)) { setSaved(false); reportError(err); } }
+    finally { if (current(operationVersion.current)) { busy.current = false; setWorking(false); } }
   };
 
   const move = (target: number) => act(async () => {
     await saveCurrent(false);
+    if (!current(operationVersion.current)) return;
     setStep(target); setSaved(false); scroll.current?.scrollTo({ y: 0, animated: true });
   });
 
@@ -111,11 +122,14 @@ export default function PatientOnboardingScreen() {
       const message = validatePatientStep(current, data, identity);
       if (message) { setStep(current); setError(message); scroll.current?.scrollTo({ y: 0, animated: true }); return; }
     }
+    if (step === 7 && (!catalog?.available || catalogLoading || catalogError)) { setError('O catálogo aprovado está indisponível. Não é possível concluir os consentimentos.'); return; }
     if (step < 8) {
       await saveCurrent(true);
+      if (!current(operationVersion.current)) return;
       setStep(step + 1); setSaved(false); scroll.current?.scrollTo({ y: 0, animated: true });
     } else {
-      const completed = await submitPatientDraft(api, data['8'] || {});
+      const completed = await submitPatientDraft(scopedApi(operationVersion.current), data['8'] || {});
+      if (!current(operationVersion.current)) return;
       setDraft(completed);
       await refreshUser();
     }
@@ -150,10 +164,30 @@ export default function PatientOnboardingScreen() {
     <Text style={styles.toggleLabel}>{label}</Text>
   </View>;
 
-  const legalLink = (path: string, title: string) => <TouchableOpacity key={path} style={styles.legalLink}
-    onPress={() => Linking.openURL(`https://genovesi-jm.github.io/health-/${path}`).catch(reportError)} accessibilityRole="link">
-    <Text style={styles.linkText}>{title} ↗</Text>
-  </TouchableOpacity>;
+  const catalogCountry = data['4']?.country === 'PT' ? 'PT' : 'AO';
+  useEffect(() => {
+    if (step !== 7 || !draft || patientDraftComplete(draft)) return;
+    const version = sessions.version(); let active = true;
+    setCatalog(null); setCatalogError(''); setCatalogLoading(true);
+    setData(previous => ({ ...previous, '7': { catalog_country: catalogCountry, catalog_language: 'pt', consent_acceptances: [] } }));
+    const client = scopedApi(version);
+    void Promise.all([client.get('/api/v1/compliance/catalog' + consentQuery(catalogCountry)), client.get('/api/v1/compliance/consent-state' + consentQuery(catalogCountry))])
+      .then(([documents, state]) => {
+        if (!active || !current(version)) return;
+        const available = parseConsentCatalog(documents.data, catalogCountry); const snapshot = parseConsentState(state.data, catalogCountry);
+        setCatalog(available);
+        setData(previous => ({ ...previous, '7': { catalog_country: catalogCountry, catalog_language: 'pt', consent_expected_revision: snapshot.revision, consent_acceptances: [] } }));
+      }).catch(() => { if (active && current(version)) setCatalogError('Não foi possível carregar os textos aprovados. Nenhuma autorização foi preenchida automaticamente.'); })
+      .finally(() => { if (active && current(version)) setCatalogLoading(false); });
+    return () => { active = false; };
+    // The draft's identity is stable; storing a step must not silently reload checked choices.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, catalogCountry, catalogRefresh, draft?.id]);
+  const chooseCatalogCountry = (value: ConsentCountry) => {
+    setData(previous => ({ ...previous, '4': { ...previous['4'], country: value }, '7': { catalog_country: value, catalog_language: 'pt', consent_acceptances: [] } }));
+    setSaved(false);
+  };
+  const acceptanceIds = new Set(Array.isArray(data['7']?.consent_acceptances) ? data['7'].consent_acceptances.map((item: { document_id: string }) => item.document_id) : []);
 
   const body = () => {
     switch (step) {
@@ -192,11 +226,23 @@ export default function PatientOnboardingScreen() {
         {toggle('ec_consent', 'Confirmo que este contacto autorizou ser chamado em caso de emergência.')}
       </>;
       case 7: return <>
-        <Text style={styles.label}>Obrigatórios para usar o serviço</Text>
-        {REQUIRED_CHOICES.map(([key, label]) => toggle(key, label))}
-        <View style={styles.choices}>{legalLink('terms', 'Termos')}{legalLink('privacy', 'Privacidade')}{legalLink('medical-disclaimer', 'Aviso Médico')}</View>
-        <Text style={styles.label}>Opcionais — pode recusar</Text>
-        {OPTIONAL_CHOICES.map(([key, label]) => toggle(key, label))}
+        <Text style={styles.hint}>Catálogo do país de serviço do seu perfil. Alterar esta escolha também altera o país indicado na etapa Localização. Textos em português.</Text>
+        <View style={styles.choices}>{(['AO', 'PT'] as const).map(code => <TouchableOpacity key={code} style={[styles.choice, catalogCountry === code && styles.selected]} disabled={working || catalogLoading} onPress={() => chooseCatalogCountry(code)} accessibilityRole="radio" accessibilityState={{ selected: catalogCountry === code }}><Text>{code === 'AO' ? 'Angola' : 'Portugal'}</Text></TouchableOpacity>)}</View>
+        <TouchableOpacity style={styles.secondary} disabled={working || catalogLoading} onPress={() => setCatalogRefresh(value => value + 1)}><Text style={styles.linkText}>Atualizar textos aprovados</Text></TouchableOpacity>
+        {catalogLoading && <ActivityIndicator color="#0d9488" />}
+        {!!catalogError && <Text style={styles.error} accessibilityRole="alert">{catalogError}</Text>}
+        {catalog && !catalog.available && <Text style={styles.error}>O catálogo aprovado está incompleto ou indisponível. Não é possível concluir o perfil neste momento; pode guardar os restantes dados.</Text>}
+        {catalog?.documents.filter(item => item.required).map(document => <View key={document.id} style={styles.field}>
+          <Text style={styles.label}>{document.title}</Text><Text style={styles.hint}>Finalidade: {document.purpose} · versão {document.version} · {document.country} · Português</Text>
+          <Text selectable style={styles.summary}>{document.content}</Text><Text selectable style={styles.hint}>Origem aprovada: {document.approved_source}</Text>
+          <View style={styles.toggle}><Switch value={acceptanceIds.has(document.id)} disabled={working || catalogLoading || !catalog.available}
+            accessibilityLabel={`Li e aceito esta versão: ${document.title}`} onValueChange={checked => {
+              const previous = Array.isArray(data['7']?.consent_acceptances) ? data['7'].consent_acceptances : [];
+              const refs = previous.filter((item: { document_id: string }) => item.document_id !== document.id);
+              setData(current => ({ ...current, '7': { ...current['7'], consent_acceptances: checked ? [...refs, consentReference(document)] : refs } })); setSaved(false);
+            }} /><Text style={styles.toggleLabel}>Li e aceito esta versão exata.</Text></View>
+        </View>)}
+        <Text style={styles.hint}>As finalidades opcionais não são necessárias para concluir o perfil. Poderá decidir separadamente em Consentimentos; não são autorizadas neste formulário.</Text>
       </>;
       default: return <>
         <Text style={styles.hint}>Ao concluir, o perfil e os cinco consentimentos serão guardados em conjunto. Reveja os dados antes de continuar.</Text>
@@ -207,7 +253,7 @@ export default function PatientOnboardingScreen() {
           [4, 'Localização', `${text('country', 4) === 'PT' ? 'Portugal' : 'Angola'}${text('city', 4) ? ` · ${text('city', 4)}` : ''}`],
           [5, 'Saúde', ['blood_type', 'allergies', 'chronic', 'medications', 'surgeries'].map(key => text(key, 5)).filter(Boolean).join('\n') || 'Sem informação adicional'],
           [6, 'Emergência', `${text('ec_name', 6)}\n${text('ec_phone', 6)}`],
-          [7, 'Consentimentos', 'Rever escolhas obrigatórias e opcionais'],
+          [7, 'Consentimentos', 'Rever os cinco textos e as referências exatas'],
         ].map(([number, title, summary]) => <View key={number} style={styles.review}>
           <View style={{ flex: 1 }}><Text style={styles.label}>{title}</Text><Text style={styles.summary}>{summary}</Text></View>
           <TouchableOpacity disabled={working} onPress={() => move(Number(number))} accessibilityRole="button"><Text style={styles.linkText}>Editar</Text></TouchableOpacity>

@@ -154,11 +154,17 @@ def _assert_photo_access(triage_id: str, user: User, db: Session) -> TriageSessi
             return session
     elif user.role == RoleEnum.DOCTOR:
         require_verified_doctor(user, db)
+        from app.services.clinician_access import require_current_clinician
+        credential = require_current_clinician(user, db)
         doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
         if doctor:
             linked = db.query(Consultation.id).filter(
                 Consultation.triage_session_id == triage_id,
                 Consultation.doctor_id == doctor.id,
+                Consultation.patient_id == session.patient_id,
+                Consultation.status.in_(("scheduled", "in_progress", "completed")),
+                Consultation.country == credential.practice_country,
+                Consultation.country.in_(("AO", "PT")),
             ).first()
             if linked:
                 return session
@@ -179,8 +185,13 @@ def start_triage(
     extras = body.model_extra or {}
     if body.age_group not in (None, "adult") or body.answered_by_guardian is True or extras:
         raise HTTPException(409, "A triagem de menores ou em nome de outra pessoa não está disponível. Não envie esses dados na sua conta.")
+    from app.services.appointments import lock_resources
+    from app.services.consent_runtime import require_effective
+    lock_resources(db, None, patient.id)
+    require_effective(db, patient.id, body.country, body.consent_language)
     session = TriageSession(
         patient_id=patient.id,
+        country=body.country, consent_language=body.consent_language,
         status="in_progress",
         chief_complaint=body.chief_complaint,
     )
@@ -220,6 +231,11 @@ async def upload_triage_photo(
     ).first()
     if not session:
         raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+    from app.services.appointments import lock_resources
+    from app.services.consent_runtime import require_effective
+    lock_resources(db, None, patient.id)
+    from app.services.consent_runtime import REQUIRED_PURPOSES
+    require_effective(db, patient.id, session.country, session.consent_language, purposes=(*REQUIRED_PURPOSES, 'images'))
     pending_request = db.query(TriagePhotoRequest).filter(
         TriagePhotoRequest.triage_session_id == triage_id,
         TriagePhotoRequest.view_type == view_type,
@@ -604,6 +620,10 @@ def submit_answers(
     ).first()
     if not session:
         raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+    from app.services.appointments import lock_resources
+    from app.services.consent_runtime import require_effective
+    lock_resources(db, None, patient.id)
+    require_effective(db, patient.id, session.country, session.consent_language)
     if session.status != "in_progress":
         raise HTTPException(status_code=400, detail="Sessão já completada ou expirada.")
 
@@ -641,6 +661,10 @@ def complete_triage(
     ).first()
     if not session:
         raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+    from app.services.appointments import lock_resources
+    from app.services.consent_runtime import require_effective
+    lock_resources(db, None, patient.id)
+    require_effective(db, patient.id, session.country, session.consent_language)
     if session.status != "in_progress":
         raise HTTPException(status_code=400, detail="Sessão já completada.")
 

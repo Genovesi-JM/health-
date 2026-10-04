@@ -52,11 +52,11 @@ it('redirects signed-out and wrong-role deep links before loading private page c
   expect(state.documentsLoaded).not.toHaveBeenCalled();
 });
 
-it('opens a patient deep link after the existing consent gate succeeds', async () => {
+it('keeps a personal document deep link accessible without a global consent gate', async () => {
   state.auth.user = { id: 'patient', role: 'patient', email: 'patient@example.test', is_active: true, patient_onboarding_complete: true };
   window.history.replaceState(null, '', '/patient/documents'); render(<App />);
   await screen.findByRole('heading', { name: 'Private documents route' });
-  expect(state.get).toHaveBeenCalledWith('/api/v1/compliance/consents');
+  expect(state.get).not.toHaveBeenCalled();
   expect(window.location.pathname).toBe('/patient/documents');
 });
 

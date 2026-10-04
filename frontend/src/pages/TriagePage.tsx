@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import type { TriageQuestion, TriageResult, TriageHistoryItem } from '../types';
@@ -100,6 +100,7 @@ function TriageSession() {
   const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [step, setStep] = useState<Step>('history');
+  const [country, setCountry] = useState<'AO' | 'PT'>('AO');
   const [category, setCategory] = useState<TriageCategory>('general');
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -230,7 +231,7 @@ function TriageSession() {
       const hasVitals = ['systolic', 'diastolic', 'spo2', 'temperature', 'glucose', 'heartRate']
         .some(key => vitals[key as keyof VitalReadings] !== undefined);
       const r = await api.post('/api/v1/triage/start', {
-        chief_complaint: complaint,
+        chief_complaint: complaint, country, consent_language: 'pt',
         age_group: 'adult',
         category,
         answered_by_guardian: false,
@@ -438,6 +439,10 @@ function TriageSession() {
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('triage.describe')}</h3>
           </div>
           <form onSubmit={startTriage} style={{ padding: '1.25rem' }}>
+
+            <label htmlFor="triage-country">País deste novo pedido</label>{' '}
+            <select id="triage-country" value={country} disabled={loading} onChange={event => setCountry(event.target.value === 'PT' ? 'PT' : 'AO')}><option value="AO">Angola</option><option value="PT">Portugal</option></select>
+            <p><Link to={`/consents?country=${country}`}>Rever consentimentos para este país</Link>. As decisões atuais são verificadas antes de iniciar.</p>
 
             <p role="note">Esta triagem destina-se apenas ao próprio titular adulto da conta. A triagem de menores ou em nome de outra pessoa não está disponível.</p>
 

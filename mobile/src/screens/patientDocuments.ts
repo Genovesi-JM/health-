@@ -2,6 +2,8 @@ export const DOCUMENT_TEXT_LIMIT = 100_000;
 export const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 
 export type PatientDocument = {
+  country?: 'AO' | 'PT' | null;
+  consent_language?: string | null;
   id: string;
   original_filename: string;
   content_type: string;
@@ -24,7 +26,7 @@ export function documentMetadata(item: DocumentMetadata): DocumentMetadata {
   return { id: item.id, original_filename: item.original_filename, content_type: item.content_type,
     size_bytes: item.size_bytes, status: item.status, scan_status: item.scan_status, version: item.version,
     extraction_method: item.extraction_method, created_at: item.created_at, reviewed_at: item.reviewed_at,
-    error_code: item.error_code };
+    error_code: item.error_code, country: item.country ?? null, consent_language: item.consent_language ?? null };
 }
 
 export async function loadDocumentPage(
@@ -51,7 +53,8 @@ export function mergeDocumentPage(existing: DocumentMetadata[], page: DocumentMe
 }
 
 export function documentAccessLost(error: unknown): boolean {
-  return [401, 403].includes((error as { response?: { status?: number } })?.response?.status ?? 0);
+  const response = (error as { response?: { status?: number; data?: { detail?: { code?: unknown } } } })?.response;
+  return response?.status === 401 || response?.status === 403 && response.data?.detail?.code !== 'consent_required';
 }
 
 export function documentCursorExpired(error: unknown): boolean {
@@ -68,7 +71,7 @@ export type DocumentCapabilities = {
 };
 
 export type PhotoAsset = { uri: string; fileName?: string | null; mimeType?: string | null; fileSize?: number };
-export type DocumentUpload = { key: string; file: { uri: string; name: string; type: 'image/jpeg' | 'image/png' | 'application/pdf' }; size?: number };
+export type DocumentUpload = { key: string; file: { uri: string; name: string; type: 'image/jpeg' | 'image/png' | 'application/pdf' }; size?: number; country?: 'AO' | 'PT'; consent_language?: 'pt' };
 export type ReviewDraft = { document: PatientDocument; text: string; conflict: boolean };
 export type PdfAsset = { uri: string; name: string; mimeType?: string | null; size?: number };
 
@@ -168,7 +171,12 @@ export async function sendDocumentUpload(
   makeForm: () => { append: (name: string, value: any) => void } = () => new FormData(),
 ): Promise<PatientDocument> {
   if (!consent) throw new Error('Autorize o tratamento deste documento antes de o enviar.');
+  if (!['AO', 'PT'].includes(upload.country ?? '') || upload.consent_language !== 'pt') {
+    throw new DocumentSelectionError('O envio anterior não inclui país e idioma confirmados. Use Verificar envio para recuperar o pedido; não altere o seu conteúdo.');
+  }
   const form = makeForm();
+  form.append('country', upload.country);
+  form.append('consent_language', upload.consent_language);
   form.append('file', upload.file);
   form.append('processing_consent', 'true');
   const response = await api.post('/api/v1/patient-documents', form, {
@@ -226,7 +234,7 @@ Promise<{ saved: boolean; draft: ReviewDraft }> {
 export function documentError(error: unknown, fallback: string): string {
   if (documentAccessLost(error)) return 'O acesso aos documentos mudou. O conteúdo carregado foi removido. Inicie sessão novamente para continuar.';
   const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
-  return typeof detail === 'string' ? detail : fallback;
+  return typeof detail === 'string' ? detail : detail && typeof detail === 'object' && 'message' in detail && typeof detail.message === 'string' ? detail.message : fallback;
 }
 
 export const DOCUMENT_STATUS: Record<PatientDocument['status'], string> = {

@@ -2,6 +2,7 @@ export type DocumentStatus = 'pending_processing' | 'ready_for_review' | 'needs_
 export type DocumentMetadata = {
   id: string; original_filename: string; content_type: string; size_bytes: number;
   status: DocumentStatus; scan_status: string; version: number; extraction_method: string | null;
+  country?: 'AO' | 'PT' | null; consent_language?: string | null;
   created_at: string; reviewed_at: string | null; error_code: string | null;
 };
 export type PatientDocument = DocumentMetadata & { extracted_text: string | null; reviewed_text: string | null };

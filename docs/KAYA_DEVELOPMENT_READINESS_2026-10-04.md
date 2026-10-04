@@ -11,6 +11,7 @@ priority, followed by standalone Kaya apps for Android and iOS.
 | Area | Current implementation | Evidence / practical limit |
 | --- | --- | --- |
 | AO/PT foundation | Explicit service country, professional authority and clinic timezone; Angola/Luanda and Portugal/Lisbon/Madeira/Azores formatting and DST handling | Market configuration grants no cross-border care permission |
+| Consent | Durable exact-text AO/PT catalog, append-only decisions and withdrawal, retained episode authority, web/native review and recovery | [Consent runtime](KAYA_CONSENT_MODEL.md); no approved texts seeded, no human release approval |
 | Accounts | Patient onboarding, professional enrollment/review and privileged MFA checks; session restoration uses server identity | Account changes invalidate old clinical views and pending identity responses |
 | Documents | Private PDF/JPEG/PNG upload, exact retry identity, scanner gate, local text-PDF extraction, separate patient review, paginated metadata, lazy details and clinician read-only web view | [Document runtime](KAYA_FILE_SAFETY.md); image/scanned-PDF OCR and production scanning are not validated |
 | Scheduling | Published dated slots, pending clinician acceptance, atomic capacity checks, cancellation release, rescheduling with renewed acceptance and persisted request expiry | [Scheduling](KAYA_SCHEDULING.md), [booking](KAYA_BOOKING.md); real local PostgreSQL races; expiry worker is implemented but not activated |
@@ -41,10 +42,11 @@ These are explicit outstanding items, not hidden behind passing test counts:
   the expiry worker still needs a reviewed deployment schedule and monitoring. Native
   clinician closeout editing, embedded video and scanned-document OCR are not
   implemented by the patient-native/source-export work.
-- Adopt approved, versioned consent documents and withdrawal behavior for each
-  market. Current runtime checks rely on recorded consent types; they do not
-  establish acceptance of an approved text hash/version for that market. Family
-  profile CRUD does not establish verified guardianship or delegated care.
+- Obtain and publish owner-approved, versioned consent documents for each
+  market through a reviewed catalog publication process. Exact-text runtime
+  decisions and withdrawal are implemented for the routes documented in the
+  [consent contract](KAYA_CONSENT_MODEL.md); no real approved catalog is present.
+  Family profile CRUD does not establish verified guardianship or delegated care.
   Unsupported dependent/guardian/pediatric triage entry now fails before any
   clinical record or measurement is created. The draft pilot's invitation,
   adult eligibility, named-clinic admission limits and staffed coverage still

@@ -183,11 +183,12 @@ def test_read_audit_failure_does_not_disclose_summary(api, people, db_session):
         event.remove(HealthAuditLog, "before_insert", fail_audit)
 
 
-def test_consent_must_still_exist_at_closeout(api, people, db_session):
+def test_episode_snapshot_preserves_closeout_after_later_withdrawal(api, people, db_session):
     item = seed_consultation(db_session, people, "in_progress")
-    db_session.query(PatientConsent).filter_by(patient_id=item.patient_id, consent_type="telemedicine_consent").delete()
+    from consent_fixtures import withdraw
+    withdraw(db_session, people["patient"]["profile"], "telemedicine_consent")
     db_session.commit()
-    assert complete(api, item, people).status_code == 409
+    assert complete(api, item, people).status_code == 200
 
 
 def test_video_end_is_idempotent_and_leaves_clinical_closeout_open(api, people, db_session):
@@ -250,10 +251,11 @@ def test_patient_checkin_requires_explicit_current_consent(api, people, db_sessi
     url = f"/api/v1/teleconsultations/{item.id}/check-in"
     body = {"camera_ready": True, "microphone_ready": True, "network_quality": "fair", "consent_confirmed": False}
     assert api.post(url, json=body, headers=people["patient"]["headers"]).status_code == 422
-    db_session.query(PatientConsent).filter_by(patient_id=item.patient_id, consent_type="telemedicine_consent").delete()
+    from consent_fixtures import withdraw
+    withdraw(db_session, people["patient"]["profile"], "telemedicine_consent")
     db_session.commit()
-    assert api.post(url, json={**body, "consent_confirmed": True}, headers=people["patient"]["headers"]).status_code == 409
-    assert api.post(f"/api/v1/teleconsultations/{item.id}/join", headers=people["patient"]["headers"]).status_code == 409
+    assert api.post(url, json={**body, "consent_confirmed": True}, headers=people["patient"]["headers"]).status_code == 403
+    assert api.post(f"/api/v1/teleconsultations/{item.id}/join", headers=people["patient"]["headers"]).status_code == 403
 
 
 def migration():

@@ -22,16 +22,17 @@ it.each([{ id: 'child', is_minor: true }, { id: 'adult-relative', is_minor: fals
   },
 );
 
-it('allows explicit adult self intake without family selectors or guardian controls', async () => {
+it.each(['AO', 'PT'])('allows explicit adult self intake for %s without family or guardian selectors', async country => {
   vi.mocked(api.post).mockResolvedValue({ data: { triage_id: 'self-triage', questions: [] } });
   show();
   fireEvent.click((await screen.findAllByRole('button', { name: 'Nova Triagem' }))[0]);
   expect(screen.getByRole('note')).toHaveTextContent('próprio titular adulto');
+  fireEvent.change(screen.getByLabelText('País deste novo pedido'), { target: { value: country } });
   expect(screen.queryByText('Estou a responder como pai/mãe ou responsável')).not.toBeInTheDocument();
   fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Sintomas do próprio titular' } });
   fireEvent.click(screen.getByRole('button', { name: 'Iniciar Triagem' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/api/v1/triage/start', {
-    chief_complaint: 'Sintomas do próprio titular', age_group: 'adult', category: 'general', answered_by_guardian: false,
+    chief_complaint: 'Sintomas do próprio titular', country, consent_language: 'pt', age_group: 'adult', category: 'general', answered_by_guardian: false,
     vital_signs: undefined,
   }));
   expect(vi.mocked(api.get).mock.calls.some(([path]) => path === '/api/v1/family/me')).toBe(false);

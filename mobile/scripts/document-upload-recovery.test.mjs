@@ -13,7 +13,7 @@ runInNewContext(source, { exports, require: name => {
   assert.equal(name, '../screens/patientDocuments'); return patientDocuments;
 } });
 const { readPendingUpload, recoveryStorageKey, sendRecoverableUpload, recoverCommittedUpload, discardPendingUpload } = exports;
-const upload = { key: '12345678-1234-4234-8234-123456789012', file: { uri: 'file:///cache/exam.pdf', name: 'exam.pdf', type: 'application/pdf' }, size: 100 };
+const upload = { key: '12345678-1234-4234-8234-123456789012', file: { uri: 'file:///cache/exam.pdf', name: 'exam.pdf', type: 'application/pdf' }, size: 100, country: 'AO', consent_language: 'pt' };
 const otherUpload = { ...upload, key: '22345678-1234-4234-8234-123456789012', file: { ...upload.file, uri: 'file:///cache/second.pdf' } };
 const document = { id: 'document-1', original_filename: 'exam.pdf', content_type: 'application/pdf', size_bytes: 100,
   version: 1, status: 'pending_processing', scan_status: 'pending', extracted_text: null, reviewed_text: null };
@@ -149,4 +149,22 @@ test('a session-bound API refuses to send A file after login changes during stor
   assert.equal(sent, false);
   assert.equal(await readPendingUpload(storage, 'B'), null);
   assert.equal((await readPendingUpload(storage, 'A')).upload.key, upload.key);
+});
+
+test('legacy pending upload without market remains readable and lookup-recoverable but cannot be silently rewritten or resent', async () => {
+  const {storage,values}=storageFixture(); const legacy={...upload}; delete legacy.country; delete legacy.consent_language;
+  values.set(recoveryStorageKey('A'),JSON.stringify({ownerId:'A',upload:legacy,consent:true}));
+  const pending=await readPendingUpload(storage,'A'); assert.equal(pending.upload.country,undefined);
+  await assert.rejects(() => sendRecoverableUpload({post:async()=>assert.fail('Legacy upload resent')},storage,'A',pending.upload,true,makeForm),/não inclui país/);
+  await assert.rejects(() => sendRecoverableUpload({post:async()=>assert.fail('Old key market rewritten')},storage,'A',{...legacy,country:'PT',consent_language:'pt'},true,makeForm),/envio por confirmar/);
+  assert.equal(await recoverCommittedUpload({get:async()=>({data:document})},storage,'A',pending),document);
+  assert.equal(await readPendingUpload(storage,'A'),null);
+});
+test('country and consent language stay immutable through uncertain upload retry', async () => {
+  const {storage}=storageFixture(); const calls=[]; const api={post:async(path,body)=>{calls.push(body.values);throw new Error('offline');}};
+  await assert.rejects(()=>sendRecoverableUpload(api,storage,'A',upload,true,makeForm));
+  const pending=await readPendingUpload(storage,'A');
+  await assert.rejects(()=>sendRecoverableUpload(api,storage,'A',{...pending.upload,country:'PT'},true,makeForm),/envio por confirmar/);
+  await assert.rejects(()=>sendRecoverableUpload(api,storage,'A',pending.upload,true,makeForm));
+  assert.deepEqual(snapshot(calls[0]),snapshot(calls[1])); assert.equal(calls[1].country,'AO'); assert.equal(calls[1].consent_language,'pt');
 });

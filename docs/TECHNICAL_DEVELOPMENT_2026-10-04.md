@@ -719,3 +719,40 @@ consent adoption. The existing Android APK still represents the earlier09df949
 informational/policy277 source. Provider integration, reviewed commercial prices,
 refund/settlement operations, current consent adoption and clinical release
 approvals are not established by these local tests.
+
+## Durable consent and exact-text recovery
+
+The operational API now retains immutable AO/PT catalog text and append-only
+grant/refusal/withdrawal events. Empty catalogs remain unavailable; no real text
+is approved or seeded. Exact UUID retries recover the original decision together
+with current state. State reads use one immutable sequence prefix, preventing an
+old grant view from acquiring a newer revision across a concurrent withdrawal.
+Withdrawals/refusals deny older grants across translations in the same market.
+
+Onboarding and the documented booking, triage, document, checkout and episode
+flows now check current exact references. Actual care start retains an immutable
+episode snapshot, allowing retained closeout/correction after later withdrawal
+without inventing authority for a legacy episode. Web/native provide exact text,
+separate decisions, history and owner-scoped recovery. Personal record access is
+not hidden behind a blanket consent redirect. See the [runtime contract](KAYA_CONSENT_MODEL.md).
+
+Bank references now use the full attempt UUID and ambiguous provider/reference
+correlation is rejected before applying a receipt, including after a provider
+await. No payment provider was enabled.
+
+The staged checkpoint passed **1,789 backend tests** in 186.52 seconds,
+**431 web tests**, **199 native tests**, TypeScript, lint, 15 presentation checks,
+production build and emitted PWA checks. PostgreSQL passed **39 scenarios and
+140 forced races**, then stopped. Repository checks passed 29 tests plus 43
+subtests. Four platform/entry Hermes exports passed; the existing Android APK
+remains an earlier source snapshot. Six built-browser scenarios passed using
+only intercepted synthetic API replies; desktop and 390px screenshots were
+inspected. External font requests were blocked during that browser proof; this
+was not a real backend/provider end-to-end test.
+
+Evidence: [combined checkpoint](evidence/consent-runtime-2026-10-04/manifest.json)
+and [native proof](evidence/native-consent-2026-10-04/manifest.json).
+Policy contains 288 routes with all activation flags false and HOLD. These counts
+exclude subsequent readings/triage changes. The review also identified legacy
+measurement ingestion and prescription/renewal routes needing separate consent
+adoption before activation; they are not silently certified by this checkpoint.

@@ -9,6 +9,7 @@ import json
 import re
 from datetime import date, datetime, timezone
 from typing import Any
+from uuid import NAMESPACE_URL, uuid5
 
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
@@ -119,14 +120,12 @@ def _validate(user: User, payload: Any, profile: UserProfile | None) -> dict:
     if steps[6].get("ec_consent") is not True:
         errors["6.ec_consent"] = "Confirme a autorização do contacto de emergência."
 
-    if steps[7].get("consent_version") != CONSENT_VERSION:
-        errors["7.consent_version"] = "Reveja e aceite a versão atual dos consentimentos."
-    for field in CONSENT_FIELDS:
-        if steps[7].get(field) is not True:
-            errors[f"7.{field}"] = "Este consentimento obrigatório deve ser aceite."
-    for field in OPTIONAL_CONSENT_FIELDS:
-        if field in steps[7] and type(steps[7][field]) is not bool:
-            errors[f"7.{field}"] = "Escolha aceitar ou não aceitar."
+    if steps[7].get("catalog_country") != country or not isinstance(steps[7].get("catalog_language"), str):
+        errors["7.consent_acceptances"] = "Escolha os textos aprovados para o país e idioma do perfil."
+    if type(steps[7].get("consent_expected_revision")) is not int or steps[7].get("consent_expected_revision", -1) < 0:
+        errors["7.consent_expected_revision"] = "Atualize o estado dos consentimentos."
+    if not isinstance(steps[7].get("consent_acceptances"), list) or len(steps[7]["consent_acceptances"]) != len(CONSENT_FIELDS):
+        errors["7.consent_acceptances"] = "Reveja e aceite cada um dos cinco textos aprovados."
 
     if errors:
         raise HTTPException(422, detail={
@@ -192,19 +191,35 @@ def complete_patient_onboarding(db: Session, user: User, draft: OnboardingDraft,
     accepted_at = datetime.utcnow()
     ip = request.client.host[:45] if request.client else None
     user_agent = (request.headers.get("user-agent") or "")[:500]
-    grants = []
-    for consent_type in CONSENT_FIELDS.values():
-        consent = PatientConsent(
-            patient_id=patient.id, consent_type=consent_type,
-            accepted_at=accepted_at, ip_address=ip, user_agent=user_agent,
-        )
-        db.add(consent)
-        grants.append(consent)
-    db.flush()
-    # All grants and their version evidence are in this same transaction.
-    # Optional choices remain declarations; they never establish family access.
-    choices = {field: values["steps"][7].get(field, False)
-               for field in (*CONSENT_FIELDS, *OPTIONAL_CONSENT_FIELDS)}
+    from app.services import consent_runtime
+    from app.health_schemas import ConsentRequest
+    from app.services.appointments import lock_resources
+    from pydantic import ValidationError
+    step = values["steps"][7]
+    grants = {}
+    lock_resources(db, None, patient.id)
+    if consent_runtime.revision(db, patient.id) != step["consent_expected_revision"]:
+        raise HTTPException(422, {"error": "invalid_patient_onboarding", "fields": {
+            "7.consent_expected_revision": "Os consentimentos mudaram. Reveja a decisão atual antes de concluir."}})
+    try:
+        catalog = consent_runtime.catalog_rows(db, values["country"], step["catalog_language"])
+        used = set()
+        for offset, reference in enumerate(step["consent_acceptances"]):
+            body = ConsentRequest(**reference, action="grant", expected_revision=step["consent_expected_revision"] + offset)
+            document = next((row for row in catalog.values() if row.id == body.document_id), None)
+            if (not document or document.purpose not in consent_runtime.REQUIRED_PURPOSES or document.purpose in used
+                    or body.country != values["country"] or body.language != step["catalog_language"]):
+                raise ValueError()
+            event = consent_runtime.append_event(db, patient, user.id, body.model_dump(),
+                str(uuid5(NAMESPACE_URL, f"kaya-onboarding:{draft.id}:{document.purpose}")))
+            grants[document.purpose] = event
+            used.add(document.purpose)
+        if used != set(consent_runtime.REQUIRED_PURPOSES): raise ValueError()
+    except (HTTPException, ValidationError, TypeError, ValueError):
+        raise HTTPException(422, {"error": "invalid_patient_onboarding", "fields": {
+            "7.consent_acceptances": "Os textos aprovados mudaram ou não estão disponíveis. Reveja cada texto antes de concluir."}}) from None
+    choices = {field: purpose in grants for field, purpose in CONSENT_FIELDS.items()}
+    choices.update({field: False for field in OPTIONAL_CONSENT_FIELDS})
     db.add(HealthAuditLog(
         actor_user_id=user.id, action="patient_onboarding_completed",
         resource_type="onboarding_draft", resource_id=draft.id,
@@ -214,10 +229,10 @@ def complete_patient_onboarding(db: Session, user: User, draft: OnboardingDraft,
             "service_country": values["country"],
             # These versioned wizard statements are currently displayed in
             # Portuguese. A communication preference is not translation proof.
-            "language": "pt",
+            "language": step["catalog_language"],
             "preferred_language": values["language"],
             "consent_version": CONSENT_VERSION,
-            "consent_grants": {grant.consent_type: grant.id for grant in grants},
+            "consent_grants": {purpose: grant.id for purpose, grant in grants.items()},
             "consent_choices": choices,
             "emergency_contact_authorized": True,
             "contact_verification": "not_performed",

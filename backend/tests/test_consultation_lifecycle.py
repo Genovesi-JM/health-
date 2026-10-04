@@ -59,8 +59,8 @@ def people(db_session):
             profile = Patient(user_id=user.id)
             db_session.add(profile)
             db_session.flush()
-            for kind in ("privacy_policy", "telemedicine_consent", "terms_of_service"):
-                db_session.add(PatientConsent(patient_id=profile.id, consent_type=kind))
+            from consent_fixtures import grant_all
+            grant_all(db_session, profile)
         else:
             profile = Doctor(user_id=user.id, license_number=f"TEST-{uuid4().hex}",
                              specialization=specialty,
@@ -86,16 +86,21 @@ def people(db_session):
 
 
 def scheduled_payload(people):
-    return {"doctor_id": people["doctor"]["profile"].id,
+    return {"country": "AO", "doctor_id": people["doctor"]["profile"].id,
             "scheduled_at": (datetime.now(timezone(timedelta(hours=2))) + timedelta(days=2)).isoformat(),
             "specialty": "clinica_geral"}
 
 
 def seed_consultation(db, people, status="requested", assigned=True, **values):
+    values.setdefault("country", "AO")
     item = Consultation(patient_id=people["patient"]["profile"].id,
                         doctor_id=people["doctor"]["profile"].id if assigned else None,
                         status=status, **values)
     db.add(item)
+    db.flush()
+    if status in ("in_progress", "completed") and item.country in ("AO", "PT"):
+        from consent_fixtures import seed_episode
+        seed_episode(db, item)
     db.commit()
     return item
 

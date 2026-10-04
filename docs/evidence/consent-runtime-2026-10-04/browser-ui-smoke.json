@@ -1,0 +1,229 @@
+{
+  "kind": "synthetic-built-ui-only",
+  "browser": "154.0.8037.93",
+  "tests": 6,
+  "results": [
+    "Both empty market catalogs block fresh consent without invented texts.",
+    "Literal approved text and exact consent UUID survive a lost response and browser reload without a duplicate grant.",
+    "Withdrawal preserves accessible consultation history and append-only decision history.",
+    "A lost checkout response remains recoverable on cancelled history; a paid receipt under financial review never marks care paid.",
+    "Portugal checkout remains disabled even if a synthetic provider advertises availability.",
+    "Consent and withdrawal history render at a 390px viewport without horizontal page overflow."
+  ],
+  "pageErrors": [],
+  "denied": [],
+  "blockedExternal": [
+    {
+      "origin": "https://fonts.googleapis.com",
+      "path": "/css2"
+    },
+    {
+      "origin": "https://fonts.googleapis.com",
+      "path": "/css2"
+    },
+    {
+      "origin": "https://fonts.googleapis.com",
+      "path": "/css2"
+    },
+    {
+      "origin": "https://fonts.googleapis.com",
+      "path": "/css2"
+    },
+    {
+      "origin": "https://fonts.googleapis.com",
+      "path": "/css2"
+    },
+    {
+      "origin": "https://fonts.googleapis.com",
+      "path": "/css2"
+    }
+  ],
+  "apiCalls": [
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-state",
+      "query": "?country=AO&language=pt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-state",
+      "query": "?country=PT&language=pt"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-state",
+      "query": "?country=AO&language=pt"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/compliance/consent",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-state",
+      "query": "?country=AO&language=pt"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-requests/75948376-e221-4c0f-8fa0-5ad48d5a061b",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-history/page",
+      "query": "?limit=20"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/compliance/consent",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-history/page",
+      "query": "?limit=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-history/page",
+      "query": "?limit=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultations/me/page",
+      "query": "?limit=20&view=all"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dashboard/patient-state",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billing/payment-methods",
+      "query": "?country=AO&currency=AOA&include_planned=true"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billing/consultation/synthetic-visit/payment-status",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/billing/consultation/checkout",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultations/me/page",
+      "query": "?limit=20&view=all"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dashboard/patient-state",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billing/payment-methods",
+      "query": "?country=AO&currency=AOA&include_planned=true"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billing/consultation/synthetic-visit/payment-status",
+      "query": "?request_key=61f42b16-e48e-4c1b-92c8-76ce523381b9"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/consultations/me/page",
+      "query": "?limit=20&view=all"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dashboard/patient-state",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billing/payment-methods",
+      "query": "?country=PT&currency=EUR&include_planned=true"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billing/consultation/synthetic-visit/payment-status",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/compliance/consent-state",
+      "query": "?country=AO&language=pt"
+    }
+  ],
+  "source": "Built frontend/dist, all API replies synthetic; external traffic denied; no live provider or backend tested."
+}

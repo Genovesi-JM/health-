@@ -370,12 +370,11 @@ def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db
         patient_id=patient.id,
         doctor_id=doctor.id,
         specialty="clinica_geral",
-        status="scheduled",
+        status="scheduled", country="AO",
     )
-    db_session.add_all([
-        consultation,
-        PatientConsent(patient_id=patient.id, consent_type="telemedicine_consent"),
-    ])
+    from consent_fixtures import grant_all
+    grant_all(db_session, patient)
+    db_session.add(consultation)
     db_session.commit()
 
     prepared = client.post(

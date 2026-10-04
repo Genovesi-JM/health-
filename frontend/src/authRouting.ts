@@ -37,7 +37,7 @@ export function accountPathAfterLogin(user: User, requested?: string): string {
 export function requiredPathRedirect(user: User, pathname: string): string | null {
   const required = requiredAccountPath(user);
   if (!required || pathname === required) return null;
-  if (['/settings', '/security', '/security/mfa'].includes(pathname)) return null;
+  if (['/settings', '/security', '/security/mfa', '/consents', '/consent-gate', '/data-consent'].includes(pathname)) return null;
   if (isProfessionalApplicant(user) && pathname === '/onboarding/professional') return null;
   return required;
 }

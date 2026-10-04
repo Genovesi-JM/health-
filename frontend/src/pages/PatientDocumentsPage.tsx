@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Download, FileText, RefreshCw, Upload } from 'lucide-react';
 import api from '../api';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { apiErrorStatus } from '../utils/apiError';
 import { appendDocumentPage, type DocumentMetadata, type DocumentPage, type DocumentStatus as Status, type PatientDocument } from '../utils/patientDocuments';
@@ -47,6 +48,7 @@ function PatientDocumentWorkspace() {
   const [uploadUncertain, setUploadUncertain] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [consent, setConsent] = useState(false);
+  const [country, setCountry] = useState<'AO' | 'PT'>('AO');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
   const busyRef = useRef(false);
@@ -58,7 +60,7 @@ function PatientDocumentWorkspace() {
   const doc = selectedId ? details[selectedId] ?? null : null;
   const text = doc ? drafts[doc.id] ?? defaultText(doc) : '';
   const canReview = doc?.scan_status === 'clean' && ['ready_for_review', 'needs_manual_review'].includes(doc.status);
-  const canProcess = doc && ['pending_processing', 'processing_failed'].includes(doc.status);
+  const canProcess = doc && ['AO', 'PT'].includes(doc.country ?? '') && doc.consent_language === 'pt' && ['pending_processing', 'processing_failed'].includes(doc.status);
 
   const replaceDocument = (updated: PatientDocument) => {
     setDetails(previous => ({ ...previous, [updated.id]: updated }));
@@ -147,6 +149,7 @@ function PatientDocumentWorkspace() {
     }
   };
   const processDocument = async (item: PatientDocument) => {
+    if (!['AO', 'PT'].includes(item.country ?? '') || item.consent_language !== 'pt') { setError('O país e idioma deste documento anterior precisam de revisão antes de nova leitura. O original continua disponível.'); return; }
     const version = lifetime.current;
     try {
       const response = await api.post<PatientDocument>(`${BASE}/${item.id}/process`, { version: item.version });
@@ -176,7 +179,7 @@ function PatientDocumentWorkspace() {
     if (!file || !consent || !capabilities?.upload_enabled) return;
     const version = lifetime.current;
     uploadKey.current ??= crypto.randomUUID();
-    const form = new FormData(); form.append('file', file); form.append('processing_consent', 'true');
+    const form = new FormData(); form.append('file', file); form.append('processing_consent', 'true'); form.append('country', country); form.append('consent_language', 'pt');
     let response;
     try {
       response = await api.post<PatientDocument>(BASE, form, {
@@ -185,7 +188,7 @@ function PatientDocumentWorkspace() {
     } catch (failure) {
       if (version === lifetime.current) {
         const status = apiErrorStatus(failure);
-        if (uploadUncertain || !status || status >= 500 || [408, 409, 429].includes(status)) setUploadUncertain(true);
+        if (uploadUncertain || !status || status >= 500 || [401, 403, 408, 409, 429].includes(status)) setUploadUncertain(true);
       }
       throw failure;
     }
@@ -235,6 +238,9 @@ function PatientDocumentWorkspace() {
         <p>PDF, JPG ou PNG, até 10 MB. A leitura automática reconhece texto já existente em PDF. Fotografias e documentos digitalizados precisam de revisão manual.</p>
         {!capabilities?.upload_enabled && <p role="status">O envio de documentos está temporariamente indisponível. Pode consultar os documentos já guardados.</p>}
         <fieldset disabled={!!busy || !capabilities?.upload_enabled} style={{ border: 0, padding: 0 }}>
+          <label htmlFor="document-country">País deste envio</label>{' '}
+          <select id="document-country" value={country} disabled={uploadUncertain} onChange={event => { setCountry(event.target.value === 'PT' ? 'PT' : 'AO'); uploadKey.current = crypto.randomUUID(); setConsent(false); }}><option value="AO">Angola</option><option value="PT">Portugal</option></select>
+          <p><Link to={`/consents?country=${country}`}>Rever consentimentos para este país</Link>. O envio e uma nova leitura exigem decisões atuais verificadas pelo servidor.</p>
           <label htmlFor="patient-document-file">Ficheiro</label><br />
           <input id="patient-document-file" ref={fileInput} type="file" disabled={uploadUncertain} accept={ACCEPTED_TYPES.join(',')} onChange={event => chooseFile(event.target.files?.[0])} />
           {file && <p>Selecionado: {file.name}</p>}
@@ -256,6 +262,8 @@ function PatientDocumentWorkspace() {
       </section>
       {doc && <section className="card" aria-labelledby="review-title" style={{ padding: '1.25rem', margin: '1rem 0' }}>
         <h2 id="review-title">{doc.original_filename}</h2>
+        {!doc.country && <p>O país deste documento anterior não foi confirmado. O original e o histórico continuam disponíveis; nova leitura exige revisão do contexto.</p>}
+        {doc.country && <p>País do documento: {doc.country} · idioma: {doc.consent_language ?? 'Não confirmado'} · <Link to={`/consents?country=${doc.country}`}>Rever consentimentos</Link></p>}
         <p>{STATUS_LABELS[doc.status] ?? 'Estado desconhecido'} · {Math.ceil(doc.size_bytes / 1024)} KB</p>
         <button className="btn btn-outline" disabled={!!busy || doc.scan_status !== 'clean'} onClick={() => void download()}><Download size={16} /> Descarregar original</button>
         {doc.scan_status !== 'clean' && <p>O original fica indisponível até concluir a verificação de segurança.</p>}

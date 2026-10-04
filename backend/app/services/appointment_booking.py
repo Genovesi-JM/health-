@@ -13,11 +13,12 @@ from app.services.appointments import current_doctor, ensure_capacity, lock_reso
 from app.services.consultation_lifecycle import record_event
 
 
-def _replay(db, patient_id, key, digest):
+def _replay(db, patient_id, key, digest, legacy_digest=None):
     if not key:
         return None
     previous = db.query(Consultation).filter_by(patient_id=patient_id, booking_request_key=key).populate_existing().first()
-    if previous and previous.booking_request_digest != digest:
+    if previous and previous.booking_request_digest != digest and not (
+            previous.consent_language is None and previous.booking_request_digest == legacy_digest):
         raise HTTPException(409, "Esta chave já foi usada com outro pedido. Atualize a escolha.")
     return previous
 
@@ -30,7 +31,9 @@ def create_booking(db, body, patient, user, key):
         except (ValueError, TypeError, AttributeError):
             raise HTTPException(422, "A chave do pedido deve ser um UUID válido.") from None
     digest = hashlib.sha256(json.dumps(body.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    existing = _replay(db, patient.id, key, digest)
+    legacy_body = body.model_dump(mode="json", exclude={"consent_language"})
+    legacy_digest = hashlib.sha256(json.dumps(legacy_body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    existing = _replay(db, patient.id, key, digest, legacy_digest)
     if existing:
         return existing, False
     specialty = normalize_specialty(body.specialty)
@@ -61,9 +64,18 @@ def create_booking(db, body, patient, user, key):
             raise HTTPException(422, "O médico não corresponde à especialidade escolhida.")
     try:
         lock_resources(db, doctor_id, patient.id)
-        existing = _replay(db, patient.id, key, digest)
+        existing = _replay(db, patient.id, key, digest, legacy_digest)
         if existing:
             return existing, False
+        from app.services.consent_runtime import require_effective
+        require_effective(db, patient.id, body.country, body.consent_language)
+        if body.triage_session_id:
+            from app.health_models import TriageSession
+            triage = db.query(TriageSession).filter_by(id=body.triage_session_id, patient_id=patient.id).first()
+            if not triage:
+                raise HTTPException(404, "Sessão de triagem não encontrada.")
+            if triage.country != body.country or triage.consent_language != body.consent_language:
+                raise HTTPException(409, "A triagem pertence a outro país ou idioma. Reveja o contexto antes de marcar.")
         if doctor_id:
             current_doctor(db, doctor_id, body.country)
             if slot:
@@ -79,7 +91,8 @@ def create_booking(db, body, patient, user, key):
         item = Consultation(patient_id=patient.id, triage_session_id=body.triage_session_id,
             specialty=specialty, doctor_id=doctor_id, status="requested", scheduled_at=start,
             scheduled_end_at=end, requested_expires_at=deadline(start), slot_id=slot.id if slot else None, country=body.country,
-            timezone=slot.timezone if slot else None, booking_request_key=key, booking_request_digest=digest if key else None)
+            timezone=slot.timezone if slot else None, consent_language=body.consent_language,
+            booking_request_key=key, booking_request_digest=digest if key else None)
         db.add(item)
         db.flush()
         if slot:
@@ -99,7 +112,7 @@ def create_booking(db, body, patient, user, key):
         raise
     except (IntegrityError, OperationalError):
         db.rollback()
-        existing = _replay(db, patient.id, key, digest)
+        existing = _replay(db, patient.id, key, digest, legacy_digest)
         if existing:
             return existing, False
         raise HTTPException(409, "A disponibilidade mudou. Atualize e tente novamente.") from None

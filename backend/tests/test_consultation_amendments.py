@@ -135,9 +135,12 @@ def test_only_current_assigned_verified_doctor_can_correct(api, people, db_sessi
     assert amend(api, item, people, correction(api, item, people), who=who).status_code == expected
 
 
-@pytest.mark.parametrize("mutation,expected", [("suspended", 403), ("country", 409), ("unknown_country", 409), ("consent", 409)])
+@pytest.mark.parametrize("mutation,expected", [("suspended", 403), ("country", 409), ("unknown_country", 409), ("consent", 200)])
 def test_correction_rechecks_authority_country_and_consent(api, people, db_session, mutation, expected):
     item = seed_consultation(db_session, people, "in_progress", country=None if mutation == "unknown_country" else "AO")
+    if mutation == "unknown_country":
+        assert complete(api, item, people).status_code == 409
+        return
     assert complete(api, item, people).status_code == 200
     body = correction(api, item, people)
     credential = db_session.query(ClinicianCredential).filter_by(user_id=people["doctor"]["user"].id).one()
@@ -146,7 +149,8 @@ def test_correction_rechecks_authority_country_and_consent(api, people, db_sessi
     elif mutation == "country":
         credential.practice_country = "PT"
     elif mutation == "consent":
-        db_session.query(PatientConsent).filter_by(patient_id=item.patient_id, consent_type="telemedicine_consent").delete()
+        from consent_fixtures import withdraw
+        withdraw(db_session, people["patient"]["profile"], "telemedicine_consent")
     db_session.commit()
     assert amend(api, item, people, body).status_code == expected
 
@@ -223,7 +227,7 @@ def test_clinician_360_uses_verified_effective_content_and_own_record_capabiliti
 @pytest.mark.parametrize("field,value", [("country", "PT"), ("timezone", "Europe/Lisbon"), ("status", "cancelled")])
 def test_finalized_episode_jurisdiction_and_status_cannot_be_rewritten(api, people, db_session, field, value):
     item = finalized(api, people, db_session)
-    with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+    with pytest.raises(IntegrityError, match="(finalized_clinical_record|consent_evidence)_is_retained"):
         db_session.execute(update(Consultation).where(Consultation.id == item.id).values(**{field: value}))
     db_session.rollback()
     assert read(api, item, people).status_code == 200
@@ -239,7 +243,7 @@ def test_sql_deletion_and_parent_cascades_cannot_remove_finalized_records(api, p
                        "consultation": (Consultation, item.id), "patient": (Patient, item.patient_id),
                        "doctor": (Doctor, item.doctor_id), "patient_user": (User, people["patient"]["user"].id),
                        "doctor_user": (User, people["doctor"]["user"].id)}[target]
-    with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+    with pytest.raises(IntegrityError, match="(finalized_clinical_record|consent_evidence)_is_retained"):
         db_session.execute(delete(model).where(model.id == identity))
     db_session.rollback()
     assert read(api, item, people, "doctor").json()["closeout"]["current_revision"] == 1
@@ -249,7 +253,7 @@ def test_orm_parent_delete_and_amendment_updates_are_blocked(api, people, db_ses
     item = finalized(api, people, db_session)
     response = amend(api, item, people, correction(api, item, people))
     identity = response.json()["closeout"]["amendments"][0]["id"]
-    with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+    with pytest.raises(IntegrityError, match="(finalized_clinical_record|consent_evidence)_is_retained"):
         db_session.execute(update(ConsultationAmendment).where(ConsultationAmendment.id == identity).values(reason="rewritten"))
     db_session.rollback()
     db_session.delete(item)
@@ -299,7 +303,7 @@ def test_sqlite_replace_cannot_delete_retained_unique_identity(api, people, db_s
             values["booking_request_key"] = str(uuid4())
         if conflict == "slug":
             values["user_id"] = str(uuid4())
-        with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+        with pytest.raises(IntegrityError, match="(finalized_clinical_record|consent_evidence)_is_retained"):
             conn.execute(table.insert().prefix_with("OR REPLACE").values(**values))
         conn.rollback()
     assert read(api, item, people, "doctor").json()["closeout"]["current_revision"] == 1
@@ -336,7 +340,7 @@ def test_sqlite_update_replace_from_unretained_source_cannot_remove_retained_tar
         else:
             source["email"] = f"source-{uuid4().hex}@example.test"
         conn.execute(table.insert().values(**source)); conn.commit()
-        with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+        with pytest.raises(IntegrityError, match="(finalized_clinical_record|consent_evidence)_is_retained"):
             conn.execute(update(table).prefix_with("OR REPLACE").where(table.c.id == source["id"]).values(**{conflict: original[conflict]}))
         conn.rollback()
     assert read(api, item, people).json()["closeout"]["patient_summary"] == "Explicit patient instructions"
@@ -363,7 +367,7 @@ def test_referenced_follow_up_identity_is_retained(api, people, db_session, muta
         statement = delete(ClinicalCareTask).where(ClinicalCareTask.id == task_id)
     elif mutation != "orm_delete":
         statement = update(ClinicalCareTask).where(ClinicalCareTask.id == task_id).values(**{mutation: str(uuid4())})
-    with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+    with pytest.raises(IntegrityError, match="(finalized_clinical_record|consent_evidence)_is_retained"):
         if mutation == "orm_delete":
             db_session.delete(task)
             db_session.commit()
@@ -437,7 +441,7 @@ def test_migration_preserves_historical_records_and_read_guards_imported_corrupt
             assert denied.value.status_code == 409
         else:
             assert closeout_result(db, item, clinician=False)["closeout"]["patient_summary"] == "Original summary"
-        with pytest.raises(IntegrityError, match="finalized_clinical_record_is_retained"):
+        with pytest.raises(IntegrityError, match="(finalized_clinical_record|consent_evidence)_is_retained"):
             db.execute(delete(ConsultationNotes).where(ConsultationNotes.id == note_id))
         db.rollback()
     engine.dispose()

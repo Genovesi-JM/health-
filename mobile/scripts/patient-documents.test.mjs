@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  preparePhotoUpload, sendDocumentUpload, newUploadKey, canProcessDocument, canReviewDocument,
+  documentError, preparePhotoUpload, sendDocumentUpload, newUploadKey, canProcessDocument, canReviewDocument,
   startDocumentReview, reconcileDocumentReview, reviewPayload, saveDocumentReview, manualReviewMessage,
   DOCUMENT_TEXT_LIMIT, DOCUMENT_MAX_BYTES, preparePdfUpload, selectPdfUpload, validateDocumentUpload,
   documentTypeAvailable, documentUploadLimit, validateCachedDocumentUpload,
@@ -142,7 +142,7 @@ test('actual cached PDF bytes determine size and a disabled capability never ope
 });
 
 test('PDF retry sends the same private multipart file and key, with explicit processing consent', async () => {
-  const upload = preparePdfUpload(pdf, capabilities);
+  const upload = { ...preparePdfUpload(pdf, capabilities), country: 'PT', consent_language: 'pt' };
   const requests = [];
   const api = { post: async (path, body, options) => {
     requests.push({ path, body, options });
@@ -158,13 +158,14 @@ test('PDF retry sends the same private multipart file and key, with explicit pro
     assert.equal(request.path, '/api/v1/patient-documents');
     assert.deepEqual(request.body.values.file, upload.file);
     assert.equal(request.body.values.processing_consent, 'true');
+    assert.equal(request.body.values.country, 'PT'); assert.equal(request.body.values.consent_language, 'pt');
     assert.equal(request.options.headers['Idempotency-Key'], upload.key);
   }
 });
 
 test('upload key is a UUID and remains stable for retries after an uncertain upload', async () => {
   const attempts = [];
-  const upload = preparePhotoUpload({ uri: 'file:///photo.jpg', fileName: 'exame.jpg' }, LIMIT);
+  const upload = { ...preparePhotoUpload({ uri: 'file:///photo.jpg', fileName: 'exame.jpg' }, LIMIT), country: 'AO', consent_language: 'pt' };
   assert.match(upload.key, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   assert.notEqual(newUploadKey(), upload.key);
   const api = { post: async (url, body, options) => {
@@ -311,4 +312,11 @@ test('partial PDF extraction warns to check all pages rather than treating text 
   assert.match(manualReviewMessage(document({ error_code: 'partial_text_requires_ocr' })), /incompleto.*todas as páginas/);
   assert.match(manualReviewMessage(document({ error_code: 'ocr_required' })), /transcreva apenas/);
   assert.match(manualReviewMessage(document({ error_code: 'page_limit' })), /original completo/);
+});
+
+test('withdrawal blocks fresh processing without clearing personal records as if authentication were lost', () => {
+  const consentRequired={response:{status:403,data:{detail:{code:'consent_required',message:'Reveja os textos aprovados.'}}}};
+  assert.equal(documentAccessLost(consentRequired),false);
+  assert.equal(documentError(consentRequired,'fallback'),'Reveja os textos aprovados.');
+  assert.equal(documentAccessLost({response:{status:403,data:{detail:{code:'owner_denied'}}}}),true);
 });
