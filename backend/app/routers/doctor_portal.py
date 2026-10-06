@@ -236,7 +236,10 @@ def doctor_patients_list(
 
     consultations = (
         db.query(Consultation)
-        .filter(Consultation.doctor_id == doctor.id)
+        .filter(
+            Consultation.doctor_id == doctor.id,
+            Consultation.status.in_(("scheduled", "in_progress", "completed")),
+        )
         .all()
     )
 
@@ -315,6 +318,7 @@ def doctor_patient_summary(
         .filter(
             Consultation.doctor_id == doctor.id,
             Consultation.patient_id == patient_id,
+            Consultation.status.in_(("scheduled", "in_progress", "completed")),
         )
         .first()
     )

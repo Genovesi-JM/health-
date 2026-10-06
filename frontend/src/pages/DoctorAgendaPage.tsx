@@ -40,6 +40,8 @@ export default function DoctorAgendaPage() {
   const [selected, setSelected] = useState(new Date(today));
   const [appts, setAppts] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     api.get('/api/v1/doctor/agenda/today')
@@ -68,8 +70,21 @@ export default function DoctorAgendaPage() {
 
   const shownAppts = isToday(selected) ? appts : [];
 
-  const updateStatus = (id: string, status: Appointment['status']) =>
-    setAppts(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  const updateStatus = async (id: string, status: 'confirmed' | 'cancelled') => {
+    setPendingAction(id);
+    setActionError('');
+    try {
+      const response = status === 'confirmed'
+        ? await api.post(`/api/v1/doctor/queue/${id}/accept`)
+        : await api.patch(`/api/v1/consultations/${id}`, {});
+      const serverStatus = response.data.status === 'scheduled' ? 'confirmed' : response.data.status;
+      setAppts(prev => prev.map(a => a.id === id ? { ...a, status: serverStatus } : a));
+    } catch {
+      setActionError('Não foi possível atualizar a consulta. Atualize a agenda e tente novamente.');
+    } finally {
+      setPendingAction(null);
+    }
+  };
 
   const confirmed = shownAppts.filter(a => a.status === 'confirmed' || a.status === 'in_progress').length;
   const pending   = shownAppts.filter(a => a.status === 'pending').length;
@@ -77,6 +92,7 @@ export default function DoctorAgendaPage() {
 
   return (
     <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+      {actionError && <p role="alert">{actionError}</p>}
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -167,8 +183,8 @@ export default function DoctorAgendaPage() {
                 {/* Actions */}
                 {a.status === 'pending' && (
                   <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
-                    <button onClick={() => updateStatus(a.id, 'confirmed')} title="Confirmar" style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: '#059669', cursor: 'pointer' }}><Check size={15} /></button>
-                    <button onClick={() => updateStatus(a.id, 'cancelled')} title="Cancelar" style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', cursor: 'pointer' }}><X size={15} /></button>
+                    <button disabled={pendingAction !== null} onClick={() => updateStatus(a.id, 'confirmed')} title="Confirmar" style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: '#059669', cursor: 'pointer' }}><Check size={15} /></button>
+                    <button disabled={pendingAction !== null} onClick={() => updateStatus(a.id, 'cancelled')} title="Cancelar" style={{ padding: '0.4rem', border: 'none', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', cursor: 'pointer' }}><X size={15} /></button>
                   </div>
                 )}
                 {(a.status === 'confirmed' || a.status === 'in_progress') && (

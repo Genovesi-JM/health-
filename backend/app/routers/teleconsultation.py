@@ -24,6 +24,7 @@ from app.health_models import (
     TeleconsultationSession,
 )
 from app.rbac import log_health_audit
+from app.services.consultation_lifecycle import transition
 
 
 router = APIRouter(prefix="/api/v1/teleconsultations", tags=["teleconsultation"])
@@ -285,10 +286,13 @@ def start_session(
         or not doctor_participant.microphone_ready
     ):
         raise HTTPException(status_code=409, detail="O médico deve concluir o teste do dispositivo e o check-in.")
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_video_started",
+        allowed_from=("scheduled", "in_progress"), status="in_progress",
+        started_at=consultation.started_at or datetime.utcnow(),
+    )
     session.status = "in_progress"
     session.started_at = session.started_at or datetime.utcnow()
-    consultation.status = "in_progress"
-    consultation.started_at = consultation.started_at or datetime.utcnow()
     db.commit()
     log_health_audit(db, "teleconsultation.started", user.id, "teleconsultation_session", session.id, request=request)
     return _session_out(session, db)
@@ -338,10 +342,14 @@ def complete_session(
     if user.role != "doctor":
         raise HTTPException(status_code=403, detail="A teleconsulta é encerrada pelo médico.")
     session = _session(consultation_id, db)
+    if session.status != "in_progress":
+        raise HTTPException(status_code=409, detail="A teleconsulta não está em curso.")
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_video_completed",
+        allowed_from=("in_progress",), status="completed", ended_at=datetime.utcnow(),
+    )
     session.status = "completed"
     session.ended_at = datetime.utcnow()
-    consultation.status = "completed"
-    consultation.ended_at = consultation.ended_at or datetime.utcnow()
     db.commit()
     log_health_audit(db, "teleconsultation.completed", user.id, "teleconsultation_session", session.id, request=request)
     return _session_out(session, db)

@@ -167,7 +167,7 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
           </label>
           <select
             value={specialty}
-            onChange={(e) => setSpecialty(e.target.value)}
+            onChange={(e) => { setSpecialty(e.target.value); setDoctorId(''); }}
             className="form-input"
             style={{ width: '100%', marginBottom: '1.25rem' }}
           >
@@ -228,7 +228,7 @@ export default function BookConsultationModal({ open, onClose, patientState, onB
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!specialty || !scheduleReady || submitting}
+            disabled={!specialty || !scheduleReady || submitting || success}
             className="btn btn-primary"
             style={{ opacity: !specialty || !scheduleReady || submitting ? 0.5 : 1 }}
           >
