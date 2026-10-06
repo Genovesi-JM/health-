@@ -5,7 +5,7 @@ import { Video, CheckCircle2, Clock, Shield, Wifi, Monitor, ArrowRight, Stethosc
 
 const STEPS = [
   { num: '01', title: 'Selecciona a especialidade', desc: 'Clínica geral, psicologia, pediatria e muitas mais disponíveis por videochamada.' },
-  { num: '02', title: 'Confirma a marcação', desc: 'Escolha o horário e o médico disponível. Confirmação imediata por email.' },
+  { num: '02', title: 'Pede a marcação', desc: 'Escolha o médico e o horário pretendidos. A marcação fica confirmada após aceitação do médico.' },
   { num: '03', title: 'Entra na consulta', desc: 'Link seguro enviado por email. Consulta por vídeo, sem instalação de apps.' },
   { num: '04', title: 'Recebe seguimento', desc: 'Receita digital, relatório e próximos passos disponíveis no portal.' },
 ];

@@ -16,7 +16,7 @@ Cancel/Reschedule:
 - PATCH /api/v1/consultations/{id} — Cancel or update
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -34,10 +34,10 @@ from app.health_schemas import (
     ConsultationCancelRequest, ConsultationQueueItem, RoleEnum,
 )
 from app.rbac import (
-    get_patient_for_user, get_doctor_for_user,
+    get_patient_for_user,
     require_consents, require_verified_doctor,
-    log_health_audit,
 )
+from app.services.consultation_lifecycle import record_event, transition
 
 # Canonical specialty codes (match Doctor.specialization). Legacy English UI
 # codes and free-text labels are normalised to these so bookings always reach
@@ -90,46 +90,50 @@ def book_consultation(
         if not triage:
             raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
 
-    # If the patient chose a specific doctor + time, assign directly (scheduled);
-    # otherwise it goes into the shared queue as a request.
+    specialty = normalize_specialty(body.specialty)
+    scheduled_at = body.scheduled_at
+    if scheduled_at:
+        if scheduled_at.tzinfo is None or scheduled_at.utcoffset() is None:
+            raise HTTPException(status_code=422, detail="Indique o fuso horário da marcação.")
+        scheduled_at = scheduled_at.astimezone(timezone.utc).replace(tzinfo=None)
+        if scheduled_at <= datetime.utcnow():
+            raise HTTPException(status_code=422, detail="Escolha uma data e hora futuras.")
+    if bool(body.doctor_id) != bool(scheduled_at) or (body.next_available and scheduled_at):
+        raise HTTPException(status_code=422, detail="Escolha o próximo médico disponível ou um médico e horário em conjunto.")
+
+    # A preferred doctor/time is a request until that doctor explicitly accepts.
     assigned_doctor_id = None
-    status = "requested"
-    if body.doctor_id and body.scheduled_at:
+    if body.doctor_id:
         doc = db.query(Doctor).filter(Doctor.id == body.doctor_id).first()
         if not doc:
             raise HTTPException(status_code=404, detail="Médico não encontrado.")
         if doc.verification_status != "verified":
             raise HTTPException(status_code=400, detail="Este médico ainda não está verificado.")
+        if normalize_specialty(doc.specialization) != specialty:
+            raise HTTPException(status_code=422, detail="O médico não corresponde à especialidade escolhida.")
         assigned_doctor_id = doc.id
-        status = "scheduled"
 
     consultation = Consultation(
         patient_id=patient.id,
         triage_session_id=body.triage_session_id,
-        specialty=normalize_specialty(body.specialty),
+        specialty=specialty,
         doctor_id=assigned_doctor_id,
-        status=status,
-        scheduled_at=body.scheduled_at,
+        status="requested",
+        scheduled_at=scheduled_at,
     )
     db.add(consultation)
+    db.flush()
+    record_event(db, consultation, user.id, "consultation_booked", None, "requested")
     db.commit()
     db.refresh(consultation)
-
-    log_health_audit(
-        db,
-        action="consultation_booked",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-    )
 
     try:
         create_notification(
             db,
             user_id=user.id,
-            title="Consulta agendada",
-            message=f"A sua consulta de {consultation.specialty.replace('_', ' ')} foi registada com sucesso.",
-            type="success",
+            title="Pedido de consulta recebido",
+            message="O seu pedido aguarda aceitação do médico. O horário ainda não está confirmado.",
+            type="info",
             entity_type="consultation",
             entity_id=consultation.id,
         )
@@ -143,8 +147,8 @@ def book_consultation(
             if doc:
                 create_notification(
                     db, user_id=doc.user_id,
-                    title="Nova consulta agendada",
-                    message="Um paciente agendou uma consulta consigo.",
+                    title="Novo pedido de consulta",
+                    message="Um paciente pediu uma consulta consigo. Reveja e aceite o pedido para confirmar.",
                     type="info", entity_type="consultation", entity_id=consultation.id,
                 )
         except Exception:
@@ -176,34 +180,24 @@ def doctor_queue(
     user: User = Depends(require_verified_doctor),
     db: Session = Depends(get_db),
 ):
-    """Get compatible unassigned requests plus this doctor's active cases."""
+    """Get eligible shared requests and this doctor's own requests/active cases."""
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     q = db.query(Consultation).filter(
         or_(
             and_(
                 Consultation.doctor_id.is_(None),
                 Consultation.status == "requested",
+                Consultation.specialty.in_((normalize_specialty(doctor.specialization), "clinica_geral")),
             ),
             and_(
                 Consultation.doctor_id == doctor.id,
-                Consultation.status == "in_progress",
+                Consultation.status.in_(("requested", "scheduled", "in_progress")),
             ),
         )
     )
     if specialty:
-        q = q.filter(or_(
-            Consultation.doctor_id == doctor.id,
-            Consultation.specialty == specialty,
-        ))
-    elif doctor:
-        # Default: filter by doctor's specialization
-        q = q.filter(
-            or_(
-                Consultation.doctor_id == doctor.id,
-                Consultation.specialty == doctor.specialization,
-                Consultation.specialty == "clinica_geral",
-            )
-        )
+        # A display filter can narrow access, never expand it to another specialty.
+        q = q.filter(Consultation.specialty == normalize_specialty(specialty))
 
     consultations = q.order_by(Consultation.created_at.asc()).limit(50).all()
 
@@ -280,27 +274,25 @@ def accept_consultation(
 
     consultation = db.query(Consultation).filter(
         Consultation.id == consultation_id,
-        Consultation.status == "requested",
-        Consultation.doctor_id.is_(None),
+        or_(
+            Consultation.doctor_id == doctor.id,
+            and_(
+                Consultation.doctor_id.is_(None),
+                Consultation.specialty.in_((normalize_specialty(doctor.specialization), "clinica_geral")),
+            ),
+        ),
     ).first()
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou já aceite.")
 
-    consultation.doctor_id = doctor.id
-    consultation.status = "in_progress"
-    consultation.started_at = datetime.utcnow()
-    db.add(consultation)
+    next_status = "scheduled" if consultation.scheduled_at else "in_progress"
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_accepted",
+        allowed_from=("requested",), status=next_status, doctor_id=doctor.id,
+        started_at=datetime.utcnow() if next_status == "in_progress" else None,
+    )
     db.commit()
     db.refresh(consultation)
-
-    log_health_audit(
-        db,
-        action="consultation_accepted",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-        metadata={"doctor_id": doctor.id},
-    )
 
     # Notify the patient that a doctor accepted their consultation.
     try:
@@ -309,7 +301,8 @@ def accept_consultation(
             create_notification(
                 db, user_id=pat.user_id,
                 title="Consulta aceite",
-                message="Um médico aceitou a sua consulta. Já pode conversar por mensagem ou vídeo.",
+                message=("O médico aceitou o seu pedido e confirmou o horário."
+                         if next_status == "scheduled" else "Um médico aceitou a sua consulta."),
                 type="success", entity_type="consultation", entity_id=consultation.id,
             )
     except Exception:
@@ -337,19 +330,12 @@ def start_consultation(
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou não está no estado agendado.")
 
-    consultation.status = "in_progress"
-    consultation.started_at = datetime.utcnow()
-    db.add(consultation)
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_started",
+        allowed_from=("scheduled",), status="in_progress", started_at=datetime.utcnow(),
+    )
     db.commit()
     db.refresh(consultation)
-
-    log_health_audit(
-        db,
-        action="consultation_started",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-    )
 
     return consultation
 
@@ -372,8 +358,10 @@ def complete_consultation(
     ).first()
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou não atribuída a si.")
-    if consultation.status == "completed":
-        raise HTTPException(status_code=400, detail="Consulta já completada.")
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_completed",
+        allowed_from=("in_progress",), status="completed", ended_at=datetime.utcnow(),
+    )
 
     # Save notes
     notes = ConsultationNotes(
@@ -387,19 +375,8 @@ def complete_consultation(
     )
     db.add(notes)
 
-    consultation.status = "completed"
-    consultation.ended_at = datetime.utcnow()
-    db.add(consultation)
     db.commit()
     db.refresh(consultation)
-
-    log_health_audit(
-        db,
-        action="consultation_completed",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-    )
 
     return consultation
 
@@ -430,12 +407,11 @@ def cancel_consultation(
     elif user.role not in (RoleEnum.ADMIN, RoleEnum.SUPPORT):
         raise HTTPException(status_code=403, detail="Sem permissão.")
 
-    if consultation.status in ("completed", "cancelled"):
-        raise HTTPException(status_code=400, detail="Consulta não pode ser cancelada.")
-
-    consultation.status = "cancelled"
-    consultation.cancellation_reason = body.reason
-    db.add(consultation)
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_cancelled",
+        allowed_from=("requested", "scheduled", "in_progress"), status="cancelled",
+        cancellation_reason=body.reason,
+    )
     db.commit()
     db.refresh(consultation)
 
