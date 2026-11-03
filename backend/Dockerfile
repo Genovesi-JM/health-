@@ -1,31 +1,14 @@
 FROM python:3.12-slim
-
-# System deps for psycopg2 (PostgreSQL) and reportlab (PDF)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc libpq-dev curl && \
-    rm -rf /var/lib/apt/lists/*
-
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 KAYA_MANAGED_SCHEMA=true
 WORKDIR /app
-
-# Install Python dependencies (use deploy requirements for production)
-COPY requirements.deploy.txt requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.deploy.txt && \
-    pip install --no-cache-dir psycopg2-binary redis
-
-# Copy application code
-COPY . .
-
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
+COPY requirements.deploy.txt ./
+RUN pip install --no-cache-dir -r requirements.deploy.txt psycopg2-binary redis
+RUN adduser --disabled-password --gecos '' appuser && chown appuser:appuser /app
+COPY --chown=appuser:appuser app/ ./app/
+COPY --chown=appuser:appuser alembic/ ./alembic/
+COPY --chown=appuser:appuser accounts_alembic/ ./accounts_alembic/
+COPY --chown=appuser:appuser scripts/ ./scripts/
+COPY --chown=appuser:appuser alembic.ini accounts_alembic.ini ./
 USER appuser
-
-# Expose port
 EXPOSE 8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
-
-# Run migrations (fail loudly if they fail — do NOT suppress errors in production)
-# Then start gunicorn with uvicorn workers
-CMD ["sh", "-c", "python -m alembic upgrade head && gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
+CMD ["gunicorn","app.main:app","--worker-class","uvicorn.workers.UvicornWorker","--bind","0.0.0.0:8000","--workers","1","--timeout","120"]
