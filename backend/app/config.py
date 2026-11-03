@@ -58,6 +58,12 @@ class Settings(BaseSettings):
             return v.replace("postgres://", "postgresql://", 1)
         return v
 
+    health_storage_provider: str = "auto"
+    azure_storage_account_name: Optional[str] = None
+    azure_storage_container: Optional[str] = None
+    azure_storage_managed_identity_client_id: Optional[str] = None
+    azure_storage_signed_url_seconds: int = 300
+
     # DigitalOcean Spaces (S3-compatible storage)
     do_spaces_key: Optional[str] = None
     do_spaces_secret: Optional[str] = None
