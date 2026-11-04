@@ -1,0 +1,811 @@
+{
+  "snapshot": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review",
+  "files": [
+    {
+      "path": "frontend/.dockerignore",
+      "sha256": "284074281766a29ade53e05767b38e0e5debe857192102a0b63b4a26763c837c"
+    },
+    {
+      "path": "frontend/Dockerfile",
+      "sha256": "ce09cb16f55c04659e7752282bd4de9e0d4aba374e01910bfeb0a3bfa49b773e"
+    },
+    {
+      "path": "frontend/eslint.config.js",
+      "sha256": "4efe97b16d1200fac0eaf07aa00930a8668b1f96a0be1891ace8c1e712ff0ccb"
+    },
+    {
+      "path": "frontend/index.html",
+      "sha256": "aa930960d0e875af60629ee3e705550763fb9a44496530de6b5fa7024ba92d2d"
+    },
+    {
+      "path": "frontend/nginx.conf",
+      "sha256": "c6db501cefa5fd4f003365660c162b2170b5769daef23ea27730c0f567e4a9e7"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "sha256": "c6be000e1d224f47b90645a6653b9639a817c832335d7447953150d1b7c2e682"
+    },
+    {
+      "path": "frontend/package.json",
+      "sha256": "b9d40f85c6d23d9aba44898f2a530f35b2b98f12afe033d74ea8624f1b0eab75"
+    },
+    {
+      "path": "frontend/public/404.html",
+      "sha256": "85b6f9b3db73572d526d7b30dd38e26b2112a50746dc9a0ffa7dd44e39e0a18f"
+    },
+    {
+      "path": "frontend/public/apple-touch-icon.png",
+      "sha256": "5abf3009da5d8944bb089b89f2480cec4b3183969ae1e1a6f4738533e50fa233"
+    },
+    {
+      "path": "frontend/public/favicon-32.png",
+      "sha256": "c1f1ec205c4ba7941fdc3ceed7464e27f74c7d51d5084aabf848bfde5ade4aa9"
+    },
+    {
+      "path": "frontend/public/icon-192.png",
+      "sha256": "384c951cf2b2e769ac22b49cfa63a0a1d8258e00e4abc4bdd69de071acd271c9"
+    },
+    {
+      "path": "frontend/public/icon-512.png",
+      "sha256": "b3970fd0edfe6fdbcbc9517004b7763dcb3ef710752fb636298be32bd7409e22"
+    },
+    {
+      "path": "frontend/public/icon-512.svg",
+      "sha256": "5e50a035e115cc7caf71e4cf3134b403d2e4ec2e713f18554a1d2bf7d1518d49"
+    },
+    {
+      "path": "frontend/public/kaya-logo.svg",
+      "sha256": "94ab8a2ddda115b59cca2b29d6c77ab08b77af577c4b0504004a822dac6e5114"
+    },
+    {
+      "path": "frontend/public/kaya-panel-clinicas.svg",
+      "sha256": "82e908c1e9d28bfb1a6df30b5c8afdd934f3213d9932b5394186677708dd68ee"
+    },
+    {
+      "path": "frontend/public/kaya-panel-dispositivos.svg",
+      "sha256": "a86d22c69ba5345c9565fd734dd12d4a3e95a06d2571b858ae494709d59ae953"
+    },
+    {
+      "path": "frontend/public/kaya-panel-especialistas.svg",
+      "sha256": "c21269d4e67a667cafc5430d5e743d84fdfb6dc106c13434290b0ec0fafbb535"
+    },
+    {
+      "path": "frontend/public/kaya-panel-medicos.svg",
+      "sha256": "58ebe4b0af6ff676ad30db476f3bd68f6aea4acabc4690ad19d65a0124ccc1a0"
+    },
+    {
+      "path": "frontend/public/kaya-panel-pacientes.svg",
+      "sha256": "66abb058046618cbba67c08dc1565918794171d77d0b12d0638e6a3e68a78819"
+    },
+    {
+      "path": "frontend/public/manifest.webmanifest",
+      "sha256": "0bfd141ad15ffbd5f5b4758fe0ee6443dc180b5179774575215083666536c6d2"
+    },
+    {
+      "path": "frontend/public/vite.svg",
+      "sha256": "4a748afd443918bb16591c834c401dae33e87861ab5dbad0811c3a3b4a9214fb"
+    },
+    {
+      "path": "frontend/src/App.phase1.test.tsx",
+      "sha256": "c35ad070c54de2a23dd1f476beaca3b9d94f3429c65b476cadcd3068983dea82"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "sha256": "5df1aedaa0cca6b354372cc9d2bb076f723f2f7c4bba79ce714932c54c46580e"
+    },
+    {
+      "path": "frontend/src/AuthContext.tsx",
+      "sha256": "d3e9b89720c4a1d78b11210e2f6f9eaddcdbfc6a32d1304a998ecf7ee932aebf"
+    },
+    {
+      "path": "frontend/src/LegacyApp.tsx",
+      "sha256": "6cab9769fb33fc2a8eb2080b1d3a1ac2fcdb8f5e7f4687f87f3de74f005cf725"
+    },
+    {
+      "path": "frontend/src/ProtectedRoute.security.test.tsx",
+      "sha256": "d5a73b3fc0d8bcd4daa9137d1aff4efbfcf9296ffc7f50371808192a5a86180a"
+    },
+    {
+      "path": "frontend/src/ProtectedRoute.tsx",
+      "sha256": "4f9f7a755284c74c59d2da6e9680d31af50eba8af608c13073d018d1dd250374"
+    },
+    {
+      "path": "frontend/src/RoleRoute.tsx",
+      "sha256": "40ba8e15f9b409e763966c2742a0709c27bc4ddb9f06b8f9148507be1dc617e4"
+    },
+    {
+      "path": "frontend/src/api.ts",
+      "sha256": "82f352ee8b6721e45bdd4ed8f1948db2ae6e4cd522136bb19c0051a3e0443f6a"
+    },
+    {
+      "path": "frontend/src/assets/react.svg",
+      "sha256": "35ef61ed53b323ae94a16a8ec659b3d0af3880698791133f23b084085ab1c2e5"
+    },
+    {
+      "path": "frontend/src/components/BookConsultationModal.tsx",
+      "sha256": "e997e26b773177aad41e220f99ce1b5dd2385d3c10b7170d2de507b8d1a69273"
+    },
+    {
+      "path": "frontend/src/components/CaseDetailDrawer.tsx",
+      "sha256": "5d59156ce0afa6dc3470455e33a6b20c4d8b677b92a91590266731d95261f98c"
+    },
+    {
+      "path": "frontend/src/components/ChatModal.tsx",
+      "sha256": "3c2b90c7864fa5834719a56430a60b7ff54ff30a094f56ddc2805861938d80ac"
+    },
+    {
+      "path": "frontend/src/components/ChatWidget.tsx",
+      "sha256": "bef79f152ea70184bcbafdcd604d56d8842427f531fef2f2e328913f47bfb6ae"
+    },
+    {
+      "path": "frontend/src/components/DocumentUpload.tsx",
+      "sha256": "ebf9be540bad7963b72c2ec719313b256c4f12eefe3c2c448bee1422c0fe2977"
+    },
+    {
+      "path": "frontend/src/components/ExtractedDataConfirmation.test.tsx",
+      "sha256": "514c554e059e2cb180f7747ca665ee90741507796a672be8dbd5c62e2562b495"
+    },
+    {
+      "path": "frontend/src/components/ExtractedDataConfirmation.tsx",
+      "sha256": "7475dd46380bc62171309fd90520a304a5348b252e61a9f11caf3070fe8dfa84"
+    },
+    {
+      "path": "frontend/src/components/Footer.tsx",
+      "sha256": "f3cddf5701c8a83e7cef3487cf2c8bf727a7d3fb7bea631bea3632ce85a32e5c"
+    },
+    {
+      "path": "frontend/src/components/HealthSnapshot.tsx",
+      "sha256": "73daeda44cf62fb3151b16a15768f7217bef26a17182cea407af9a2fc6b6fa5f"
+    },
+    {
+      "path": "frontend/src/components/InstallPrompt.tsx",
+      "sha256": "9caf844d1ef70de6356a7d15ad449c845c608a513a73b8f0c9c7e114c163a664"
+    },
+    {
+      "path": "frontend/src/components/KpiGrid.tsx",
+      "sha256": "8c069a871ffc00db574e1235b8428d6d046215270ed70f58eb880f0d18ea3bd3"
+    },
+    {
+      "path": "frontend/src/components/LanguageSelector.tsx",
+      "sha256": "b1315430cdd05b589dffa26a165fba21270907ab1cd57ab6ea001a5af46fee03"
+    },
+    {
+      "path": "frontend/src/components/Navbar.tsx",
+      "sha256": "8b558c6429aff5bbfc143627a843ef7c7b5d2405ef93a56e67dc45867eba649f"
+    },
+    {
+      "path": "frontend/src/components/OnboardingShell.tsx",
+      "sha256": "94b37959487cbe28a65f91be46d4e1d9234b445d985f4c98402258e566599305"
+    },
+    {
+      "path": "frontend/src/components/PatientReadingsPanel.tsx",
+      "sha256": "cc8ac9d368b4d5b26a26b62752a7f2aa27a7c8ea445aef3449d7dcefa0b66811"
+    },
+    {
+      "path": "frontend/src/components/PaymentModal.tsx",
+      "sha256": "da8b0f2ebdb6443fee651f2c9569a910331b1fbd11353cc7f521fb2d1acb6dca"
+    },
+    {
+      "path": "frontend/src/components/ReviewModal.tsx",
+      "sha256": "b9911f794266cda1a7c5509424dc36b409881da83df31134bd828f3516c83cf3"
+    },
+    {
+      "path": "frontend/src/components/Sidebar.tsx",
+      "sha256": "0c43c5b09f72f8cbae67b21d10a838da14205c594c70ba4fb3ea68a47fafdf31"
+    },
+    {
+      "path": "frontend/src/components/TeleconsultationControl.tsx",
+      "sha256": "f066d26106a54cae4d54539641976d02e71bc5ed86ae95032962d7fe58d06add"
+    },
+    {
+      "path": "frontend/src/components/TriagePhotoGuide.tsx",
+      "sha256": "523f2c68a22782b80aba7b6faa36bf672425bd7d0c603703b707a6b7ce9caf78"
+    },
+    {
+      "path": "frontend/src/components/TriagePhotoReview.tsx",
+      "sha256": "47a98060ef100a1d0c256ca05ce084050f976ea83c6d4f1f6da9b86f351763d1"
+    },
+    {
+      "path": "frontend/src/config/kayaPolicy.json",
+      "sha256": "9076f41e6045a2f58bfb8816189f7a46d6a5788d83ecf9ec17faa9edf813d2cb"
+    },
+    {
+      "path": "frontend/src/constants/specialties.ts",
+      "sha256": "023cc37660ea633be3725cfb56775d52daf9d1e25f440791b9a48686062036c7"
+    },
+    {
+      "path": "frontend/src/hooks/useUnreadNotifications.ts",
+      "sha256": "8dfff390294fea3459d8621b3ca0588f84a6a93e22e5254050a443c7967d73b0"
+    },
+    {
+      "path": "frontend/src/i18n/LanguageContext.tsx",
+      "sha256": "928a3ad00d06bdcf436fb345ab56a9e3c9e0430e38306bdd4b7c4e1134360b6a"
+    },
+    {
+      "path": "frontend/src/i18n/translations.test.ts",
+      "sha256": "e28e815ad17c72deab2041cbe50eac270282c647e612b4ebb813de49993e2af9"
+    },
+    {
+      "path": "frontend/src/i18n/translations.ts",
+      "sha256": "0ed97df541adc52b8946ff5d68c43a6a0248c22ed33fec30ecd5f5c004a10232"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "sha256": "e61529ebeb020c117e1009b41b8d64f5199282497283df23c850a05ee1782fd4"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "sha256": "91e436bd68ee5aa96f00191c0882b1f0a97db43ef57c876f5bd3acb19e3855df"
+    },
+    {
+      "path": "frontend/src/pages/AboutPage.tsx",
+      "sha256": "9c5789c4b011abc95dbe7974f0c61452481f7cf7959d88fe410085a1358ce25d"
+    },
+    {
+      "path": "frontend/src/pages/AdminApplicationsPage.tsx",
+      "sha256": "cc402bb0a1f423494619ebf0666a7d861205801b0bf0f5f63e721cbaa9579af3"
+    },
+    {
+      "path": "frontend/src/pages/AdminCompliancePage.tsx",
+      "sha256": "93cc07a54a027db30ef5dc8f5829c8d2a80485ff8ae59f0c50c7d79646b20fa1"
+    },
+    {
+      "path": "frontend/src/pages/AdminCredentialsPage.tsx",
+      "sha256": "b85e0a9daf9bebbd23a9d1c4bf612eeeccdab96d33af0b97f34194d971bdae58"
+    },
+    {
+      "path": "frontend/src/pages/AdminDashboardPage.tsx",
+      "sha256": "a091de22f703c88584d89120ae23ed25fe673d9737a08074f6e3ef8ac7471094"
+    },
+    {
+      "path": "frontend/src/pages/AdminDoctorsPage.tsx",
+      "sha256": "8eaf915bea1a733e922669fca27b0a366962580b57df98a864951b9aeb9355da"
+    },
+    {
+      "path": "frontend/src/pages/AdminExpiryPage.tsx",
+      "sha256": "c7463c74fc8bbbeb9fd82c3b16c28c900c2fe6c730c6ecfc75d979c9a47cf836"
+    },
+    {
+      "path": "frontend/src/pages/AdminPatientsPage.tsx",
+      "sha256": "221aff992b42bcd5fe871c34d6c18704f25ec31398e2873e79ebc388311a6677"
+    },
+    {
+      "path": "frontend/src/pages/AuthCallbackPage.tsx",
+      "sha256": "ea5287b66cecbed3a9353de43dd45f544edaad7e0669db6dcc58a55ecb32af69"
+    },
+    {
+      "path": "frontend/src/pages/CaregiverOnboardingPage.tsx",
+      "sha256": "79b2e68b791b6f43d3a2b944bbd30b651e3157e324a65a8b3bf12c558ea2ed36"
+    },
+    {
+      "path": "frontend/src/pages/ChooseAccountTypePage.test.tsx",
+      "sha256": "c714014414c52b69e7f5545085d167690c1400d180244148867f9ff1e02a6c5b"
+    },
+    {
+      "path": "frontend/src/pages/ChooseAccountTypePage.tsx",
+      "sha256": "1ff36e807a1ece4507fe6ad366984b610ee34616eb7ce781e27a56fc162b3046"
+    },
+    {
+      "path": "frontend/src/pages/ChronicCarePage.tsx",
+      "sha256": "d5ee1f909dc7114e1259b297c21a89682d214fe618bef99ba4b3976877725467"
+    },
+    {
+      "path": "frontend/src/pages/ClinicianPatientWorkspacePage.tsx",
+      "sha256": "c174cb70b85135bcf80fa4a5a58f5920cb0c0ed4139794527265243707d18f89"
+    },
+    {
+      "path": "frontend/src/pages/ClinicsPage.tsx",
+      "sha256": "f94adb1d250f0b2faddfc6e86d8e3a39efe1b241ca0958235d3766376e46b8e8"
+    },
+    {
+      "path": "frontend/src/pages/ConsentGatePage.tsx",
+      "sha256": "08fb18371ae3b9b52909cc8c26dea6d53526533df77ff82122ad224cce510434"
+    },
+    {
+      "path": "frontend/src/pages/ConsentsPage.tsx",
+      "sha256": "7459993cb91ac4ce65f5e2fd24d4afbfd86bd04100f8aff585040e6e956ed9c1"
+    },
+    {
+      "path": "frontend/src/pages/ConsultationsPage.tsx",
+      "sha256": "ddc7f31d302fa378c1f997bb8b2d1a988b575f634544a2d604bc23e7c785f1b9"
+    },
+    {
+      "path": "frontend/src/pages/ContactoPage.tsx",
+      "sha256": "0a2027bd25f19adb140c08ea5b3eb5908d612c385bd7ad35cad472fc8c8771fc"
+    },
+    {
+      "path": "frontend/src/pages/CorporateDashboardPage.tsx",
+      "sha256": "4c3bb8c24a431b8dc03f9ebf22be2a1390a868e27ccc1fc69defd96b7a8e036e"
+    },
+    {
+      "path": "frontend/src/pages/DashboardPage.tsx",
+      "sha256": "d3c87c9bb65dc942a093d77ec86e7b00b0a635976361ebcdd47873dd4d6c0f34"
+    },
+    {
+      "path": "frontend/src/pages/DevicesPage.tsx",
+      "sha256": "6bd7a6e57b926f6988f1f84e89a29a2405af47c32cdc5b1972b1ee0613d70054"
+    },
+    {
+      "path": "frontend/src/pages/DoctorAgendaPage.tsx",
+      "sha256": "93df7bc20b86a36e907180e557399bd150b49fa6ec851d1bfb397dba37e2d1dc"
+    },
+    {
+      "path": "frontend/src/pages/DoctorApplyPage.tsx",
+      "sha256": "1a0a8c48164137d3a3836c27a3693e59791ed96f3728799259c9c9806cf9d9d3"
+    },
+    {
+      "path": "frontend/src/pages/DoctorAvailabilityPage.tsx",
+      "sha256": "e500af7da5c828b3ffd4877b9c916ca37feadc0a97b723c76d3785ddb99ef526"
+    },
+    {
+      "path": "frontend/src/pages/DoctorDashboardPage.tsx",
+      "sha256": "ecc516fae34ef4bf2bc20c03eea3ea274a22615b1e7a4d3e857eb51773d7380d"
+    },
+    {
+      "path": "frontend/src/pages/DoctorFinancePage.tsx",
+      "sha256": "fb253b7bce6239ab9c293f840a0544ab7a46c8eab8befd538ae8a6ab378ddadd"
+    },
+    {
+      "path": "frontend/src/pages/DoctorLivePage.tsx",
+      "sha256": "d54c3b48da5980cd4040e86a64a6983ea3b1ef05eebb49a0b11cb3232fda5ded"
+    },
+    {
+      "path": "frontend/src/pages/DoctorMessagesPage.tsx",
+      "sha256": "6f0d3242840270fcf74ea8404c26be59735f97130c1a6d69bea2fa53e3af5223"
+    },
+    {
+      "path": "frontend/src/pages/DoctorPatientsPage.tsx",
+      "sha256": "975a9063b967ace4fca9833c4bf755c126eb80836543b7d9998be18b1d888787"
+    },
+    {
+      "path": "frontend/src/pages/DoctorPrescriptionsPage.tsx",
+      "sha256": "06d001af949da2a34f92cd0382cc22ca9e2c81ab9c65835528f1511f116b3fbc"
+    },
+    {
+      "path": "frontend/src/pages/DoctorProfileEditPage.tsx",
+      "sha256": "38f08717413ce282ab3f081d0081a48dc7ea04c17bae6e9b5b820028f5b8f6fb"
+    },
+    {
+      "path": "frontend/src/pages/DoctorProfilePage.tsx",
+      "sha256": "f03e18d991232c943fff5a59e8a232e206a45c63bd999abf7c236d6f43943940"
+    },
+    {
+      "path": "frontend/src/pages/DoctorQueuePage.tsx",
+      "sha256": "0569152661d421ccda918934d625570e2fed4eee1b59884ff129a9cb42318db7"
+    },
+    {
+      "path": "frontend/src/pages/DoctorRegisterPage.tsx",
+      "sha256": "f945aa7e605bb9404cf69479ec54541a4885f05f6d6cc7a2b091182d9e89e0d8"
+    },
+    {
+      "path": "frontend/src/pages/DoctorReviewsPage.tsx",
+      "sha256": "66a473f56ed342f32aa53baa367ac2a8fa051bb14553d506d6fc4f1412fbbe20"
+    },
+    {
+      "path": "frontend/src/pages/DoctorSecurityPage.tsx",
+      "sha256": "c5a54b89c35185f7a4eed7709de896a243ac4c876bf0d20dc78c376fd26ea24a"
+    },
+    {
+      "path": "frontend/src/pages/DoctorSuportePage.tsx",
+      "sha256": "3b2746d8c1c295c71c95e66c31380036981e9cb4ced3b76165cda1e4816acb7a"
+    },
+    {
+      "path": "frontend/src/pages/DoctorsListPage.tsx",
+      "sha256": "4a2c1aa8c27e60c4497b7d71cddbe66d28562429fd2440fe6d0359d92063eb74"
+    },
+    {
+      "path": "frontend/src/pages/EmpresasPage.tsx",
+      "sha256": "d639d60cc14e583fe3950981001c8e67ec10f8f521de560aeea4ad3fc6d1357a"
+    },
+    {
+      "path": "frontend/src/pages/EspecialistasPage.tsx",
+      "sha256": "a4af1cc9dddadf8b5271d1dd59b33b23c4310e20201210c90ce682aff3afec91"
+    },
+    {
+      "path": "frontend/src/pages/FAQPage.tsx",
+      "sha256": "a67219e063540b1f7e155287b7252f1903ba34468d05c9a1bba7e5669a54746f"
+    },
+    {
+      "path": "frontend/src/pages/FamilyPage.tsx",
+      "sha256": "fd8d568534aa8510e27de0bb63134dce25896fa0264b304219ce23bfe41a0e0d"
+    },
+    {
+      "path": "frontend/src/pages/LandingPage.tsx",
+      "sha256": "5cea83e22469785bcf13dea8219239b3f34103d03dcba7012927edfdb0e21c0f"
+    },
+    {
+      "path": "frontend/src/pages/LoginPage.tsx",
+      "sha256": "042670f542e05abfb56ff670f719029423bca61bf6c24f5884c22daddc39c6c3"
+    },
+    {
+      "path": "frontend/src/pages/MapaPage.tsx",
+      "sha256": "000108261266cc13914c1348aee8014937a9ca354877d3a186401cbf874ee8b9"
+    },
+    {
+      "path": "frontend/src/pages/MedicalDisclaimerPage.tsx",
+      "sha256": "2982797f75e58d3ac541732207b13931f5f85a7884487e0a0c8200f0bb325abf"
+    },
+    {
+      "path": "frontend/src/pages/NotificationsPage.tsx",
+      "sha256": "cdcf482205f391d4c80e269644be0b7e1e02753962b9de4710fec09281baf110"
+    },
+    {
+      "path": "frontend/src/pages/NurseDashboardPage.tsx",
+      "sha256": "509286e9a0c795268e56b2883893f13bf1c3417385dd187bd3aa77244c4525fa"
+    },
+    {
+      "path": "frontend/src/pages/NurseDashboardPreviewShell.tsx",
+      "sha256": "8f55e825075c74c175c103a729cd12ffad66b1ea7960b7419af5c73a564fde8e"
+    },
+    {
+      "path": "frontend/src/pages/OrganisationOnboardingPage.tsx",
+      "sha256": "f31dd6f0741d528ec2e9af672976510457fd66e40d59d09b5333189070b3e16a"
+    },
+    {
+      "path": "frontend/src/pages/PatientOnboardingPage.tsx",
+      "sha256": "ec28773f8c9080f221609fd5d26a57aef63fc879a8cc5b150a75074418d59f0b"
+    },
+    {
+      "path": "frontend/src/pages/PatientPrescriptionRequestPage.tsx",
+      "sha256": "8743c1b814e53529591fe073809f3c32e24a289decaad93bbef18d0ae1df7f68"
+    },
+    {
+      "path": "frontend/src/pages/PatientProfilePage.tsx",
+      "sha256": "4f664788cc9637f4d1b6c0fc86553d73aca2213bae1a2ac81cc99ce26792763a"
+    },
+    {
+      "path": "frontend/src/pages/PatientReadingsPage.tsx",
+      "sha256": "f8037af4858c5087ac6ff4ef56298d2d57cac26097e7d0caed2d5be89385899c"
+    },
+    {
+      "path": "frontend/src/pages/PatientsPage.tsx",
+      "sha256": "39ae01694e193d3402ad3e63b1e9a060e45cfe66d2133ec042a6842d8c199250"
+    },
+    {
+      "path": "frontend/src/pages/PricingPage.tsx",
+      "sha256": "c41da5cfcf8317704aa7d2cb9b22f7f32117ce6c99d578b50bac128ea7dcf47f"
+    },
+    {
+      "path": "frontend/src/pages/PrivacyPolicyPage.tsx",
+      "sha256": "916ca861aed854eab40dae799e96849d8a6cef5e62bfa217a47b57c5faacefca"
+    },
+    {
+      "path": "frontend/src/pages/ProfessionalOnboardingPage.tsx",
+      "sha256": "7bbc17492449ef155199d7c68949f61ed8cca67c94ff73c3147e4d6551edfce7"
+    },
+    {
+      "path": "frontend/src/pages/ProfessionalVerificationPage.tsx",
+      "sha256": "0d6efb8bbd8a8ceae0706c9879d41fca53d42116effc58689572ca8ab80bc07a"
+    },
+    {
+      "path": "frontend/src/pages/PublicDoctorPage.tsx",
+      "sha256": "05004ff507780479b37d2db49f38407e34757f3f9ae8425fa123f53d6f78659f"
+    },
+    {
+      "path": "frontend/src/pages/RegisterPage.tsx",
+      "sha256": "ad062f0652ffad66ae673a855c8d6dcb56e77c3515a9580d8b3389cca0540052"
+    },
+    {
+      "path": "frontend/src/pages/SecurityMfaPage.tsx",
+      "sha256": "8514d53f162214ee0f33619d5c0eaa3a23f1a53626c129a9d3fe9287f20ee296"
+    },
+    {
+      "path": "frontend/src/pages/SecuritySettingsPage.tsx",
+      "sha256": "0c19b589fc2abbd0c435884a292f4331f2d2a89cacb014ca2dc0752afc04df52"
+    },
+    {
+      "path": "frontend/src/pages/SelfCarePage.tsx",
+      "sha256": "9fa945eeb0db5607c0b0d4f84af8649c9ec70f403498b02e59aa6f998383b24f"
+    },
+    {
+      "path": "frontend/src/pages/ServicesPage.tsx",
+      "sha256": "2b8e4cc540b3928a0e6d54df9f15f1f6da67eb6be93154ce9aeca9a0fc790a26"
+    },
+    {
+      "path": "frontend/src/pages/SettingsPage.tsx",
+      "sha256": "a4ef01e0769203f727079c64c9e77976d90a8a1c823993b1b6740696e809e1f9"
+    },
+    {
+      "path": "frontend/src/pages/StorePage.tsx",
+      "sha256": "9a187ccfb36fcce291f0c24175cd351c5f631c9f17ef86af131e2f1eee8fb5d7"
+    },
+    {
+      "path": "frontend/src/pages/TeleconsultaPage.tsx",
+      "sha256": "0b393e4bbca01aa5b13c8bfc695d050bca7f652e20dd6e3ee6e2cda5dd53b2fb"
+    },
+    {
+      "path": "frontend/src/pages/TermsOfServicePage.tsx",
+      "sha256": "bda8840e4a9dc1e39b1a76ca1b6790b5e1bf061f066af3790c9c656fd0c6ffd5"
+    },
+    {
+      "path": "frontend/src/pages/TriagePage.tsx",
+      "sha256": "c174db42a56911662c0f273864bb954d87a1a5f154bcc575a998f21f178fc0f1"
+    },
+    {
+      "path": "frontend/src/pages/UrgenciaPage.tsx",
+      "sha256": "7d7046e442e5c144c51f08c9ca8350a7f1135cae0d05477481ac70e91dc89b4b"
+    },
+    {
+      "path": "frontend/src/phase1/InformationalApp.tsx",
+      "sha256": "67408a03421406aa3aeb5cf50d67852470fc1f60b88403a077bb82a77dcb308b"
+    },
+    {
+      "path": "frontend/src/phase1/egress.test.ts",
+      "sha256": "66b18bcc73199b2ed52aa1fe0630374b9ff716c24a56a4984426efb91c6bd268"
+    },
+    {
+      "path": "frontend/src/phase1/entrypoints.test.ts",
+      "sha256": "6b1899c32e5f11cb689cf449ad7be4085648b607063535242bf2d33844fba87a"
+    },
+    {
+      "path": "frontend/src/phase1/informational.css",
+      "sha256": "a243e22c165f1cb8397bf1793f8f83561dd8e52fa7ce23503753dee5dc516a2e"
+    },
+    {
+      "path": "frontend/src/phase1/policy.ts",
+      "sha256": "e6517dfcd44b1feed6cbdeeb22d8e674b64f7ae79ce7df175a5be718d82f7476"
+    },
+    {
+      "path": "frontend/src/test/setup.ts",
+      "sha256": "91a3c8962a0edcb956206a501d943fe99e1c78c6d4d8b5c9a948a3362c75978c"
+    },
+    {
+      "path": "frontend/src/types.ts",
+      "sha256": "aa0b7a3e80c4bdedaa55a3318861c8b9defaed95072ea6081b2fb0ab6fd96a54"
+    },
+    {
+      "path": "frontend/src/utils/apiError.ts",
+      "sha256": "27a8a83a09592a1d19da7dcfa5a5298aa1019c48a83a519156727bb4a19a7f13"
+    },
+    {
+      "path": "frontend/src/utils/deviceApi.ts",
+      "sha256": "a2897e0839d560511615986e188b6a5de3bf72ca7cd8f1991e4111397cba5b7d"
+    },
+    {
+      "path": "frontend/src/utils/video.ts",
+      "sha256": "7684c9a079fd19167a1052e82a26a623803d8b14d152ff774e6cc0db5fb8bbed"
+    },
+    {
+      "path": "frontend/tsconfig.app.json",
+      "sha256": "6da90348aff5c16d1900cd11c54c42daa436babc36a42536435381251b92b617"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "sha256": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808"
+    },
+    {
+      "path": "frontend/tsconfig.node.json",
+      "sha256": "c3dd0fb522feba3596713f51b95bd53d781d845d24aedbfa2ac093d8b39c5120"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "sha256": "fd92fbbbb69c1c0a09b6850eb345809500816f4ada03c796073061e031fab259"
+    },
+    {
+      "path": "frontend/vitest.config.ts",
+      "sha256": "e02f313e3a2ee54769186e81eed08f4924f5ae4c0e0ddc755a0d67262128508d"
+    },
+    {
+      "path": "mobile/.gitignore",
+      "sha256": "044554c47c280b31113813a2cd5a41a3c741cc068349c9605ce4681e76f2a32c"
+    },
+    {
+      "path": "mobile/App.tsx",
+      "sha256": "77de87db55fdfeac887ff08d5c5e72746cdfaa70846b20dd1a7375cf577ce2b7"
+    },
+    {
+      "path": "mobile/LegacyApp.tsx",
+      "sha256": "9ccb7f53cb15eb335d7813a1abdc3982072f2bd14c6c91a8298a945c38e91a11"
+    },
+    {
+      "path": "mobile/README.md",
+      "sha256": "ae0d28a5c7d6bdeaf3e5475a0e9857fefcf65c499ba06bcbe097babea87167cf"
+    },
+    {
+      "path": "mobile/app.json",
+      "sha256": "0978099311138c555d78a606fc655be8b997b84d3a6ee1e7680c39dfbf5e1b69"
+    },
+    {
+      "path": "mobile/assets/adaptive-icon.png",
+      "sha256": "6b7fa434f92a8b80aab02d9bf1a12e49ffcae424e4013a1c4f68b67e3d2bbcd0"
+    },
+    {
+      "path": "mobile/assets/favicon.png",
+      "sha256": "6b7fa434f92a8b80aab02d9bf1a12e49ffcae424e4013a1c4f68b67e3d2bbcd0"
+    },
+    {
+      "path": "mobile/assets/icon.png",
+      "sha256": "6b7fa434f92a8b80aab02d9bf1a12e49ffcae424e4013a1c4f68b67e3d2bbcd0"
+    },
+    {
+      "path": "mobile/assets/splash.png",
+      "sha256": "6b7fa434f92a8b80aab02d9bf1a12e49ffcae424e4013a1c4f68b67e3d2bbcd0"
+    },
+    {
+      "path": "mobile/babel.config.js",
+      "sha256": "c27c3e8f3470c96cfa6f165c5ada8dcd66b1db7556c22c31cb8f0450babdf209"
+    },
+    {
+      "path": "mobile/eas.json",
+      "sha256": "9051f9e8a2e667723ea36da5ede66107b017f1290a5b6f51f38dac571e2b8a3d"
+    },
+    {
+      "path": "mobile/index.js",
+      "sha256": "1c6fdead8ecc9dcb31ca67379ac2b0c7c82bb553aafab2a788b1f47b4fdcfec4"
+    },
+    {
+      "path": "mobile/legacy-app.json",
+      "sha256": "37398a9cc49fc9012e0da1ca517b2bcaf673ef0f5f570430402317705fdd1b37"
+    },
+    {
+      "path": "mobile/package-lock.json",
+      "sha256": "6b381456c0a0741e1e4a8709a133a3b1dc592edfd1ffda68dfbe420bab1371cf"
+    },
+    {
+      "path": "mobile/package.json",
+      "sha256": "9300b4499b109b0437ca228de8ad08b87c903018e78a8f2fc338b1cdb27b680e"
+    },
+    {
+      "path": "mobile/src/components/TriagePhotoGuide.tsx",
+      "sha256": "75c58aa95c5ee9ee4ff0255758ff412e204b0e278c0c609ad05833f6deca3057"
+    },
+    {
+      "path": "mobile/src/config/kayaPolicy.json",
+      "sha256": "9076f41e6045a2f58bfb8816189f7a46d6a5788d83ecf9ec17faa9edf813d2cb"
+    },
+    {
+      "path": "mobile/src/contexts/AuthContext.tsx",
+      "sha256": "72b2a778fd0c56a8da104377a79545cbed189f956d93812c206e0da07839c8c6"
+    },
+    {
+      "path": "mobile/src/health/HealthSyncManager.tsx",
+      "sha256": "13f661553a548f322065d0d58c620c84bb6458225a32337c3f26b87a3e43e7a1"
+    },
+    {
+      "path": "mobile/src/health/backgroundHealthTask.ts",
+      "sha256": "23c3890702c4f202dbb8931bc06cb430da879f3c6d9497d92aac6659009ae92c"
+    },
+    {
+      "path": "mobile/src/health/backgroundScheduler.ts",
+      "sha256": "451e555125441eeacefee17f77f53ed068c183cd29c444bd29ff3893bccd0720"
+    },
+    {
+      "path": "mobile/src/health/healthSync.ts",
+      "sha256": "b0b70cad4efcb3039289bdcaadbc973aa389cff4f4648deaa2b8f940056b4327"
+    },
+    {
+      "path": "mobile/src/health/platformHealth.android.ts",
+      "sha256": "b77183d073055a5bb4c750875dec7243f036ad07d45f55e3eced2730b8145f1d"
+    },
+    {
+      "path": "mobile/src/health/platformHealth.ios.ts",
+      "sha256": "aac404b15a938afb2b9f5cbd18390653be15f0b171f5b8d13209a0e0749322f0"
+    },
+    {
+      "path": "mobile/src/health/platformHealth.ts",
+      "sha256": "c5461111f7f3dca25dbe5cfbdf2570ffea0b6c67c9c9bdf0231da5c941f2eadf"
+    },
+    {
+      "path": "mobile/src/health/types.ts",
+      "sha256": "4fa6d452048149bed755d645414203dc084af796ab0f4916275507de0bd39e35"
+    },
+    {
+      "path": "mobile/src/i18n/LanguageContext.tsx",
+      "sha256": "7e95c05e1cf55633fa45db293d3d957691c052d1a38e5557a8d721fbbb364195"
+    },
+    {
+      "path": "mobile/src/navigation/AppStack.tsx",
+      "sha256": "66739191c5fb7e9a3f35d0083a872df95784607bf13070798f1ecb56e566a491"
+    },
+    {
+      "path": "mobile/src/navigation/AuthStack.tsx",
+      "sha256": "b7f143e0d13d7a186e85caf89ee4ac92a5c4fe7bb2122a0d3f47b7cdc5212d21"
+    },
+    {
+      "path": "mobile/src/navigation/ClinicianStack.tsx",
+      "sha256": "d692519a8cb681c101e94782f26e1b0311e40dbae7db39902cae89ef88b3b520"
+    },
+    {
+      "path": "mobile/src/navigation/index.tsx",
+      "sha256": "e78ff8d6247475724ae57e34a695b59a721ccfdb532c34b242db7ca01d2b75ca"
+    },
+    {
+      "path": "mobile/src/phase1/InformationalApp.tsx",
+      "sha256": "761860c74f727bb9b6bed736a22f8a406f86c748d9d3cecd3217c4b01a90fd6a"
+    },
+    {
+      "path": "mobile/src/phase1/policy.ts",
+      "sha256": "dd242f1e68a9682b21e27929fcd052ee9d3c21f452189aebfc5f1f002e0a43bb"
+    },
+    {
+      "path": "mobile/src/screens/BookConsultationScreen.tsx",
+      "sha256": "8732761d57bf6a48e4e06d26e9dc6b6a38e33c35f1696b280f3cb38c6d3d3183"
+    },
+    {
+      "path": "mobile/src/screens/ClinicianPatient360Screen.tsx",
+      "sha256": "8d86c17b889d8003789f767d8041567dc419b618bb9fd579e29717f37dc6cc2d"
+    },
+    {
+      "path": "mobile/src/screens/ConsentGateScreen.tsx",
+      "sha256": "7c10f30ca059d6446aa95b567dcb0cc06bdc250fa0384410366829e378c2ff93"
+    },
+    {
+      "path": "mobile/src/screens/DoctorDashboardScreen.tsx",
+      "sha256": "5ba4089e85b8bed0e1720e420e243c551dc6bf4de137b148ac8e64d5f5dec739"
+    },
+    {
+      "path": "mobile/src/screens/FamilyScreen.tsx",
+      "sha256": "16ffb5505e7b4d8f4cdca99a249ac6f87c422203142998792de16c0236fca33a"
+    },
+    {
+      "path": "mobile/src/screens/HomeScreen.tsx",
+      "sha256": "e983acd6c523272e6390b0991d5fda5ac9839c8a9047e8b5ac098facdfa0fc75"
+    },
+    {
+      "path": "mobile/src/screens/LandingScreen.tsx",
+      "sha256": "a2e9617c0c18ba9237b60b12d4ea9eeda103781999050727f038aa264310c75a"
+    },
+    {
+      "path": "mobile/src/screens/LoginScreen.tsx",
+      "sha256": "ec49909d0b6f3721d01682edb79fea76960598b74ac97cf353d8e9bb24336342"
+    },
+    {
+      "path": "mobile/src/screens/NotificationsScreen.tsx",
+      "sha256": "a1d79405a26593b8d819af8d3e05e076c154020f6be3b98c40bbf9ed97a25f51"
+    },
+    {
+      "path": "mobile/src/screens/NurseDashboardScreen.tsx",
+      "sha256": "e113ee441506c816b3f9bcaa8d8ef8f25a7534fa8d747a961dbd64a186baa0eb"
+    },
+    {
+      "path": "mobile/src/screens/PatientProfileScreen.tsx",
+      "sha256": "8a3cf4366040116af9793b2ed365c1bb7cb31f3f4917f88c618cc930c3cd4ec1"
+    },
+    {
+      "path": "mobile/src/screens/PrescriptionRequestScreen.tsx",
+      "sha256": "6546833385683fedcf1dc54b194eb65ec178ae8fc7570226f25060fe98bf04a2"
+    },
+    {
+      "path": "mobile/src/screens/ProfessionalVerificationScreen.tsx",
+      "sha256": "974cca89ec39035aa18c4a3a711d58a2fe2bc9fb3411c55a904e4f11aa97349b"
+    },
+    {
+      "path": "mobile/src/screens/ReadingsScreen.tsx",
+      "sha256": "9a4c8e2fbd38ef5a51905dc3edeeb4877725151120676eba13a753741915d467"
+    },
+    {
+      "path": "mobile/src/screens/RegisterScreen.tsx",
+      "sha256": "d05579490858a0bd8bb74f2dc91bddb817ec10615a1027dbd41bc0c3213ccce5"
+    },
+    {
+      "path": "mobile/src/screens/SettingsScreen.tsx",
+      "sha256": "d7933909db2dbd7defbb2b173015ae25e25c5d017457fba4ff9b3c5d7f8d0028"
+    },
+    {
+      "path": "mobile/src/screens/TriageScreen.tsx",
+      "sha256": "2ce77c5a449d8be888463e0f2e21fd39ea1714f10fdfd8a8849249a5028338bb"
+    },
+    {
+      "path": "mobile/src/services/api.ts",
+      "sha256": "2ed76669c7f1703d4e14e5dcd3ad000fbe90529364cd0c808dc87a761528f336"
+    },
+    {
+      "path": "mobile/src/utils/apiError.ts",
+      "sha256": "588fcaa14060f2f3c42cb6137efa8213528c981603b150936b6c830ea0a405f6"
+    },
+    {
+      "path": "mobile/tsconfig.json",
+      "sha256": "4cac84c4e466ca0ddd2dcef6df8a5f57eeb93e86eecfb61684860fcf08d64faa"
+    }
+  ],
+  "excluded_user_tests": {
+    "frontend/src/components/DocumentUpload.test.tsx": "66241bd803cd6325b24f6dbf92f33ca318f2f5019c2bbade470b901d89c78617",
+    "frontend/src/components/OnboardingShell.test.tsx": "12d1cd1e6af95eab9607e38df5adccd5c96b55fa945f68385fa33a5703d5c552",
+    "frontend/src/pages/AdminExpiryPage.test.tsx": "7b4425648603ec10a690ff7cf05c5101fd2f7ff7469b224d4cf3c1075d39b468"
+  },
+  "dependency_provenance": "Reused exact fresh npm-ci dependency installations from Phase 0; no new install, upgrades, lock changes or registry requests. Both lock hashes verified against Phase 0 and current originals.",
+  "lockfiles": {
+    "frontend": "c6be000e1d224f47b90645a6653b9639a817c832335d7447953150d1b7c2e682",
+    "mobile": "6b381456c0a0741e1e4a8709a133a3b1dc592edfd1ffda68dfbe420bab1371cf"
+  }
+}

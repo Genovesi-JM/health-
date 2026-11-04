@@ -1,0 +1,490 @@
+{
+  "date": "2026-09-14",
+  "scope": "Retained Phase 0 generated evidence only; no runtime/test behavior or original user files changed",
+  "initial_findings": {
+    "generic_api_key": 49,
+    "jwt": 2
+  },
+  "disposition": {
+    "verified_source_or_evidence_sha256_false_positives": 49,
+    "public_package_readme_jwt_examples_removed_by_metadata_projection": 2,
+    "live_credentials_identified": 0,
+    "provider_validation_performed": false,
+    "scanner_rules_or_allowlists_changed": false
+  },
+  "verified_original_findings": [
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 21,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/alembic/versions/add_clinician_credentials_v1.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 46,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/credential_schemas.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 57,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/oauth2.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 68,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/auth.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 78,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/credentials.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 121,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_providers.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 122,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_verification.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 152,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/cleanup_expired_tokens.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 154,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_oauth_states.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 155,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_reset_tokens.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 167,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_clinician_credentials.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "finding_line": 170,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_google_oauth.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 22,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/alembic/versions/add_clinician_credentials_v1.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 47,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/credential_schemas.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 58,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/oauth2.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 69,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/auth.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 79,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/credentials.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 122,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_providers.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 123,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_verification.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 153,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/cleanup_expired_tokens.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 155,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_oauth_states.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 156,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_reset_tokens.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 168,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_clinician_credentials.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "finding_line": 171,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_google_oauth.py",
+      "basis": "current source file",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 22,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/alembic/versions/add_clinician_credentials_v1.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 47,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/credential_schemas.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 58,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/oauth2.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 69,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/auth.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 79,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/credentials.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 122,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_providers.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 123,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_verification.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 148,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/cleanup_expired_tokens.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 150,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_oauth_states.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 151,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_reset_tokens.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 163,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_clinician_credentials.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "finding_line": 166,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_google_oauth.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 21,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/alembic/versions/add_clinician_credentials_v1.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 46,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/credential_schemas.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 57,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/oauth2.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 68,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/auth.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 78,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/routers/credentials.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 121,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_providers.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 122,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/app/services/credential_verification.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 147,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/cleanup_expired_tokens.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 149,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_oauth_states.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 150,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/scripts/migrate_add_reset_tokens.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 162,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_clinician_credentials.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "finding_line": 165,
+      "rule": "generic-api-key",
+      "artifact_path": "backend/tests/test_google_oauth.py",
+      "basis": "recorded original Git revision",
+      "digest_verified": true
+    },
+    {
+      "finding_path": "docs/evidence/phase0-completion-2026-09-14/evidence-sha256.json",
+      "finding_line": 64,
+      "rule": "generic-api-key",
+      "artifact_path": "secret-scan-review.md",
+      "basis": "retained evidence file",
+      "digest_verified": true
+    }
+  ],
+  "artifacts_changed": [
+    {
+      "path": "docs/evidence/phase0-completion-2026-09-14/backend-current-manifest.json",
+      "raw_sha256": "a8200a6926ed402fb46b34f04148311f01d618955e2e44a1eabd4b5b0bb7ac9d",
+      "retained_sha256": "89dae2698d31aad34818469f19835e519211f3f178a698007eadb68a0d7ed5a9",
+      "raw_copy": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-evidence-sanitation/backend-current-manifest.json",
+      "change": "Lossless source-digest map converted to path/sha256 records; no digest omitted or changed",
+      "source_entries_verified": 184,
+      "verification_basis": "actual isolated source snapshot"
+    },
+    {
+      "path": "docs/evidence/phase0-completion-2026-09-14/backend-gate-manifest.json",
+      "raw_sha256": "8ab326eaff1af0416d382d3f98063fe3edcf616a7bee7ef09aa5df638394904e",
+      "retained_sha256": "ceb61bcbc4b30fe2b40e417b82c0f23cdfb2957b29b56cd1e8e39f362959a5a2",
+      "raw_copy": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-evidence-sanitation/backend-gate-manifest.json",
+      "change": "Lossless source-digest map converted to path/sha256 records; no digest omitted or changed",
+      "source_entries_verified": 185,
+      "verification_basis": "actual isolated source snapshot"
+    },
+    {
+      "path": "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-manifest.json",
+      "raw_sha256": "ef4b23e5ac9e40b132d880e0de9b38db68ed8c01f2858c126cfa1097832159d6",
+      "retained_sha256": "eac6bf23008dadffe17e852c4fddb905edc7701895f24fe17d381bf6dfa0ab98",
+      "raw_copy": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-evidence-sanitation/backend-original-gate-manifest.json",
+      "change": "Lossless source-digest map converted to path/sha256 records; no digest omitted or changed",
+      "source_entries_verified": 180,
+      "verification_basis": "recorded Git source revision"
+    },
+    {
+      "path": "docs/evidence/phase0-completion-2026-09-14/backend-original-manifest.json",
+      "raw_sha256": "b982d0884f143a0af36ef964c5cae3bfd0d1f984c301ae16d88697680f585cb5",
+      "retained_sha256": "b1d292c956ad55839af049e4d084e2fc3e5216771d2d81a2f011ff79f985c0be",
+      "raw_copy": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-evidence-sanitation/backend-original-manifest.json",
+      "change": "Lossless source-digest map converted to path/sha256 records; no digest omitted or changed",
+      "source_entries_verified": 179,
+      "verification_basis": "recorded Git source revision"
+    },
+    {
+      "path": "docs/evidence/phase0-completion-2026-09-14/backend-install-report.json",
+      "raw_sha256": "57d63c5e2d6776852b0fd74ebdb3ad37758543e33bdfab1b3f722eab797f7d3b",
+      "retained_sha256": "51389ad0c9d164f793b2534dcbcbdbbe5f2a5d341def8b23314aa14242cc354d",
+      "raw_copy": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-evidence-sanitation/backend-install-report.json",
+      "change": "Package name/version/request flags, exact public artifact URL and archive digests retained; package descriptions and other presentation metadata omitted",
+      "package_count": 77,
+      "omitted_example_locations": [
+        {
+          "package": "PyJWT",
+          "field": "metadata.description",
+          "jwt_shapes": 1
+        },
+        {
+          "package": "python-jose",
+          "field": "metadata.description",
+          "jwt_shapes": 1
+        }
+      ]
+    }
+  ],
+  "retained_artifact_accounting": "Raw backend run summaries describe original scratch logs/manifests. This record links transformed evidence with raw and retained digests; the final evidence-sha256.json indexes retained bytes.",
+  "final_scan": {
+    "scanner": "Gitleaks 8.30.1",
+    "current_source_and_evidence_files": 497,
+    "generated_evidence_logs_included": 26,
+    "historical_source_paths": 403,
+    "locally_reachable_commits": 204,
+    "current_findings": 0,
+    "history_findings": 0,
+    "rules": 222,
+    "report": "gitleaks-scan.json"
+  },
+  "source_manifest_entries_verified": 728,
+  "supporting_script_changes": [
+    {
+      "path": "scripts/kaya_phase0_backend.py",
+      "change": "Manifest emission only: source_sha256 becomes lossless path/sha256 records"
+    },
+    {
+      "path": "scripts/kaya_phase0_gitleaks.py",
+      "change": "Explicitly scan known completion-evidence artifacts including gitignored synthetic logs; operational/health logs remain excluded; no rule suppression"
+    }
+  ]
+}

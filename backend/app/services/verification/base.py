@@ -35,6 +35,7 @@ class ProviderMode(str, Enum):
     LIVE = "live"          # real vendor API, real credentials
     SANDBOX = "sandbox"    # vendor sandbox (fake data, real API)
     MOCK = "mock"          # in-process deterministic simulation
+    UNAVAILABLE = "unavailable"  # implementation/release gate not complete
 
 
 # ── Result / request payloads ────────────────────────────────────────────────

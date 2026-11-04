@@ -1,0 +1,68 @@
+{
+  "dependency-consistency": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "-m",
+      "pip",
+      "check"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final-policy/source",
+    "timeout_seconds": 30,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 1.28,
+    "log_sha256": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09"
+  },
+  "launch-hold": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final-policy/source/backend/phase0_pytest.py",
+      "phase0_tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final-policy/results/launch-hold.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final-policy/source/backend",
+    "timeout_seconds": 240,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 3.15,
+    "log_sha256": "a326d324c8dad90e4b9aab047c5f467712f892b70db7c7606d3dc269f8b593de",
+    "junit": {
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": []
+  },
+  "phase1-policy": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final-policy/source/backend/phase0_pytest.py",
+      "phase1_tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final-policy/results/phase1-policy.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final-policy/source/backend",
+    "timeout_seconds": 240,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 4.92,
+    "log_sha256": "5e9ddeda8c0bb4747fac5efb5ec358e35859b0420d1832bfaba79b4b25b8e284",
+    "junit": {
+      "tests": 74,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": []
+  }
+}

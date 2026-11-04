@@ -1,0 +1,254 @@
+
+> kaya-health-mobile@1.0.0 test
+> node --experimental-strip-types --test scripts/*.test.mjs
+
+(node:29804) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/services/sessionCoordinator.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ actual API interceptors reject late A data and MFA/401 errors without clearing account B (8.765ms)
+✔ actual interceptor never retries an A request under B after a late token refresh (11ms)
+✔ actual interceptor refreshes the current session once and preserves request identity (1.985292ms)
+✔ current MFA invalidation notifies the provider and clears only its current session (1.34675ms)
+✔ HOLD still blocks operational requests before authentication or token refresh (6.569416ms)
+✔ a booking bound before durable storage cannot send with a replacement account token (3.859833ms)
+(node:29805) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/config/apiUrl.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ distribution requires an explicit endpoint (1.162625ms)
+✔ uses the canonical endpoint, trims it, and supports the legacy alias (0.956833ms)
+✔ distribution rejects HTTP, loopback aliases and emulator addresses (0.658708ms)
+✔ all builds reject malformed URLs, credentials and embedded query data (0.354959ms)
+✔ development can use simulator, LAN or localhost endpoints (0.177833ms)
+✔ works with the URL implementation installed by the pinned Expo SDK (30.60425ms)
+(node:29806) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/appointmentAvailability.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ availability request uses country and canonical specialty with escaped query values (9.320292ms)
+✔ bounded search windows cover all 180 publishable days without gaps (22.590125ms)
+✔ window navigation is bounded and uses UTC intervals across seasonal clock changes (1.572ms)
+✔ slot query carries the selected future window as offset-bearing timestamps (0.710042ms)
+✔ available slots exclude stale, reserved, withdrawn and mismatched results and sort by instant (1.197708ms)
+✔ slot booking sends only the published slot identity, country and specialty (0.313875ms)
+✔ unscheduled queue is explicit and never supplies a fabricated doctor or timestamp (0.136041ms)
+✔ stale or mismatched selection is rejected before creating a booking request (0.582708ms)
+✔ each new request has a UUID key while retries restore the exact payload and key (3.875208ms)
+✔ corrupt or ambiguous saved attempts fail closed instead of becoming a fresh request (0.449ms)
+✔ pending requests are isolated by patient identity without storage key collisions (0.215ms)
+✔ retry sends the same exact body and idempotency key and returns the server state (0.308125ms)
+✔ booking is stored before POST and removed only after confirmed server response (0.570125ms)
+✔ local persistence failure cannot create a booking with an unrecoverable key (8.837834ms)
+✔ lost response retains key across restart and recovers the existing booking on retry (0.4605ms)
+✔ server conflicts clear the attempted reservation and allow a new published choice (0.213083ms)
+✔ transient server failures preserve attempts, while definite rejections can unlock the form (0.941875ms)
+✔ a storage cleanup failure preserves a successful attempt for idempotent recovery (0.231166ms)
+✔ validation or permission errors on an uncertain retry retain its original key (2.070916ms)
+✔ appointment timestamps use the published timezone and respect Portugal seasonal offsets (4.264917ms)
+✔ Portugal repeated-hour slots and consultation timestamps identify distinct instants (29.631334ms)
+✔ missing or unsupported timezone falls back to explicitly labelled UTC, never device time (0.47775ms)
+(node:29807) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/consultationExpiry.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ rescheduling permits only a known same-doctor market and an eligible unpaid lifecycle revision (1.46ms)
+✔ replacement slots exclude old, mismatched doctor/country, reserved and elapsed slots (1.23275ms)
+✔ restoration retains past-slot exact retry payload and isolates owner and consultation storage keys (1.0145ms)
+✔ targeted refresh requires exactly the requested consultation (0.406875ms)
+✔ request is saved before POST and storage failure never changes a reservation (13.008666ms)
+✔ lost response, generic conflict, authentication and later validation preserve exact retry across reopen (5.942958ms)
+✔ only structured locked noncommit proof unlocks another selection (0.459292ms)
+✔ failed successful-result cleanup retains request and malformed success cannot drop recovery (0.818416ms)
+✔ old successful or noncommitted replies cannot clear a newer saved UUID (0.693417ms)
+✔ another pending key or a mutated body cannot overwrite a saved reschedule (1.331375ms)
+✔ a reached or unknown request deadline blocks a new move but never suppresses exact saved recovery (0.547166ms)
+(node:29808) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/contexts/authSession.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ MFA enrollment and challenge responses never normalize into persisted sessions (1.701625ms)
+✔ malformed or tokenless auth responses cannot create a session (0.186875ms)
+✔ completed MFA response can be held for recovery-code acknowledgement before login (0.145625ms)
+✔ fresh identity preserves tokens and routes a canonical patient applicant to verification (0.189541ms)
+✔ verified application metadata never promotes a patient account (0.122208ms)
+✔ explicit MFA session errors require reauthentication but ordinary permission errors do not (0.159125ms)
+(node:29809) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/health/backgroundTaskPolicy.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ background minimum interval uses minutes for the maintained task API (0.762625ms)
+✔ a disconnected owner completes without health reads or uploads (0.309375ms)
+✔ successful sync, including no new data, completes for the connected owner (0.842375ms)
+✔ owner storage and sync failures report failure for OS rescheduling (0.23425ms)
+(node:29810) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/consultationExpiry.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ new schedule actions require a future verified deadline for requested consultations (1.214125ms)
+✔ copy distinguishes a reached deadline, required review and persisted expiration without promising release (0.407292ms)
+(node:29811) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/consultationPages.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ patient and clinician routes send bounded pages, the selected view and an encoded opaque cursor (1.533958ms)
+✔ page traversal retains server order, deduplicates overlaps and cannot overwrite a newer revision (1.342625ms)
+✔ retryable page failures preserve rows and cursor while expired cursors require explicit restart (4.833666ms)
+✔ a late page cannot append after refresh or leak into a replacement account or view (1.729916ms)
+✔ loss of access clears server data and initial failure never reports an empty successful inbox (0.553417ms)
+✔ acknowledged cancellation removes an active-view row and leaves history/all views truthful (0.304958ms)
+✔ a page requested before acknowledged cancellation cannot restore the cancelled row (0.197417ms)
+✔ a paged queue denial clears every clinical feed and prevents an older dashboard response restoring patients (0.437ms)
+✔ dashboard or escalation access loss also clears queue and invalidates its parallel next page (0.261584ms)
+✔ transient feed errors preserve rows, and only a current recovery can lift the access guard (0.383125ms)
+(node:29812) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/consultations.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ patient detail reads published summary and clinician-owned followup without preparing or joining video (1.998833ms)
+✔ closeout status takes priority over stale list metadata (6.133667ms)
+✔ capability failure does not hide an available summary or create video access (2.348792ms)
+✔ metadata failure preserves authorized closeout and marks missing schedule information (0.386541ms)
+✔ older consultation outside latest history remains readable through owner-authorized closeout (0.415375ms)
+✔ failed closeout access never falls back to stale list data or invents a summary (0.834791ms)
+✔ consultation identity must match response and path encodes the requested identifier (0.385875ms)
+✔ unpublished and legacy closeouts remain empty and never imply successful video (0.464667ms)
+✔ client stays explicit about unavailable native video even if future server advertises it (0.20225ms)
+✔ only pending and scheduled consultations offer patient cancellation (0.525459ms)
+✔ dates handle missing data and preserve the timestamp instant for either market (30.988958ms)
+✔ errors accept readable server details without rendering validation objects or raw network errors (0.223ms)
+✔ access changes and integrity conflicts clear a previously visible summary while offline errors mark it stale (0.127125ms)
+✔ latest patient summary and attribution come from the explicitly published revision (0.39775ms)
+✔ patient closeout allowlist excludes accidentally returned clinical fields at every level (0.350958ms)
+✔ published history orders revisions without requiring private intervening amendments (0.112458ms)
+✔ legacy published summaries keep original attribution without fabricating a revision (0.079084ms)
+✔ inconsistent publication evidence clears cached summaries instead of exposing an unverified version (0.306166ms)
+(node:29813) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/consultations.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ doctor reader separates current unpublished SOAP and summary from the last patient publication (1.767958ms)
+✔ an older doctor history entry opens by exact closeout ID without any patient-only metadata request (0.896083ms)
+✔ invalid clinical attribution, identity or publication cannot become a verified record; access loss clears cache (0.609875ms)
+(node:29814) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/consultationExpiry.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ accept and start send the displayed revision and return the patient only after acknowledgment (1.970917ms)
+✔ a missing or invalid revision never mutates even when an old card remains visible (0.799042ms)
+✔ a concurrent reschedule conflict refreshes current cards but never retries acceptance automatically (0.247083ms)
+✔ active care opens without a new mutation; rejection or failed conflict refresh cannot report success (0.35ms)
+✔ expired, pending or unknown request deadlines cannot be accepted from an old queue card (0.352917ms)
+(node:29815) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/patientDocuments.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ persists the minimal owner-scoped consent and exact request before sending, then replays after restart and auth failures (3.796583ms)
+✔ never sends before consent and durable storage, and cannot replace a reserved UUID or its payload (1.013416ms)
+✔ every later validation/conflict error keeps the original request and 404 lookup is not absence proof (3.045625ms)
+✔ positive lookup recovers with no cached-file read or POST and retains reference on auth, transport or invalid responses (0.812167ms)
+✔ a late acknowledgment cannot delete a newer request after explicit local discard (5.979833ms)
+✔ serialized delayed deletion finishes before a new reservation, including failed deletion (1.987083ms)
+✔ rejects wrong-owner and unbounded or clinical-text records without deleting evidence (0.547625ms)
+✔ a session-bound API refuses to send A file after login changes during storage (0.985667ms)
+(node:29816) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/services/sessionCoordinator.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a delayed native reading for A is never uploaded or checkpointed under B (4.97575ms)
+✔ a delayed permission grant cannot restore old health ownership after account replacement (4.45825ms)
+✔ account replacement during a batch prevents later batches and old cursor writes (2.18375ms)
+✔ current-owner sync preserves the API session binding and commits its cursors only after success (3.214709ms)
+✔ an old UI callback cannot connect or read health data for a different authenticated owner (1.562375ms)
+✔ subscriptions completing after account change are detached and cannot trigger old callbacks (1.223125ms)
+✔ all resolved native plugins preserve the informational HOLD permissions (612.090791ms)
+✔ release HOLD removes optional biometric, overlay and foreground permissions without changing debug tooling (10.792375ms)
+(node:29818) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/notifications.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ inbox queries use an explicit filter and escape opaque pagination cursors (1.288875ms)
+✔ inbox preserves string IDs, server cursor and global unread count rather than counting the page (0.954084ms)
+✔ failed reads reject without substituting an empty inbox or a zero badge (0.7455ms)
+✔ malformed page counts or items cannot become a successful empty-state result (1.536208ms)
+✔ pagination deduplicates overlap and updates existing notices without losing loaded rows (0.248083ms)
+✔ mark-one waits for the matching server acknowledgement and uses the exact encoded ID (0.265417ms)
+✔ mismatched, unread, or failed mutation responses never confirm reading (0.346875ms)
+✔ successful read reconciles all and unread caches without fabricating other read states (0.200375ms)
+✔ reading the last loaded unread row does not hide unread notifications on later pages (0.275667ms)
+✔ empty inbox copy requires a verified zero and no further page before claiming no unread notices (0.246875ms)
+✔ read-all accepts its committed count including zero but does not treat it as global unread (0.218167ms)
+✔ read-all incomplete acknowledgements and errors remain failures (0.351959ms)
+✔ home badge reads the exact global unread endpoint (0.287209ms)
+✔ only valid consultation references navigate to the fixed patient detail route (0.366291ms)
+✔ external channel limitations and unknown capabilities remain explicit (0.1295ms)
+✔ display dates preserve UTC instants and handle invalid metadata (24.912542ms)
+✔ errors use readable API details without leaking raw transport messages or validation objects (0.2385ms)
+✔ authorization loss clears cached notices while transient failures permit a labelled stale view (0.152709ms)
+(node:29819) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/patientDocuments.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ exact upload replay rejects a missing or changed cache without changing the reserved request (4.895166ms)
+✔ document pages load only metadata and encode opaque cursors without sending text into list state (3.936084ms)
+✔ overlapping pages deduplicate without replacing newer metadata or the active edited review (0.4085ms)
+✔ failed or invalid pages preserve caller list and cursor; expired cursor requires explicit refresh (0.729792ms)
+✔ native picker accepts only JPG/PNG and rejects HEIC, PDF and oversized photos (4.18275ms)
+✔ PDF selection accepts explicit or inferred PDF type and a local file at the 10 MiB boundary (0.3585ms)
+✔ PDF selection rejects mismatched MIME, non-PDF names, missing bytes and inaccessible files (0.368375ms)
+✔ PDF upload obeys a lower server limit and never accepts a raised limit above 10 MiB (0.375875ms)
+✔ cancelled PDF picker does not replace selection, consent, key or review edits (0.859125ms)
+✔ PDF picker failure or invalid selection preserves draft and can be corrected on the next selection (1.429833ms)
+✔ actual cached PDF bytes determine size and a disabled capability never opens the picker (0.592791ms)
+✔ PDF retry sends the same private multipart file and key, with explicit processing consent (1.425583ms)
+✔ upload key is a UUID and remains stable for retries after an uncertain upload (0.857208ms)
+✔ upload without explicit processing consent never calls the API (0.250459ms)
+✔ review is available only for clean, reviewable documents (0.188209ms)
+✔ retry processing is available after scanner failure but never after confirmation (0.117ms)
+✔ manual review starts empty rather than inventing OCR and uses patient review when saved (0.120667ms)
+✔ confirmation requires nonempty bounded text while rejection can be empty (0.226958ms)
+✔ successful review sends the current revision and reports success only after server response (0.217375ms)
+✔ conflicting review fetches the latest revision but preserves unsaved patient edits (0.234917ms)
+✔ a review completed elsewhere cannot be silently overwritten after conflict (0.161833ms)
+✔ retry after a lost committed review recovers only the matching saved result (0.201583ms)
+✔ failed saves and failed conflict reloads preserve the caller draft and never report success (0.28625ms)
+✔ reconciliation cannot substitute another patient document (0.082917ms)
+✔ partial PDF extraction warns to check all pages rather than treating text as complete (0.14525ms)
+(node:29820) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/screens/patientOnboarding.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ new drafts have eight steps without inventing health information or accepted consent (2.064334ms)
+✔ resuming preserves saved answers, explicit false choices and untouched health fields (0.403084ms)
+✔ an outdated or unversioned draft requires consent to be reviewed again (0.201709ms)
+✔ Angola and Portugal payloads match the eight-step server contract (19.770542ms)
+✔ account email, dates, country and SMS contact fail before submission (0.327667ms)
+✔ all five consent fields and emergency permission must be booleans true (0.232584ms)
+✔ an old frozen draft is not proof that profile and consent completion occurred (0.1585ms)
+✔ submit saves the final step and atomically submits only the scoped patient draft (0.52075ms)
+✔ retry after a lost completion response never tries to edit a frozen draft (0.753375ms)
+✔ save or submit errors never report a completed profile (0.441042ms)
+(node:29821) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/genovesimaria/Documents/kaya-web/mobile/src/services/sessionCoordinator.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/genovesimaria/Documents/kaya-web/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ late restoration cannot resurrect A after logout and a successful login B (7.841ms)
+✔ late refreshUser cannot combine identity A with account B tokens (1.174125ms)
+✔ concurrent sign-ins publish only the latest identity (1.575083ms)
+✔ logout hides the user immediately and serializes slow cleanup before the next login (1.050583ms)
+✔ an in-flight secure-storage write finishes before the replacement account writes (0.983917ms)
+✔ missing refresh token on a new login removes the previous account token and health ownership (0.752541ms)
+✔ a failed clear waits for all old deletes before allowing a newer login to persist (0.949875ms)
+✔ late token refresh and a stale MFA invalidation cannot alter a newer account (1.221625ms)
+✔ refresh work is shared only within its own session and cannot cancel newer refresh work (0.975917ms)
+✔ identity mismatch or provider disposal cannot publish or cache an unverified identity (0.748959ms)
+✔ xcode scoped UUID dependency retains native project roundtrip and valid unique IDs (14.285333ms)
+✔ the UUID copy resolved by xcode rejects undersized caller buffers (2.673625ms)
+ℹ tests 174
+ℹ suites 0
+ℹ pass 174
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1090.13

@@ -1,0 +1,16 @@
+{
+  "backend-source-manifest.json": "298f4a4817768e3593be221dd899ed3393aa68c08b88e83da03031ce83bcff9f",
+  "backend.log": "e48e1c70a3794504b08fb517c56aa568b84b38ca8745424be94a4e8ba79af205",
+  "backend.xml.gz": "f9c7c8d377a0f8ea5128a6adc5f1b2314587b2c4a6b74bab9905cb1e50b1de6c",
+  "browser-script-source.json": "cedbc1be71883db2de72cc183001921092abce0dd22ff431c2133fa514f887ab",
+  "browser-ui-smoke.json": "e4e3cd07bfb6b0f78e01d4cf33abfde657bbaa1b7a6dc279319386652dc62907",
+  "consent-mobile-viewport.png": "aa93a7cb9bd54dfaf94fa23338878419e681cd79942c30c8fd1eb196955ef929",
+  "payment-review-desktop.png": "e465cccf998c7884717bf22ac6f6b9f429e08f7ec14dc82deb316ffbb9af0eb8",
+  "postgresql.json": "46100b3aaad3e55505c0171db9e80a374b69989eb3237e468d98100f7f3a2dc0",
+  "repository-checks.log": "7f09b55a8c228940f354719316fc60fc77434d74a4d02e1b256c608231f42ffb",
+  "validation.json": "198c612b4abda200286cec6b6cd60eff94fa0e45bdfcb605548553182acc501d",
+  "web-build.log": "122ae40b956716d8ea3a1d3a1956c8b88895d066dfa29b98b6279456c0c4293e",
+  "web-lint.log": "0d4695f4da2780a75fa8d28ae5fabe88093b7de3774417c514e2ecd90774e01f",
+  "web-source-manifest.json": "14a90d0de19053d36966cdd0a7e911efda362114225fe2e0c9d0582b8aac2b8b",
+  "web-tests.log": "9bf511b277391835fc8414830519aeec0a8e0ac41a3715d91a442caea2c9d76f"
+}

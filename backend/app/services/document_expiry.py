@@ -21,6 +21,7 @@ from typing import Optional
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from app.services.credential_mutations import CredentialRevision, mutate_credential
 
 from app.health_models import (
     ClinicianCredential,
@@ -30,6 +31,7 @@ from app.health_models import (
 
 from .verification.state_machine import (
     InvalidTransitionError,
+    is_allowed,
     record_transition,
 )
 
@@ -79,8 +81,8 @@ def _reminder_message_pt(kind: str, days: int, expiry: date) -> tuple[str, str, 
         return (
             f"⚠ {kind_label.title()} expirou",
             f"A sua {kind_label} expirou em {when}. "
-            "Não poderá aceitar novos pacientes até renovar. "
-            "Envie o documento actualizado no ecrã Verificação profissional.",
+            "Não poderá aceitar novos pacientes até renovar e obter nova aprovação. "
+            "Peça à equipa de verificação a reabertura do processo para enviar o documento actualizado.",
             "error",
         )
     if days <= 14:
@@ -164,6 +166,7 @@ def scan_credentials(
     ).all()
 
     for cred in credentials:
+        revision = CredentialRevision.capture(cred)
         result.scanned += 1
         expiry = _parse_iso(cred.licence_expiry_date)
         if not expiry:
@@ -188,13 +191,16 @@ def scan_credentials(
         # If the licence has actually expired AND the credential is still
         # marked verified/completed, transition it to "expired" so downstream
         # RBAC gates (require_verified_clinician) automatically deny.
-        if days_remaining <= 0 and cred.status in ("verified", "completed"):
+        if days_remaining <= 0 and revision.status in ("verified", "completed"):
             try:
+                if not is_allowed(revision.status, "expired"):
+                    raise InvalidTransitionError(revision.status, "expired")
+                mutate_credential(db, cred, revision=revision, status="expired")
                 record_transition(
                     db,
                     entity_type=ENTITY_TYPE_CREDENTIAL,
                     entity_id=cred.id,
-                    previous_status=cred.status,
+                    previous_status=revision.status,
                     new_status="expired",
                     actor_user_id=None,
                     actor_kind="system",
@@ -203,7 +209,6 @@ def scan_credentials(
                         f"Cédula profissional expirou em {cred.licence_expiry_date}."
                     ),
                 )
-                cred.status = "expired"
                 result.credentials_expired += 1
             except InvalidTransitionError:
                 # The state graph should always allow verified→expired.

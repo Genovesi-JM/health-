@@ -11,7 +11,7 @@ Endpoints:
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -27,7 +27,11 @@ from app.rbac import get_patient_for_user
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/family", tags=["family"])
+def _private(response: Response) -> None:
+    response.headers["Cache-Control"] = "private, no-store"
+
+
+router = APIRouter(prefix="/api/v1/family", tags=["family"], dependencies=[Depends(_private)])
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -67,7 +71,7 @@ def create_family_member(
     member = FamilyMember(
         owner_patient_id=patient.id,
         full_name=body.full_name,
-        relationship=body.relationship,
+        relationship_type=body.relationship,
         date_of_birth=body.date_of_birth,
         gender=body.gender,
         phone=body.phone,
@@ -94,7 +98,7 @@ def update_family_member(
     patient = get_patient_for_user(current_user, db)
     member = _get_member_or_404(family_member_id, patient.id, db)
     for field, value in body.model_dump(exclude_unset=True).items():
-        setattr(member, field, value)
+        setattr(member, "relationship_type" if field == "relationship" else field, value)
     db.commit()
     db.refresh(member)
     return member

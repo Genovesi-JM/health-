@@ -23,6 +23,7 @@ from app.health_models import (
     Patient, Doctor, Consultation, ConsultationMessage,
 )
 from app.health_schemas import MessageCreate, MessageOut, MessageThreadOut
+from app.services.clinician_access import require_current_clinician
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,8 @@ def _access(consultation_id: str, user: User, db: Session) -> Tuple[Consultation
     if patient and c.patient_id == patient.id:
         return c, "patient"
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
-    if doctor and c.doctor_id == doctor.id:
+    if user.role == "doctor" and doctor and c.doctor_id == doctor.id:
+        require_current_clinician(user, db)
         return c, "doctor"
     raise HTTPException(status_code=403, detail="Sem acesso a esta conversa.")
 
@@ -83,10 +85,9 @@ def send_message(
             recipient = pat.user_id if pat else None
             who = "O seu médico"
         if recipient:
-            preview = msg.body[:60] + ("…" if len(msg.body) > 60 else "")
             create_notification(
                 db, user_id=recipient, title="Nova mensagem",
-                message=f"{who}: {preview}", type="info",
+                message="Tem uma nova mensagem. Abra a consulta para ler.", type="info",
                 entity_type="consultation", entity_id=consultation_id,
             )
     except Exception:
@@ -158,6 +159,9 @@ def _threads_for(consultation_ids: List[str], viewer_role: str, db: Session) -> 
 
 @router.get("/api/v1/doctor/message-threads", response_model=List[MessageThreadOut])
 def doctor_threads(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Acesso restrito a médicos.")
+    require_current_clinician(user, db)
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")

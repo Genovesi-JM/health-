@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useEffect, useState, type FormEvent } from 'react';
 import api from '../api';
 import type { Doctor } from '../types';
@@ -56,8 +57,8 @@ export default function DoctorProfilePage() {
         await api.post('/api/v1/doctors/profile', body);
       }
       setMsg(t('doctor.saved'));
-    } catch (err: any) {
-      setMsg(err.response?.data?.detail || t('profile.save_error'));
+    } catch (err: unknown) {
+      setMsg(apiErrorMessage(err, t('profile.save_error')));
     }
     setSaving(false);
   };

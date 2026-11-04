@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import api from '../api';
+import { useT } from '../i18n/LanguageContext';
 
 interface Review { id: string; patient: string; rating: number; comment?: string | null; date: string; }
 
@@ -13,6 +14,7 @@ function Stars({ n }: { n: number }) {
 }
 
 export default function DoctorReviewsPage() {
+  const { t } = useT();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [average, setAverage] = useState(0);
   const [count, setCount] = useState(0);
@@ -28,7 +30,7 @@ export default function DoctorReviewsPage() {
   return (
     <div style={{ margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Star size={20} style={{ color: '#f59e0b' }} /> Avaliações dos Pacientes
+        <Star size={20} style={{ color: '#f59e0b' }} /> {t('drev.title')}
       </h1>
 
       {loading ? (
@@ -36,15 +38,15 @@ export default function DoctorReviewsPage() {
       ) : count === 0 ? (
         <div className="empty-state" style={{ padding: '3rem' }}>
           <div className="empty-state-icon"><Star size={24} style={{ color: '#f59e0b' }} /></div>
-          <div className="empty-state-title">Ainda sem avaliações</div>
-          <div className="empty-state-desc">As avaliações dos pacientes aparecem aqui após as consultas concluídas.</div>
+          <div className="empty-state-title">{t('drev.empty_title')}</div>
+          <div className="empty-state-desc">{t('drev.empty_desc')}</div>
         </div>
       ) : (
         <>
           <div className="card" style={{ padding: '1.5rem', textAlign: 'center', marginBottom: '1.25rem' }}>
             <div style={{ fontSize: '3rem', fontWeight: 900, color: '#f59e0b', lineHeight: 1 }}>{average.toFixed(1)}</div>
             <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}><Stars n={Math.round(average)} /></div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{count} avaliaç{count === 1 ? 'ão' : 'ões'}</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{count} {count === 1 ? t('drev.count_one') : t('drev.count_many')}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

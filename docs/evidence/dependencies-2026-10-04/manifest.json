@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-10-04T17:51:12.398600+00:00",
+  "scope": "Local backend and web dependency checkpoint; mobile upgrade evidence is separate; no production image or release approval implied",
+  "node": "24.21.0",
+  "npm": "11.19.0",
+  "pip_audit": "2.10.1",
+  "source_sha256": {
+    "backend/requirements.phase0.lock": "edbe8268931fe5bb38258dad39d65896b7c1f198f8accb43a11bf9a73a2c8af4",
+    "backend/requirements.deploy.lock": "d9e5db4c9c8211d489e3f7d428bdd839988343ff838d8329d78d5933e659ea75",
+    "frontend/package-lock.json": "c7db25a43e0dadd138d667368d02fe4e9b5a096faeea322aa11b6d2d0e185236"
+  },
+  "evidence_sha256": {
+    "backend-test-before.json": "71ea3dbbafc6358812f3ad68e99741008fde4dd886471fca5b53f561c1e9497d",
+    "backend-runtime-before.json": "11a423ccbf57bc93f0ac7dae4fe56450a30c37a2a4d7d4b84fd5a161b99f809c",
+    "backend-test-after.json": "8ed42f6577aab9b222c667a48ca381e30b0ca823d82c950f83270665c57f342f",
+    "backend-runtime-after.json": "20dc6d75a949296a9838b0bd319472e3760e7f74311742124d220bdb9ae05b60",
+    "backend-before-severity.json": "dd6cb5a04772b8f8e962fda728f36efac006a0efe6a2efc144ca4e1653e1f1fb",
+    "backend-runtime-sbom.json": "bd86e39ab8b70e59beabc1fbec1493d3cd314575d6605ba3534dffbca6675755",
+    "web-production-before.json": "095d04d52f8302663dbd7b6cc6ef278ae99c4bceafd94265558c45f30bf7a0a1",
+    "web-all-before.json": "7e749a34c07e3480923e39a2447206bb33ff103233fb50a4ef9995078aa245a0",
+    "web-production-after.json": "0995d80f60e87f61a405d48304a638a5c5b61789c81b586226cebb6050b996d2",
+    "web-all-after.json": "0995d80f60e87f61a405d48304a638a5c5b61789c81b586226cebb6050b996d2",
+    "web-production-sbom.json": "d98845ebc8e222f339d6ea9cb234f433ac04d98dfadf0cc6e853d4345c92cbed",
+    "postgresql.json": "dc512abe24af50e02e80e70ae50274d904deb0cf5d97c361e197155e26eac4f7"
+  }
+}

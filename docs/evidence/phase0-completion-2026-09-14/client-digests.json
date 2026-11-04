@@ -1,0 +1,66 @@
+{
+  "client-frontend-audit.log": {
+    "sha256": "40b5b576df001289d90a27244cd304a11c38f030da77e923d799be4dc461d254",
+    "bytes": 20604
+  },
+  "client-frontend-build.log": {
+    "sha256": "b33b714e441120609287a26d517ea49afe7b8be31c135e8ad1fec81fda0c371d",
+    "bytes": 1354
+  },
+  "client-frontend-lint.json": {
+    "sha256": "adb0458b70ed303c42643e609133fefc8d49cb03cced6f367c6facb5f90a7701",
+    "bytes": 801340
+  },
+  "client-frontend-lint.log": {
+    "sha256": "db216392e4488852dc0312468f4761f00ceb6cf37d3ae32902d2af898312b0ac",
+    "bytes": 172
+  },
+  "client-frontend-npm-ci.log": {
+    "sha256": "2fa9f682053447fb5deab85463dbab53f62e698ab15344ea7b7f8a89b9db99cb",
+    "bytes": 1063
+  },
+  "client-frontend-tests-tracked.json": {
+    "sha256": "d0907efcf9f0307a17da7e9ff6174ea9d323dfc4ee3eb64b204392d53ae1cbac",
+    "bytes": 6203
+  },
+  "client-frontend-tests-tracked.log": {
+    "sha256": "581db317c54d49a8323c570b9b2bb3f1bc183ab048bff0d3bc4c09449599db22",
+    "bytes": 2215
+  },
+  "client-frontend-tests-user-tests.json": {
+    "sha256": "054782ef9581369c36b3e79f968878be513d2b4d20e85f45cfeacec7b51331df",
+    "bytes": 52689
+  },
+  "client-frontend-tests-user-tests.log": {
+    "sha256": "1670e31d9657497e87b42a0a6b3a686e1aab3720a0a3b9268110d62fe296b493",
+    "bytes": 91010
+  },
+  "client-harness.json": {
+    "sha256": "35cb894d949e0cfec69f4ea68cea63ca801f87cce709c9cef998469ff914b93b",
+    "bytes": 774
+  },
+  "client-mobile-audit.log": {
+    "sha256": "2c04d7d8c8c0c768cf59a3f7dfcac8e2b1cc5ba1cb375c6a17bbeedb16949ada",
+    "bytes": 58659
+  },
+  "client-mobile-npm-ci.log": {
+    "sha256": "443a9a203ed34c45949c18db84fde32b6aad192be5004db54438fda4312616be",
+    "bytes": 2807
+  },
+  "client-mobile-typecheck.log": {
+    "sha256": "82690030b78088b64f357fdad2af0518e8c303be020a379661c4a158e1bd041f",
+    "bytes": 54
+  },
+  "client-notes.md": {
+    "sha256": "c343be8030b139bd4d814e2464c7cf863f8b619f6f107cfa253cfd2aad9e2f25",
+    "bytes": 5431
+  },
+  "client-source-manifest.json": {
+    "sha256": "dffcfb065524e1dc5c2f9478fc9eed3cfdc8731966e0286dd27ea90d1ec34387",
+    "bytes": 56204
+  },
+  "client-summary.json": {
+    "sha256": "a3a872182bd2c11e6a7777cc45d54f5c700df720bbfd7cc5335a4d8f9d9828b5",
+    "bytes": 59610
+  }
+}

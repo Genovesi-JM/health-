@@ -55,6 +55,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
+      - KAYA_EXECUTION_MODE=hold
       - ENV=production
       - SECRET_KEY=${SECRET_KEY}
       # DATABASE_URL: if set in .env (Managed PostgreSQL), it takes precedence.

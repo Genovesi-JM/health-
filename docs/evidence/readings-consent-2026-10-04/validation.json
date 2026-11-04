@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Explicit-market manual/device measurements, consent before acquisition, triage completion serialization",
+  "backend": {
+    "passed": 1816,
+    "seconds": 191.27,
+    "warnings": 71226,
+    "source_files": 351,
+    "snapshot": "staged index",
+    "report": "backend.xml.gz"
+  },
+  "web": {
+    "passed": 456,
+    "files": 61,
+    "typecheck": "passed",
+    "lint": "passed",
+    "prototype_checks": 15,
+    "production_build": "passed",
+    "emitted_pwa_graph": "passed",
+    "source_files": 237
+  },
+  "browser": {
+    "passed": 9,
+    "kind": "built UI with synthetic HTTP replies; fresh Chrome154; external traffic blocked",
+    "production_integration": false,
+    "readings_screenshot_inspected": true
+  },
+  "native": {
+    "passed": 214,
+    "source_files": 102,
+    "typecheck": "passed",
+    "hermes_exports": 4,
+    "evidence": "../native-readings-2026-10-04/report.json",
+    "native_apk_rebuilt": false
+  },
+  "postgresql": {
+    "version": "18.1",
+    "scenarios": 43,
+    "forced_races": 167,
+    "cluster_stopped": true,
+    "network": "Unix socket only; no TCP",
+    "snapshot": "working tree backend hashes verified against final index"
+  },
+  "repository": {
+    "passed": 29,
+    "subtests": 43,
+    "policy_routes": 288,
+    "release": "HOLD",
+    "activation_flags": false
+  },
+  "limitations": [
+    "No approved consent catalog or clinical activation.",
+    "No real device bridge, live provider, patient enrollment, migration or deployment.",
+    "Existing APK is earlier09df949/policy277; current Hermes exports are JavaScript proof.",
+    "Legacy renewal/prescription adoption is next work, excluded from this source snapshot.",
+    "Two existing native tooling advisories remain unresolved."
+  ]
+}

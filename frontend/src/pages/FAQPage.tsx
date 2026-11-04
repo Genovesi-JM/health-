@@ -2,19 +2,7 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-
-const FAQS = [
-  { q: 'O KAYA faz diagnósticos?', a: 'Não. O KAYA nunca faz diagnósticos. A triagem orienta com base num protocolo clínico e sugere os próximos passos. Um médico real valida sempre.' },
-  { q: 'A teleconsulta substitui uma consulta presencial?', a: 'Depende da situação. Para muitos casos, uma teleconsulta é suficiente. Quando não é, o médico indica a necessidade de consulta presencial ou exames.' },
-  { q: 'Os meus dados médicos estão seguros?', a: 'Sim. Todos os dados são encriptados em trânsito e em repouso. Só você e o seu médico têm acesso ao seu historial clínico.' },
-  { q: 'Posso gerir a saúde de toda a família?', a: 'Sim. Com o Plano Família pode criar perfis para filhos, pais e dependentes — incluindo perfis pediátricos para menores de 16 anos.' },
-  { q: 'Como funciona o renovação de medicação?', a: 'Submete o pedido pelo portal. Um médico parceiro avalia e, se adequado, emite uma nova receita digital. A decisão é sempre humana.' },
-  { q: 'O que é o pré-alerta de urgência?', a: 'Antes de se dirigir a um hospital parceiro em caso de urgência, pode enviar os seus dados e sintomas. O hospital recebe o alerta e prepara-se para a sua chegada.' },
-  { q: 'Posso usar no telemóvel?', a: 'Sim. O portal é totalmente responsivo e funciona em qualquer dispositivo — computador, tablet ou telemóvel.' },
-  { q: 'Como me torno parceiro (clínica ou médico)?', a: 'Entre em contacto connosco através de parcerias@kaya.ao. Verificamos e integramos novos parceiros após validação.' },
-  { q: 'O serviço está disponível fora de Luanda?', a: 'De momento focamo-nos em Luanda. A expansão para outras províncias e países está no nosso roadmap.' },
-  { q: 'Qual é a diferença entre o plano Basic e Premium?', a: 'O Basic é gratuito e inclui triagem e marcação de consultas. O Premium inclui teleconsulta, renovação de medicação, registo de sinais vitais e até 3 perfis.' },
-];
+import { useT } from '../i18n/LanguageContext';
 
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -36,24 +24,26 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function FAQPage() {
+  const { t } = useT();
+  const faqs = Array.from({ length: 10 }, (_, i) => ({ q: t(`faq.q${i + 1}`), a: t(`faq.a${i + 1}`) }));
   return (
     <div className="landing-wrapper">
       <Navbar />
 
       <section className="lp-page-hero" style={{ paddingBottom: '2rem' }}>
-        <div className="lp-tag">Perguntas Frequentes</div>
-        <h1>Perguntas Frequentes</h1>
-        <p>Tudo o que precisa de saber sobre o KAYA — simples e transparente.</p>
+        <div className="lp-tag">{t('faq.tag')}</div>
+        <h1>{t('faq.title')}</h1>
+        <p>{t('faq.subtitle')}</p>
       </section>
 
       <section className="lp-section" style={{ paddingTop: '2rem' }}>
         <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-          {FAQS.map(faq => <FAQItem key={faq.q} q={faq.q} a={faq.a} />)}
+          {faqs.map(faq => <FAQItem key={faq.q} q={faq.q} a={faq.a} />)}
         </div>
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>Não encontrou o que procurava?</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>{t('faq.not_found')}</p>
           <a href="mailto:suporte@kaya.ao" className="lp-cta lp-cta--outline" style={{ display: 'inline-flex' }}>
-            Contactar suporte
+            {t('faq.contact_support')}
           </a>
         </div>
       </section>

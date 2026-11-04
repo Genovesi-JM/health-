@@ -1,16 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text,
   TouchableOpacity, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import api from '../services/api';
+import api, { sessions } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { ClinicianStackParamList } from '../navigation/ClinicianStack';
+import { openDisplayedQueueItem } from './doctorQueue';
+import { useConsultationPage } from './useConsultationPage';
+import { consultationExpiryMessage, requestAllowsNewScheduleAction, type ConsultationExpiry } from './consultationExpiry';
+import { appointmentDate } from './appointmentAvailability';
+import { CONSULTATION_STATUS } from './consultations';
+import { createClinicalFeedGuard } from './consultationPages';
 
 type Navigation = NativeStackNavigationProp<ClinicianStackParamList, 'DoctorDashboard'>;
 
@@ -22,7 +28,7 @@ type Dashboard = {
   doctor: { display_name?: string | null; specialization?: string | null };
 };
 
-type QueueItem = {
+type QueueItem = ConsultationExpiry & {
   id: string;
   patient_id?: string;
   patient_name?: string;
@@ -30,6 +36,9 @@ type QueueItem = {
   risk_level?: string | null;
   specialty?: string;
   status: string;
+  reschedule_revision?: number;
+  scheduled_at?: string | null;
+  timezone?: string | null;
 };
 
 type Escalation = {
@@ -56,74 +65,123 @@ export default function DoctorDashboardScreen() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [queue, setQueue] = useState<QueueItem[]>([]);
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [accepting, setAccepting] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const queueBusy = useRef(false);
+  const active = useRef(false);
+  const loadVersion = useRef(0);
+  const [clinicalAccessLost, setClinicalAccessLost] = useState(false);
+  const clearQueue = useRef<(() => void) | null>(null);
+  const guardRef = useRef<ReturnType<typeof createClinicalFeedGuard> | null>(null);
+  if (!guardRef.current) guardRef.current = createClinicalFeedGuard(() => {
+    loadVersion.current++;
+    setClinicalAccessLost(true); setDashboard(null); setEscalations([]);
+    setError('O acesso clínico mudou. Atualize o acesso antes de continuar.');
+    setLoading(false); setRefreshing(false);
+    clearQueue.current?.();
+  });
+  const guard = guardRef.current;
+  const queuePage = useConsultationPage<QueueItem>('doctor-queue', 'all', () => guard.deny());
+  clearQueue.current = queuePage.clearAccess;
+  const accessDenied = clinicalAccessLost || queuePage.accessLost;
+  const queue = accessDenied ? [] : queuePage.items;
 
   const load = useCallback(async (refresh = false) => {
+    const version = ++loadVersion.current;
+    const sessionVersion = sessions.version();
+    const accessVersion = guard.version();
     if (refresh) setRefreshing(true);
     setError('');
+    const getClinicalFeed = (path: string, options?: Parameters<typeof api.get>[1]) => api.get(path, options).catch(failure => {
+      if (active.current && version === loadVersion.current && sessions.current(sessionVersion) && guard.current(accessVersion) &&
+          [401, 403].includes(failure?.response?.status)) guard.deny();
+      throw failure;
+    });
     const results = await Promise.allSettled([
-      api.get('/api/v1/doctor/dashboard'),
-      api.get('/api/v1/doctor/queue'),
-      api.get('/api/v1/clinical-operations/escalations', { params: { status: 'pending' } }),
+      getClinicalFeed('/api/v1/doctor/dashboard'),
+      getClinicalFeed('/api/v1/clinical-operations/escalations', { params: { status: 'pending' } }),
     ]);
+    if (!active.current || version !== loadVersion.current || !sessions.current(sessionVersion) || !guard.current(accessVersion)) return;
+    if (results.some(result => result.status === 'rejected' && [401, 403].includes(result.reason?.response?.status))) {
+      guard.deny(); return;
+    }
     if (results[0].status === 'fulfilled') setDashboard(results[0].value.data);
-    if (results[1].status === 'fulfilled') setQueue(results[1].value.data || []);
-    if (results[2].status === 'fulfilled') setEscalations(results[2].value.data.items || []);
-    if (results.every(result => result.status === 'rejected')) setError(t('clinician.load_error'));
+    if (results[1].status === 'fulfilled') setEscalations(results[1].value.data.items || []);
+    if (results.some(result => result.status === 'rejected')) setError(t('clinician.load_error'));
+    else if (guard.recover(accessVersion)) setClinicalAccessLost(false);
     setLoading(false);
     setRefreshing(false);
-  }, [t]);
+  }, [t, guard]);
 
-  useEffect(() => { void load(); }, [load]);
+  useFocusEffect(useCallback(() => {
+    active.current = true; void load();
+    return () => { active.current = false; loadVersion.current++; };
+  }, [load]));
 
   const acceptEscalation = async (item: Escalation) => {
+    if (queueBusy.current || guard.isDenied() || queuePage.accessLost) return;
+    queueBusy.current = true;
+    const version = sessions.version();
+    const accessVersion = guard.version();
     setAccepting(item.id);
     try {
       await api.post(`/api/v1/clinical-operations/escalations/${item.id}/accept`);
+      if (!active.current || !sessions.current(version) || !guard.current(accessVersion) || guard.isDenied()) return;
       navigation.navigate('Patient360', { patientId: item.patient_id });
       setEscalations(current => current.filter(row => row.id !== item.id));
     } catch (requestError: any) {
+      if (!active.current || !sessions.current(version) || !guard.current(accessVersion)) return;
+      if ([401, 403].includes(requestError?.response?.status)) guard.deny();
       Alert.alert(t('common.error'), requestError?.response?.data?.detail || t('clinician.accept_error'));
     } finally {
+      queueBusy.current = false;
       setAccepting(null);
     }
   };
 
   const acceptQueueItem = async (item: QueueItem) => {
-    if (!item.patient_id) return;
+    if (!item.patient_id || queueBusy.current || guard.isDenied() || queuePage.accessLost || queuePage.loading || queuePage.error) return;
+    const version = sessions.version();
+    const accessVersion = guard.version();
+    queueBusy.current = true;
     setAccepting(item.id);
     try {
-      if (item.status !== 'in_progress') await api.post(`/api/v1/doctor/queue/${item.id}/accept`);
-      navigation.navigate('Patient360', { patientId: item.patient_id });
+      const patientId = await openDisplayedQueueItem(api, item, queuePage.refresh);
+      if (!active.current || !sessions.current(version) || !guard.current(accessVersion) || guard.isDenied()) return;
+      navigation.navigate('Patient360', { patientId });
       void load();
     } catch (requestError: any) {
-      Alert.alert(t('common.error'), requestError?.response?.data?.detail || t('clinician.accept_error'));
+      if (!active.current || !sessions.current(version) || !guard.current(accessVersion)) return;
+      if ([401, 403].includes(requestError?.response?.status)) guard.deny();
+      Alert.alert(t('common.error'), requestError?.response?.data?.detail || requestError?.message || t('clinician.accept_error'));
     } finally {
+      queueBusy.current = false;
       setAccepting(null);
     }
   };
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={TEAL} /></View>;
+  const visibleDashboard = accessDenied ? null : dashboard;
 
   const kpis = [
-    { label: t('doctor.today'), value: dashboard?.today.total ?? 0, icon: 'calendar-outline', color: TEAL },
-    { label: t('doctor.waiting'), value: queue.length, icon: 'hourglass-outline', color: '#d97706' },
-    { label: t('doctor.active'), value: dashboard?.today.in_progress ?? 0, icon: 'videocam-outline', color: '#2563eb' },
-    { label: t('doctor.prescriptions'), value: dashboard?.pending_prescription_requests ?? 0, icon: 'document-text-outline', color: '#7c3aed' },
-    { label: t('doctor.week'), value: dashboard?.week.completed ?? 0, icon: 'checkmark-circle-outline', color: '#059669' },
-    { label: t('doctor.patients'), value: dashboard?.unique_patients ?? 0, icon: 'people-outline', color: '#475569' },
+    { label: t('doctor.today'), value: visibleDashboard?.today.total ?? '—', icon: 'calendar-outline', color: TEAL },
+    { label: `${t('doctor.waiting')} · carregados`, value: queuePage.loaded ? queue.length : '—', icon: 'hourglass-outline', color: '#d97706' },
+    { label: t('doctor.active'), value: visibleDashboard?.today.in_progress ?? '—', icon: 'videocam-outline', color: '#2563eb' },
+    { label: t('doctor.prescriptions'), value: visibleDashboard?.pending_prescription_requests ?? '—', icon: 'document-text-outline', color: '#7c3aed' },
+    { label: t('doctor.week'), value: visibleDashboard?.week.completed ?? '—', icon: 'checkmark-circle-outline', color: '#059669' },
+    { label: t('doctor.patients'), value: visibleDashboard?.unique_patients ?? '—', icon: 'people-outline', color: '#475569' },
   ];
 
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={TEAL} />}
+      refreshControl={<RefreshControl refreshing={refreshing || queuePage.loading} onRefresh={() => {
+        if (!queueBusy.current) { void load(true); void queuePage.refresh(); }
+      }} tintColor={TEAL} />}
     >
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
@@ -138,7 +196,14 @@ export default function DoctorDashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {!!error && <View style={styles.errorCard}><Text style={styles.errorText}>{error}</Text></View>}
+      {(!!error || accessDenied) && <View style={styles.errorCard}><Text style={styles.errorText}>{error || 'O acesso clínico mudou. Atualize antes de continuar.'}</Text>
+        <TouchableOpacity accessibilityRole="button" disabled={refreshing || queuePage.loading} onPress={() => { void load(true); void queuePage.refresh(); }}>
+          <Text style={styles.signOutText}>Atualizar acesso clínico</Text>
+        </TouchableOpacity>
+      </View>}
+      <TouchableOpacity accessibilityRole="button" disabled={accessDenied} style={styles.primaryButton} onPress={() => navigation.navigate('DoctorConsultations')}>
+        <Text style={styles.primaryButtonText}>Consultar histórico das minhas consultas</Text>
+      </TouchableOpacity>
 
       <View style={styles.kpiGrid}>
         {kpis.map(item => (
@@ -160,10 +225,10 @@ export default function DoctorDashboardScreen() {
           </View>
           <Text style={styles.count}>{escalations.length}</Text>
         </View>
-        {!escalations.length ? (
+        {accessDenied || !escalations.length ? (
           <View style={styles.emptyRow}>
             <Ionicons name="checkmark-circle-outline" size={19} color="#059669" />
-            <Text style={styles.empty}>{t('doctor.no_escalations')}</Text>
+            <Text style={styles.empty}>{error || accessDenied ? 'Não foi possível confirmar as escaladas. Atualize para tentar novamente.' : t('doctor.no_escalations')}</Text>
           </View>
         ) : escalations.map(item => {
           const tone = riskTone(item.urgency);
@@ -181,7 +246,7 @@ export default function DoctorDashboardScreen() {
               <Text style={styles.summary} numberOfLines={3}>{item.clinical_summary}</Text>
               <TouchableOpacity
                 style={styles.primaryButton}
-                disabled={accepting === item.id}
+                disabled={accepting !== null || !!error || accessDenied}
                 onPress={() => void acceptEscalation(item)}
                 accessibilityRole="button"
               >
@@ -203,16 +268,24 @@ export default function DoctorDashboardScreen() {
           </View>
           <Text style={styles.count}>{queue.length}</Text>
         </View>
-        {!queue.length ? (
-          <Text style={styles.empty}>{t('doctor.no_queue')}</Text>
-        ) : queue.slice(0, 10).map(item => {
+        <Text style={styles.empty}>Registos carregados por ordem de entrada{queuePage.nextCursor ? ' · há mais registos' : ''}.</Text>
+        {!!queuePage.error && <View style={styles.errorCard} accessibilityRole="alert">
+          <Text style={styles.errorText}>{queuePage.error}</Text>
+          <TouchableOpacity accessibilityRole="button" disabled={queuePage.loading || accepting !== null} onPress={() => void queuePage.refresh()}>
+            <Text style={styles.signOutText}>{queuePage.restartRequired ? 'Recomeçar fila' : 'Atualizar fila'}</Text>
+          </TouchableOpacity>
+        </View>}
+        {queuePage.loading && <ActivityIndicator color={TEAL} />}
+        {!queue.length && !queuePage.loading && !queuePage.error && queuePage.loaded ? (
+          <Text style={styles.empty}>{queuePage.nextCursor ? 'Carregue a página seguinte para consultar mais pedidos.' : t('doctor.no_queue')}</Text>
+        ) : queue.map(item => {
           const tone = riskTone(item.risk_level);
           return (
             <TouchableOpacity
               key={item.id}
               style={styles.queueRow}
               onPress={() => void acceptQueueItem(item)}
-              disabled={!item.patient_id || accepting === item.id}
+              disabled={!item.patient_id || accepting !== null || queuePage.loading || !!queuePage.error || !requestAllowsNewScheduleAction(item)}
               accessibilityRole="button"
             >
               <View style={styles.avatar}>
@@ -220,7 +293,11 @@ export default function DoctorDashboardScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.patient}>{item.patient_name || t('clinician.patient')}</Text>
+                <Text style={styles.reason}>{CONSULTATION_STATUS[item.status] || 'Estado por confirmar'}</Text>
                 <Text style={styles.reason} numberOfLines={1}>{item.chief_complaint || item.specialty || '—'}</Text>
+                {item.scheduled_at && <Text style={styles.reason}>{appointmentDate(item.scheduled_at, item.timezone)}</Text>}
+                {item.requested_expires_at && item.status === 'requested' && <Text style={styles.reason}>Prazo: {appointmentDate(item.requested_expires_at, item.timezone)}</Text>}
+                {consultationExpiryMessage(item, { clinician: true }) && <Text style={styles.reason}>{consultationExpiryMessage(item, { clinician: true })}</Text>}
               </View>
               <View style={[styles.badge, { backgroundColor: tone.bg }]}>
                 <Text style={[styles.badgeText, { color: tone.color }]}>{item.risk_level || '—'}</Text>
@@ -229,6 +306,11 @@ export default function DoctorDashboardScreen() {
             </TouchableOpacity>
           );
         })}
+        {queuePage.loadingMore && <ActivityIndicator color={TEAL} />}
+        {queuePage.nextCursor && !queuePage.restartRequired && <TouchableOpacity accessibilityRole="button" style={styles.primaryButton}
+          disabled={queuePage.loading || queuePage.loadingMore || accepting !== null} onPress={() => void queuePage.loadMore()}>
+          <Text style={styles.primaryButtonText}>Carregar mais pedidos</Text>
+        </TouchableOpacity>}
       </View>
     </ScrollView>
   );
@@ -271,4 +353,3 @@ const styles = StyleSheet.create({
   avatar: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#ccfbf1' },
   avatarText: { color: '#0f766e', fontSize: 11, fontWeight: '900' },
 });
-

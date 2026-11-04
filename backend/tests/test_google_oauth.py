@@ -27,7 +27,7 @@ def test_google_flow_monkeypatch(monkeypatch, tmp_path):
     # Import application and DB artifacts here (after conftest has set the
     # test database URL). Importing at module level can cause engines to be
     # created with the default DB before the test fixture overrides it.
-    from app.main import create_application
+    from app.factory import create_app as create_application
     from app.database import SessionLocal
     from app.models import OAuthState, User
 
@@ -35,7 +35,7 @@ def test_google_flow_monkeypatch(monkeypatch, tmp_path):
     client = TestClient(app)
 
     # 1) Call /auth/google/login and ensure redirect contains state
-    resp = client.get('/auth/google/login', allow_redirects=False)
+    resp = client.get('/auth/google/login', follow_redirects=False)
     assert resp.status_code in (302, 307)
     loc = resp.headers.get('location')
     assert 'accounts.google.com' in loc

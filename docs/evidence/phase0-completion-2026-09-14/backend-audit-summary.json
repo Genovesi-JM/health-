@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/audit-tools312/bin/python",
+    "-m",
+    "pip_audit",
+    "-r",
+    "/Users/genovesimaria/Documents/kaya-web/backend/requirements.phase0.lock",
+    "--no-deps",
+    "--disable-pip",
+    "--format",
+    "json"
+  ],
+  "exit_code": 1,
+  "lock_sha256": "d1a386896c2d4b70ffc9d4eff2b8dcd84737eaa60b85c4dcaffda09d431228bc",
+  "scope": "Complete resolved Phase 0 lock, including deployment requirements, test packages, and transitive dependencies; not a built production image audit",
+  "package_count": 77,
+  "affected_packages": 4,
+  "advisory_entries": 35,
+  "skipped_packages": [],
+  "audit_version": "pip-audit 2.10.1"
+}

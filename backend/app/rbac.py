@@ -13,9 +13,10 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
 from app.health_models import (
-    Patient, Doctor, ClinicianCredential, CorporateAccount, CorporateMember, HealthAuditLog,
+    Patient, Doctor, CorporateAccount, CorporateMember, HealthAuditLog,
 )
 from app.health_schemas import RoleEnum
+from app.services.clinician_access import require_current_clinician, require_doctor_profile_access
 
 import json
 
@@ -63,9 +64,7 @@ def require_verified_doctor(
     """Require the current user to be a verified doctor."""
     if user.role != RoleEnum.DOCTOR:
         raise HTTPException(status_code=403, detail="Acesso restrito a médicos.")
-    doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
-    if not doctor or doctor.verification_status != "verified":
-        raise HTTPException(status_code=403, detail="Médico não verificado.")
+    require_current_clinician(user, db)
     return user
 
 
@@ -74,21 +73,7 @@ def require_verified_clinician(
     db: Session = Depends(get_db),
 ) -> User:
     """Require a doctor or nurse whose credential dossier passed human review."""
-    if user.role not in (RoleEnum.DOCTOR, RoleEnum.NURSE):
-        raise HTTPException(status_code=403, detail="Acesso restrito a profissionais clínicos.")
-    credential = db.query(ClinicianCredential).filter(
-        ClinicianCredential.user_id == user.id,
-        ClinicianCredential.profession == user.role,
-    ).first()
-    if not credential or credential.status != "verified":
-        raise HTTPException(
-            status_code=403,
-            detail={
-                "code": "credential_verification_required",
-                "message": "Conclua a verificação profissional antes de aceder a funções clínicas.",
-                "status": credential.status if credential else "not_started",
-            },
-        )
+    require_current_clinician(user, db)
     return user
 
 
@@ -142,6 +127,8 @@ def get_doctor_for_user(
     """Get the Doctor record linked to the current user."""
     if user.role not in (RoleEnum.DOCTOR, RoleEnum.ADMIN):
         raise HTTPException(status_code=403, detail="Acesso restrito a médicos.")
+    if user.role == RoleEnum.DOCTOR:
+        require_doctor_profile_access(user, db)
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")
@@ -165,27 +152,14 @@ def get_corporate_for_user(
 # Consent enforcement
 # ═══════════════════════════════════════════════════════════════
 
-REQUIRED_CONSENTS = ["privacy_policy", "telemedicine_consent", "terms_of_service"]
+from app.services.consent_runtime import REQUIRED_PURPOSES
+REQUIRED_CONSENTS = list(REQUIRED_PURPOSES)
 
 
-def require_consents(
-    patient: Patient = Depends(get_patient_for_user),
-    db: Session = Depends(get_db),
-) -> Patient:
-    """Ensure the patient has accepted all required consents before booking."""
-    from app.health_models import PatientConsent
-    existing = (
-        db.query(PatientConsent.consent_type)
-        .filter(PatientConsent.patient_id == patient.id)
-        .all()
-    )
-    accepted = {row[0] for row in existing}
-    missing = set(REQUIRED_CONSENTS) - accepted
-    if missing:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Consentimentos obrigatórios em falta: {', '.join(sorted(missing))}",
-        )
+def require_consents(patient: Patient, db: Session, *, country: str | None = None, language: str = "pt") -> Patient:
+    """Explicit scope is mandatory; old type-only declarations confer no grant."""
+    from app.services.consent_runtime import require_effective
+    require_effective(db, patient.id, country, language)
     return patient
 
 
@@ -239,10 +213,10 @@ def assert_doctor_can_access_patient(
 
     A doctor is allowed to access a patient's data when at least one of the
     following is true:
-    - The patient has a consultation (any status) assigned to this doctor.
-    - The patient has an open prescription request directed at this doctor.
-    - The patient is in the doctor's queue (consultation.doctor_id is None but
-      specialty matches — handled via consultation with no doctor yet).
+    - The patient has an accepted consultation assigned to this doctor.
+    - An approved/adjusted renewal has valid retained decision evidence.
+
+    A directed request is not acceptance and does not grant record access.
 
     Admin / support access is handled separately and must be audited with a
     reason; that check is NOT done here.
@@ -255,22 +229,17 @@ def assert_doctor_can_access_patient(
         .filter(
             Consultation.doctor_id == doctor.id,
             Consultation.patient_id == patient_id,
+            Consultation.status.in_(("scheduled", "in_progress", "completed")),
         )
         .first()
     )
     if consultation_exists:
         return
 
-    # Check for any prescription request from this patient to this doctor
-    request_exists = (
-        db.query(PrescriptionRequest.id)
-        .filter(
-            PrescriptionRequest.doctor_id == doctor.id,
-            PrescriptionRequest.patient_id == patient_id,
-        )
-        .first()
-    )
-    if request_exists:
+    # A directed request is not acceptance. Retained, scoped clinical decisions
+    # may establish care; legacy statuses without evidence never do.
+    from app.services.prescription_renewals import has_accepted_renewal
+    if has_accepted_renewal(db, doctor.id, patient_id):
         return
 
     # A doctor who accepted a nurse escalation now owns that episode and needs

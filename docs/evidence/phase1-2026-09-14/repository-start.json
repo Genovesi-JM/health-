@@ -1,0 +1,35 @@
+{
+  "recorded_at": "2026-09-14T00:08:45.797126+00:00",
+  "origin": "https://github.com/Genovesi-JM/health-.git",
+  "branch": "fix/nurse-queue-and-i18n",
+  "head": "d6d99953846602ab411822cfa616e4c753f41ed7",
+  "upstream": "origin/fix/nurse-queue-and-i18n",
+  "ahead_behind": "6\t0",
+  "status": "M backend/email_log.txt\n?? docs/KAYA_JURISDICTION_DECISION.md\n?? docs/KAYA_PILOT_SCOPE.md\n?? frontend/src/components/DocumentUpload.test.tsx\n?? frontend/src/components/OnboardingShell.test.tsx\n?? frontend/src/pages/AdminExpiryPage.test.tsx",
+  "preserved_files": [
+    {
+      "path": "backend/email_log.txt",
+      "sha256": "e675eac81c513a07e996bf44b97b6e07e78658047b0f847a4ae5a7bf72401ea5"
+    },
+    {
+      "path": "frontend/src/components/DocumentUpload.test.tsx",
+      "sha256": "66241bd803cd6325b24f6dbf92f33ca318f2f5019c2bbade470b901d89c78617"
+    },
+    {
+      "path": "frontend/src/components/OnboardingShell.test.tsx",
+      "sha256": "12d1cd1e6af95eab9607e38df5adccd5c96b55fa945f68385fa33a5703d5c552"
+    },
+    {
+      "path": "frontend/src/pages/AdminExpiryPage.test.tsx",
+      "sha256": "7b4425648603ec10a690ff7cf05c5101fd2f7ff7469b224d4cf3c1075d39b468"
+    }
+  ],
+  "planning_choice": {
+    "date": "2026-09-14",
+    "actor": "user in current task",
+    "quote": "Angola \u2014 Luanda",
+    "scope": "planning_only",
+    "formal_adoption": "BLOCKED_EXTERNAL"
+  },
+  "capture_note": "Captured after two parallel Phase 1 documentation drafts appeared. The four preserved user files are identified separately and match the Phase 0 checkpoint evidence."
+}

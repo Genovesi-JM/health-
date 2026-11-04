@@ -1,0 +1,7 @@
+{
+  "sha256": {
+    "backend-junit.xml": "48b903923f4ad0945e1b26f501f50f75ddda7aaf7c9ce4c40e2693995a126fd9",
+    "postgresql.json": "37903a0e59403ea5fab1f464fb8772d61f71daf40f59db8465cb4f7fefec3d3a",
+    "validation.json": "c98491b251d95911ee2b050bc5894f6473d2288d56be2ea0684ae851c7bf99c8"
+  }
+}

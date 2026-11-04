@@ -1,0 +1,5 @@
+# Validation dependency input, including the complete deployment graph.
+-r requirements.txt
+-r requirements.deploy.txt
+psycopg2-binary
+pytest-timeout==2.4.0

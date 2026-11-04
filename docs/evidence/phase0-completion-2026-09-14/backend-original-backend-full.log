@@ -1,0 +1,1136 @@
+...........F......................FFFFFFFFFF.FF..FFFFFF.FFFF........F.FF [ 29%]
+.................F......FF.FF...F.F.FF..............F.FFFFFFF.FFFF...... [ 59%]
+.......................F......................FFFFFFFFFFF.FFF........... [ 89%]
+..........................                                               [100%]
+=================================== FAILURES ===================================
+_______________________________ test_demo_login ________________________________
+tests/test_basic.py:30: in test_demo_login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+_________ test_foreign_diploma_requires_recognition_and_human_approval _________
+tests/test_clinician_credentials.py:77: in test_foreign_diploma_requires_recognition_and_human_approval
+    auth = _register(client, role="doctor", diploma_country="PT")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+____________________ test_nurse_queue_is_gated_until_review ____________________
+tests/test_clinician_credentials.py:112: in test_nurse_queue_is_gated_until_review
+    auth = _register(client, role="nurse", diploma_country="AO")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+____________ test_verified_nurse_dashboard_exposes_operational_kpis ____________
+tests/test_clinician_credentials.py:119: in test_verified_nurse_dashboard_exposes_operational_kpis
+    auth = _register(client, role="nurse", diploma_country="AO")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_ test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities _
+tests/test_clinician_credentials.py:130: in test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities
+    nurse = _register(client, role="nurse", diploma_country="AO")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________ test_nurse_escalation_assigns_doctor_and_opens_patient_360 __________
+tests/test_clinician_credentials.py:176: in test_nurse_escalation_assigns_doctor_and_opens_patient_360
+    nurse = _register(client, role="nurse", diploma_country="AO")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____ test_pem_gateway_is_explicitly_preparation_only_without_credentials ______
+tests/test_clinician_credentials.py:238: in test_pem_gateway_is_explicitly_preparation_only_without_credentials
+    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____ test_nursing_documentation_and_care_tasks_are_shared_in_patient_360 ______
+tests/test_clinician_credentials.py:253: in test_nursing_documentation_and_care_tasks_are_shared_in_patient_360
+    nurse = _register(client, role="nurse", diploma_country="AO")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+______ test_teleconsultation_requires_preflight_and_records_role_checkin _______
+tests/test_clinician_credentials.py:322: in test_teleconsultation_requires_preflight_and_records_role_checkin
+    nurse = _register(client, role="nurse", diploma_country="AO")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+____________ test_registration_rejects_incomplete_clinician_profile ____________
+tests/test_clinician_credentials.py:425: in test_registration_rejects_incomplete_clinician_profile
+    assert response.status_code == 422
+E   assert 403 == 422
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+___________________ test_nurse_invite_creates_nurse_dossier ____________________
+tests/test_clinician_credentials.py:433: in test_nurse_invite_creates_nurse_dossier
+    headers=_headers(admin_login.json()),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:39: in _headers
+    return {"Authorization": f"Bearer {auth['access_token']}"}
+                                       ^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'access_token'
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_________________ test_us_licence_requires_state_jurisdiction __________________
+tests/test_clinician_credentials.py:476: in test_us_licence_requires_state_jurisdiction
+    auth = _register(client)
+           ^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____ test_provider_start_requires_consent_and_is_idempotent_without_keys ______
+tests/test_clinician_credentials.py:497: in test_provider_start_requires_consent_and_is_idempotent_without_keys
+    auth = _register(client, diploma_country="AO")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+___________________ test_list_cases_returns_paginated_shape ____________________
+tests/test_compliance_dashboard.py:48: in test_list_cases_returns_paginated_shape
+    _register(client)  # ensure at least one case exists
+    ^^^^^^^^^^^^^^^^^
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________________ test_list_cases_filter_by_status _______________________
+tests/test_compliance_dashboard.py:60: in test_list_cases_filter_by_status
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____________________ test_list_cases_filter_by_profession _____________________
+tests/test_compliance_dashboard.py:68: in test_list_cases_filter_by_profession
+    _register(client, role="doctor")
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+____________ test_list_cases_filter_by_country_is_case_insensitive _____________
+tests/test_compliance_dashboard.py:78: in test_list_cases_filter_by_country_is_case_insensitive
+    _register(client, country="AO")
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____________________ test_list_cases_search_matches_name ______________________
+tests/test_compliance_dashboard.py:86: in test_list_cases_search_matches_name
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________ test_list_cases_pagination_respects_limit_offset _______________
+tests/test_compliance_dashboard.py:97: in test_list_cases_pagination_respects_limit_offset
+    _register(client)
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+___________________ test_detail_endpoint_returns_full_shape ____________________
+tests/test_compliance_dashboard.py:115: in test_detail_endpoint_returns_full_shape
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________ test_detail_endpoint_includes_uploaded_evidence ________________
+tests/test_compliance_dashboard.py:128: in test_detail_endpoint_includes_uploaded_evidence
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+____________ test_detail_endpoint_includes_transitions_after_action ____________
+tests/test_compliance_dashboard.py:137: in test_detail_endpoint_includes_transitions_after_action
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_compliance_dashboard.py:22: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____________________ test_detail_endpoint_404_on_unknown ______________________
+tests/test_compliance_dashboard.py:151: in test_detail_endpoint_404_on_unknown
+    r = client.get("/api/v1/compliance/cases/does-not-exist/detail", headers=_headers(admin))
+                                                                             ^^^^^^^^^^^^^^^
+tests/test_compliance_dashboard.py:27: in _headers
+    return {"Authorization": f"Bearer {auth['access_token']}"}
+                                       ^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'access_token'
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+______________________ test_scan_endpoint_returns_summary ______________________
+tests/test_document_expiry.py:215: in test_scan_endpoint_returns_summary
+    token = _register_admin_or_login(client)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_document_expiry.py:58: in _register_admin_or_login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________________ test_upcoming_endpoint_lists_soonest_first __________________
+tests/test_document_expiry.py:235: in test_upcoming_endpoint_lists_soonest_first
+    token = _register_admin_or_login(client)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_document_expiry.py:58: in _register_admin_or_login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________________ test_upcoming_endpoint_computes_days_remaining ________________
+tests/test_document_expiry.py:253: in test_upcoming_endpoint_computes_days_remaining
+    token = _register_admin_or_login(client)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_document_expiry.py:58: in _register_admin_or_login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://127.0.0.1:8010 frontend_base=http://127.0.0.1:8001 google_client_id_set=False google_client_secret_set=False
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________ TestTriageFlow.test_only_linked_doctor_can_list_triage_photos _________
+tests/test_health.py:625: in test_only_linked_doctor_can_list_triage_photos
+    assert allowed.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________________ TestDoctorFlow.test_doctor_create_profile ___________________
+tests/test_health.py:819: in test_doctor_create_profile
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+______________ TestDoctorFlow.test_verified_doctor_can_view_queue ______________
+tests/test_health.py:827: in test_verified_doctor_can_view_queue
+    assert r.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________________ TestDoctorFlow.test_doctor_accept_consultation ________________
+tests/test_health.py:859: in test_doctor_accept_consultation
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________ TestDoctorFlow.test_doctor_complete_consultation _______________
+tests/test_health.py:896: in test_doctor_complete_consultation
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+______________ TestAdminVerification.test_admin_can_verify_doctor ______________
+tests/test_health.py:965: in test_admin_can_verify_doctor
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"MFA enrollment is required before privileged access. Contact the administrator for secure enrollment."}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________ TestAdminVerification.test_admin_can_list_pending_doctors ___________
+tests/test_health.py:983: in test_admin_can_list_pending_doctors
+    assert r.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+______________________ TestDashboard.test_admin_dashboard ______________________
+tests/test_health.py:1000: in test_admin_dashboard
+    assert r.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________________________ TestDashboard.test_health_kpis ________________________
+tests/test_health.py:1008: in test_health_kpis
+    assert r.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________________ test_auth_response_flags_mandatory_for_doctor _________________
+tests/test_mfa.py:101: in test_auth_response_flags_mandatory_for_doctor
+    _email, auth = _register(client, role="doctor")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________________________ test_setup_verify_enables_mfa _________________________
+tests/test_mfa.py:116: in test_setup_verify_enables_mfa
+    _email, auth = _register(client)
+                   ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_________________________ test_verify_rejects_bad_code _________________________
+tests/test_mfa.py:122: in test_verify_rejects_bad_code
+    _email, auth = _register(client)
+                   ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________________ test_login_returns_challenge_when_mfa_enabled _________________
+tests/test_mfa.py:131: in test_login_returns_challenge_when_mfa_enabled
+    email, auth = _register(client)
+                  ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+___________________ test_challenge_completes_login_with_totp ___________________
+tests/test_mfa.py:142: in test_challenge_completes_login_with_totp
+    email, auth = _register(client)
+                  ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+____________ test_challenge_completes_with_recovery_code_single_use ____________
+tests/test_mfa.py:155: in test_challenge_completes_with_recovery_code_single_use
+    email, auth = _register(client)
+                  ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________________ test_challenge_rejects_bad_code ________________________
+tests/test_mfa.py:172: in test_challenge_rejects_bad_code
+    email, auth = _register(client)
+                  ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________________ test_disable_requires_valid_code _______________________
+tests/test_mfa.py:182: in test_disable_requires_valid_code
+    _email, auth = _register(client)
+                   ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+________________ test_regenerate_recovery_codes_invalidates_old ________________
+tests/test_mfa.py:201: in test_regenerate_recovery_codes_invalidates_old
+    email, auth = _register(client)
+                  ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________________ test_setup_conflicts_when_already_enabled ___________________
+tests/test_mfa.py:215: in test_setup_conflicts_when_already_enabled
+    _email, auth = _register(client)
+                   ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________ test_mfa_challenge_token_cannot_access_protected_endpoints __________
+tests/test_mfa.py:226: in test_mfa_challenge_token_cannot_access_protected_endpoints
+    email, auth = _register(client)
+                  ^^^^^^^^^^^^^^^^^
+tests/test_mfa.py:80: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________ test_stale_requests_excluded_from_queue_metrics ________________
+tests/test_nurse_dashboard.py:34: in test_stale_requests_excluded_from_queue_metrics
+    nurse = _register(client, role="nurse", diploma_country="AO")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_clinician_credentials.py:34: in _register
+    assert response.status_code == 201, response.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____________________ test_admin_can_list_contact_messages _____________________
+tests/test_public_contact.py:36: in test_admin_can_list_contact_messages
+    r = client.get("/api/v1/contact/admin", headers={"Authorization": f"Bearer {admin['access_token']}"})
+                                                                                ^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'access_token'
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____________ test_reviewer_request_information_writes_transition ______________
+tests/test_state_machine.py:188: in test_reviewer_request_information_writes_transition
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_________________ test_reviewer_endpoints_reject_support_role __________________
+tests/test_state_machine.py:220: in test_reviewer_endpoints_reject_support_role
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____________________ test_invalid_transition_returns_409 ______________________
+tests/test_state_machine.py:230: in test_invalid_transition_returns_409
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________________ test_reviewer_can_suspend_then_reactivate ___________________
+tests/test_state_machine.py:247: in test_reviewer_can_suspend_then_reactivate
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________________ test_history_endpoint_404_on_unknown_case ___________________
+tests/test_state_machine.py:286: in test_history_endpoint_404_on_unknown_case
+    admin = _admin(client)
+            ^^^^^^^^^^^^^^
+tests/test_state_machine.py:183: in _admin
+    assert r.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+__________________ test_manual_review_complete_maps_outcomes ___________________
+tests/test_state_machine.py:295: in test_manual_review_complete_maps_outcomes
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+____________________ test_manual_review_rejects_bad_outcome ____________________
+tests/test_state_machine.py:311: in test_manual_review_rejects_bad_outcome
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_________________ test_request_information_notifies_applicant __________________
+tests/test_state_machine.py:325: in test_request_information_notifies_applicant
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______________________ test_approval_notifies_applicant _______________________
+tests/test_state_machine.py:340: in test_approval_notifies_applicant
+    doc = _register(client)
+          ^^^^^^^^^^^^^^^^^
+tests/test_state_machine.py:157: in _register
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+___________ test_identity_start_returns_sandbox_result_without_creds ___________
+tests/test_verification_actions.py:45: in test_identity_start_returns_sandbox_result_without_creds
+    auth = _register_doctor(client)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_verification_actions.py:34: in _register_doctor
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+______________________ test_identity_status_deterministic ______________________
+tests/test_verification_actions.py:56: in test_identity_status_deterministic
+    auth = _register_doctor(client)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_verification_actions.py:34: in _register_doctor
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_____________ test_qualifications_start_returns_sandbox_submitted ______________
+tests/test_verification_actions.py:80: in test_qualifications_start_returns_sandbox_submitted
+    auth = _register_doctor(client)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_verification_actions.py:34: in _register_doctor
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_______ test_registry_check_returns_manual_review_with_authority_context _______
+tests/test_verification_actions.py:92: in test_registry_check_returns_manual_review_with_authority_context
+    auth = _register_doctor(client)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_verification_actions.py:34: in _register_doctor
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+_________ test_documents_extract_returns_not_configured_without_azure __________
+tests/test_verification_actions.py:106: in test_documents_extract_returns_not_configured_without_azure
+    auth = _register_doctor(client)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_verification_actions.py:34: in _register_doctor
+    assert r.status_code == 201, r.text
+E   AssertionError: {"detail":"Professional registration requires secure MFA onboarding. Contact the administrator."}
+E   assert 403 == 201
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+[HealthPlatform] Config: env=test backend_base=http://testserver frontend_base=http://127.0.0.1:8001 google_client_id_set=True google_client_secret_set=True
+[HealthPlatform] Schema drift check completed.
+[HealthPlatform] Admin users created: 0
+[HealthPlatform] Patient users created: 0
+[HealthPlatform] Doctor users created: 0
+[HealthPlatform] Seed complete: {'admins': 0, 'patients': 0, 'doctors': 0}
+=============================== warnings summary ===============================
+../../../phase0-backend-clean/venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+../../../phase0-backend-clean/venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3585: 26 warnings
+tests/test_account_security.py: 132 warnings
+tests/test_basic.py: 16 warnings
+tests/test_caregiver.py: 317 warnings
+tests/test_clinician_credentials.py: 11 warnings
+tests/test_document_expiry.py: 298 warnings
+tests/test_google_oauth.py: 13 warnings
+tests/test_health.py: 255 warnings
+tests/test_mfa.py: 27 warnings
+tests/test_onboarding.py: 169 warnings
+tests/test_organisations.py: 186 warnings
+tests/test_public_contact.py: 2 warnings
+tests/test_public_facilities.py: 25 warnings
+tests/test_scheduler.py: 188 warnings
+tests/test_state_machine.py: 5 warnings
+tests/test_verification_actions.py: 14 warnings
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3585: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+../../../phase0-backend-clean/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:284
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:284: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.7/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+../../../phase0-backend-clean/venv/lib/python3.12/site-packages/starlette/testclient.py:41
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/starlette/testclient.py:41: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    [], typing.ContextManager[anyio.abc.BlockingPortal]
+
+tests/test_account_security.py: 14 warnings
+tests/test_basic.py: 2 warnings
+tests/test_caregiver.py: 22 warnings
+tests/test_clinician_credentials.py: 1 warning
+tests/test_google_oauth.py: 1 warning
+tests/test_health.py: 44 warnings
+tests/test_mfa.py: 3 warnings
+tests/test_onboarding.py: 12 warnings
+tests/test_organisations.py: 14 warnings
+tests/test_verification_actions.py: 1 warning
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/oauth2.py:20: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=minutes))
+
+tests/test_account_security.py: 14 warnings
+tests/test_basic.py: 2 warnings
+tests/test_caregiver.py: 22 warnings
+tests/test_clinician_credentials.py: 1 warning
+tests/test_mfa.py: 3 warnings
+tests/test_onboarding.py: 12 warnings
+tests/test_organisations.py: 14 warnings
+tests/test_verification_actions.py: 1 warning
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/auth.py:204: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expires_at=datetime.utcnow() + timedelta(days=settings.refresh_token_expires_days),
+
+tests/test_account_security.py: 10 warnings
+tests/test_caregiver.py: 42 warnings
+tests/test_clinician_credentials.py: 1 warning
+tests/test_health.py: 66 warnings
+tests/test_onboarding.py: 35 warnings
+tests/test_organisations.py: 26 warnings
+tests/test_verification_actions.py: 1 warning
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = timegm(datetime.utcnow().utctimetuple())
+
+tests/test_account_security.py::test_change_email_succeeds
+tests/test_public_contact.py::test_submit_contact_stores_message
+tests/test_public_contact.py::test_admin_can_list_contact_messages
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/mail.py:150: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    fh.write(f"[{datetime.utcnow().isoformat()}] to={to_email} subject={subject}\n")
+
+tests/test_account_security.py::test_list_sessions_returns_current
+tests/test_account_security.py::test_revoke_sessions_revokes_refresh_tokens
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/auth.py:826: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_account_security.py::test_revoke_sessions_can_keep_current
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/auth.py:494: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    if rt.expires_at < datetime.utcnow():
+
+tests/test_google_oauth.py::test_google_flow_monkeypatch
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/starlette/testclient.py:484: DeprecationWarning: The `allow_redirects` argument is deprecated. Use `follow_redirects` instead.
+    warnings.warn(message, DeprecationWarning)
+
+tests/test_google_oauth.py::test_google_flow_monkeypatch
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/auth.py:900: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expires_at = datetime.utcnow() + timedelta(minutes=10)
+
+tests/test_google_oauth.py::test_google_flow_monkeypatch
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/auth.py:950: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    if st.expires_at < datetime.utcnow():
+
+tests/test_health.py::TestTriageFlow::test_patient_syncs_health_platform_records_idempotently
+tests/test_health.py::TestTriageFlow::test_patient_syncs_health_platform_records_idempotently
+tests/test_health.py::TestTriageFlow::test_patient_syncs_health_platform_records_idempotently
+tests/test_health.py::TestTriageFlow::test_health_sync_rejects_wrong_source_and_skips_impossible_values
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/readings.py:254: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_health.py::TestTriageFlow::test_patient_gets_non_diagnostic_reading_summary
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/tests/test_health.py:342: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_health.py::TestTriageFlow::test_patient_gets_non_diagnostic_reading_summary
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/readings.py:166: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    period_start = datetime.utcnow() - timedelta(days=days)
+
+tests/test_health.py::TestTriageFlow::test_full_triage_flow
+tests/test_health.py::TestTriageFlow::test_triage_history
+tests/test_health.py::TestTriageFlow::test_visual_red_flag_cannot_be_downgraded_by_other_answers
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/triage.py:665: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.completed_at = datetime.utcnow()
+
+tests/test_health.py::TestTriageFlow::test_patient_can_upload_private_triage_photo
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/triage.py:271: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    photo.created_at = datetime.utcnow()
+
+tests/test_health.py::TestTriageFlow::test_patient_can_upload_private_triage_photo
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/triage.py:487: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "exported_at": datetime.utcnow().isoformat(),
+
+tests/test_onboarding.py::test_submit_freezes_draft
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/onboarding.py:258: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    draft.submitted_at = datetime.utcnow()
+
+tests/test_organisations.py::test_submit_succeeds_when_complete
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-original/source/backend/app/routers/organisations.py:315: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    org.submitted_at = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_basic.py::test_demo_login - AssertionError: {"detail":"MFA ...
+FAILED tests/test_clinician_credentials.py::test_foreign_diploma_requires_recognition_and_human_approval
+FAILED tests/test_clinician_credentials.py::test_nurse_queue_is_gated_until_review
+FAILED tests/test_clinician_credentials.py::test_verified_nurse_dashboard_exposes_operational_kpis
+FAILED tests/test_clinician_credentials.py::test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities
+FAILED tests/test_clinician_credentials.py::test_nurse_escalation_assigns_doctor_and_opens_patient_360
+FAILED tests/test_clinician_credentials.py::test_pem_gateway_is_explicitly_preparation_only_without_credentials
+FAILED tests/test_clinician_credentials.py::test_nursing_documentation_and_care_tasks_are_shared_in_patient_360
+FAILED tests/test_clinician_credentials.py::test_teleconsultation_requires_preflight_and_records_role_checkin
+FAILED tests/test_clinician_credentials.py::test_registration_rejects_incomplete_clinician_profile
+FAILED tests/test_clinician_credentials.py::test_nurse_invite_creates_nurse_dossier
+FAILED tests/test_clinician_credentials.py::test_us_licence_requires_state_jurisdiction
+FAILED tests/test_clinician_credentials.py::test_provider_start_requires_consent_and_is_idempotent_without_keys
+FAILED tests/test_compliance_dashboard.py::test_list_cases_returns_paginated_shape
+FAILED tests/test_compliance_dashboard.py::test_list_cases_filter_by_status
+FAILED tests/test_compliance_dashboard.py::test_list_cases_filter_by_profession
+FAILED tests/test_compliance_dashboard.py::test_list_cases_filter_by_country_is_case_insensitive
+FAILED tests/test_compliance_dashboard.py::test_list_cases_search_matches_name
+FAILED tests/test_compliance_dashboard.py::test_list_cases_pagination_respects_limit_offset
+FAILED tests/test_compliance_dashboard.py::test_detail_endpoint_returns_full_shape
+FAILED tests/test_compliance_dashboard.py::test_detail_endpoint_includes_uploaded_evidence
+FAILED tests/test_compliance_dashboard.py::test_detail_endpoint_includes_transitions_after_action
+FAILED tests/test_compliance_dashboard.py::test_detail_endpoint_404_on_unknown
+FAILED tests/test_document_expiry.py::test_scan_endpoint_returns_summary - As...
+FAILED tests/test_document_expiry.py::test_upcoming_endpoint_lists_soonest_first
+FAILED tests/test_document_expiry.py::test_upcoming_endpoint_computes_days_remaining
+FAILED tests/test_health.py::TestTriageFlow::test_only_linked_doctor_can_list_triage_photos
+FAILED tests/test_health.py::TestDoctorFlow::test_doctor_create_profile - Ass...
+FAILED tests/test_health.py::TestDoctorFlow::test_verified_doctor_can_view_queue
+FAILED tests/test_health.py::TestDoctorFlow::test_doctor_accept_consultation
+FAILED tests/test_health.py::TestDoctorFlow::test_doctor_complete_consultation
+FAILED tests/test_health.py::TestAdminVerification::test_admin_can_verify_doctor
+FAILED tests/test_health.py::TestAdminVerification::test_admin_can_list_pending_doctors
+FAILED tests/test_health.py::TestDashboard::test_admin_dashboard - assert 403...
+FAILED tests/test_health.py::TestDashboard::test_health_kpis - assert 403 == 200
+FAILED tests/test_mfa.py::test_auth_response_flags_mandatory_for_doctor - Ass...
+FAILED tests/test_mfa.py::test_setup_verify_enables_mfa - AssertionError: {"d...
+FAILED tests/test_mfa.py::test_verify_rejects_bad_code - AssertionError: {"de...
+FAILED tests/test_mfa.py::test_login_returns_challenge_when_mfa_enabled - Ass...
+FAILED tests/test_mfa.py::test_challenge_completes_login_with_totp - Assertio...
+FAILED tests/test_mfa.py::test_challenge_completes_with_recovery_code_single_use
+FAILED tests/test_mfa.py::test_challenge_rejects_bad_code - AssertionError: {...
+FAILED tests/test_mfa.py::test_disable_requires_valid_code - AssertionError: ...
+FAILED tests/test_mfa.py::test_regenerate_recovery_codes_invalidates_old - As...
+FAILED tests/test_mfa.py::test_setup_conflicts_when_already_enabled - Asserti...
+FAILED tests/test_mfa.py::test_mfa_challenge_token_cannot_access_protected_endpoints
+FAILED tests/test_nurse_dashboard.py::test_stale_requests_excluded_from_queue_metrics
+FAILED tests/test_public_contact.py::test_admin_can_list_contact_messages - K...
+FAILED tests/test_state_machine.py::test_reviewer_request_information_writes_transition
+FAILED tests/test_state_machine.py::test_reviewer_endpoints_reject_support_role
+FAILED tests/test_state_machine.py::test_invalid_transition_returns_409 - Ass...
+FAILED tests/test_state_machine.py::test_reviewer_can_suspend_then_reactivate
+FAILED tests/test_state_machine.py::test_history_endpoint_404_on_unknown_case
+FAILED tests/test_state_machine.py::test_manual_review_complete_maps_outcomes
+FAILED tests/test_state_machine.py::test_manual_review_rejects_bad_outcome - ...
+FAILED tests/test_state_machine.py::test_request_information_notifies_applicant
+FAILED tests/test_state_machine.py::test_approval_notifies_applicant - Assert...
+FAILED tests/test_verification_actions.py::test_identity_start_returns_sandbox_result_without_creds
+FAILED tests/test_verification_actions.py::test_identity_status_deterministic
+FAILED tests/test_verification_actions.py::test_qualifications_start_returns_sandbox_submitted
+FAILED tests/test_verification_actions.py::test_registry_check_returns_manual_review_with_authority_context
+FAILED tests/test_verification_actions.py::test_documents_extract_returns_not_configured_without_azure
+62 failed, 180 passed, 2073 warnings in 277.15s (0:04:37)

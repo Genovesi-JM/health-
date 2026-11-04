@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { appointmentError, formatAppointmentTime, isAppointmentConflict } from '../utils/appointments';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../api';
+import api, { getSession } from '../api';
 import type { Consultation, PatientState } from '../types';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Activity, Zap, X } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
@@ -11,35 +12,84 @@ import ReviewModal from '../components/ReviewModal';
 import { specialtyLabel } from '../constants/specialties';
 import { MessageSquare, Star, Video } from 'lucide-react';
 import TeleconsultationControl from '../components/TeleconsultationControl';
+import ConsultationCloseout from '../components/ConsultationCloseout';
+import RescheduleConsultation from '../components/RescheduleConsultation';
+import { useConsultationPages } from '../utils/useConsultationPages';
+import { requestCanCancel, requestExpiryMessage } from '../utils/requestExpiry';
+import { canReschedule, readReschedule } from '../utils/pendingReschedule';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
 
 export default function ConsultationsPage() {
   const { t, lang } = useT();
   const locale = LOCALE_MAP[lang] || 'pt-PT';
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [patientState, setPatientState] = useState<PatientState | null>(null);
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');
+  const history = useConsultationPages<Consultation>('/api/v1/consultations/me/page', tab);
+  const { items: consultations, setItems: setConsultations, loading, error: loadError } = history;
   const [showBooking, setShowBooking] = useState(false);
   const [payFor, setPayFor] = useState<string | null>(null);
   const [chatFor, setChatFor] = useState<Consultation | null>(null);
   const [reviewFor, setReviewFor] = useState<Consultation | null>(null);
   const [videoFor, setVideoFor] = useState<Consultation | null>(null);
+  const [summaryFor, setSummaryFor] = useState<Consultation | null>(null);
+  const [cancelFor, setCancelFor] = useState<Consultation | null>(null);
+  const [rescheduleFor, setRescheduleFor] = useState<Consultation | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  const [cancelNotice, setCancelNotice] = useState('');
+  const cancellationBusy = useRef(false);
+  const owner = getSession()?.userId;
+  useEffect(() => {
+    if (history.accessLost) {
+      setShowBooking(false); setPayFor(null); setChatFor(null); setReviewFor(null);
+      setVideoFor(null); setSummaryFor(null); setCancelFor(null); setRescheduleFor(null);
+    }
+  }, [history.accessLost]);
+  // Recovery remains available after care or payment changes fresh-move eligibility.
+  // Read again on modal close so a newly uncertain attempt is reachable immediately.
+  const recovery = new Map<string, 'pending' | 'unavailable'>();
+  if (owner) for (const item of consultations) {
+    try { if (readReschedule(owner, item.id)) recovery.set(item.id, 'pending'); }
+    catch { recovery.set(item.id, 'unavailable'); }
+  }
+
+  const cancelConsultation = async () => {
+    if (!cancelFor || cancellationBusy.current || !requestCanCancel(cancelFor)) return;
+    const target = cancelFor;
+    cancellationBusy.current = true; setCancelling(true); setCancelError(''); setCancelNotice('');
+    try {
+      const response = await api.patch(`/api/v1/consultations/${target.id}`, {});
+      const saved: Consultation = response.data;
+      setConsultations(previous => previous.map(item => item.id === target.id ? { ...item, ...saved } : item));
+      setCancelFor(null);
+      setCancelNotice(saved.status === 'cancelled' ? 'Consulta cancelada.' : 'O estado da consulta foi atualizado pelo serviço.');
+    } catch (error) {
+      if (isAppointmentConflict(error)) {
+        setCancelFor(null);
+        setCancelError('A consulta mudou antes do cancelamento. Consulte o estado atualizado.');
+        try {
+          await history.refresh();
+        } catch {
+          setCancelError('A consulta mudou, mas não foi possível atualizar a lista. Atualize a página antes de tentar cancelar novamente.');
+        }
+      } else {
+        setCancelError(appointmentError(error, 'Não foi possível confirmar o cancelamento. A consulta mantém o último estado conhecido; tente novamente ou atualize a página.'));
+      }
+    } finally {
+      cancellationBusy.current = false; setCancelling(false);
+    }
+  };
 
   useEffect(() => {
-    Promise.allSettled([
-      api.get('/api/v1/consultations/me'),
-      api.get('/api/v1/dashboard/patient-state'),
-    ]).then(([cRes, sRes]) => {
-      if (cRes.status === 'fulfilled') setConsultations(cRes.value.data);
-      if (sRes.status === 'fulfilled') setPatientState(sRes.value.data);
-    }).finally(() => setLoading(false));
+    let active = true;
+    api.get('/api/v1/dashboard/patient-state').then(response => { if (active) setPatientState(response.data); }).catch(() => {});
+    return () => { active = false; };
   }, []);
 
   const filtered = consultations.filter(c => {
     if (tab === 'upcoming') return ['requested','scheduled','in_progress'].includes(c.status);
-    if (tab === 'past') return ['completed','cancelled','no_show'].includes(c.status);
+    if (tab === 'past') return ['completed','cancelled','no_show','expired'].includes(c.status);
     return true;
   });
 
@@ -65,12 +115,13 @@ export default function ConsultationsPage() {
   const statusLabel = (s: string) => {
     const map: Record<string, string> = {
       requested: t('consult.status_requested'), scheduled: t('consult.status_scheduled'), in_progress: t('consult.status_in_progress'),
-      completed: t('consult.status_completed'), cancelled: t('consult.status_cancelled'), no_show: t('consult.status_no_show'),
+      completed: t('consult.status_completed'), cancelled: t('consult.status_cancelled'), no_show: t('consult.status_no_show'), expired: 'Prazo terminado',
     };
     return map[s] || s;
   };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
+  if (history.accessLost) return <><p role="alert">{loadError}</p><button className="btn btn-secondary" onClick={() => void history.refresh()}>Atualizar consultas</button></>;
 
   return (
     <>
@@ -79,6 +130,13 @@ export default function ConsultationsPage() {
         <p>{t('consult.subtitle')}</p>
       </div>
 
+      {loadError && <p role="alert" className="alert alert-danger">{loadError}</p>}
+      <button className="btn btn-secondary" onClick={() => void history.refresh()}>Atualizar consultas</button>
+      {history.moreError && <p role="alert">{history.moreError}</p>}
+      {history.nextCursor && <button className="btn btn-secondary" disabled={history.loadingMore} onClick={() => void history.loadMore()}>{history.loadingMore ? 'A carregar…' : 'Carregar mais consultas'}</button>}
+      {history.nextCursor && <p>A lista continua. Carregue mais para ver os restantes registos.</p>}
+      {!cancelFor && cancelError && <p role="alert">{cancelError}</p>}
+      {cancelNotice && <p role="status">{cancelNotice}</p>}
       <div className="tab-nav">
         <button className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>{t('consult.tab_all')}</button>
         <button className={tab === 'upcoming' ? 'active' : ''} onClick={() => setTab('upcoming')}>{t('consult.tab_upcoming')}</button>
@@ -86,7 +144,7 @@ export default function ConsultationsPage() {
       </div>
 
       <div className="card">
-        {filtered.length === 0 ? (
+        {loadError ? null : filtered.length === 0 ? (
           <div className="empty-state" style={{ padding: '3rem' }}>
             <div className="empty-state-icon"><Calendar size={24} style={{ color: 'var(--accent-teal)' }} /></div>
             <div className="empty-state-title">
@@ -156,6 +214,9 @@ export default function ConsultationsPage() {
                     <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
                       <div>{specialtyLabel(c.specialty, t)}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+                        {requestCanCancel(c) && <button className="btn btn-sm" disabled={cancelling || recovery.has(c.id)} onClick={() => { setCancelFor(c); setCancelError(''); setCancelNotice(''); }}>Cancelar consulta</button>}
+                        {(recovery.has(c.id) || canReschedule(c)) && <button className="btn btn-sm" disabled={cancelling} onClick={() => setRescheduleFor(c)}>{recovery.has(c.id) ? 'Recuperar alteração' : 'Alterar horário'}</button>}
+                        {recovery.has(c.id) && <small>{recovery.get(c.id) === 'pending' ? 'Confirme a alteração pendente antes de cancelar a consulta.' : 'Não foi possível verificar a referência da alteração. Abra a recuperação antes de continuar.'}</small>}
                         {['scheduled', 'in_progress', 'completed'].includes(c.status) && (
                           <button
                             onClick={() => setChatFor(c)}
@@ -172,6 +233,7 @@ export default function ConsultationsPage() {
                             <Video size={13} /> {t('video.label')}
                           </button>
                         )}
+                        {c.status === 'completed' && <button className="btn btn-sm" onClick={() => setSummaryFor(c)}>Resumo da consulta</button>}
                         {c.status === 'completed' && (
                           <button
                             onClick={() => setReviewFor(c)}
@@ -187,14 +249,12 @@ export default function ConsultationsPage() {
                         {statusIcon(c.status)} {statusLabel(c.status)}
                       </span>
                     </td>
-                    <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleString(locale) : '—'}</td>
+                    <td>{c.scheduled_at ? formatAppointmentTime(c.scheduled_at, c.timezone || 'UTC', locale) : '—'}{requestExpiryMessage(c) && <p>{requestExpiryMessage(c)}</p>}</td>
                     <td>
                       {c.payment_status === 'paid' ? (
-                        <span className="badge badge-success">{t('pay.status_paid')}</span>
-                      ) : ['cancelled', 'no_show', 'completed'].includes(c.status) ? (
-                        // Finished/cancelled consultations shouldn't offer a Pagar button —
-                        // they're historical. Show the raw status only.
-                        <span className="badge badge-neutral">{c.payment_status}</span>
+                        <><span className="badge badge-success">{t('pay.status_paid')}</span><button className="btn btn-secondary btn-sm" onClick={() => setPayFor(c.id)}>Verificar pagamento</button></>
+                      ) : ['cancelled', 'no_show', 'completed', 'expired'].includes(c.status) ? (
+                        <><span className="badge badge-neutral">{c.payment_status}</span><button className="btn btn-secondary btn-sm" onClick={() => setPayFor(c.id)}>Verificar pagamento</button></>
                       ) : (
                         <button className="btn btn-primary btn-sm" onClick={() => setPayFor(c.id)}>
                           {t('pay.pay_now')}
@@ -210,7 +270,22 @@ export default function ConsultationsPage() {
         )}
       </div>
 
+      {cancelFor && <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cancel-consultation-title">
+        <section className="modal" style={{ padding: '1.5rem', maxWidth: 480 }}>
+          <h2 id="cancel-consultation-title">Cancelar esta consulta?</h2>
+          <p>{specialtyLabel(cancelFor.specialty, t)}</p>
+          <p>{cancelFor.scheduled_at ? formatAppointmentTime(cancelFor.scheduled_at, cancelFor.timezone || 'UTC', locale) : 'Pedido sem hora marcada'}</p>
+          <p>Ao confirmar, o pedido ou a consulta será cancelado e o horário poderá voltar a ficar disponível.</p>
+          {cancelError && <p role="alert">{cancelError}</p>}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-secondary" disabled={cancelling} onClick={() => { setCancelFor(null); setCancelError(''); }}>Manter consulta</button>
+            <button type="button" className="btn btn-primary" disabled={cancelling} onClick={() => void cancelConsultation()}>{cancelling ? 'A cancelar…' : 'Confirmar cancelamento'}</button>
+          </div>
+        </section>
+      </div>}
+
       {/* Book Consultation Modal */}
+      {rescheduleFor && <RescheduleConsultation key={rescheduleFor.id} consultation={rescheduleFor} onClose={() => setRescheduleFor(null)} onUpdated={item => setConsultations(previous => previous.map(row => row.id === item.id ? item : row))} />}
       <BookConsultationModal
         open={showBooking}
         onClose={() => setShowBooking(false)}
@@ -222,9 +297,12 @@ export default function ConsultationsPage() {
       <PaymentModal
         open={payFor !== null}
         consultationId={payFor || ''}
+        country={consultations.find(item => item.id === payFor)?.country ?? null}
+        recoveryOnly={!consultations.some(item => item.id === payFor && item.payment_status !== 'paid' && !['cancelled', 'no_show', 'completed', 'expired'].includes(item.status))}
         onClose={() => setPayFor(null)}
         onPaid={() => {
-          setConsultations(prev => prev.map(c => c.id === payFor ? { ...c, payment_status: 'paid' } : c));
+          setPayFor(null);
+          void history.refresh();
         }}
       />
 
@@ -261,6 +339,12 @@ export default function ConsultationsPage() {
           </div>
         </div>
       )}
+
+      {summaryFor && <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Resumo da consulta">
+        <div className="modal" style={{ maxHeight: '90vh', overflowY: 'auto' }}><div className="modal-header"><h3>{specialtyLabel(summaryFor.specialty, t)}</h3><button className="btn btn-sm" aria-label="Fechar resumo" onClick={() => setSummaryFor(null)}><X size={20} /></button></div>
+          <div className="modal-body"><ConsultationCloseout consultationId={summaryFor.id} role="patient" /></div>
+        </div>
+      </div>}
 
       {/* Review modal */}
       <ReviewModal

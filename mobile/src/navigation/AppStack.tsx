@@ -9,21 +9,29 @@ import ReadingsScreen from '../screens/ReadingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import BookConsultationScreen from '../screens/BookConsultationScreen';
+import ConsultationsScreen from '../screens/ConsultationsScreen';
+import ConsultationDetailScreen from '../screens/ConsultationDetailScreen';
+import RescheduleConsultationScreen from '../screens/RescheduleConsultationScreen';
 import PrescriptionRequestScreen from '../screens/PrescriptionRequestScreen';
 import FamilyScreen from '../screens/FamilyScreen';
 import ConsentGateScreen from '../screens/ConsentGateScreen';
 import TriageScreen from '../screens/TriageScreen';
+import PatientDocumentsScreen from '../screens/PatientDocumentsScreen';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export type AppStackParamList = {
   HomeTabs: undefined;
   BookConsultation: undefined;
+  Consultations: undefined;
+  ConsultationDetail: { consultationId: string };
+  RescheduleConsultation: { consultationId: string };
   PrescriptionRequest: undefined;
   Family: undefined;
-  ConsentGate: undefined;
+  ConsentGate: { country?: 'AO' | 'PT' } | undefined;
   Readings: undefined;
   Notifications: undefined;
   Triage: undefined;
+  PatientDocuments: undefined;
 };
 
 export type TabParamList = {
@@ -74,6 +82,12 @@ export default function AppStack() {
       <Stack.Screen name="HomeTabs" component={HomeTabs} options={{ headerShown: false }} />
       <Stack.Screen name="BookConsultation" component={BookConsultationScreen}
         options={{ title: 'Marcar Consulta', headerTintColor: TEAL }} />
+      <Stack.Screen name="Consultations" component={ConsultationsScreen}
+        options={{ title: 'As minhas consultas', headerTintColor: TEAL }} />
+      <Stack.Screen name="ConsultationDetail" component={ConsultationDetailScreen}
+        options={{ title: 'Consulta e orientações', headerTintColor: TEAL }} />
+      <Stack.Screen name="RescheduleConsultation" component={RescheduleConsultationScreen}
+        options={{ title: 'Alterar horário', headerTintColor: TEAL }} />
       <Stack.Screen name="PrescriptionRequest" component={PrescriptionRequestScreen}
         options={{ title: 'Pedir Receita', headerTintColor: TEAL }} />
       <Stack.Screen name="Family" component={FamilyScreen}
@@ -82,6 +96,8 @@ export default function AppStack() {
         options={{ title: 'Consentimentos', headerTintColor: TEAL }} />
       <Stack.Screen name="Triage" component={TriageScreen}
         options={{ title: 'Orientação de saúde', headerTintColor: TEAL }} />
+      <Stack.Screen name="PatientDocuments" component={PatientDocumentsScreen}
+        options={{ title: 'Os meus documentos', headerTintColor: TEAL }} />
     </Stack.Navigator>
   );
 }

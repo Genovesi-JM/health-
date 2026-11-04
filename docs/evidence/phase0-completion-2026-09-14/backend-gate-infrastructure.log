@@ -1,0 +1,17 @@
+test_group_scope_and_no_runtime_or_paid_extras (test_foundation.CompiledFoundationTests.test_group_scope_and_no_runtime_or_paid_extras) ... ok
+test_logs_capped_and_empty_consumption_environment (test_foundation.CompiledFoundationTests.test_logs_capped_and_empty_consumption_environment) ... ok
+test_network_delegations_and_postgres_restriction (test_foundation.CompiledFoundationTests.test_network_delegations_and_postgres_restriction) ... ok
+test_only_four_narrow_identity_grants (test_foundation.CompiledFoundationTests.test_only_four_narrow_identity_grants) ... ok
+test_own_vault_registry_and_identity (test_foundation.CompiledFoundationTests.test_own_vault_registry_and_identity) ... ok
+test_postgres_child_writes_are_serialized (test_foundation.CompiledFoundationTests.test_postgres_child_writes_are_serialized) ... ok
+test_region_and_password_have_no_unsafe_defaults (test_foundation.CompiledFoundationTests.test_region_and_password_have_no_unsafe_defaults) ... ok
+test_single_small_private_postgres_and_two_databases (test_foundation.CompiledFoundationTests.test_single_small_private_postgres_and_two_databases) ... ok
+test_storage_disallows_anonymous_and_shared_key (test_foundation.CompiledFoundationTests.test_storage_disallows_anonymous_and_shared_key) ... ok
+test_defaults_are_nonsecret_and_region_explicit (test_foundation.ParameterTests.test_defaults_are_nonsecret_and_region_explicit) ... ok
+test_reserved_or_malformed_administrator_rejected (test_foundation.ParameterTests.test_reserved_or_malformed_administrator_rejected) ... ok
+test_unreviewed_region_rejected (test_foundation.ParameterTests.test_unreviewed_region_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 7.950s
+
+OK

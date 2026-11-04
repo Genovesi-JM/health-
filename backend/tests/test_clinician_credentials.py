@@ -12,27 +12,42 @@ from app.health_models import (
 )
 
 
-def _register(client, role="doctor", diploma_country="PT"):
+def _provision_clinician(client, role="doctor", diploma_country="PT"):
+    """Provision a test professional through an administrator-issued invitation.
+
+    Public registration intentionally creates a non-privileged patient account.
+    Clinical workflow tests require controlled provisioning followed by MFA;
+    credential verification is still exercised separately by each test.
+    """
+    from _authutil import login_with_mfa
+    admin_auth = login_with_mfa(client, "teste@admin.com", "123456")
+    invite = client.post(
+        "/admin/doctor-invites", headers=_headers(admin_auth),
+        json={"role": role, "expires_days": 7},
+    )
+    assert invite.status_code == 201, invite.text
+    invite_token = parse_qs(urlparse(invite.json()["invite_url"]).query)["token"][0]
     email = f"{role}-{uuid.uuid4().hex[:8]}@example.com"
-    response = client.post("/auth/register", headers={
-        "X-Forwarded-For": f"198.51.100.{int(uuid.uuid4().hex[:2], 16)}",
-    }, json={
+    response = client.post("/auth/register/doctor", json={
+        "token": invite_token,
         "email": email,
         "password": "strong-pass",
-        "full_name": "Profissional Teste",
-        "sector_focus": "health",
-        "role": role,
+        "display_name": "Profissional Teste",
+        "specialization": "clinica_geral" if role == "doctor" else "enfermagem_geral",
         "practice_country": "AO",
         "licence_country": "AO",
         "issuing_authority": "Ordem Profissional",
-        "licence_number": "AO-12345",
+        "license_number": "AO-12345",
         "diploma_country": diploma_country,
         "diploma_institution": "Universidade de Teste",
         "degree_title": "Medicina" if role == "doctor" else "Enfermagem",
-        "graduation_year": 2020,
     })
     assert response.status_code == 201, response.text
-    return response.json()
+    assert response.json()["user"]["role"] == role
+    auth = login_with_mfa(client, email, "strong-pass")
+    assert auth["user"]["role"] == role
+    assert auth["mfa_enrolled"] is True
+    return auth
 
 
 def _headers(auth):
@@ -52,10 +67,11 @@ def _verify_clinician(client, auth):
     assert _upload(client, auth, "diploma").status_code == 200
     submitted = client.post("/api/v1/credentials/me/submit", headers=_headers(auth))
     assert submitted.status_code == 200
-    admin = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
+    from _authutil import login_with_mfa
+    admin_sess = login_with_mfa(client, "teste@admin.com", "123456")
     approved = client.post(
         f"/api/v1/credentials/admin/{submitted.json()['id']}/decision",
-        headers=_headers(admin.json()),
+        headers=_headers(admin_sess),
         json={"action": "approve"},
     )
     assert approved.status_code == 200
@@ -73,8 +89,24 @@ def test_patient_registration_cannot_create_clinician_dossier(client):
     assert dossier.status_code == 403
 
 
+def test_public_professional_registration_does_not_grant_clinical_role(client):
+    response = client.post("/auth/register", json={
+        "email": f"applicant-{uuid.uuid4().hex[:8]}@example.com",
+        "password": "strong-pass", "full_name": "Professional Applicant",
+        "sector_focus": "health", "role": "doctor",
+        "practice_country": "AO", "licence_country": "AO",
+        "issuing_authority": "Ordem Profissional", "licence_number": "TEST-APPLICANT",
+        "diploma_country": "AO", "diploma_institution": "Universidade de Teste",
+        "degree_title": "Medicina",
+    })
+    assert response.status_code == 201, response.text
+    assert response.json()["user"]["role"] == "patient"
+    dashboard = client.get("/api/v1/doctor/dashboard", headers=_headers(response.json()))
+    assert dashboard.status_code == 403, dashboard.text
+
+
 def test_foreign_diploma_requires_recognition_and_human_approval(client):
-    auth = _register(client, role="doctor", diploma_country="PT")
+    auth = _provision_clinician(client, role="doctor", diploma_country="PT")
     dossier = client.get("/api/v1/credentials/me", headers=_headers(auth))
     assert dossier.status_code == 200
     assert set(dossier.json()["missing_evidence"]) == {"professional_card", "diploma", "recognition"}
@@ -94,11 +126,11 @@ def test_foreign_diploma_requires_recognition_and_human_approval(client):
     blocked = client.get("/api/v1/doctor/dashboard", headers=_headers(auth))
     assert blocked.status_code == 403
 
-    admin_login = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
-    assert admin_login.status_code == 200
+    from _authutil import login_with_mfa as _lwm
+    admin_login_sess = _lwm(client, "teste@admin.com", "123456")
     approved = client.post(
         f"/api/v1/credentials/admin/{submitted.json()['id']}/decision",
-        headers=_headers(admin_login.json()),
+        headers=_headers(admin_login_sess),
         json={"action": "approve"},
     )
     assert approved.status_code == 200
@@ -109,14 +141,14 @@ def test_foreign_diploma_requires_recognition_and_human_approval(client):
 
 
 def test_nurse_queue_is_gated_until_review(client):
-    auth = _register(client, role="nurse", diploma_country="AO")
+    auth = _provision_clinician(client, role="nurse", diploma_country="AO")
     blocked = client.get("/api/v1/nurse/dashboard", headers=_headers(auth))
     assert blocked.status_code == 403
     assert blocked.json()["detail"]["code"] == "credential_verification_required"
 
 
 def test_verified_nurse_dashboard_exposes_operational_kpis(client):
-    auth = _register(client, role="nurse", diploma_country="AO")
+    auth = _provision_clinician(client, role="nurse", diploma_country="AO")
     _verify_clinician(client, auth)
     dashboard = client.get("/api/v1/nurse/dashboard", headers=_headers(auth))
     assert dashboard.status_code == 200
@@ -127,7 +159,7 @@ def test_verified_nurse_dashboard_exposes_operational_kpis(client):
 
 
 def test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities(client, db_session):
-    nurse = _register(client, role="nurse", diploma_country="AO")
+    nurse = _provision_clinician(client, role="nurse", diploma_country="AO")
     _verify_clinician(client, nurse)
 
     patient_auth = client.post("/auth/register", json={
@@ -173,8 +205,8 @@ def test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities
 
 
 def test_nurse_escalation_assigns_doctor_and_opens_patient_360(client, db_session):
-    nurse = _register(client, role="nurse", diploma_country="AO")
-    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    nurse = _provision_clinician(client, role="nurse", diploma_country="AO")
+    doctor_auth = _provision_clinician(client, role="doctor", diploma_country="AO")
     _verify_clinician(client, nurse)
     _verify_clinician(client, doctor_auth)
 
@@ -235,7 +267,7 @@ def test_nurse_escalation_assigns_doctor_and_opens_patient_360(client, db_sessio
 
 
 def test_pem_gateway_is_explicitly_preparation_only_without_credentials(client, db_session, monkeypatch):
-    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    doctor_auth = _provision_clinician(client, role="doctor", diploma_country="AO")
     _verify_clinician(client, doctor_auth)
     for name in ("PEM_API_BASE_URL", "PEM_CLIENT_ID", "PEM_ORGANISATION_ID", "PEM_CLIENT_CERT_PATH"):
         monkeypatch.delenv(name, raising=False)
@@ -250,8 +282,8 @@ def test_pem_gateway_is_explicitly_preparation_only_without_credentials(client, 
 
 
 def test_nursing_documentation_and_care_tasks_are_shared_in_patient_360(client, db_session):
-    nurse = _register(client, role="nurse", diploma_country="AO")
-    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    nurse = _provision_clinician(client, role="nurse", diploma_country="AO")
+    doctor_auth = _provision_clinician(client, role="doctor", diploma_country="AO")
     _verify_clinician(client, nurse)
     _verify_clinician(client, doctor_auth)
     doctor = db_session.query(Doctor).filter(Doctor.user_id == doctor_auth["user"]["id"]).first()
@@ -319,8 +351,8 @@ def test_nursing_documentation_and_care_tasks_are_shared_in_patient_360(client, 
 
 
 def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db_session):
-    nurse = _register(client, role="nurse", diploma_country="AO")
-    doctor_auth = _register(client, role="doctor", diploma_country="AO")
+    nurse = _provision_clinician(client, role="nurse", diploma_country="AO")
+    doctor_auth = _provision_clinician(client, role="doctor", diploma_country="AO")
     _verify_clinician(client, nurse)
     _verify_clinician(client, doctor_auth)
     doctor = db_session.query(Doctor).filter(Doctor.user_id == doctor_auth["user"]["id"]).first()
@@ -338,12 +370,11 @@ def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db
         patient_id=patient.id,
         doctor_id=doctor.id,
         specialty="clinica_geral",
-        status="scheduled",
+        status="scheduled", country="AO",
     )
-    db_session.add_all([
-        consultation,
-        PatientConsent(patient_id=patient.id, consent_type="telemedicine_consent"),
-    ])
+    from consent_fixtures import grant_all
+    grant_all(db_session, patient)
+    db_session.add(consultation)
     db_session.commit()
 
     prepared = client.post(
@@ -351,7 +382,7 @@ def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db
         headers=_headers(nurse),
     )
     assert prepared.status_code == 201, prepared.text
-    assert prepared.json()["provider_mode"] == "pilot"
+    assert prepared.json()["provider_mode"] == "disabled"
     assert prepared.json()["recording_enabled"] is False
     patient_prepare = client.post(
         f"/api/v1/teleconsultations/{consultation.id}/prepare",
@@ -410,8 +441,11 @@ def test_teleconsultation_requires_preflight_and_records_role_checkin(client, db
         f"/api/v1/teleconsultations/{consultation.id}/join",
         headers=_headers(doctor_auth),
     )
-    assert joined.status_code == 200, joined.text
-    assert joined.json()["room_url"].startswith("https://meet.jit.si/KAYA-")
+    # Phase 25: video is disabled by default and fails closed. No public
+    # meet.jit.si room is ever emitted; join returns 503 until an approved
+    # provider adapter is implemented and reviewed; environment flags are insufficient.
+    assert joined.status_code == 503, joined.text
+    assert "jit.si" not in joined.text
 
 
 def test_registration_rejects_incomplete_clinician_profile(client):
@@ -427,10 +461,11 @@ def test_registration_rejects_incomplete_clinician_profile(client):
 
 
 def test_nurse_invite_creates_nurse_dossier(client):
-    admin_login = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
+    from _authutil import login_with_mfa as _lwm
+    admin_login_sess = _lwm(client, "teste@admin.com", "123456")
     invite = client.post(
         "/admin/doctor-invites",
-        headers=_headers(admin_login.json()),
+        headers=_headers(admin_login_sess),
         json={"role": "nurse", "expires_days": 7},
     )
     assert invite.status_code == 201, invite.text
@@ -452,8 +487,13 @@ def test_nurse_invite_creates_nurse_dossier(client):
     })
     assert registered.status_code == 201, registered.text
     assert registered.json()["user"]["role"] == "nurse"
-    dossier = client.get("/api/v1/credentials/me", headers=_headers(registered.json()))
-    assert dossier.status_code == 200
+    # The invitation response does not bypass the mandatory MFA access gate.
+    blocked = client.get("/api/v1/credentials/me", headers=_headers(registered.json()))
+    assert blocked.status_code == 403, blocked.text
+    assert blocked.headers["X-Kaya-Error-Code"] == "mfa_enrollment_required"
+    nurse_auth = _lwm(client, email, "strong-pass")
+    dossier = client.get("/api/v1/credentials/me", headers=_headers(nurse_auth))
+    assert dossier.status_code == 200, dossier.text
     assert dossier.json()["profession"] == "nurse"
     assert "recognition" in dossier.json()["missing_evidence"]
 
@@ -473,8 +513,10 @@ def test_country_requirements_include_us_uk_and_all_eu_members(client):
 
 
 def test_us_licence_requires_state_jurisdiction(client):
-    auth = _register(client)
-    dossier = client.get("/api/v1/credentials/me", headers=_headers(auth)).json()
+    auth = _provision_clinician(client)
+    dossier_response = client.get("/api/v1/credentials/me", headers=_headers(auth))
+    assert dossier_response.status_code == 200, dossier_response.text
+    dossier = dossier_response.json()
     update = {
         key: dossier.get(key) for key in (
             "profession", "legal_name", "nationality_country", "practice_country",
@@ -489,12 +531,12 @@ def test_us_licence_requires_state_jurisdiction(client):
     assert rejected.status_code == 422
     update["licence_jurisdiction"] = "California"
     accepted = client.put("/api/v1/credentials/me", headers=_headers(auth), json=update)
-    assert accepted.status_code == 200
+    assert accepted.status_code == 200, accepted.text
     assert accepted.json()["licence_jurisdiction"] == "California"
 
 
 def test_provider_start_requires_consent_and_is_idempotent_without_keys(client):
-    auth = _register(client, diploma_country="AO")
+    auth = _provision_clinician(client, diploma_country="AO")
     assert _upload(client, auth, "professional_card").status_code == 200
     denied = client.post(
         "/api/v1/credentials/me/providers/start",

@@ -3,11 +3,15 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../navigation/AppStack';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { useLanguage, type AppLanguage } from '../i18n/LanguageContext';
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { language, setLanguage, t } = useLanguage();
   const { user, logout } = useAuth();
   const [oldPw, setOldPw] = useState('');
@@ -52,6 +56,10 @@ export default function SettingsScreen() {
             ))}
           </View>
         </View>
+
+        {['patient', 'cliente'].includes(user?.role ?? '') && <View style={styles.section}><Text style={styles.sectionTitle}>Consentimentos e privacidade</Text>
+          <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('ConsentGate')}><Text style={styles.btnText}>Rever decisões, histórico e retirada</Text></TouchableOpacity>
+        </View>}
 
         {/* Account info */}
         <View style={styles.section}>

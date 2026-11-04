@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { getSession, getInitials } from '../api';
 import { useT } from '../i18n/LanguageContext';
@@ -19,6 +19,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/especialistas', label: 'Especialistas',  sub: 'Encontre o médico certo' },
       { to: '/telemedicina', label: 'Teleconsulta',    sub: 'Consulta online imediata' },
       { to: '/chronic-care', label: 'Cuidado Crónico', sub: 'Hipertensão, diabetes, asma' },
+      { to: '/mapa',         label: 'Mapa de Clínicas', sub: 'Clínicas, hospitais e laboratórios' },
     ],
   },
   {
@@ -33,7 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { to: '/devices',   label: 'Devices & Kits',   sub: 'Tensiómetros, glicómetros e mais' },
       { to: '/pricing',   label: 'Preços',            sub: 'Planos para pacientes e clínicas' },
-      { to: '/urgencia',  label: 'Urgência',          sub: 'Pré-alerta hospitalar' },
+      { to: '/urgencia',  label: 'Urgência',          sub: 'Orientação de emergência' },
       { to: '/faq',       label: 'FAQ',               sub: 'Perguntas frequentes' },
     ],
   },

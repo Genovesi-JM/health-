@@ -1,0 +1,1873 @@
+{
+  "policy_version": 1,
+  "planning": {
+    "country_code": "AO",
+    "country_name": "Angola",
+    "city": "Luanda",
+    "decision_status": "SELECTED_BY_USER",
+    "approval_scope": "planning_only",
+    "formal_jurisdiction_status": "BLOCKED_EXTERNAL",
+    "decision_date": "2026-10-04",
+    "decision_actor": "user in current task",
+    "decision_quote": "lets consider final launch market, angola and portugal(prepare for both priritise ngola). the second decision you can take.",
+    "target_markets": [
+      {
+        "country_code": "AO",
+        "country_name": "Angola",
+        "launch_role": "primary",
+        "initial_city": "Luanda",
+        "locale": "pt-AO",
+        "currency": "AOA",
+        "timezones": [
+          "Africa/Luanda"
+        ]
+      },
+      {
+        "country_code": "PT",
+        "country_name": "Portugal",
+        "launch_role": "preparation",
+        "initial_city": null,
+        "locale": "pt-PT",
+        "currency": "EUR",
+        "timezones": [
+          "Europe/Lisbon",
+          "Atlantic/Madeira",
+          "Atlantic/Azores"
+        ]
+      }
+    ],
+    "inference_prohibited": [
+      "language",
+      "currency",
+      "timezone",
+      "IP address",
+      "request headers",
+      "cloud region"
+    ]
+  },
+  "release": {
+    "status": "HOLD",
+    "approved_jurisdictions": [],
+    "default_client_profile": "informational",
+    "unknown_jurisdiction_profile": "informational",
+    "real_participants_enabled": false,
+    "external_communications_enabled": false,
+    "provider_calls_enabled": false,
+    "public_metadata_endpoint": {
+      "method": "GET",
+      "path": "/api/v1/public/pilot-scope"
+    },
+    "unlisted_api_action": "DENY_503",
+    "unlisted_ui_action": "INFORMATIONAL_ONLY",
+    "synthetic_fixture_note": "The Phase 0 backend synthetic factory is isolated development evidence only. It does not grant public or client permissions."
+  },
+  "feature_flags": {
+    "account_access": false,
+    "onboarding": false,
+    "provider_directory": false,
+    "appointment_coordination": false,
+    "triage": false,
+    "teleconsultation": false,
+    "prescribing_referrals": false,
+    "clinical_messaging": false,
+    "clinical_operations": false,
+    "health_tracking": false,
+    "family_caregivers": false,
+    "notifications": false,
+    "payments": false,
+    "device_commerce": false,
+    "ai_guidance": false,
+    "credentialing": false,
+    "organisation_admin": false,
+    "public_contact": false,
+    "kaya_response": false,
+    "native_health_sync": false,
+    "autonomous_triage": false,
+    "service_operations": false
+  },
+  "capabilities": [
+    {
+      "id": "account_access",
+      "label": "Accounts and invited access",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "POST",
+          "path": "/auth/register"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/refresh"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/logout"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/me"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/status"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/forgot-password"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/reset-password"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/change-password"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/change-email"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/change-phone"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/sessions"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/revoke-sessions"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/google/login"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/google/callback"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/google/onboarding"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/microsoft/login"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/microsoft/callback"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/doctor-invite/{token}"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register/doctor"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/mfa/status"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/mfa/setup"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/mfa/verify"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/mfa/disable"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/mfa/recovery-codes"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/mfa/challenge"
+        }
+      ],
+      "ui_routes": [
+        "/login",
+        "/register",
+        "/choose-account-type",
+        "/auth/callback",
+        "/settings",
+        "/security/mfa",
+        "/security",
+        "/doctor/security"
+      ],
+      "included_in_pilot": true
+    },
+    {
+      "id": "onboarding",
+      "label": "Identity, onboarding and consent",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/me"
+        },
+        {
+          "method": "GET",
+          "path": "/me/documents"
+        },
+        {
+          "method": "GET",
+          "path": "/me/documents/{document_id}/download"
+        },
+        {
+          "method": "GET",
+          "path": "/me/documents/{document_id}/view"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/compliance/consent"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/consents"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/onboarding/start"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/onboarding/status"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/onboarding/steps/{step}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/onboarding/save"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/onboarding/submit"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/onboarding/review"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/catalog"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/consent-state"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/consent-requests/{request_key}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/consent-history/page"
+        }
+      ],
+      "ui_routes": [
+        "/register/doctor",
+        "/candidatura",
+        "/consent-gate",
+        "/data-consent",
+        "/onboarding/patient",
+        "/onboarding/professional",
+        "/onboarding/organisation",
+        "/consents"
+      ],
+      "included_in_pilot": true
+    },
+    {
+      "id": "provider_directory",
+      "label": "Public clinic and professional directory",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/doctors/"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctors/by-slug/{slug}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctors/profile"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctors/me"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/doctors/me"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctors/me/availability"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctors/me/availability"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/doctors/me/availability/{slot_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctors/pending"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctors/{doctor_id}/verify"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctors/apply"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/public/facilities"
+        }
+      ],
+      "ui_routes": [
+        "/especialistas",
+        "/mapa",
+        "/clinics",
+        "/medicos",
+        "/medicos/:slug"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "appointment_coordination",
+      "label": "Human-confirmed appointment coordination",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/appointments/capabilities"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/appointments/slots"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/appointment-slots"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctor/appointment-slots"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/doctor/appointment-slots/{slot_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/book"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/{consultation_id}/reschedule"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/consultations/me"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/queue"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/consultations"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctor/queue/{consultation_id}/accept"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctor/queue/{consultation_id}/start"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/{consultation_id}/complete"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/consultations/{consultation_id}/closeout"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/{consultation_id}/closeout/amendments"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/consultations/{consultation_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/{consultation_id}/review"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/consultations/me/page"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/queue/page"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/consultations/page"
+        }
+      ],
+      "ui_routes": [
+        "/consultations",
+        "/doctor/queue",
+        "/doctor/agenda",
+        "/doctor/disponibilidade"
+      ],
+      "included_in_pilot": true
+    },
+    {
+      "id": "triage",
+      "label": "Symptom triage and self-care advice",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "POST",
+          "path": "/api/v1/triage/start"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/triage/{triage_id}/photos"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/triage/{triage_id}/photos"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/triage/photo-requests/pending"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/triage/{triage_id}/photo-requests"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/triage/{triage_id}/photo-requests"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/triage/{triage_id}/photos-export"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/triage/{triage_id}/photos/{photo_id}/content"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/triage/{triage_id}/photos/{photo_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/triage/{triage_id}/answers"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/triage/{triage_id}/complete"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/triage/history"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/triage/{triage_id}"
+        }
+      ],
+      "ui_routes": [
+        "/triage",
+        "/self-care"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "teleconsultation",
+      "label": "Video consultations",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/teleconsultations/capabilities"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/teleconsultations/{consultation_id}/prepare"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/teleconsultations/{consultation_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/teleconsultations/{consultation_id}/check-in"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/teleconsultations/{consultation_id}/preflight"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/teleconsultations/{consultation_id}/start"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/teleconsultations/{consultation_id}/join"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/teleconsultations/{consultation_id}/complete"
+        }
+      ],
+      "ui_routes": [
+        "/telemedicina",
+        "/doctor/consultas"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "prescribing_referrals",
+      "label": "Prescriptions and referrals",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/{consultation_id}/prescription"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/{consultation_id}/referral"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/files/{file_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/prescription-requests"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/prescription-requests"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/prescription-requests"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/doctor/prescription-requests/{request_id}/decide"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/consultation-document-requests/{request_key}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/prescription-requests/decisions/{request_key}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/prescription-requests/page"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/prescription-requests/page"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/prescription-requests/requests/{request_key}"
+        }
+      ],
+      "ui_routes": [
+        "/prescricoes/pedido",
+        "/doctor/prescricoes"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "clinical_messaging",
+      "label": "Clinical messaging",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "POST",
+          "path": "/api/v1/consultations/{consultation_id}/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/consultations/{consultation_id}/messages"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/message-threads"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient/message-threads"
+        }
+      ],
+      "ui_routes": [
+        "/doctor/mensagens"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "clinical_operations",
+      "label": "Clinical workspaces and care delivery",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/nurse/queue"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/nurse/dashboard"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/dashboard"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/agenda/today"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/patients"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/patients/{patient_id}/summary"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/patients/{patient_id}/clinical-summary"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/finance"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/doctor/reviews"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clinician/patients/{patient_id}/360"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clinical-operations/escalations"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clinical-operations/escalations"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clinical-operations/escalations/{escalation_id}/accept"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clinical-operations/escalations/{escalation_id}/resolve"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clinical-operations/nursing/observations"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clinical-operations/patients/{patient_id}/nursing/observations"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clinical-operations/care-tasks"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clinical-operations/patients/{patient_id}/care-tasks"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clinical-operations/care-tasks/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clinical-operations/care-tasks/{task_id}/complete"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clinical-operations/integrations/pem/status"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clinical-operations/prescriptions/{prescription_id}/pem/prepare"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clinical-operations/revenue/me"
+        }
+      ],
+      "ui_routes": [
+        "/preview/nurse",
+        "/preview/clinician/patient",
+        "/clinician/patients/:patientId",
+        "/chronic-care",
+        "/nurse",
+        "/doctor/dashboard",
+        "/doctor/profile",
+        "/doctor/pacientes",
+        "/doctor/avaliacoes",
+        "/doctor/suporte"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "health_tracking",
+      "label": "Health records and measurements",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/patients/"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patients/{patient_id:uuid}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/patients/profile"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patients/me"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/patients/me"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/dashboard/kpis"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/dashboard/patient-state"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/dashboard/health"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/dashboard/admin"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/readings/me"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/readings/me/summary"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/readings"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/readings/sync"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/readings/import"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/readings/patient/{patient_id}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/readings/{reading_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/medications/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/medications"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/medications/{medication_id}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/medications/{medication_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/medications/patient/{patient_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/capabilities"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/page"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/patients/{patient_id}/page"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/patient-documents"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/patient-documents/"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/{document_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/patient-documents/{document_id}/process"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/{document_id}/download"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/patient-documents/{document_id}/review"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/patient-documents/requests/{idempotency_key}"
+        }
+      ],
+      "ui_routes": [
+        "/patients",
+        "/dashboard",
+        "/patient/profile",
+        "/patient/readings",
+        "/patient/documents"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "family_caregivers",
+      "label": "Family and caregiver access",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/family/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/family"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/family/{family_member_id}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/family/{family_member_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/caregiver/dependants"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/caregiver/dependants"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/caregiver/dependants/{link_id}/scopes"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/caregiver/dependants/{link_id}/evidence"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/caregiver/dependants/{link_id}/invite"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/caregiver/dependants/{link_id}/revoke"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/caregiver/dependants/{link_id}/history"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/caregiver/dependants/{link_id}/appointments"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/caregiver/dependants/{link_id}/prescriptions"
+        }
+      ],
+      "ui_routes": [
+        "/family",
+        "/onboarding/caregiver"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "notifications",
+      "label": "In-app, email, SMS and push notifications",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/unread-count"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/notifications"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/notifications/read-all"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/v1/notifications/{notification_id}/read"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/capabilities"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/notifications/inbox"
+        }
+      ],
+      "ui_routes": [
+        "/notifications"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "payments",
+      "label": "Payments and subscriptions",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/billing/payment-methods"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/billing/consultation/checkout"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/billing/consultation/{consultation_id}/payment-status"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/billing/consultation/{consultation_id}/confirm"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/billing/webhook/{provider}"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/billing/me/invoices"
+        }
+      ],
+      "ui_routes": [
+        "/pricing",
+        "/doctor/financeiro"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "device_commerce",
+      "label": "Device shop and payment status",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/shop/devices"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shop/devices/{device_id}/checkout"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shop/payments/{payment_id}/status"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shop/orders/me"
+        }
+      ],
+      "ui_routes": [
+        "/devices",
+        "/loja"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "ai_guidance",
+      "label": "AI guidance and chatbot",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "POST",
+          "path": "/api/v1/chatbot/public-guidance"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chatbot/chat"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/chatbot/message"
+        }
+      ],
+      "ui_routes": [],
+      "included_in_pilot": false
+    },
+    {
+      "id": "credentialing",
+      "label": "Credential verification and provider integrations",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/api/v1/credentials/requirements"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/credentials/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/credentials/me/providers/start"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/credentials/me/providers/refresh"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/credentials/webhooks/persona"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/credentials/webhooks/dataflow"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/credentials/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/credentials/me/evidence/{kind}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/credentials/me/submit"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/credentials/admin"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/credentials/admin/{credential_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/credentials/admin/{credential_id}/decision"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/credentials/evidence/{evidence_id}/download"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/cases/{credential_id}/history"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/compliance/cases/{credential_id}/request-information"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/compliance/cases/{credential_id}/manual-review-complete"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/compliance/cases/{credential_id}/suspend"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/compliance/cases/{credential_id}/reactivate"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/compliance/cases/{credential_id}/revoke"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/cases"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/cases/{credential_id}/detail"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/compliance/expiry/scan"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/compliance/expiry/upcoming"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/verification/identity/start"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/verification/identity/status"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/verification/documents/extract"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/verification/qualifications/start"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/verification/qualifications/status"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/verification/registry/check"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/webhooks/sumsub"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/webhooks/veremark"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/webhooks/certn"
+        }
+      ],
+      "ui_routes": [
+        "/professional-verification",
+        "/admin/applications",
+        "/admin/credentials",
+        "/admin/compliance",
+        "/admin/expiry"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "organisation_admin",
+      "label": "Organisation and corporate administration",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "POST",
+          "path": "/admin/companies"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/companies"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/companies/{company_id}"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/companies/{company_id}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/companies/{company_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/companies/{company_id}/users"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/companies/{company_id}/users"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/companies/{company_id}/connectors"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/companies/{company_id}/connectors"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/companies/{company_id}/connectors/{connector_id}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/companies/{company_id}/connectors/{connector_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/companies/{company_id}/connectors/{connector_id}/sync"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/audit-logs"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/stats"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/health"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/companies/{company_id}/sites"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/companies/{company_id}/sites"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/sites"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/sites/{site_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/sites/{site_id}/datasets"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/datasets"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/datasets/{dataset_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/companies/{company_id}/documents"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/documents"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/documents/{document_id}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/documents/{document_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/documents/{document_id}/download"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/companies/{company_id}/integrations"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/integrations"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/integrations/{integration_id}/sync"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/integrations/{integration_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/contacts"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/products"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/products"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/products/{product_id}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/products/{product_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/products/{product_id}/stock"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/users"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/users/{user_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/orders"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/orders/{order_id}/status"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/alerts"
+        },
+        {
+          "method": "POST",
+          "path": "/admin/doctor-invites"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/doctor-invites"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admin/doctor-invites/{invite_id}"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/doctor-applications"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admin/doctor-applications/{application_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/corporate/accounts"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/corporate/accounts/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/corporate/enroll"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/corporate/kpis"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/organisations"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/organisations/me"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/organisations/me/locations"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/organisations/me/locations/{location_id}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/organisations/me/documents/{kind}"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/organisations/me/submit"
+        }
+      ],
+      "ui_routes": [
+        "/empresas",
+        "/corporate",
+        "/admin",
+        "/admin/doctors",
+        "/admin/patients"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "public_contact",
+      "label": "Contact form submissions",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "POST",
+          "path": "/api/v1/contact"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/contact/admin"
+        }
+      ],
+      "ui_routes": [
+        "/contacto"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "kaya_response",
+      "label": "Emergency dispatch and hospital pre-alert",
+      "state": "NOT_BUILT",
+      "default_enabled": false,
+      "synthetic_test_state": "NOT_BUILT",
+      "api_bindings": [],
+      "ui_routes": [
+        "/urgencia"
+      ],
+      "included_in_pilot": false
+    },
+    {
+      "id": "native_health_sync",
+      "label": "Native health and device synchronization",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [],
+      "ui_routes": [],
+      "included_in_pilot": false
+    },
+    {
+      "id": "autonomous_triage",
+      "label": "Autonomous clinical triage",
+      "state": "NOT_BUILT",
+      "default_enabled": false,
+      "synthetic_test_state": "NOT_BUILT",
+      "api_bindings": [],
+      "ui_routes": [],
+      "included_in_pilot": false
+    },
+    {
+      "id": "service_operations",
+      "label": "Service readiness and administration",
+      "state": "DISABLED_PENDING_GATE",
+      "default_enabled": false,
+      "synthetic_test_state": "PRESERVED_SOURCE",
+      "api_bindings": [
+        {
+          "method": "GET",
+          "path": "/health"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/health"
+        }
+      ],
+      "ui_routes": [],
+      "included_in_pilot": false
+    }
+  ],
+  "public_copy": {
+    "title": "Kaya — pilot planning",
+    "availability": "Kaya is not accepting participants or providing care through this application.",
+    "planning_notice": "Angola is the first launch market, initially Luanda. Portugal is being prepared in parallel; its initial location is not yet selected. Service availability remains subject to each market's release readiness.",
+    "unavailable_actions": [
+      "signup",
+      "triage",
+      "booking",
+      "video",
+      "prescribing",
+      "payments",
+      "AI",
+      "emergency dispatch"
+    ],
+    "legacy_copy_disposition": "Legacy pages and translations are preserved as unmounted source. Complete copy/translation remediation is a later phase."
+  },
+  "ui_boundary": {
+    "web": "Every path renders only the informational entrypoint; legacy router and AuthProvider are not mounted.",
+    "expo": "Informational App only; legacy navigation and background health registration are not imported.",
+    "native_ios": "Reference source only; build and installed binary state UNKNOWN; excluded from this pilot.",
+    "informational_routes": [
+      "/",
+      "/about",
+      "/services",
+      "/faq",
+      "/privacy",
+      "/terms",
+      "/medical-disclaimer",
+      "*"
+    ]
+  },
+  "pilot": {
+    "pilot_id": "ao-luanda-primary-care-coordination-v1",
+    "planning_status": "DRAFT_OPERATIONAL_HYPOTHESIS",
+    "launch_status": "HOLD",
+    "execution_mode": "synthetic_only",
+    "real_participants_enabled": false,
+    "country_code": "AO",
+    "city": "Luanda",
+    "timezone": "Africa/Luanda",
+    "interface_locale": "pt",
+    "angolan_portuguese_review": "BLOCKED_EXTERNAL",
+    "clinic_id": null,
+    "clinic_count": 1,
+    "operator_id": null,
+    "clinical_owner_id": null,
+    "data_controller_id": null,
+    "age_min": 18,
+    "invited_only": true,
+    "workflow": "Routine primary-care appointment coordination with human clinic confirmation",
+    "platform": "responsive_web_pwa_only",
+    "duration_days": 14,
+    "start_date": null,
+    "end_date": null,
+    "schedule": {
+      "weekdays": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_local": "09:00",
+      "end_local_exclusive": "13:00",
+      "holiday_calendar": null,
+      "staffed_dates": [],
+      "approval_status": "BLOCKED_EXTERNAL",
+      "staffing_requirements": {
+        "authorized_coordinator_count": 1,
+        "verified_primary_care_clinician_count": 1,
+        "approval_status": "BLOCKED_EXTERNAL"
+      }
+    },
+    "capacity": {
+      "max_invited_adults": 25,
+      "max_confirmed_appointments_per_day": 5,
+      "max_pending_requests": 5,
+      "proposed_appointment_minutes": 30
+    },
+    "coordination_target_staffed_minutes": 30,
+    "commercial_hypothesis": "No Kaya charges during proposed evaluation. Clinic care arrangements need separate approval; no free-treatment claim.",
+    "excluded_populations": [
+      "minors",
+      "proxies",
+      "uncertain eligibility or consent authority",
+      "outside approved jurisdiction"
+    ],
+    "excluded_workflows": [
+      "emergency or urgent triage",
+      "pregnancy or maternity care",
+      "mental-health crisis",
+      "post-discharge or procedure care",
+      "complex chronic-care pathways",
+      "diagnosis or treatment advice",
+      "clinical notes",
+      "prescribing or referrals",
+      "AI",
+      "video",
+      "payments",
+      "marketplace",
+      "Response or hospital pre-alert",
+      "devices or wearable feeds",
+      "external messaging"
+    ],
+    "permitted_data_categories": [
+      "scoped invitation",
+      "reviewed eligibility status",
+      "minimal administrative identifiers",
+      "appointment and staff references",
+      "consent version and status",
+      "administrative outcomes",
+      "restricted audit events"
+    ],
+    "prohibited_data_categories": [
+      "symptom narratives",
+      "health documents",
+      "photos",
+      "vital signs",
+      "device feeds"
+    ],
+    "metrics": [
+      {
+        "id": "safety_boundary_violation_count",
+        "kind": "count",
+        "operator": "max",
+        "threshold": 0,
+        "breach_action": "HOLD",
+        "owner_role": "clinical_safety"
+      },
+      {
+        "id": "failed_escalation_count",
+        "kind": "count",
+        "operator": "max",
+        "threshold": 0,
+        "breach_action": "HOLD",
+        "owner_role": "clinical_safety_and_operations"
+      },
+      {
+        "id": "privacy_unauthorized_disclosure_count",
+        "kind": "count",
+        "operator": "max",
+        "threshold": 0,
+        "breach_action": "HOLD",
+        "owner_role": "privacy_and_security"
+      },
+      {
+        "id": "credential_invalid_confirmation_count",
+        "kind": "count",
+        "operator": "max",
+        "threshold": 0,
+        "breach_action": "HOLD",
+        "owner_role": "clinic_and_credentialing"
+      },
+      {
+        "id": "booking_conflict_count",
+        "kind": "count",
+        "operator": "max",
+        "threshold": 0,
+        "breach_action": "HOLD",
+        "owner_role": "clinic_and_engineering"
+      },
+      {
+        "id": "staffed_coverage_ratio",
+        "kind": "ratio",
+        "operator": "min",
+        "threshold": 1.0,
+        "breach_action": "CLOSE_BOOKING_WINDOW",
+        "owner_role": "operations"
+      },
+      {
+        "id": "pending_request_count",
+        "kind": "count",
+        "operator": "max",
+        "threshold": 5,
+        "at_limit_action": "REJECT_NEW_REQUESTS",
+        "breach_action": "PAUSE_ADMISSION",
+        "owner_role": "clinic_and_operations"
+      },
+      {
+        "id": "support_unacknowledged_staffed_minutes",
+        "kind": "duration_minutes",
+        "operator": "max",
+        "threshold": 30,
+        "breach_action": "PAUSE_ADMISSION",
+        "owner_role": "operations"
+      },
+      {
+        "id": "booking_completion_ratio",
+        "kind": "ratio",
+        "operator": "min",
+        "threshold": 0.9,
+        "minimum_sample": 10,
+        "window_days": 7,
+        "breach_action": "PAUSE_ADMISSION",
+        "owner_role": "clinic_and_product"
+      },
+      {
+        "id": "critical_boundary_comprehension_ratio",
+        "kind": "ratio",
+        "operator": "min",
+        "threshold": 0.9,
+        "minimum_sample": 10,
+        "required_evidence_kind": "consented_human_evaluation",
+        "individual_failure_blocks_admission": true,
+        "breach_action": "HOLD",
+        "owner_role": "clinical_and_language_accessibility"
+      }
+    ],
+    "metric_status": "DRAFT_REQUIRES_HUMAN_APPROVAL",
+    "missing_invalid_or_insufficient_evidence_action": "INDETERMINATE_AND_BLOCK",
+    "automatic_resume": false,
+    "immediate_hold_events": [
+      "real_data_ingress",
+      "paid_or_live_provider_activation",
+      "excluded_admission",
+      "missing_required_approval",
+      "disabled_capability_bypass",
+      "identity_consent_or_credential_uncertainty",
+      "audit_integrity_loss",
+      "stop_control_unavailable"
+    ],
+    "owners": [
+      {
+        "role": "operator",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "licensed_clinic",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "clinical_safety",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "data_controller",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "privacy",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "security",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "operations",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "credentialing",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "language_accessibility",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      },
+      {
+        "role": "release_board",
+        "assigned_person": null,
+        "status": "BLOCKED_EXTERNAL"
+      }
+    ],
+    "metric_owner_labels": "Descriptive accountability roles only; no named people assigned."
+  },
+  "route_inventory": {
+    "method": "AST declarations of mounted preserved backend; exact method/path binding, no imports",
+    "mounted_router_count": 37,
+    "mounted_route_count": 293,
+    "legacy_unmounted_prefixes": [
+      "/chat",
+      "/status",
+      "/payments",
+      "/shop",
+      "/contacts"
+    ],
+    "unmounted_and_unknown_action": "DENY_503"
+  }
+}

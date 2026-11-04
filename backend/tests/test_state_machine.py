@@ -28,6 +28,13 @@ def test_draft_cannot_jump_to_verified():
     )
 
 
+@pytest.mark.parametrize("legacy,canonical", [("verified", "completed"), ("needs_info", "action_required")])
+def test_equivalent_status_spellings_are_auditable_noops(legacy, canonical):
+    assert is_allowed(legacy, canonical)
+    assert is_allowed(canonical, legacy)
+    assert not is_allowed("draft", "verified")
+
+
 def test_submitted_to_processing():
     assert is_allowed(
         VerificationStatus.SUBMITTED.value,
@@ -155,7 +162,8 @@ def _register(client, role="doctor", diploma_country="AO"):
         "graduation_year": 2020,
     })
     assert r.status_code == 201, r.text
-    return r.json()
+    from _authutil import complete_enrollment
+    return complete_enrollment(client, r.json())
 
 
 def _headers(auth):
@@ -179,6 +187,11 @@ def _submit_dossier(client, auth):
 
 
 def _admin(client):
+    from _authutil import login_with_mfa
+    return login_with_mfa(client, "teste@admin.com", "123456")
+
+
+def _admin_unused(client):
     r = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
     assert r.status_code == 200
     return r.json()
@@ -272,6 +285,19 @@ def test_reviewer_can_suspend_then_reactivate(client):
     ).json()
     assert reactivated["new_status"] == VerificationStatus.COMPLETED.value
 
+    # Reactivation returns a review state; clinical access needs explicit final
+    # approval after current evidence and licence validity are checked again.
+    from _authutil import login_with_mfa
+    clinician = login_with_mfa(client, doc["user"]["email"], "strong-pass")
+    blocked = client.get("/api/v1/doctor/dashboard", headers=_headers(clinician))
+    assert blocked.status_code == 403, blocked.text
+    finalized = client.post(
+        f"/api/v1/credentials/admin/{case['id']}/decision", headers=_headers(admin),
+        json={"action": "approve"},
+    )
+    assert finalized.status_code == 200, finalized.text
+    assert client.get("/api/v1/doctor/dashboard", headers=_headers(clinician)).status_code == 200
+
     h = client.get(
         f"/api/v1/compliance/cases/{case['id']}/history",
         headers=_headers(admin),
@@ -344,6 +370,10 @@ def test_approval_notifies_applicant(client):
         f"/api/v1/credentials/admin/{case['id']}/decision",
         headers=_headers(admin), json={"action": "approve"},
     )
+    # Approval grants the persisted clinician role; its old applicant session
+    # cannot skip the newly mandatory MFA requirement.
+    from _authutil import login_with_mfa
+    doc = login_with_mfa(client, doc["user"]["email"], "strong-pass")
     notifs = client.get("/api/v1/notifications/me", headers=_headers(doc)).json()
     items = notifs if isinstance(notifs, list) else notifs.get("items", [])
     titles = " ".join(n.get("title", "") for n in items)

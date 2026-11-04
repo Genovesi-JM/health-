@@ -16,52 +16,34 @@ Cancel/Reschedule:
 - PATCH /api/v1/consultations/{id} — Cancel or update
 """
 import logging
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timezone
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import User
+from app.models import User, UserProfile
 from app.health_models import (
-    Patient, Doctor, Consultation, ConsultationNotes, TriageSession, TriageResult,
+    Patient, Doctor, Consultation, ConsultationNotes, TriageSession, TriageResult, HealthAuditLog,
 )
 from app.health_schemas import (
-    ConsultationBookRequest, ConsultationOut, ConsultationCompleteRequest,
-    ConsultationCancelRequest, ConsultationQueueItem, RoleEnum,
+    ConsultationBookRequest, ConsultationOut, ConsultationCompleteRequest, ConsultationAmendmentRequest,
+    ConsultationCancelRequest, ConsultationQueueItem, ConsultationRescheduleRequest, RoleEnum,
 )
 from app.rbac import (
-    get_patient_for_user, get_doctor_for_user,
+    get_patient_for_user,
     require_consents, require_verified_doctor,
-    log_health_audit,
 )
+from app.services.consultation_lifecycle import displayed_revision, record_event, require_displayed_revision, transition
+from app.services.clinician_access import require_current_clinician
+from app.services.consultation_closeout import finalize_consultation, closeout_result, end_video
 
-# Canonical specialty codes (match Doctor.specialization). Legacy English UI
-# codes and free-text labels are normalised to these so bookings always reach
-# the right doctor's queue.
-_SPECIALTY_ALIASES = {
-    "general": "clinica_geral", "clinica geral": "clinica_geral",
-    "cardiology": "cardiologia", "dermatology": "dermatologia",
-    "pediatrics": "pediatria", "orthopedics": "ortopedia",
-    "neurology": "neurologia", "gynecology": "ginecologia",
-    "ophthalmology": "oftalmologia", "psychiatry": "psiquiatria",
-    "internal": "medicina_interna", "internal medicine": "medicina_interna",
-    "surgery": "cirurgia", "other": "outra",
-}
-
-
-def normalize_specialty(value: Optional[str]) -> str:
-    """Map any specialty input to a canonical snake_case code."""
-    if not value:
-        return "clinica_geral"
-    v = value.strip().lower()
-    if v in _SPECIALTY_ALIASES:
-        return _SPECIALTY_ALIASES[v]
-    snake = v.replace(" ", "_")
-    return _SPECIALTY_ALIASES.get(snake, snake)
+from app.services.consultation_pages import consultation_page, history_query, private_page
+from app.services.specialties import normalize_specialty
+from app.services.request_expiry import annotate_expiry, safely_due_sql
 from app.routers.notifications import create_notification
 
 logger = logging.getLogger(__name__)
@@ -76,86 +58,51 @@ router = APIRouter(tags=["consultations"])
 @router.post("/api/v1/consultations/book", response_model=ConsultationOut)
 def book_consultation(
     body: ConsultationBookRequest,
-    patient: Patient = Depends(require_consents),
+    patient: Patient = Depends(get_patient_for_user),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
     """Book a consultation. Requires all consents to be accepted."""
-    # Validate triage reference if provided
-    if body.triage_session_id:
-        triage = db.query(TriageSession).filter(
-            TriageSession.id == body.triage_session_id,
-            TriageSession.patient_id == patient.id,
-        ).first()
-        if not triage:
-            raise HTTPException(status_code=404, detail="Sessão de triagem não encontrada.")
+    from app.services.appointment_booking import create_booking
+    consultation, _ = create_booking(db, body, patient, user, idempotency_key)
 
-    # If the patient chose a specific doctor + time, assign directly (scheduled);
-    # otherwise it goes into the shared queue as a request.
-    assigned_doctor_id = None
-    status = "requested"
-    if body.doctor_id and body.scheduled_at:
-        doc = db.query(Doctor).filter(Doctor.id == body.doctor_id).first()
-        if not doc:
-            raise HTTPException(status_code=404, detail="Médico não encontrado.")
-        if doc.verification_status != "verified":
-            raise HTTPException(status_code=400, detail="Este médico ainda não está verificado.")
-        assigned_doctor_id = doc.id
-        status = "scheduled"
+    return annotate_expiry([consultation], db)[0]
 
-    consultation = Consultation(
-        patient_id=patient.id,
-        triage_session_id=body.triage_session_id,
-        specialty=normalize_specialty(body.specialty),
-        doctor_id=assigned_doctor_id,
-        status=status,
-        scheduled_at=body.scheduled_at,
-    )
-    db.add(consultation)
-    db.commit()
-    db.refresh(consultation)
 
-    log_health_audit(
-        db,
-        action="consultation_booked",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-    )
+@router.post("/api/v1/consultations/{consultation_id}/reschedule", response_model=ConsultationOut)
+def reschedule_consultation(
+    consultation_id: str, body: ConsultationRescheduleRequest, response: Response,
+    patient: Patient = Depends(get_patient_for_user), user: User = Depends(get_current_user),
+    db: Session = Depends(get_db), idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
+):
+    from app.services.appointment_rescheduling import reschedule
+    consultation = db.query(Consultation).filter_by(id=consultation_id, patient_id=patient.id).first()
+    if not consultation:
+        raise HTTPException(404, "Consulta não encontrada.")
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return annotate_expiry([reschedule(db, consultation, body, patient, user, idempotency_key)], db)[0]
 
-    try:
-        create_notification(
-            db,
-            user_id=user.id,
-            title="Consulta agendada",
-            message=f"A sua consulta de {consultation.specialty.replace('_', ' ')} foi registada com sucesso.",
-            type="success",
-            entity_type="consultation",
-            entity_id=consultation.id,
-        )
-    except Exception:
-        pass
 
-    # If scheduled directly with a doctor, notify that doctor.
-    if assigned_doctor_id:
-        try:
-            doc = db.get(Doctor, assigned_doctor_id)
-            if doc:
-                create_notification(
-                    db, user_id=doc.user_id,
-                    title="Nova consulta agendada",
-                    message="Um paciente agendou uma consulta consigo.",
-                    type="info", entity_type="consultation", entity_id=consultation.id,
-                )
-        except Exception:
-            pass
-
-    return consultation
+@router.get("/api/v1/consultations/me/page")
+def patient_consultation_page(
+    response: Response, view: Literal["all", "upcoming", "past"] = Query("all"),
+    status: Optional[str] = Query(None, max_length=40), limit: int = Query(20, ge=1, le=100),
+    cursor: Optional[str] = Query(None, max_length=1024),
+    patient: Patient = Depends(get_patient_for_user), db: Session = Depends(get_db),
+):
+    query = history_query(db.query(Consultation).filter(Consultation.patient_id == patient.id), view=view, status=status)
+    rows, next_cursor = consultation_page(query, viewer=patient.user_id, owner=patient.id,
+        scope="patient-consultations", limit=limit, cursor=cursor, filters={"view": view, "status": status})
+    private_page(response)
+    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in annotate_expiry(rows, db)], "next_cursor": next_cursor}
 
 
 @router.get("/api/v1/consultations/me", response_model=List[ConsultationOut])
 def my_consultations(
     status: Optional[str] = Query(None),
+    consultation_id: Optional[str] = Query(None, max_length=36),
     patient: Patient = Depends(get_patient_for_user),
     db: Session = Depends(get_db),
 ):
@@ -163,52 +110,52 @@ def my_consultations(
     q = db.query(Consultation).filter(Consultation.patient_id == patient.id)
     if status:
         q = q.filter(Consultation.status == status)
-    return q.order_by(Consultation.created_at.desc()).limit(100).all()
+    if consultation_id:
+        q = q.filter(Consultation.id == consultation_id)
+    return annotate_expiry(q.order_by(Consultation.created_at.desc()).limit(100).all(), db)
 
 
 # ═══════════════════════════════════════════════════════════════
 # Doctor endpoints
 # ═══════════════════════════════════════════════════════════════
 
-@router.get("/api/v1/doctor/queue", response_model=List[ConsultationQueueItem])
-def doctor_queue(
-    specialty: Optional[str] = Query(None),
-    user: User = Depends(require_verified_doctor),
-    db: Session = Depends(get_db),
-):
-    """Get compatible unassigned requests plus this doctor's active cases."""
+def _queue_query(user, db, specialty):
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+    credential = require_current_clinician(user, db)
     q = db.query(Consultation).filter(
         or_(
             and_(
                 Consultation.doctor_id.is_(None),
                 Consultation.status == "requested",
+                Consultation.specialty.in_((normalize_specialty(doctor.specialization), "clinica_geral")),
+                or_(Consultation.country == credential.practice_country, Consultation.country.is_(None)),
             ),
             and_(
                 Consultation.doctor_id == doctor.id,
-                Consultation.status == "in_progress",
+                Consultation.status.in_(("requested", "scheduled", "in_progress")),
             ),
         )
     )
     if specialty:
-        q = q.filter(or_(
-            Consultation.doctor_id == doctor.id,
-            Consultation.specialty == specialty,
-        ))
-    elif doctor:
-        # Default: filter by doctor's specialization
-        q = q.filter(
-            or_(
-                Consultation.doctor_id == doctor.id,
-                Consultation.specialty == doctor.specialization,
-                Consultation.specialty == "clinica_geral",
-            )
-        )
+        # A display filter can narrow access, never expand it to another specialty.
+        q = q.filter(Consultation.specialty == normalize_specialty(specialty))
 
-    consultations = q.order_by(Consultation.created_at.asc()).limit(50).all()
+    return q.filter(~safely_due_sql()), doctor
 
+
+def _patient_names(consultations, db):
+    identifiers = {item.patient_id for item in consultations}
+    if not identifiers:
+        return {}
+    return {identifier: name or "Paciente" for identifier, name in db.query(Patient.id, UserProfile.full_name)
+        .join(User, User.id == Patient.user_id).outerjoin(UserProfile, UserProfile.user_id == User.id)
+        .filter(Patient.id.in_(identifiers)).all()}
+
+
+def _queue_items(consultations, db):
     items = []
-    for c in consultations:
+    names = _patient_names(consultations, db)
+    for c in annotate_expiry(consultations, db):
         # Get triage info if available (minimal patient data)
         risk_level = None
         chief_complaint = None
@@ -224,30 +171,68 @@ def doctor_queue(
                 if result:
                     risk_level = result.risk_level
 
-        # Resolve patient display name
-        patient_name = None
-        try:
-            pat = db.query(Patient).filter(Patient.id == c.patient_id).first()
-            if pat:
-                u = db.get(User, pat.user_id)
-                if u:
-                    patient_name = u.name or u.email.split("@")[0]
-        except Exception:
-            pass
-
         items.append(ConsultationQueueItem(
             id=c.id,
             patient_id=c.patient_id,
-            patient_name=patient_name,
+            patient_name=names.get(c.patient_id, "Paciente"),
             triage_session_id=c.triage_session_id,
             specialty=c.specialty,
             status=c.status,
+            requested_expires_at=c.requested_expires_at,
+            expired_at=c.expired_at,
+            request_expiry_state=c.request_expiry_state,
             risk_level=risk_level,
             chief_complaint=chief_complaint,
             scheduled_at=c.scheduled_at,
+            reschedule_revision=c.reschedule_revision,
+            timezone=c.timezone,
+            scheduled_end_at=c.scheduled_end_at,
             created_at=c.created_at,
         ))
     return items
+
+
+@router.get("/api/v1/doctor/queue", response_model=List[ConsultationQueueItem])
+def doctor_queue(
+    specialty: Optional[str] = Query(None), user: User = Depends(require_verified_doctor),
+    db: Session = Depends(get_db),
+):
+    query, _ = _queue_query(user, db, specialty)
+    return _queue_items(query.order_by(Consultation.created_at.asc(), Consultation.id.asc()).limit(50).all(), db)
+
+
+@router.get("/api/v1/doctor/queue/page")
+def doctor_queue_page(
+    response: Response, specialty: Optional[str] = Query(None, max_length=100),
+    limit: int = Query(25, ge=1, le=100), cursor: Optional[str] = Query(None, max_length=1024),
+    user: User = Depends(require_verified_doctor), db: Session = Depends(get_db),
+):
+    query, doctor = _queue_query(user, db, specialty)
+    rows, next_cursor = consultation_page(query, viewer=user.id, owner=doctor.id, scope="doctor-queue",
+        limit=limit, cursor=cursor, ascending=True, filters={"specialty": normalize_specialty(specialty) if specialty else None})
+    private_page(response)
+    return {"items": _queue_items(rows, db), "next_cursor": next_cursor}
+
+
+@router.get("/api/v1/doctor/consultations/page")
+def assigned_consultation_page(
+    response: Response, view: Literal["all", "upcoming", "past"] = Query("all"),
+    status: Optional[str] = Query(None, max_length=40), limit: int = Query(20, ge=1, le=100),
+    cursor: Optional[str] = Query(None, max_length=1024),
+    user: User = Depends(require_verified_doctor), db: Session = Depends(get_db),
+):
+    require_current_clinician(user, db)
+    doctor = db.query(Doctor).filter_by(user_id=user.id).first()
+    if not doctor:
+        raise HTTPException(404, "Perfil de médico não encontrado.")
+    query = history_query(db.query(Consultation).filter(Consultation.doctor_id == doctor.id), view=view, status=status)
+    rows, next_cursor = consultation_page(query, viewer=user.id, owner=doctor.id, scope="doctor-consultations",
+        limit=limit, cursor=cursor, filters={"view": view, "status": status})
+    names = _patient_names(rows, db)
+    for row in rows:
+        row.patient_name = names.get(row.patient_id, "Paciente")
+    private_page(response)
+    return {"items": [ConsultationOut.model_validate(row).model_dump(mode="json") for row in annotate_expiry(rows, db)], "next_cursor": next_cursor}
 
 
 @router.get("/api/v1/doctor/consultations", response_model=List[ConsultationOut])
@@ -264,12 +249,13 @@ def doctor_consultations(
     q = db.query(Consultation).filter(Consultation.doctor_id == doctor.id)
     if status:
         q = q.filter(Consultation.status == status)
-    return q.order_by(Consultation.created_at.desc()).limit(100).all()
+    return annotate_expiry(q.order_by(Consultation.created_at.desc()).limit(100).all(), db)
 
 
 @router.post("/api/v1/doctor/queue/{consultation_id}/accept", response_model=ConsultationOut)
 def accept_consultation(
     consultation_id: str,
+    expected_revision: int = Depends(displayed_revision),
     user: User = Depends(require_verified_doctor),
     db: Session = Depends(get_db),
 ):
@@ -280,47 +266,34 @@ def accept_consultation(
 
     consultation = db.query(Consultation).filter(
         Consultation.id == consultation_id,
-        Consultation.status == "requested",
-        Consultation.doctor_id.is_(None),
+        or_(
+            Consultation.doctor_id == doctor.id,
+            and_(
+                Consultation.doctor_id.is_(None),
+                Consultation.specialty.in_((normalize_specialty(doctor.specialization), "clinica_geral")),
+            ),
+        ),
     ).first()
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou já aceite.")
 
-    consultation.doctor_id = doctor.id
-    consultation.status = "in_progress"
-    consultation.started_at = datetime.utcnow()
-    db.add(consultation)
+    require_displayed_revision(consultation, expected_revision)
+    next_status = "scheduled" if consultation.scheduled_at else "in_progress"
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_accepted",
+        allowed_from=("requested",), status=next_status, doctor_id=doctor.id,
+        started_at=datetime.utcnow() if next_status == "in_progress" else None,
+    )
     db.commit()
     db.refresh(consultation)
 
-    log_health_audit(
-        db,
-        action="consultation_accepted",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-        metadata={"doctor_id": doctor.id},
-    )
-
-    # Notify the patient that a doctor accepted their consultation.
-    try:
-        pat = db.get(Patient, consultation.patient_id)
-        if pat:
-            create_notification(
-                db, user_id=pat.user_id,
-                title="Consulta aceite",
-                message="Um médico aceitou a sua consulta. Já pode conversar por mensagem ou vídeo.",
-                type="success", entity_type="consultation", entity_id=consultation.id,
-            )
-    except Exception:
-        pass
-
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 @router.post("/api/v1/doctor/queue/{consultation_id}/start", response_model=ConsultationOut)
 def start_consultation(
     consultation_id: str,
+    expected_revision: int = Depends(displayed_revision),
     user: User = Depends(require_verified_doctor),
     db: Session = Depends(get_db),
 ):
@@ -337,21 +310,15 @@ def start_consultation(
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou não está no estado agendado.")
 
-    consultation.status = "in_progress"
-    consultation.started_at = datetime.utcnow()
-    db.add(consultation)
+    require_displayed_revision(consultation, expected_revision)
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_started",
+        allowed_from=("scheduled",), status="in_progress", started_at=datetime.utcnow(),
+    )
     db.commit()
     db.refresh(consultation)
 
-    log_health_audit(
-        db,
-        action="consultation_started",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-    )
-
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 @router.post("/api/v1/consultations/{consultation_id}/complete", response_model=ConsultationOut)
@@ -372,36 +339,85 @@ def complete_consultation(
     ).first()
     if not consultation:
         raise HTTPException(status_code=404, detail="Consulta não encontrada ou não atribuída a si.")
-    if consultation.status == "completed":
-        raise HTTPException(status_code=400, detail="Consulta já completada.")
+    try:
+        finalize_consultation(db, consultation, body, user)
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível confirmar a gravação. Tente novamente com o mesmo conteúdo.") from None
 
-    # Save notes
-    notes = ConsultationNotes(
-        consultation_id=consultation.id,
-        doctor_id=doctor.id,
-        subjective=body.subjective,
-        objective=body.objective,
-        assessment=body.assessment,
-        plan=body.plan,
-        outcome=body.outcome,
-    )
-    db.add(notes)
+    return annotate_expiry([consultation], db)[0]
 
-    consultation.status = "completed"
-    consultation.ended_at = datetime.utcnow()
-    db.add(consultation)
-    db.commit()
-    db.refresh(consultation)
 
-    log_health_audit(
-        db,
-        action="consultation_completed",
-        actor_user_id=user.id,
-        resource_type="consultation",
-        resource_id=consultation.id,
-    )
+@router.post("/api/v1/consultations/{consultation_id}/closeout/amendments")
+def amend_consultation_closeout(
+    consultation_id: str,
+    body: ConsultationAmendmentRequest,
+    response: Response,
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
+    user: User = Depends(require_verified_doctor),
+    db: Session = Depends(get_db),
+):
+    """Append an attributed correction without changing the finalized original."""
+    from app.services.consultation_amendments import append_amendment
+    doctor = db.query(Doctor).filter_by(user_id=user.id).first()
+    consultation = db.query(Consultation).filter_by(
+        id=consultation_id, doctor_id=doctor.id if doctor else None,
+    ).first() if doctor else None
+    if consultation is None:
+        raise HTTPException(404, "Consulta não encontrada ou não atribuída a si.")
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    try:
+        append_amendment(db, consultation, body, user, idempotency_key)
+        result = closeout_result(db, consultation, clinician=True)
+        db.commit()
+        return result
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível confirmar a correção. Repita com a mesma chave e conteúdo.") from None
 
-    return consultation
+
+@router.get("/api/v1/consultations/{consultation_id}/closeout")
+def get_consultation_closeout(
+    consultation_id: str,
+    response: Response,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Read only authored patient disclosures; SOAP belongs to the assigned doctor."""
+    query = db.query(Consultation).filter(Consultation.id == consultation_id)
+    if user.role in ("patient", "cliente"):
+        patient = db.query(Patient).filter(Patient.user_id == user.id).first()
+        if not patient:
+            raise HTTPException(404, "Consulta não encontrada.")
+        query = query.filter(Consultation.patient_id == patient.id)
+    elif user.role == "doctor":
+        require_current_clinician(user, db)
+        doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+        if not doctor:
+            raise HTTPException(404, "Consulta não encontrada.")
+        query = query.filter(Consultation.doctor_id == doctor.id)
+    else:
+        raise HTTPException(403, "Sem acesso ao resumo desta consulta.")
+    consultation = query.first()
+    if not consultation:
+        raise HTTPException(404, "Consulta não encontrada.")
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    result = closeout_result(db, consultation, clinician=user.role == "doctor")
+    db.add(HealthAuditLog(actor_user_id=user.id, action="consultation_closeout_read",
+                          resource_type="consultation", resource_id=consultation.id))
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível abrir o resumo. Tente novamente.") from None
+    return result
 
 
 @router.patch("/api/v1/consultations/{consultation_id}", response_model=ConsultationOut)
@@ -419,27 +435,30 @@ def cancel_consultation(
         raise HTTPException(status_code=404, detail="Consulta não encontrada.")
 
     # Row-level access check
-    if user.role == RoleEnum.PATIENT:
+    if user.role in (RoleEnum.PATIENT, "cliente"):
         patient = db.query(Patient).filter(Patient.user_id == user.id).first()
         if not patient or consultation.patient_id != patient.id:
             raise HTTPException(status_code=403, detail="Sem permissão.")
     elif user.role == RoleEnum.DOCTOR:
+        require_current_clinician(user, db)
         doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
         if not doctor or consultation.doctor_id != doctor.id:
             raise HTTPException(status_code=403, detail="Sem permissão.")
     elif user.role not in (RoleEnum.ADMIN, RoleEnum.SUPPORT):
         raise HTTPException(status_code=403, detail="Sem permissão.")
 
-    if consultation.status in ("completed", "cancelled"):
-        raise HTTPException(status_code=400, detail="Consulta não pode ser cancelada.")
-
-    consultation.status = "cancelled"
-    consultation.cancellation_reason = body.reason
-    db.add(consultation)
+    transition(
+        db, consultation, actor_id=user.id, action="consultation_cancelled",
+        allowed_from=(("requested", "scheduled") if user.role in (RoleEnum.PATIENT, "cliente")
+                      else ("requested", "scheduled", "in_progress")), status="cancelled",
+        cancellation_reason=body.reason,
+        patient_cancel=user.role in (RoleEnum.PATIENT, "cliente"),
+    )
+    end_video(db, consultation, user.id, datetime.utcnow())
     db.commit()
     db.refresh(consultation)
 
-    return consultation
+    return annotate_expiry([consultation], db)[0]
 
 
 # ── Patient review of a completed consultation ───────────────────────────────

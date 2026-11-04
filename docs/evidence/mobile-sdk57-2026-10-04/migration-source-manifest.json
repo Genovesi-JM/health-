@@ -1,0 +1,15 @@
+{
+  "package.json": "919b9111d1bebe76591ede4f9ad48248c6cea8c11ef9e9e47418c2be4f136c1a",
+  "package-lock.json": "a73130c9f1e3b5577df82000f11aa61cdef86f5e28a9df952776af2ec02e0a41",
+  "app.json": "c5621ce400851bb8c490414d8718aba8e772d010c38ff43f7858a6579f182990",
+  "plugins/withInformationalHold.cjs": "287f2483e1bd1b06b19991804e82152518fac63b860e2b463bf315b7b4b506e2",
+  "src/screens/LandingScreen.tsx": "5ff8ee63c56bc333c40f216063d0d1545aaad2d3910b0e9f5a730854e85918d4",
+  "src/navigation/ClinicianStack.tsx": "399c6c59748e0abb8fc014c03a5cc9ced3f1d6e7d0e6476905410f572e32a69d",
+  "src/health/backgroundScheduler.ts": "740905f0a0c76bb7f9c86da712a4044478c8b60a2749e90cf9958dd9e894ec7c",
+  "src/health/backgroundHealthTask.ts": "ca4267abfadd96710256c5c9e3b5f225b693a118b9e5299c191f6c5ca4baff9c",
+  "src/health/backgroundTaskPolicy.ts": "420475267a1ef2d5f1cd57bebc3a863146da02af79bf678b709ddfd5f69eb27a",
+  "scripts/api-url.test.mjs": "f304f1ca1ed8f123477f374516af5b0909a1064657da53586495008f22218f96",
+  "scripts/background-task.test.mjs": "9cc86ff5728d18c7b3c85ca72790fa439a8d5ad9b4bcc12cadfdf9b5bf05a2d1",
+  "scripts/native-hold-config.test.mjs": "418a222fdc14c2afd12fa0b2ad530906bdc6cb55837ea445e6fb424595fe9d06",
+  "scripts/xcode-uuid-compatibility.test.mjs": "5049e76e8b41c7109753fac575e4a158d64806e19a375705893df8384b5535f9"
+}

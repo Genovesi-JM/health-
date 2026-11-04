@@ -1,0 +1,83 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/Users/genovesimaria/Documents/kaya-web/frontend[39m
+
+ [32m✓[39m src/ProtectedRoute.identity.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 628[2mms[22m[39m
+   [33m[2m✓[22m[39m discards loaded and pending clinical responses when authenticated identity becomes {"id":"doctor-b","role":"doctor"} on the same path [33m 391[2mms[22m[39m
+ [32m✓[39m src/pages/DoctorAvailabilityPage.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 972[2mms[22m[39m
+ [32m✓[39m src/pages/PatientDocumentsPagination.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 1132[2mms[22m[39m
+ [32m✓[39m src/pages/ConsultationsPage.reschedule-recovery.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 931[2mms[22m[39m
+ [32m✓[39m src/pages/ClinicianPatientWorkspacePage.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 1303[2mms[22m[39m
+   [33m[2m✓[22m[39m opens a completed signed record and its correction editor without an active episode [33m 373[2mms[22m[39m
+ [32m✓[39m src/pages/DoctorQueuePage.access.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 1378[2mms[22m[39m
+   [33m[2m✓[22m[39m history denial (401) tears down every sibling and ignores a late queue page after restoration [33m 440[2mms[22m[39m
+ [32m✓[39m src/components/BookConsultationModal.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 1872[2mms[22m[39m
+     [33m[2m✓[22m[39m recovers the same request after a page reload even when its slot is no longer listed [33m 506[2mms[22m[39m
+ [32m✓[39m src/LegacyApp.routes.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2073[2mms[22m[39m
+   [33m[2m✓[22m[39m redirects signed-out and wrong-role deep links before loading private page code [33m 655[2mms[22m[39m
+   [33m[2m✓[22m[39m opens a patient deep link after the existing consent gate succeeds [33m 324[2mms[22m[39m
+   [33m[2m✓[22m[39m preserves the development preview route /preview/nurse without auth [33m 310[2mms[22m[39m
+   [33m[2m✓[22m[39m preserves the development preview route /preview/clinician/patient without auth [33m 311[2mms[22m[39m
+   [33m[2m✓[22m[39m shows an actionable page-loading failure and a safe reload target [33m 318[2mms[22m[39m
+ [32m✓[39m src/pages/DoctorQueuePage.pagination.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 836[2mms[22m[39m
+   [33m[2m✓[22m[39m removes every loaded clinical panel and escalation when a next-page request denies access (401) [33m 333[2mms[22m[39m
+ [32m✓[39m src/components/ConsultationAmendments.review.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 889[2mms[22m[39m
+ [32m✓[39m src/pages/PatientDocumentsPage.test.tsx [2m([22m[2m18 tests[22m[2m)[22m[33m 2748[2mms[22m[39m
+     [33m[2m✓[22m[39m downloads authenticated bytes and revokes the temporary URL [33m 1106[2mms[22m[39m
+ [32m✓[39m src/components/ConsultationAmendments.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 766[2mms[22m[39m
+     [33m[2m✓[22m[39m requires confirmation and keeps patient publication an explicit choice [33m 417[2mms[22m[39m
+ [32m✓[39m src/pages/RegisterPage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 846[2mms[22m[39m
+     [33m[2m✓[22m[39m creates an account, refreshes identity, then opens the consent/profile journey [33m 307[2mms[22m[39m
+ [32m✓[39m src/pages/NotificationsPage.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 956[2mms[22m[39m
+ [32m✓[39m src/components/ConsultationCloseout.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 936[2mms[22m[39m
+ [32m✓[39m src/pages/DoctorAgendaPage.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 883[2mms[22m[39m
+     [33m[2m✓[22m[39m loads the selected future date in the explicit clinic timezone [33m 327[2mms[22m[39m
+ [32m✓[39m src/components/RescheduleConsultation.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 764[2mms[22m[39m
+ [32m✓[39m src/components/PaymentModal.test.tsx [2m([22m[2m26 tests[22m[2m)[22m[33m 1491[2mms[22m[39m
+ [32m✓[39m src/components/ClinicianPatientDocuments.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 592[2mms[22m[39m
+ [32m✓[39m src/components/OnboardingShell.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 836[2mms[22m[39m
+ [32m✓[39m src/components/TeleconsultationControl.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 644[2mms[22m[39m
+ [32m✓[39m src/pages/ConsultationsPage.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 985[2mms[22m[39m
+     [33m[2m✓[22m[39m waits for explicit confirmation and applies only the persisted server status [33m 443[2mms[22m[39m
+ [32m✓[39m src/pages/DoctorQueuePage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 541[2mms[22m[39m
+     [33m[2m✓[22m[39m accepts a request without treating it as an already scheduled visit [33m 314[2mms[22m[39m
+ [32m✓[39m src/pages/DoctorLivePage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 699[2mms[22m[39m
+     [33m[2m✓[22m[39m ends video separately while retaining the clinician draft for completion [33m 389[2mms[22m[39m
+ [32m✓[39m src/pages/PublicDoctorPage.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 776[2mms[22m[39m
+ [32m✓[39m src/components/DoctorConsultationHistory.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 541[2mms[22m[39m
+   [33m[2m✓[22m[39m reaches an older completed record through pagination and reads its exact clinician closeout [33m 446[2mms[22m[39m
+ [32m✓[39m src/pages/DoctorsListPage.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 715[2mms[22m[39m
+   [33m[2m✓[22m[39m prioritizes Angola, sends the market to the service, and preserves it in profile links [33m 358[2mms[22m[39m
+ [32m✓[39m src/ProtectedRoute.security.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 448[2mms[22m[39m
+ [32m✓[39m src/pages/TriagePage.subject.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 580[2mms[22m[39m
+ [32m✓[39m src/utils/useConsultationPages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 307[2mms[22m[39m
+ [32m✓[39m src/pages/ProfessionalVerificationPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 342[2mms[22m[39m
+ [32m✓[39m src/pages/ChooseAccountTypePage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 324[2mms[22m[39m
+ [32m✓[39m src/components/DocumentUpload.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 223[2mms[22m[39m
+ [32m✓[39m src/AuthContext.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 86[2mms[22m[39m
+ [32m✓[39m src/hooks/useUnreadNotifications.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 155[2mms[22m[39m
+ [32m✓[39m src/pages/MapaPage.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 170[2mms[22m[39m
+ [32m✓[39m src/pages/AdminExpiryPage.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 442[2mms[22m[39m
+ [32m✓[39m src/components/ExtractedDataConfirmation.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 268[2mms[22m[39m
+ [32m✓[39m src/pages/AuthCallbackPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m src/components/ChatModal.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 287[2mms[22m[39m
+ [32m✓[39m src/pages/ConsultationsPage.payment.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 481[2mms[22m[39m
+ [32m✓[39m src/utils/video.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/utils/appointments.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/session.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/services/client.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/utils/requestExpiry.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/i18n/translations.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/utils/pendingPayment.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/phase1/markets.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/utils/pendingAppointment.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/phase37/clientSafety.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/shellPrecache.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/phase1/operational.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/authRouting.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/utils/notifications.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m55 passed[39m[22m[90m (55)[39m
+[2m      Tests [22m [1m[32m389 passed[39m[22m[90m (389)[39m
+[2m   Start at [22m 21:56:24
+[2m   Duration [22m 11.02s[2m (transform 4.50s, setup 4.31s, import 16.32s, tests 32.27s, environment 32.39s)[22m
+

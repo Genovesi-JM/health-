@@ -1,0 +1,35 @@
+{
+  "frontend/src/LegacyApp.tsx": {
+    "original_path": "frontend/src/App.tsx",
+    "original_commit": "d6d9995",
+    "sha256": "6cab9769fb33fc2a8eb2080b1d3a1ac2fcdb8f5e7f4687f87f3de74f005cf725",
+    "byte_identical": true
+  },
+  "mobile/LegacyApp.tsx": {
+    "original_path": "mobile/App.tsx",
+    "original_commit": "d6d9995",
+    "sha256": "9ccb7f53cb15eb335d7813a1abdc3982072f2bd14c6c91a8298a945c38e91a11",
+    "byte_identical": true
+  },
+  "mobile/legacy-app.json": {
+    "original_path": "mobile/app.json",
+    "original_commit": "d6d9995",
+    "sha256": "37398a9cc49fc9012e0da1ca517b2bcaf673ef0f5f570430402317705fdd1b37",
+    "byte_identical": true
+  },
+  "frontend/src/components/DocumentUpload.test.tsx": {
+    "sha256": "66241bd803cd6325b24f6dbf92f33ca318f2f5019c2bbade470b901d89c78617",
+    "unchanged": true,
+    "included_in_phase1_test_run": false
+  },
+  "frontend/src/components/OnboardingShell.test.tsx": {
+    "sha256": "12d1cd1e6af95eab9607e38df5adccd5c96b55fa945f68385fa33a5703d5c552",
+    "unchanged": true,
+    "included_in_phase1_test_run": false
+  },
+  "frontend/src/pages/AdminExpiryPage.test.tsx": {
+    "sha256": "7b4425648603ec10a690ff7cf05c5101fd2f7ff7469b224d4cf3c1075d39b468",
+    "unchanged": true,
+    "included_in_phase1_test_run": false
+  }
+}

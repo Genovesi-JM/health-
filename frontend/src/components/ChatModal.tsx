@@ -18,7 +18,11 @@ function fmtTime(iso: string) {
   return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatModal({ open, consultationId, title, myRole, onClose }: Props) {
+export default function ChatModal(props: Props) {
+  return props.open ? <ChatSession key={props.consultationId} {...props} /> : null;
+}
+
+function ChatSession({ open, consultationId, title, myRole, onClose }: Props) {
   const { t } = useT();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState('');
@@ -35,7 +39,6 @@ export default function ChatModal({ open, consultationId, title, myRole, onClose
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     load();
     const iv = window.setInterval(load, 5000);
     return () => window.clearInterval(iv);

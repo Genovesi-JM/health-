@@ -1,0 +1,26 @@
+{
+  "informational-ios": {
+    "modules": 592,
+    "hermes_bytes": 1462169,
+    "hermes_sha256": "71a580f3638eae78552b906cd6a1043311eb0cfa03cad9bd5c4ddf8953ce367e",
+    "log": "bundle-informational-ios.log"
+  },
+  "informational-android": {
+    "modules": 590,
+    "hermes_bytes": 1467244,
+    "hermes_sha256": "9450b59398c07794917df975955727dc711e26c17022b842fe6b177f3e997c2c",
+    "log": "bundle-informational-android.log"
+  },
+  "legacy-ios": {
+    "modules": 1068,
+    "hermes_bytes": 3191092,
+    "hermes_sha256": "106657e314f97408a79fae7a40b1ace92c1bfc7c0a9b3e034761fa1ce1a27404",
+    "log": "bundle-legacy-ios.log"
+  },
+  "legacy-android": {
+    "modules": 1021,
+    "hermes_bytes": 3113732,
+    "hermes_sha256": "5de333501d0fcf063c4e5cfe9f2d3211f0a8a906ba69eda13096d329748f9a81",
+    "log": "bundle-legacy-android.log"
+  }
+}

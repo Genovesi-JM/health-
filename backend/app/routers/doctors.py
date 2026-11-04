@@ -6,7 +6,7 @@ import json
 import logging
 import re
 import unicodedata
-from typing import List
+from typing import List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -20,10 +20,10 @@ from app.health_schemas import (
     DoctorVerifyRequest, AvailabilitySlot, AvailabilityOut, RoleEnum,
 )
 from app.rbac import (
-    require_verified_doctor, get_doctor_for_user,
-    require_admin_or_support, log_health_audit,
+    get_doctor_for_user,
+    require_admin_or_support, require_compliance_reviewer,
 )
-from app.routers.notifications import create_notification
+from app.services.clinician_access import licence_is_current
 
 logger = logging.getLogger(__name__)
 
@@ -41,26 +41,44 @@ def _json_list(val):
 
 # ── Public ──
 
+def _public_doctors(db: Session, country: str | None):
+    query = db.query(Doctor, ClinicianCredential).join(User, User.id == Doctor.user_id).join(
+        ClinicianCredential, ClinicianCredential.user_id == Doctor.user_id,
+    ).filter(Doctor.verification_status == "verified", User.is_active.is_(True), User.role == "doctor",
+             ClinicianCredential.profession == "doctor", ClinicianCredential.status == "verified")
+    if country:
+        query = query.filter(ClinicianCredential.practice_country == country)
+    return query
+
+
+def _public_card(doctor: Doctor, credential: ClinicianCredential) -> DoctorPublic:
+    pub = DoctorPublic.model_validate(doctor)
+    pub.practice_country = credential.practice_country or None
+    pub.consultation_types = _json_list(doctor.consultation_types_json)
+    pub.languages = _json_list(doctor.languages_json)
+    pub.education = _json_list(doctor.education_json)
+    return pub
+
 @router.get("/", response_model=List[DoctorPublic])
 def list_verified_doctors(
     specialty: str = Query(None),
     city: str = Query(None),
     consultation_type: str = Query(None),
+    country: Literal["AO", "PT"] | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """List verified doctors (public). Optional filters."""
-    q = db.query(Doctor).filter(Doctor.verification_status == "verified")
+    q = _public_doctors(db, country)
     if specialty:
         q = q.filter(Doctor.specialization == specialty)
     if city:
         q = q.filter(Doctor.location_city.ilike(f"%{city}%"))
     doctors = q.all()
     result = []
-    for d in doctors:
-        pub = DoctorPublic.model_validate(d)
-        pub.consultation_types = _json_list(d.consultation_types_json)
-        pub.languages = _json_list(d.languages_json)
-        pub.education = _json_list(d.education_json)
+    for d, credential in doctors:
+        if not licence_is_current(credential):
+            continue
+        pub = _public_card(d, credential)
         if consultation_type and consultation_type not in (pub.consultation_types or []):
             continue
         result.append(pub)
@@ -68,19 +86,12 @@ def list_verified_doctors(
 
 
 @router.get("/by-slug/{slug}", response_model=DoctorPublic)
-def get_doctor_by_slug(slug: str, db: Session = Depends(get_db)):
+def get_doctor_by_slug(slug: str, country: Literal["AO", "PT"] | None = Query(None), db: Session = Depends(get_db)):
     """Get a single public doctor profile by slug."""
-    doctor = db.query(Doctor).filter(
-        Doctor.slug == slug,
-        Doctor.verification_status == "verified",
-    ).first()
-    if not doctor:
+    record = _public_doctors(db, country).filter(Doctor.slug == slug).first()
+    if not record or not licence_is_current(record[1]):
         raise HTTPException(status_code=404, detail="Médico não encontrado.")
-    pub = DoctorPublic.model_validate(doctor)
-    pub.consultation_types = _json_list(doctor.consultation_types_json)
-    pub.languages = _json_list(doctor.languages_json)
-    pub.education = _json_list(doctor.education_json)
-    return pub
+    return _public_card(*record)
 
 
 # ── Doctor self-management ──
@@ -235,72 +246,28 @@ def list_pending_doctors(db: Session = Depends(get_db)):
     return db.query(Doctor).filter(Doctor.verification_status == "pending").all()
 
 
-@router.post("/{doctor_id}/verify", response_model=DoctorOut,
-             dependencies=[Depends(require_admin_or_support)])
+@router.post("/{doctor_id}/verify", response_model=DoctorOut)
 def verify_doctor(
     doctor_id: str,
     body: DoctorVerifyRequest,
-    user: User = Depends(require_admin_or_support),
+    user: User = Depends(require_compliance_reviewer),
     db: Session = Depends(get_db),
 ):
-    """Verify, reject, or suspend a doctor (admin only)."""
-    from datetime import datetime
+    """Compatibility entry point for the same audited reviewer-only decision."""
+    from app.credential_schemas import CredentialDecision
+    from app.services.credential_review import review_credential
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
-        raise HTTPException(status_code=404, detail="Médico não encontrado.")
-
-    action_map = {
-        "verify": "verified",
-        "approve": "verified",
-        "reject": "rejected",
-        "suspend": "suspended",
-    }
+        raise HTTPException(404, "Médico não encontrado.")
     credential = db.query(ClinicianCredential).filter(
         ClinicianCredential.user_id == doctor.user_id,
         ClinicianCredential.profession == "doctor",
     ).first()
-    if body.action in ("verify", "approve") and (
-        not credential or credential.status != "verified"
-    ):
-        raise HTTPException(
-            status_code=409,
-            detail="Aprovação bloqueada: reveja e aprove primeiro o processo em Credenciais clínicas.",
-        )
-    doctor.verification_status = action_map[body.action]
-    if body.action in ("verify", "approve"):
-        doctor.verified_at = datetime.utcnow()
-        doctor.verified_by = user.id
-    if credential and body.action in ("reject", "suspend"):
-        credential.status = action_map[body.action]
-        credential.rejection_reason = body.reason if body.action == "reject" else None
-        credential.review_notes = body.reason
-    db.add(doctor)
-    db.commit()
+    if not credential:
+        raise HTTPException(409, "Complete primeiro a candidatura em Credenciais clínicas.")
+    review_credential(credential.id, CredentialDecision(action=body.action, notes=body.reason),
+                      reviewer=user, db=db)
     db.refresh(doctor)
-
-    log_health_audit(
-        db,
-        action=f"doctor_{body.action}",
-        actor_user_id=user.id,
-        resource_type="doctor",
-        resource_id=doctor.id,
-        metadata={"reason": body.reason},
-    )
-
-    # Notify the doctor of the verification outcome
-    _ver_labels = {
-        "verify":  ("Perfil verificado",  "A sua conta foi verificada. Pode agora receber consultas.", "success"),
-        "approve": ("Perfil verificado",  "A sua conta foi verificada. Pode agora receber consultas.", "success"),
-        "reject":  ("Verificação recusada", f"A sua verificação foi recusada.{' Motivo: ' + body.reason if body.reason else ''}", "error"),
-        "suspend": ("Conta suspensa",     f"A sua conta foi suspensa.{' Motivo: ' + body.reason if body.reason else ''}", "warning"),
-    }
-    if body.action in _ver_labels:
-        title, msg, ntype = _ver_labels[body.action]
-        try:
-            create_notification(db, user_id=doctor.user_id, title=title, message=msg, type=ntype, entity_type="doctor", entity_id=doctor.id)
-        except Exception:
-            pass
-
     return doctor
 
 

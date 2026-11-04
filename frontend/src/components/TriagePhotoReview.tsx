@@ -84,7 +84,7 @@ export default function TriagePhotoReview({ triageId }: { triageId: string }) {
         ...current.filter(item => item.id !== response.data.id),
       ]);
       setRequestMessage('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       setRequestError(apiErrorMessage(error, t('triage.photo_request_error')));
     } finally {
       setRequesting(false);

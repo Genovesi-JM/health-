@@ -1,0 +1,15 @@
+{
+  "ios_generated_forbidden_keys_present": [],
+  "ios_generated_entitlements": {},
+  "ios_native_build": "blocked by previously verified unaccepted Xcode license; no acceptance attempted",
+  "android_document_picker_present_in_packaged_dex": true,
+  "android_document_picker_package_lines": [
+    "P d 94\t95\t10478\texpo.modules.documentpicker",
+    "C d 22\t22\t1401\texpo.modules.documentpicker.DocumentInfo",
+    "M d 1\t1\t80\texpo.modules.documentpicker.DocumentInfo <init>(android.net.Uri,java.lang.String,java.lang.String,java.lang.Long,long)",
+    "M d 1\t1\t112\texpo.modules.documentpicker.DocumentInfo expo.modules.documentpicker.DocumentInfo copy$default(expo.modules.documentpicker.DocumentInfo,android.net.Uri,java.lang.String,java.lang.String,java.lang.Long,long,int,java.lang.Object)",
+    "M d 1\t1\t32\texpo.modules.documentpicker.DocumentInfo void getLastModified$annotations()",
+    "M d 1\t1\t32\texpo.modules.documentpicker.DocumentInfo void getMimeType$annotations()"
+  ],
+  "native_pdf_picker_runtime_exercised": false
+}

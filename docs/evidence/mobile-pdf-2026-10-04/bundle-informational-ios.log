@@ -1,0 +1,11 @@
+Starting Metro Bundler
+
+iOS Bundled 2874ms index.js (592 modules)
+
+› ios bundles (1):
+_expo/static/js/ios/index-8828d6fbcfd34a416a7e025a174a79e2.hbc (1.5MB)
+
+› Files (1):
+metadata.json (142B)
+
+Exported: ../bundle-pdf-final-informational-ios

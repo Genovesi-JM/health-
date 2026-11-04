@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+
 import { useT } from '../i18n/LanguageContext';
 import kayaLogo from '/kaya-logo.svg';
 

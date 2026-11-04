@@ -1,0 +1,72 @@
+{
+  "recorded_at": "2026-09-14T00:17:28.931157+00:00",
+  "preserved_files": [
+    {
+      "path": "backend/email_log.txt",
+      "sha256": "e675eac81c513a07e996bf44b97b6e07e78658047b0f847a4ae5a7bf72401ea5",
+      "current_sha256": "e675eac81c513a07e996bf44b97b6e07e78658047b0f847a4ae5a7bf72401ea5",
+      "preserved": true
+    },
+    {
+      "path": "frontend/src/components/DocumentUpload.test.tsx",
+      "sha256": "66241bd803cd6325b24f6dbf92f33ca318f2f5019c2bbade470b901d89c78617",
+      "current_sha256": "66241bd803cd6325b24f6dbf92f33ca318f2f5019c2bbade470b901d89c78617",
+      "preserved": true
+    },
+    {
+      "path": "frontend/src/components/OnboardingShell.test.tsx",
+      "sha256": "12d1cd1e6af95eab9607e38df5adccd5c96b55fa945f68385fa33a5703d5c552",
+      "current_sha256": "12d1cd1e6af95eab9607e38df5adccd5c96b55fa945f68385fa33a5703d5c552",
+      "preserved": true
+    },
+    {
+      "path": "frontend/src/pages/AdminExpiryPage.test.tsx",
+      "sha256": "7b4425648603ec10a690ff7cf05c5101fd2f7ff7469b224d4cf3c1075d39b468",
+      "current_sha256": "7b4425648603ec10a690ff7cf05c5101fd2f7ff7469b224d4cf3c1075d39b468",
+      "preserved": true
+    }
+  ],
+  "synthetic_runtime_unchanged_from_phase1_start": true,
+  "reviews": [
+    {
+      "area": "backend and client default boundaries",
+      "result": "PASS",
+      "limitations": [
+        "No clinical egress reachable from current informational entrypoint graphs.",
+        "Native compiled permissions/entitlements and installed binaries unverified.",
+        "Static assets and service-worker updates may use networking; no zero-network claim."
+      ]
+    },
+    {
+      "area": "draft policy stop rules",
+      "result": "PASS_AFTER_FIX",
+      "closed_findings": [
+        "inverted zero-tolerance operator",
+        "removed comprehension provenance and sample constraints",
+        "empty owner roster",
+        "unapproved staffing marked approved"
+      ]
+    },
+    {
+      "area": "web route inventory",
+      "result": "PASS_AFTER_FIX",
+      "closed_findings": [
+        "attribute-order and expression/spread syntax blind spots"
+      ],
+      "limitation": "Constrained source parser rejects unsupported syntax; not runtime attestation."
+    },
+    {
+      "area": "responsive web visual review",
+      "result": "PASS",
+      "evidence": "client-visual.json",
+      "reviewed_viewports": [
+        "1280x1000",
+        "390x844"
+      ],
+      "limitations": [
+        "Web viewport checks only; no physical native-device test.",
+        "Service workers disabled in browser test context; registration asset observed."
+      ]
+    }
+  ]
+}

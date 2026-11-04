@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { clearPendingAppointments } from './utils/pendingAppointment';
+import { assertOperationalAccess } from './phase1/policy';
 
 /*
  * In dev the Vite proxy forwards /auth, /api, etc. to localhost:8000.
@@ -12,8 +14,13 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT to every request
+// Attach JWT to every request. Never override an Authorization header that the
+// caller set explicitly (e.g. a short-lived MFA enrollment token during login).
 api.interceptors.request.use((config) => {
+  assertOperationalAccess();
+  if (config.headers.Authorization) {
+    return config;
+  }
   const token = localStorage.getItem('ht_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -21,19 +28,29 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-logout on 401 (except login/register)
+// Approval can promote an applicant on the server while an older session still
+// lacks MFA. Only explicit server MFA codes on 403 trigger reauthentication.
+export function requiresReauthentication(status: number | undefined, errorCode: unknown, url: string): boolean {
+  const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
+  if (status === 401) return !isAuthRoute;
+  return status === 403 && ['mfa_enrollment_required', 'mfa_verification_required'].includes(String(errorCode));
+}
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
-      const url = err.config?.url || '';
-      const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
-      if (!isAuthRoute) {
-        clearSession();
-        const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-        if (!window.location.pathname.endsWith('/login')) {
-          window.location.href = `${base}/login`;
-        }
+    const url = err.config?.url || '';
+    const errorCode = err.response?.headers?.['x-kaya-error-code'];
+    // A response belongs to the credential sent with that request. An expired
+    // previous account (or a separate MFA challenge) cannot clear a newer login.
+    const currentToken = localStorage.getItem('ht_token');
+    const requestAuthorization = err.config?.headers?.Authorization;
+    const isCurrentSession = currentToken && requestAuthorization === `Bearer ${currentToken}`;
+    if (isCurrentSession && requiresReauthentication(err.response?.status, errorCode, url)) {
+      clearSession({ preservePendingAppointments: true });
+      const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+      if (!window.location.pathname.endsWith('/login')) {
+        window.location.href = `${base}/login`;
       }
     }
     return Promise.reject(err);
@@ -47,7 +64,8 @@ const SESSION_KEYS = [
   'ht_name', 'ht_role', 'ht_user_id',
 ] as const;
 
-export function clearSession() {
+export function clearSession(options: { preservePendingAppointments?: boolean } = {}) {
+  if (!options.preservePendingAppointments) clearPendingAppointments();
   SESSION_KEYS.forEach(k => localStorage.removeItem(k));
 }
 
@@ -58,6 +76,7 @@ export function persistSession(data: {
 }) {
   localStorage.setItem('ht_token', data.access_token);
   if (data.refresh_token) localStorage.setItem('ht_refresh_token', data.refresh_token);
+  else localStorage.removeItem('ht_refresh_token');
   localStorage.setItem('ht_user', JSON.stringify(data.user));
   localStorage.setItem('ht_email', data.user.email);
   localStorage.setItem('ht_name', data.user.name || '');

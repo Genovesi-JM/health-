@@ -1,0 +1,40 @@
+{
+  "source_package_lock_sha256": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+  "source_package_json_sha256": "69f412d06605a8701be837ed29ad635127530da520108522f5e77ec027f811d8",
+  "tool": "npm11.18.0 built-in sbom --sbom-format=cyclonedx --package-lock-only",
+  "all_components": 529,
+  "production_components": 529,
+  "raw_omit_dev_caveat": "SDK checkpoint demonstrated npm11.18 raw --omit=dev unexpectedly removes direct Expo/RN under cyclic peer classification. This report uses validated projection directly.",
+  "production_method": "Temporary manifest/lock projection removes only root devDependencies. All nonroot locked package records and root production dependencies are unchanged. npm sbom --omit=dev on that projection is validated against a BFS of the ORIGINAL lock following resolved non-dev edges, including installed optional/peer edges. Both inventories match exactly with zero missing or extra components.",
+  "verification": "production-dependency-closure-verification.json",
+  "scope": "package graph, not APK contents or runtime reachability",
+  "dev_root_also_reachable_through_production_paths": {
+    "@babel/core": [
+      [
+        "expo@57.0.26",
+        "@expo/metro-config@57.0.12",
+        "@babel/core@7.29.7"
+      ]
+    ],
+    "@types/react": [
+      [
+        "react-native@0.86.3",
+        "@types/react@19.2.18"
+      ]
+    ],
+    "typescript": [
+      [
+        "expo@57.0.26",
+        "@expo/cli@57.0.27",
+        "@expo/require-utils@57.0.5",
+        "typescript@6.0.3"
+      ]
+    ],
+    "babel-preset-expo": [
+      [
+        "expo@57.0.26",
+        "babel-preset-expo@57.0.13"
+      ]
+    ]
+  }
+}

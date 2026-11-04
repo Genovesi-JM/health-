@@ -1,0 +1,763 @@
+{
+  "date_utc": "2026-09-14T00:15:01.877090+00:00",
+  "source_revision": "working tree",
+  "head": "d6d99953846602ab411822cfa616e4c753f41ed7",
+  "python": "3.12.14 (main, Aug 25 2026, 13:50:33) [Clang 22.1.3 ]",
+  "lock_sha256": "d1a386896c2d4b70ffc9d4eff2b8dcd84737eaa60b85c4dcaffda09d431228bc",
+  "wrapper_sha256": "a3f9fbdc3369c9d8fe57c493cbe604b6ae3f8464b4151e2fe09f11f237ea891c",
+  "source_sha256": [
+    {
+      "path": ".github/workflows/deploy.yml",
+      "sha256": "4b72eb29fc670c357998a32c44e52a27a4a04d275310207de1883912161fc664"
+    },
+    {
+      "path": "backend/.dockerignore",
+      "sha256": "28a8d810d951e0967f874a0677f37bde9c68f62d6c79414570f93a39ef5bcce5"
+    },
+    {
+      "path": "backend/DATABASE_SCHEMA.md",
+      "sha256": "8f301e83d6959cf11fc987cc44879bb382f96a7a6185138d20c29982bcfb3b98"
+    },
+    {
+      "path": "backend/Dockerfile",
+      "sha256": "744eb4a3fdc5159abad364cb692a90f1b1dcb53a57d07b4bf09baf7efc763220"
+    },
+    {
+      "path": "backend/ENV_CONFIG_GUIDE.md",
+      "sha256": "e130426d7e007a880f064e14e3bf684d3e72a9e5dad79c97bc7ea42d8865c522"
+    },
+    {
+      "path": "backend/RAG_IMPLEMENTATION.md",
+      "sha256": "991e9f24fcaa116456caa70de0d65e5747ad32ede1d1597f719d0a5c1279adf5"
+    },
+    {
+      "path": "backend/RAG_QUICKSTART.md",
+      "sha256": "a836d25c68d984a647bf3cd0dd622cf4a10bbbccc549e409fd739353536910d7"
+    },
+    {
+      "path": "backend/alembic.ini",
+      "sha256": "f1fbb2784bc60623c66f1105cbc212055df15ff7e0566ba1106a41d74fc1e54a"
+    },
+    {
+      "path": "backend/alembic/README",
+      "sha256": "31595cf53626af9ed16e15c44fa43183209cc163fbc3ebcb904b22ac436a8884"
+    },
+    {
+      "path": "backend/alembic/env.py",
+      "sha256": "3ebf46d314b639d8f9d978b055fe8eea14e4cbfcd461d2c1afdb67ff2351f011"
+    },
+    {
+      "path": "backend/alembic/script.py.mako",
+      "sha256": "304a8bfb6a804e5493f5300e79882c70c9f5bb2e87512f4d16f0e097dddd323f"
+    },
+    {
+      "path": "backend/alembic/versions/3e76cc464332_add_multitenant_models_v2.py",
+      "sha256": "3f14822c16d078e2b995ad98a94bdea04889720f9dd5ff05da4cae532517adf0"
+    },
+    {
+      "path": "backend/alembic/versions/9d1e115c0350_add_platform_tables_full_migration.py",
+      "sha256": "5dea340defe4cf0f1f9e18664f9a2cc648b3f06d85d95124cfdd05c72fa988eb"
+    },
+    {
+      "path": "backend/alembic/versions/add_clinician_credentials_v1.py",
+      "sha256": "694a88433f978cccf57c1eec6b58787a8f167050cd36aca206eaf676ba840e65"
+    },
+    {
+      "path": "backend/alembic/versions/add_credential_provider_checks_v1.py",
+      "sha256": "4d9dad812edd6fbac0fc6773dbff065479dfc95aaf23d7724f4db0bae330c18f"
+    },
+    {
+      "path": "backend/alembic/versions/add_device_readings_v1.py",
+      "sha256": "4188e1c8b3fafae401ae439d1b520166950f827a4fb248dc4aa838820e510627"
+    },
+    {
+      "path": "backend/alembic/versions/add_family_members_v1.py",
+      "sha256": "9c5416ab282aecd47bd1e6be5c2fa4aea34dab41712324fbbe5f23b639c02318"
+    },
+    {
+      "path": "backend/alembic/versions/add_health_sync_external_ids_v1.py",
+      "sha256": "ce523f634c483cc7aae6209daeb2b649d624e8bf54fa6d48793714e386b1f295"
+    },
+    {
+      "path": "backend/alembic/versions/add_notifications_v1.py",
+      "sha256": "54f5ce54e2bfee092a86a5c2bab44732ab2a43eadd57c31eb6e8d3091e9b1d6d"
+    },
+    {
+      "path": "backend/alembic/versions/add_patient_medications_v1.py",
+      "sha256": "d68ff56cce0838a5a4b73d91cd1a63221c14e935df65e70f83ea029b1277df5a"
+    },
+    {
+      "path": "backend/alembic/versions/add_prescription_requests_v1.py",
+      "sha256": "6976953e8d1ed18e3a38a63c4897cf870610c5b37e64b75ad8acb207bc545b83"
+    },
+    {
+      "path": "backend/alembic/versions/add_price_usd_eur_to_shop_products.py",
+      "sha256": "ad80f17ce03201a06235ea5907eeafbd4e2744dc6b073cd3ec2dfcc393b5fa58"
+    },
+    {
+      "path": "backend/alembic/versions/add_standalone_prescriptions_v1.py",
+      "sha256": "8c21338f225381a43aae1b64f8bf4c5b291f12e1d08fb9a543cb125d5c46a1db"
+    },
+    {
+      "path": "backend/alembic/versions/add_teleconsultation_operations_v1.py",
+      "sha256": "ec49a64995a01c64153f0de41e9979eb4d49a092b58cd8e3353c739b3b66c44f"
+    },
+    {
+      "path": "backend/alembic/versions/add_triage_photo_requests_v1.py",
+      "sha256": "ed94024cb85a74ac26d5ebe3ef3feed22c6bad077d701b18d235f82b521fa482"
+    },
+    {
+      "path": "backend/alembic/versions/add_triage_photos_v1.py",
+      "sha256": "770a3a5766ab37916287034fd445d13c9f1e5497626edc7af05256a324b5b91f"
+    },
+    {
+      "path": "backend/alembic/versions/c8858ccfbb42_initial_schema.py",
+      "sha256": "4b5f41b99fa6c0d931a64e71f497774f9ef03f94f81f4cbf8561387f19d0bb4f"
+    },
+    {
+      "path": "backend/alembic/versions/doctor_invite_and_profile_v1.py",
+      "sha256": "23354590487771a38b635a2db057288c9d3b4890253ccd38bb765f6fa68e1c0f"
+    },
+    {
+      "path": "backend/alembic/versions/enterprise_complete_v1.py",
+      "sha256": "e0bf5a866586308f4abad3a0620d2cc6b440160fb9c9446745f501dc4dbfc276"
+    },
+    {
+      "path": "backend/alembic/versions/fix_companies_schema_v1.py",
+      "sha256": "8139092d9291021ce2344753bd42847f821d4685b23a49643dda84abcec9a830"
+    },
+    {
+      "path": "backend/alembic/versions/health_platform_v1.py",
+      "sha256": "57034867c72295cdf2e6b4f1c0af6f5775e559ff5190b91a71a767974906b9b1"
+    },
+    {
+      "path": "backend/alembic/versions/onboarding_verification_v1.py",
+      "sha256": "c2ca59b3dbf809ddb3665cc9bf7308ba6a9e25ace7bf65a4ecf19eed6d2801c8"
+    },
+    {
+      "path": "backend/alembic/versions/production_hardening_v1.py",
+      "sha256": "767205985d99ef21781b4a76108894c575241d0b9ea5732efb76439f52e5cb35"
+    },
+    {
+      "path": "backend/app/__init__.py",
+      "sha256": "de58593c3d4f640fe1ab3852864cead266d1cbef9dd6ca62ba62995c53715d7c"
+    },
+    {
+      "path": "backend/app/accounts/__init__.py",
+      "sha256": "6a756cdbe92d34951531f0c72586105028cfba8c3f679ff1f0ec5cab26050359"
+    },
+    {
+      "path": "backend/app/accounts/database.py",
+      "sha256": "f8ae0c302bf6407336be810c2f6192e7930094f08a6c402f4f00e8573ca82011"
+    },
+    {
+      "path": "backend/app/accounts/models.py",
+      "sha256": "39c4ddc94f913e2588f78a98759a7258531bb85841fb2909df7c2c98119bf7b4"
+    },
+    {
+      "path": "backend/app/config.py",
+      "sha256": "cf09924882a7cf05e92d960cf161d622b634e9f66abdd1537afb246012d38a58"
+    },
+    {
+      "path": "backend/app/credential_schemas.py",
+      "sha256": "3cf77b6ad253a10ff5e43e34f076b113cd198756d3e0c2aba548f63bea10686c"
+    },
+    {
+      "path": "backend/app/crypto.py",
+      "sha256": "4d79172bf7a8f587e717c5bc98b05c5a4442978879f940219adab7d5683b9254"
+    },
+    {
+      "path": "backend/app/database.py",
+      "sha256": "dd8d4c463204a27c5510541328c4c513b5b6866abb7783ffd10fe1efd00ce352"
+    },
+    {
+      "path": "backend/app/deps.py",
+      "sha256": "0389c9cd48478088e10d15a6020d017b23235fdfd423df2e3aa8a95f988e2a47"
+    },
+    {
+      "path": "backend/app/health_models.py",
+      "sha256": "3df92876695a5e3867b1616dbeef7c0e10c2300b17e09d45915df9587e96aa80"
+    },
+    {
+      "path": "backend/app/health_schemas.py",
+      "sha256": "4e5b33f48437798306cb6a53087e8ffc3e27e80b8e3e746e013aa8208a894f47"
+    },
+    {
+      "path": "backend/app/init_db.py",
+      "sha256": "c47aceddda9224228220d094cd40c4ed3e99928828204728e8a79292f31c9c6e"
+    },
+    {
+      "path": "backend/app/kaya_policy.json",
+      "sha256": "9076f41e6045a2f58bfb8816189f7a46d6a5788d83ecf9ec17faa9edf813d2cb"
+    },
+    {
+      "path": "backend/app/mail.py",
+      "sha256": "3dcc6d15f2d0ffb3d797708a4ef7de90f1884aaa0371da8a037cdda65e675edf"
+    },
+    {
+      "path": "backend/app/main.py",
+      "sha256": "f58c3c0db1e915849194e18776cf3ec5ca6118027beba0e49614ebfdddee65a2"
+    },
+    {
+      "path": "backend/app/middleware/__init__.py",
+      "sha256": "5406b3209f5244785c538e1b5c9d18e20afb1939650553353ea310019ee9d72c"
+    },
+    {
+      "path": "backend/app/models.py",
+      "sha256": "96be7458ca0162a5209a09a9990dca261c9866bb3eb0334f405fdfba23e10621"
+    },
+    {
+      "path": "backend/app/oauth2.py",
+      "sha256": "2eb8e41715a1ed948af73cda00e9bc882e6dbb45537448886cfcf11434e1cd17"
+    },
+    {
+      "path": "backend/app/phase1_policy.py",
+      "sha256": "2dffbea7080d0ad7642a6b3bd2bee6427f03f1e4500de9548e8ea68cc93b2e31"
+    },
+    {
+      "path": "backend/app/rag/__init__.py",
+      "sha256": "04e3419780a94d8a027ead45b6a7603f78d67ee092202cd5116b91a91ea05888"
+    },
+    {
+      "path": "backend/app/rag/build.py",
+      "sha256": "fd4ac8b619b68bd89868fb2cc29bb83e4c5b12f68ec9735179044ad939098e0f"
+    },
+    {
+      "path": "backend/app/rag/gaia_chunks.json",
+      "sha256": "a25f542aaa09044da08bb2f76becf336ec62db2af10351a53a0daff461bc16e5"
+    },
+    {
+      "path": "backend/app/rag/metadata.json",
+      "sha256": "ebb5d7752c52cf28799b62fb36e824afb7fab912b9cb01dbb35f4a8c6fc403d2"
+    },
+    {
+      "path": "backend/app/rag/pipeline.py",
+      "sha256": "fabcbff40556e76240b8c4c46090eec13f85ad53a4f69da5512cc6a1b418a9eb"
+    },
+    {
+      "path": "backend/app/rbac.py",
+      "sha256": "05745f847ec78e8460d13d26fe5d220636818577ef50a83e21c5ee0ba973a853"
+    },
+    {
+      "path": "backend/app/routers/__init__.py",
+      "sha256": "60b79490af22b0744fcd5486c03512c87e247a40cb2cb55555f70caaec83b142"
+    },
+    {
+      "path": "backend/app/routers/accounts.py",
+      "sha256": "41211e345f662295c980658430b7d89d797d950226fbbb6359080e29ab0c09db"
+    },
+    {
+      "path": "backend/app/routers/admin.py",
+      "sha256": "7dd118d0d4595fb9880b0742ee344f772069f97f676a959a6a77fe3751fad23d"
+    },
+    {
+      "path": "backend/app/routers/ai.py",
+      "sha256": "e898907ec5079a0edaa5d0fbca8689af55e73b39b5d85e715fd8506c3412a514"
+    },
+    {
+      "path": "backend/app/routers/auth.py",
+      "sha256": "a1d63cc62145d37c333134baa8365e3b3ca4ae0340bb04afd4d250609954b657"
+    },
+    {
+      "path": "backend/app/routers/caregiver.py",
+      "sha256": "38e20a94f1443f255b054169e47b364aa3412b6bee739f1ad0ab7b9f1ceffd48"
+    },
+    {
+      "path": "backend/app/routers/chatbot.py",
+      "sha256": "d98916b31b743aff939bf3a52938c4b9106536118839922c6196cdff8bb70985"
+    },
+    {
+      "path": "backend/app/routers/clinical_operations.py",
+      "sha256": "9327dbc7ce006f790469b9fe3a4c0daebd695d34ec802fa136120a858f009c5f"
+    },
+    {
+      "path": "backend/app/routers/clinician_workspace.py",
+      "sha256": "5f869860c36d9f3f9b5c94c14321073f57bd3663e90461fe0a51d04243e74b55"
+    },
+    {
+      "path": "backend/app/routers/compliance.py",
+      "sha256": "96bdfcc2df097fc3e684f1fc4a31735b661304e95bd8a8680dd00e434999ec1e"
+    },
+    {
+      "path": "backend/app/routers/compliance_review.py",
+      "sha256": "d8933a7b685bf69fe19f0b002761adb50758b4a8d006539e6e74241ad1c4ebe5"
+    },
+    {
+      "path": "backend/app/routers/consultations.py",
+      "sha256": "5ad286275686563ff1d54f0c91f7a246b378cd17787e919da05143b2e96cc9a5"
+    },
+    {
+      "path": "backend/app/routers/contacts.py",
+      "sha256": "0b8814e8844ce7e91eb485c058b678d21ddce16da7de9a6cdd7e0541d0c236ec"
+    },
+    {
+      "path": "backend/app/routers/corporate.py",
+      "sha256": "13e976994ab26211059de43c1dfeb6ed755c55f4c62d9684ed86d03a3106afa2"
+    },
+    {
+      "path": "backend/app/routers/credentials.py",
+      "sha256": "3d71087aa2813bdbe7bd4a95a0613fb410e36490156320948a532f4392b67ae0"
+    },
+    {
+      "path": "backend/app/routers/customer_accounts.py",
+      "sha256": "adccfae35c6238d3686be2bdd18210c097bfa186bf8a2b5d95844cd826daf009"
+    },
+    {
+      "path": "backend/app/routers/dashboard.py",
+      "sha256": "efff49915c7910055b937c55c400c343d827d67cf21bb7c05d392fa4b62e4c2a"
+    },
+    {
+      "path": "backend/app/routers/datasets.py",
+      "sha256": "0883927adae7ebf01ec1548da6b0b3a4d78b259539d2c039ce9aebc5014f7fff"
+    },
+    {
+      "path": "backend/app/routers/doctor_portal.py",
+      "sha256": "080e6208b65e560d7d7a6200c850e82684a0cbc3fd260feed4d673740f360ecb"
+    },
+    {
+      "path": "backend/app/routers/doctors.py",
+      "sha256": "989373396a6a447ab6abd4bd51da6a7faa445bdb532d8e979068b600b8d8ea03"
+    },
+    {
+      "path": "backend/app/routers/employees.py",
+      "sha256": "420bcbef218d4cc4c24032d5f5bb72f5b1539154226b16606a194877311eb2d6"
+    },
+    {
+      "path": "backend/app/routers/family.py",
+      "sha256": "cb531e83191037844a7f958e37588143155e84bb3a40d1bff3f2f3cc32543b08"
+    },
+    {
+      "path": "backend/app/routers/hardware.py",
+      "sha256": "5e45b14f4bd32e4881bbd9c6537dc605d60401a76c865b6da4bbdc02c43bb7c4"
+    },
+    {
+      "path": "backend/app/routers/health_billing.py",
+      "sha256": "554a6a23e6f4a564fd1d7c7045ce008b3ea2e5f927e0b66eb789161ca7f4831c"
+    },
+    {
+      "path": "backend/app/routers/health_dashboard.py",
+      "sha256": "a960dc9bb4b5dbc6a6957ae1bc8ccf3bb067d283acfd10f58c1650be068f6f64"
+    },
+    {
+      "path": "backend/app/routers/kpi.py",
+      "sha256": "bcb014b2a3d9adb5efd695ec57211e13029455050713b1b9969ab2252f7b7bf7"
+    },
+    {
+      "path": "backend/app/routers/me.py",
+      "sha256": "114e57b287455fcd3ca230cdc1d814488076e9d35190eb833724368782e3b8bb"
+    },
+    {
+      "path": "backend/app/routers/medications.py",
+      "sha256": "6eb9d36bd7e9aa0cff72a49fb18abffba154e2946f047dc108376af14e2fb649"
+    },
+    {
+      "path": "backend/app/routers/messages.py",
+      "sha256": "93fdd731f27a4442b3f7c915428601a38cb58b0c6ff4f03ad4ce216850aa2917"
+    },
+    {
+      "path": "backend/app/routers/mfa.py",
+      "sha256": "2c4ba2c5f5c583bf254da19df6bd3f454250045e93675a921deaae6ae89f36bb"
+    },
+    {
+      "path": "backend/app/routers/notifications.py",
+      "sha256": "18afbbf87dd30484d66501fd95d36d1e079a66f61c1ae78ec4a22e626d6602b0"
+    },
+    {
+      "path": "backend/app/routers/nurse.py",
+      "sha256": "f2d735c1ffdb012ce708aec16101d57fc5014f821a0efedc4c36503ae0c3ca2a"
+    },
+    {
+      "path": "backend/app/routers/onboarding.py",
+      "sha256": "e0327202da4a9f9ca247bd48ed1883f2882be91edd87c5a64f4c3a507b69fb78"
+    },
+    {
+      "path": "backend/app/routers/orders.py",
+      "sha256": "eb9ad5c220b1aa48e3ae98409bd39abb2fde15b6051ffc06559ca1ab77e23935"
+    },
+    {
+      "path": "backend/app/routers/organisations.py",
+      "sha256": "1b0773b67b8002995dc82bc00131840f104d76f331e8dd76252b19ea86287b65"
+    },
+    {
+      "path": "backend/app/routers/patients.py",
+      "sha256": "ae87664bd4edd0ad5e18883782ea06243c2c70f9ea7a951d518d73a675eb979f"
+    },
+    {
+      "path": "backend/app/routers/payments.py",
+      "sha256": "01ad4979341ccd1ce9071a170701ed2ec3f58db2912c656cd67f51a1018251db"
+    },
+    {
+      "path": "backend/app/routers/prescription_requests.py",
+      "sha256": "23e2311436ee772a28ffd66e793e4d2fd1d249a89addc3184a8e35c40b7f58a3"
+    },
+    {
+      "path": "backend/app/routers/prescriptions.py",
+      "sha256": "7b49c86d38bfe390759065205cbbc654dee3023c4e56db3fa8a213647a007c17"
+    },
+    {
+      "path": "backend/app/routers/products.py",
+      "sha256": "04c7547cd28fae855d139638f9a8c7f16445793ccef69cc8c8b03e8f31b05d6f"
+    },
+    {
+      "path": "backend/app/routers/projects.py",
+      "sha256": "10f7b0c779b415b7ca2c6ecebb1f16a1e49c5481d338f26a6c1e5aab57cac367"
+    },
+    {
+      "path": "backend/app/routers/public_contact.py",
+      "sha256": "8482576a04da6cfd3b3764440b5891091b0e127d2eaec2fadfc6d19d10d99ffd"
+    },
+    {
+      "path": "backend/app/routers/public_facilities.py",
+      "sha256": "af0735f5ed8c72f4932690352ea4fd0d871717f000b96572a790fba7d8cb92c3"
+    },
+    {
+      "path": "backend/app/routers/readings.py",
+      "sha256": "c8832739624420f6f637bb48585932535233cc4f115b30ae4c278b767a69741e"
+    },
+    {
+      "path": "backend/app/routers/risk.py",
+      "sha256": "eca1cec72dcf4e80b35102122458deee23cf374310510cf7d5e494a21ab881c7"
+    },
+    {
+      "path": "backend/app/routers/services.py",
+      "sha256": "dae607e34b0262757b7e326d3482b66d68feb2b445a918b8078a6d94c9b56095"
+    },
+    {
+      "path": "backend/app/routers/shop.py",
+      "sha256": "cd948472eeb0cc50fde9b1b57929a5e2596ec91951a60e1a495582d8b5077366"
+    },
+    {
+      "path": "backend/app/routers/shop_devices.py",
+      "sha256": "a403fbfdc946c0a22a6cce97892ee9b69dd66bbbbf5b10197d7e03661d0a20b7"
+    },
+    {
+      "path": "backend/app/routers/teleconsultation.py",
+      "sha256": "9a6bf44c3d8370b40f9933763af45f524d6c4d9c9c0e94eaa7641e7934644168"
+    },
+    {
+      "path": "backend/app/routers/triage.py",
+      "sha256": "b74a469fc15c1265c3e64f3d8470004b6e35b1dbd644cba420ace513db65775e"
+    },
+    {
+      "path": "backend/app/routers/verification_actions.py",
+      "sha256": "b3ff4d41eca1a09720b40d50b06f0ae6ecf659b973aeee592ee3cc25e9da7900"
+    },
+    {
+      "path": "backend/app/routers/verification_webhooks.py",
+      "sha256": "07753c9e4fdbc8af4c9b94077ba883c02758bcddddb025406b2582b411dde6ce"
+    },
+    {
+      "path": "backend/app/schemas.py",
+      "sha256": "a54b534876d9cdb6ccd7922d99b0f6e40a48cf085010398bfc7040368b9f420d"
+    },
+    {
+      "path": "backend/app/security.py",
+      "sha256": "a9cc8f20f6ce7bebc826dccba697809e6fd9733c7b90d1d50f5a3c2f7361b47a"
+    },
+    {
+      "path": "backend/app/seed_data.py",
+      "sha256": "e3c49f92979eb1bcf3ac0b918122bfd21fa811b689eed305903bef75ba636bd5"
+    },
+    {
+      "path": "backend/app/services/__init__.py",
+      "sha256": "cad56987faded8319e778f171af62191dfc4ca65b4a462c10ec84528c4d504cd"
+    },
+    {
+      "path": "backend/app/services/cart.py",
+      "sha256": "d27c5bd06c3dfa1b81951b5ab6ca7b7eee38a88582a388e54f0d125736b1719a"
+    },
+    {
+      "path": "backend/app/services/credential_providers.py",
+      "sha256": "a3a6fcf44d78fc7133ce0b5fc61dfce4e9a59851c825b637548de44ceb351604"
+    },
+    {
+      "path": "backend/app/services/credential_verification.py",
+      "sha256": "afc2cbba11ff88274df3ccd48f0ad43f2b81113d4314c15474fa88c6a9510abf"
+    },
+    {
+      "path": "backend/app/services/document_expiry.py",
+      "sha256": "762378b084d4c70377a65b4c5bc6ebd8f0785d1e40fd97e3d521dfd8d6c3f748"
+    },
+    {
+      "path": "backend/app/services/health_storage.py",
+      "sha256": "d9335f212d58348bacd997078ae61152986ec071d76a2385927876f767144086"
+    },
+    {
+      "path": "backend/app/services/mfa.py",
+      "sha256": "d182cd1db4eda83d19d02aaa1cc98d8b27a669446dc8eee702ea5b628641da0d"
+    },
+    {
+      "path": "backend/app/services/orders.py",
+      "sha256": "8476f9328f14f472653e042d5703c13c238f1a2b6f31b121a194951d081624eb"
+    },
+    {
+      "path": "backend/app/services/payments.py",
+      "sha256": "62d5070bb3e920234b307915c0ae14cb06b5c7ad9aa3b6ac996ba75df69f2a51"
+    },
+    {
+      "path": "backend/app/services/pdf_generator.py",
+      "sha256": "3d2c42962933a29b7b9578d490d3ad2920c6af7ec87ce10a376f6a16ea874e94"
+    },
+    {
+      "path": "backend/app/services/pem_gateway.py",
+      "sha256": "9eb6715d75b3d11b1c4b226f7da789c72fd6f5b295bc6322c156133c99271db5"
+    },
+    {
+      "path": "backend/app/services/risk_engine.py",
+      "sha256": "2e116b3cc8938b40154bc1e99e48ce90cccb41c4df93135f112149cd6f5784b8"
+    },
+    {
+      "path": "backend/app/services/scheduler.py",
+      "sha256": "b4a839aad27773a8f9fabeb29b4eb2ce8ecbac3f2d4fa7361604b8f272d14c17"
+    },
+    {
+      "path": "backend/app/services/storage.py",
+      "sha256": "be8d936ce9c10389d8053ae00d006cb869dc5401a88fd21ab54127a9a61961e9"
+    },
+    {
+      "path": "backend/app/services/triage_engine.py",
+      "sha256": "6419810780ca192f88a2b2db6f0eb27ae215d4720ae1fa7f301205231f84e426"
+    },
+    {
+      "path": "backend/app/services/verification/__init__.py",
+      "sha256": "2bc673613da8fcd508c059bd63f40720bbff0b8f756629edc627fb5a8de1866b"
+    },
+    {
+      "path": "backend/app/services/verification/base.py",
+      "sha256": "c593f6c38cc18ce60fe8e6ad65d6a9c1f0f5ecbc2ba7636884737eb7818df1c2"
+    },
+    {
+      "path": "backend/app/services/verification/certn.py",
+      "sha256": "815ca0a92becf1e1a5f4858f2b7c65d35a76adcce2cdca6f4205c8a5e3ec0d6a"
+    },
+    {
+      "path": "backend/app/services/verification/entra.py",
+      "sha256": "607c82f01b49e5bbad62cd771a840d32036bdb451ab529e4b82129c0ccca2199"
+    },
+    {
+      "path": "backend/app/services/verification/manual_registry.py",
+      "sha256": "ed3927279e46f7903f1a2da0778cfeb1baecf90cb5c6d5438395c47e4806a0f4"
+    },
+    {
+      "path": "backend/app/services/verification/sandbox.py",
+      "sha256": "a25175613953bfc96bc4bbf00699e6a85baa58c57b6adb7e4b2737adfe87c7bc"
+    },
+    {
+      "path": "backend/app/services/verification/state_machine.py",
+      "sha256": "abfc934f4e052d47a162410ccc0d48c8bb1bb3852486d79d8785d8423550e9ae"
+    },
+    {
+      "path": "backend/app/services/verification/sumsub.py",
+      "sha256": "e84a56b7e7ccae5eaca075d43b7c260e6a86a23b70d2eb0e738997146c73a936"
+    },
+    {
+      "path": "backend/app/services/verification/veremark.py",
+      "sha256": "e0e4e8539cc30b22c5f7387189fa1a9942c14ac795d1d7f54fe773a0dad09e59"
+    },
+    {
+      "path": "backend/app/synthetic_runtime.py",
+      "sha256": "a1f8bb0b59f2218f83dc542960e01ced99d8fa888bb83e93443595991df5c60b"
+    },
+    {
+      "path": "backend/app/utils.py",
+      "sha256": "e24836af3cdcff8f5cf24040a8b353b6f6357c1940a9c9fd6b1af7ef4880d394"
+    },
+    {
+      "path": "backend/phase0_tests/test_launch_hold.py",
+      "sha256": "9d26b324175c2eeaab408f511e77e3cdca62fc7ea355d659592410a0a9ffd0e3"
+    },
+    {
+      "path": "backend/phase0_tests/test_release_boundaries.py",
+      "sha256": "093f453b03e9c4558c95319f2764e44ea6332cdab0079594049d807f8009906b"
+    },
+    {
+      "path": "backend/phase1_tests/test_public_policy.py",
+      "sha256": "23260f12e1473deaa06f8463f2db4333d81d108f423b508f033c25f10d035449"
+    },
+    {
+      "path": "backend/playwright_login_a11y.py",
+      "sha256": "099403610173d8a7b730724334315a7d66c66413b5747f35aa0e3deb059897e2"
+    },
+    {
+      "path": "backend/requirements.deploy.txt",
+      "sha256": "322cbfd6a863ebf559898331e4404165e4a177410268bbe8d4b6758b4f5ab8f7"
+    },
+    {
+      "path": "backend/requirements.phase0.in",
+      "sha256": "7effbba4fbf5148d9116d96e16619232af027da01e5235ac4203f8d6ac71d3ea"
+    },
+    {
+      "path": "backend/requirements.phase0.lock",
+      "sha256": "d1a386896c2d4b70ffc9d4eff2b8dcd84737eaa60b85c4dcaffda09d431228bc"
+    },
+    {
+      "path": "backend/requirements.txt",
+      "sha256": "c28bf4623eb2540fb130e3c8d0bec1b9dbe6ba01dabc3fb73c985e09163ff738"
+    },
+    {
+      "path": "backend/scripts/cleanup_expired_tokens.py",
+      "sha256": "27718efc9d66cb3b7e51b70aed1c79c7055f16f6b94355ca61967f82c31a1d6b"
+    },
+    {
+      "path": "backend/scripts/debug_google_flow.py",
+      "sha256": "7880d1ad46eacb708bcb53cd62d79a2617ccf9c63dba8d37994aa6d9d2b6b343"
+    },
+    {
+      "path": "backend/scripts/migrate_add_oauth_states.py",
+      "sha256": "ad386ed5a824da9e1650a4518a02cdfb84fc3eb70e7c7ae9d8c9bffc8e1eff1d"
+    },
+    {
+      "path": "backend/scripts/migrate_add_reset_tokens.py",
+      "sha256": "dfcacbb6503bd3d484c5a00d7eb413393fb867dde831f45dec8e48c17f20406b"
+    },
+    {
+      "path": "backend/security_tests/conftest.py",
+      "sha256": "c06e8752ae064356a7e105a6c0bbd4d1924a9461a4623aeb17332402b0a8819e"
+    },
+    {
+      "path": "backend/security_tests/test_azure_health_storage.py",
+      "sha256": "37a225755252f4e0f4ab4597b2e30457e9a58d3c57ffe8808f6748e63c1528e4"
+    },
+    {
+      "path": "backend/security_tests/test_azure_sdk_contract.py",
+      "sha256": "a3bc2473b13b7ebb75b4fd8974f56cfc064797ac7fa68304a7872f45be4fd7e2"
+    },
+    {
+      "path": "backend/security_tests/test_docker_allowlist.py",
+      "sha256": "c702b830cd415d661c79e940252a5360483d872653bee4f07e6c85f63d8fdd78"
+    },
+    {
+      "path": "backend/security_tests/test_pilot_security.py",
+      "sha256": "4c4107bc418823f3656d6c4bcc9d010ff67b067e505661b40d09b64e2c7ff3cf"
+    },
+    {
+      "path": "backend/security_tests/test_unimplemented_provider.py",
+      "sha256": "e4734436cc0036e5f3f150400932b25c38859fb08075e8b3b94af5a3c91510b1"
+    },
+    {
+      "path": "backend/start.py",
+      "sha256": "bb4fc489e5f49834032ac40c70177593eba66fee617cdfcdc8418f076541f2bf"
+    },
+    {
+      "path": "backend/tests/conftest.py",
+      "sha256": "046c942420e9055e89d22e5c74239bc4628e111054af4279c1271136506a87fa"
+    },
+    {
+      "path": "backend/tests/test_account_security.py",
+      "sha256": "db56822b7c60a2f13699d189d4027fd7d58a4d25b91e4d45d901a7a8f7b6a8fc"
+    },
+    {
+      "path": "backend/tests/test_basic.py",
+      "sha256": "3a7f9b5863921ca0e702c4f1f68a91e39872a581d7a278def1b00c731b48c454"
+    },
+    {
+      "path": "backend/tests/test_caregiver.py",
+      "sha256": "10b5086eed24daadc1bc39568df3015f178cb6ca6784d74df664112e916ff232"
+    },
+    {
+      "path": "backend/tests/test_clinician_credentials.py",
+      "sha256": "36815ed1864c644f8b43a403a60956d9e91fa21721f98ae916d5170a6f85fbdd"
+    },
+    {
+      "path": "backend/tests/test_compliance_dashboard.py",
+      "sha256": "cf11eac60ede18995dbde40e20b3c8006ee2a7435685c4582f5eb7be5b75f4d0"
+    },
+    {
+      "path": "backend/tests/test_document_expiry.py",
+      "sha256": "c7d83b929dbf0f285fbe1ac13773144b2c093e0ae1f260e064cd6bb5a67af680"
+    },
+    {
+      "path": "backend/tests/test_google_oauth.py",
+      "sha256": "296b79fe5591948b20be1fa4e30e5409f27fd9af828714076d96c714bf265ff5"
+    },
+    {
+      "path": "backend/tests/test_health.py",
+      "sha256": "9e5b6532b231bdd79667be5440d0d293462c3d5d763a7070ff92a0d9582fe10c"
+    },
+    {
+      "path": "backend/tests/test_integrations.py",
+      "sha256": "3f273da1fb5485e741d4c00d8ad45a15454d8a685ffd01006f1e4a8e0c256be1"
+    },
+    {
+      "path": "backend/tests/test_mfa.py",
+      "sha256": "72d96cf624cd8f12c09d519cf6970bf7e527caed7ccd8c39dd7d7c56e74e4f31"
+    },
+    {
+      "path": "backend/tests/test_nurse_dashboard.py",
+      "sha256": "24123f01e98e12f561acae2f5a6f8e5799f1d59337db1c8453786da24c8dec30"
+    },
+    {
+      "path": "backend/tests/test_onboarding.py",
+      "sha256": "5b4c59e5104a93a9726265324e9a8c83f777eff21d80756a65886b4ab8bb0d2e"
+    },
+    {
+      "path": "backend/tests/test_organisations.py",
+      "sha256": "d104b23b95d5c5083d83e86f06bced6d476da1c6d08c28027ca754e80d9e9633"
+    },
+    {
+      "path": "backend/tests/test_public_contact.py",
+      "sha256": "b68f9530127c7004da9394f3089d70d727553d436f9a3b522a7e2e8b23782d11"
+    },
+    {
+      "path": "backend/tests/test_public_facilities.py",
+      "sha256": "a045aba4470b752ee0ae5b666547b44e22dbbe4d90c3f4ab6225b3f9349a820a"
+    },
+    {
+      "path": "backend/tests/test_public_guidance.py",
+      "sha256": "c96089a1cbb1e9858141178f1bdb9df2bb5684f9e1b93d59ec97346a35904bfb"
+    },
+    {
+      "path": "backend/tests/test_scheduler.py",
+      "sha256": "1806a354e63a1825fd85a954af5975e8fa964b15de591648c5474dc05541bf04"
+    },
+    {
+      "path": "backend/tests/test_state_machine.py",
+      "sha256": "5182fc77ba0e2d108a994a584c43b68e9f81243fe37dd4e399f3dd626c32544b"
+    },
+    {
+      "path": "backend/tests/test_verification_actions.py",
+      "sha256": "896625e389098b0a68d0ffc07d39d51e7730626748489adb88a81cb31eab57ce"
+    },
+    {
+      "path": "backend/tests/test_verification_providers.py",
+      "sha256": "4a49bfece29d92901db3ce84b37ec73c7890196f45ed233f60a0254f63e3ca07"
+    },
+    {
+      "path": "deploy/setup-droplet.sh",
+      "sha256": "41a80c6db86366c43c444f0793d9d33d569ff33d5470536509fb741cb65e520f"
+    },
+    {
+      "path": "deploy/update.sh",
+      "sha256": "556f1f6d8bba07f49070d47baac66faa37be6e6be529538b98b32b371db6d3b2"
+    },
+    {
+      "path": "docker-compose.prod.yml",
+      "sha256": "2a9b9cc55634557707d81cf099daa675f23eff6d6693d600adf3a66d02cf98c4"
+    },
+    {
+      "path": "docker-compose.yml",
+      "sha256": "436156dec0a2ed6c7a95cf7781701e27353d87ebd9884bdb4d31e4cca494aece"
+    },
+    {
+      "path": "infra/azure/README.md",
+      "sha256": "eedb56a0d4db643b3fb0b4792fa4f7856a2d33d1f038e205675a9fdaab0c3243"
+    },
+    {
+      "path": "infra/azure/main.bicep",
+      "sha256": "893f7c1912c760b4c15a3f577faed4caf3c7790ca0dfe53b487fa701704ccff6"
+    },
+    {
+      "path": "infra/azure/parameters.py",
+      "sha256": "02c93ea670824476377609bc99a1893706a0ef400bb4c838a57bc2e8e896bc58"
+    },
+    {
+      "path": "infra/azure/tests/test_foundation.py",
+      "sha256": "034ba09ded6c4c0910a7f89d02f04e068e06a51e3efc704fc24f9c0005a2c0c4"
+    },
+    {
+      "path": "render.yaml",
+      "sha256": "0e4041ebbe58dfe251458214a5b24dd37e3a3a2db0a8e265b8de3eb4e9f78534"
+    }
+  ],
+  "environment": "allowlisted environment; fresh reviewed source types; excludes dotenv, database and log files, uploads and symlinks; Python TCP/UDP/DNS calls blocked in pytest; no OS sandbox or subprocess-network isolation claimed"
+}

@@ -1,3 +1,4 @@
+import { formatAppointmentTime } from '../utils/appointments';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
@@ -12,7 +13,7 @@ import {
   Activity, Calendar, ArrowRight, ChevronRight,
   HeartPulse, AlertTriangle, CheckCircle2,
   Clock, Shield, Zap, TrendingUp, Siren, User,
-  Droplets, Thermometer, Brain, Wind,
+  Droplets, Thermometer, Brain, Wind, FileText,
 } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -73,6 +74,7 @@ export default function DashboardPage() {
     { icon: Calendar, label: t('dash.qa_appointments'), color: '#2563eb', bg: '#dbeafe', to: '/consultations' },
     { icon: HeartPulse, label: t('sidebar.readings'), color: '#7c3aed', bg: '#ede9fe', to: '/patient/readings' },
     { icon: User, label: t('dash.qa_profile'), color: '#64748b', bg: '#f1f5f9', to: '/patient/profile' },
+    { icon: FileText, label: 'Os meus documentos', color: '#0d9488', bg: '#e0f7f5', to: '/patient/documents' },
   ];
 
   /* Chronic disease config — icons + colors */
@@ -333,7 +335,7 @@ export default function DashboardPage() {
                         <tr key={c.id}>
                           <td style={{ color: 'var(--text-primary)' }}>{specialtyLabel(c.specialty, t)}</td>
                           <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
-                          <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : new Date(c.created_at).toLocaleDateString(locale)}</td>
+                          <td>{c.scheduled_at ? formatAppointmentTime(c.scheduled_at, c.timezone || 'UTC', locale) : new Date(c.created_at).toLocaleDateString(locale)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -429,7 +431,7 @@ export default function DashboardPage() {
                       <tr key={c.id}>
                         <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{specialtyLabel(c.specialty, t)}</td>
                         <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
-                        <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : '—'}</td>
+                        <td>{c.scheduled_at ? formatAppointmentTime(c.scheduled_at, c.timezone || 'UTC', locale) : '—'}</td>
                         <td><span className={`badge ${c.payment_status === 'paid' ? 'badge-success' : 'badge-neutral'}`}>{c.payment_status}</span></td>
                         <td>{new Date(c.created_at).toLocaleDateString(locale)}</td>
                       </tr>

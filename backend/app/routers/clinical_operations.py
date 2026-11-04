@@ -3,12 +3,12 @@ from __future__ import annotations
 """Cross-role clinical operations: escalation, PEM preparation and revenue."""
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -20,6 +20,7 @@ from app.health_models import (
     Consultation,
     Doctor,
     ElectronicPrescriptionSubmission,
+    HealthAuditLog,
     NursingObservation,
     Patient,
     Prescription,
@@ -147,6 +148,12 @@ def _observation_out(item: NursingObservation, db: Session) -> dict:
 
 
 def _task_out(item: ClinicalCareTask, db: Session) -> dict:
+    def utc_stamp(value: Optional[datetime]) -> Optional[str]:
+        if value is None:
+            return None
+        return (value.replace(tzinfo=timezone.utc) if value.tzinfo is None
+                else value.astimezone(timezone.utc)).isoformat()
+
     creator = db.query(User).filter(User.id == item.created_by_user_id).first()
     assignee = db.query(User).filter(User.id == item.assigned_user_id).first() if item.assigned_user_id else None
     return {
@@ -161,11 +168,11 @@ def _task_out(item: ClinicalCareTask, db: Session) -> dict:
         "title": item.title,
         "instructions": item.instructions,
         "priority": item.priority,
-        "due_at": item.due_at.isoformat() if item.due_at else None,
+        "due_at": utc_stamp(item.due_at),
         "status": item.status,
         "completion_note": item.completion_note,
-        "completed_at": item.completed_at.isoformat() if item.completed_at else None,
-        "created_at": item.created_at.isoformat(),
+        "completed_at": utc_stamp(item.completed_at),
+        "created_at": utc_stamp(item.created_at),
     }
 
 
@@ -400,13 +407,17 @@ def create_care_task(
         due_at=body.due_at,
     )
     db.add(task)
-    db.commit()
-    db.refresh(task)
-    log_health_audit(
-        db, "clinical_care_task.created", user.id, "clinical_care_task", task.id,
-        {"patient_id": task.patient_id, "assigned_role": task.assigned_role, "priority": task.priority},
-        request,
-    )
+    try:
+        db.flush()
+        db.add(HealthAuditLog(actor_user_id=user.id, action="clinical_care_task.created",
+                             resource_type="clinical_care_task", resource_id=task.id))
+        from app.services.notifications import task_event
+        task_event(db, task, "created")
+        db.commit()
+        db.refresh(task)
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível guardar a tarefa. Tente novamente.") from None
     return _task_out(task, db)
 
 
@@ -463,18 +474,48 @@ def complete_care_task(
     _assert_patient_access(user, task.patient_id, db)
     if task.assigned_role != user.role or task.assigned_user_id not in (None, user.id):
         raise HTTPException(status_code=403, detail="Esta tarefa está atribuída a outro profissional.")
+    note = (body.completion_note or "").strip() or None
+
+    def same_completion() -> bool:
+        return (task.status == "completed" and task.completed_by_user_id == user.id
+                and task.completion_note == note)
+
+    if same_completion():
+        return _task_out(task, db)
     if task.status != "open":
         raise HTTPException(status_code=409, detail="A tarefa já foi encerrada.")
-    task.status = "completed"
-    task.completed_by_user_id = user.id
-    task.completed_at = datetime.utcnow()
-    task.completion_note = body.completion_note
-    db.commit()
+    # Capture status and assignment in the write: a stale clinician view must
+    # never replace another completion or a concurrently reassigned task.
+    table = ClinicalCareTask.__table__
+    try:
+        changed = db.execute(update(table).where(
+            table.c.id == task.id,
+            table.c.status == "open",
+            table.c.assigned_role == task.assigned_role,
+            table.c.assigned_user_id == task.assigned_user_id,
+        ).values(status="completed", completed_by_user_id=user.id,
+                 completed_at=datetime.utcnow(), updated_at=datetime.utcnow(),
+                 completion_note=note))
+        if changed.rowcount != 1:
+            db.rollback()
+            db.refresh(task)
+            if same_completion():
+                return _task_out(task, db)
+            raise HTTPException(status_code=409, detail="A tarefa mudou. Atualize a lista.")
+        db.add(HealthAuditLog(
+            actor_user_id=user.id, action="clinical_care_task.completed",
+            resource_type="clinical_care_task", resource_id=task.id,
+        ))
+        db.refresh(task)
+        from app.services.notifications import task_event
+        task_event(db, task, "completed")
+        db.commit()
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Não foi possível guardar a conclusão. Tente novamente.") from None
     db.refresh(task)
-    log_health_audit(
-        db, "clinical_care_task.completed", user.id, "clinical_care_task", task.id,
-        {"patient_id": task.patient_id}, request,
-    )
     return _task_out(task, db)
 
 

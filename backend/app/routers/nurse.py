@@ -9,7 +9,8 @@ NOT prescribe, complete consultations, or verify clinicians (doctor/admin only).
 - GET /api/v1/nurse/queue     — pending requests with triage risk (read-only)
 """
 import logging
-from datetime import datetime, date
+import os
+from datetime import datetime, date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -22,6 +23,16 @@ from app.rbac import require_verified_clinician
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["nurse"])
+
+
+def _active_queue_hours() -> int:
+    """How long an unassigned request stays on the live queue before it is
+    treated as abandoned. Bounds the queue so stale/orphaned bookings (old
+    test data, no-shows) don't inflate wait-time metrics. Env-tunable."""
+    try:
+        return max(1, int(os.getenv("NURSE_QUEUE_ACTIVE_HOURS", "48")))
+    except (TypeError, ValueError):
+        return 48
 
 
 def require_nurse(user: User = Depends(require_verified_clinician)) -> User:
@@ -39,9 +50,14 @@ def _patient_name(patient_id: str, db: Session) -> str:
 
 
 def _queue_items(db: Session, limit: int = 50):
+    cutoff = datetime.utcnow() - timedelta(hours=_active_queue_hours())
     rows = (
         db.query(Consultation)
-        .filter(Consultation.doctor_id.is_(None), Consultation.status == "requested")
+        .filter(
+            Consultation.doctor_id.is_(None),
+            Consultation.status == "requested",
+            Consultation.created_at >= cutoff,
+        )
         .order_by(Consultation.created_at.asc())
         .limit(limit)
         .all()

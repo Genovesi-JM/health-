@@ -1,14 +1,16 @@
 # KAYA — Verification Provider Setup
 
-Exact steps to move each verification provider from **sandbox** to **live**.
-Until a provider's credentials are set, KAYA runs it in sandbox / not-configured
-mode and the app works end to end — you only need to configure the providers
-you actually want live for the pilot.
+Configuration references for the verification providers. Credentials alone
+do not prove live operation or an end-to-end clinical workflow. Each selected
+provider needs its implemented adapter, consent, contract, webhook correlation,
+sandbox tests and release approval. Unavailable adapters remain unavailable
+even when credentials are supplied.
 
-All variables go in `backend/.env` (see `backend/.env.example`). After editing,
-restart the backend. Set `KAYA_VERIFICATION_MODE=live` (the default) to use
-configured vendors; `sandbox` forces mock providers everywhere regardless of
-credentials.
+For local development only, use untracked `backend/.env`; hosted credentials
+belong in the project's secret vault, never source control, browser builds or
+chat. `KAYA_VERIFICATION_MODE=live` selects configured implemented vendors;
+it is not validation evidence. `sandbox` selects mock identity and qualification
+providers, not real vendor sandboxes or clinical verification.
 
 `{BACKEND}` below = your public backend base URL, e.g. `https://api.kaya.ao`.
 
@@ -105,16 +107,18 @@ credential. Most PDF diplomas do not, so this step is always optional.
 3. Create a **client secret** for the app.
 4. Set:
    ```
-   AZURE_ENTRA_TENANT_ID=...
-   AZURE_ENTRA_CLIENT_ID=...
-   AZURE_ENTRA_CLIENT_SECRET=...
+   ENTRA_TENANT_ID=...
+   ENTRA_CLIENT_ID=...
+   ENTRA_CLIENT_SECRET=...
    ```
-5. With these set, `get_digital_credential_provider()` reports `mode: "live"`;
-   without them it returns `not_configured` and the wizard shows "digital
-   credential unavailable — continue with document upload".
+5. Do not provision these credentials as an activation step yet. The current
+   adapter always reports `mode: "unavailable"`, `status: "not_configured"`,
+   and accepts no callbacks. Document upload/manual review remain separate
+   and are not automatically approved.
 
-> The current adapter implements the request/verify lifecycle shape; the
-> live HTTP calls to the Entra Request Service are stubbed pending a tenant.
+> Live HTTP exchange, authority/issuer trust, callback correlation and
+> expiry/revocation checks must be implemented and validated first. A tenant
+> and a secret alone do not complete this integration.
 
 ---
 

@@ -1,0 +1,142 @@
+{
+  "backend-focused": {
+    "command": [
+      "python3",
+      "isolated_check.py",
+      "security_tests",
+      "-q",
+      "--tb=short"
+    ],
+    "cwd": "backend",
+    "timeout_seconds": 180,
+    "exit_code": 0,
+    "tail": "........................................................................ [ 61%]\n..............................................                           [100%]\n=============================== warnings summary ===============================\nsecurity_tests/test_azure_health_storage.py::test_authorized_document_download_reports_actual_azure_ttl[60-prescription]\n  /Users/genovesimaria/opt/anaconda3/lib/python3.8/site-packages/pydantic/_internal/_config.py:284: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.7/migration/\n    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)\n\n-- Docs: https://docs.pytest.org/en/stable/warnings.html\n118 passed, 1 skipped, 1 warning in 47.61s\n"
+  },
+  "backend-full": {
+    "command": [
+      "python3",
+      "isolated_check.py",
+      "tests",
+      "-q",
+      "--tb=short"
+    ],
+    "cwd": "backend",
+    "timeout_seconds": 240,
+    "exit_code": 2,
+    "tail": "ecting tests/test_nurse_dashboard.py ________________\nImportError while importing test module '<isolated-source>/backend/tests/test_nurse_dashboard.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/Users/genovesimaria/opt/anaconda3/lib/python3.8/importlib/__init__.py:127: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\ntests/test_nurse_dashboard.py:14: in <module>\n    from tests.test_clinician_credentials import _headers, _register, _verify_clinician\nE   ModuleNotFoundError: No module named 'tests.test_clinician_credentials'\n=============================== warnings summary ===============================\n../../../../../../../opt/anaconda3/lib/python3.8/site-packages/pydantic/_internal/_config.py:284\n  /Users/genovesimaria/opt/anaconda3/lib/python3.8/site-packages/pydantic/_internal/_config.py:284: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.7/migration/\n    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)\n\n-- Docs: https://docs.pytest.org/en/stable/warnings.html\n=========================== short test summary info ============================\nERROR tests/test_nurse_dashboard.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 warning, 1 error in 20.55s\n"
+  },
+  "migration-heads": {
+    "command": [
+      "python3",
+      "-m",
+      "alembic",
+      "heads"
+    ],
+    "cwd": "backend",
+    "timeout_seconds": 30,
+    "exit_code": 0,
+    "tail": "onboarding_verification_v1 (head)\n"
+  },
+  "frontend-tests": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--maxWorkers=2",
+      "--minWorkers=1"
+    ],
+    "cwd": "frontend",
+    "timeout_seconds": 180,
+    "exit_code": 1,
+    "tail": " 3\n             / \n            3\n          </div>\n        </div>\n      </div>\n    </div>\n  </body>\n</html>\n \u276f Proxy.waitForWrapper ../../../../../../kaya-web/frontend/node_modules/@testing-library/dom/dist/wait-for.js:163:27\n \u276f src/pages/AdminExpiryPage.test.tsx:39:11\n     37|     mockGet.mockResolvedValueOnce({ data: { cutoff_days: 90, total: 3,\u2026\n     38|     renderPage();\n     39|     await waitFor(() => expect(screen.getByText(/expirado|expired/i)).\u2026\n       |           ^\n     40|     // The 7-day row shows a \"7 \u2026\" badge.\n     41|     expect(screen.getByText(/^7 /)).toBeInTheDocument();\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[3/3]\u23af\n\n Test Files  2 failed | 5 passed (7)\n      Tests  3 failed | 29 passed (32)\n   Start at  00:47:01\n   Duration  17.04s (transform 1.60s, setup 1.56s, collect 6.10s, tests 4.21s, environment 10.35s, prepare 1.67s)\n\n"
+  },
+  "frontend-build": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "frontend",
+    "timeout_seconds": 180,
+    "exit_code": 0,
+    "tail": "\n> frontend@0.0.0 build\n> tsc -b && vite build\n\nvite v7.3.6 building client environment for production...\ntransforming...\n\u2713 1894 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/registerSW.js                  0.15 kB\ndist/index.html                     2.44 kB \u2502 gzip:   1.02 kB\ndist/assets/index-BSXCFPGs.css    139.94 kB \u2502 gzip:  24.42 kB\ndist/assets/index-6WjmNT9t.js   1,401.22 kB \u2502 gzip: 371.03 kB\n\n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\n\u2713 built in 12.60s\nBrowserslist: browsers data (caniuse-lite) is 7 months old. Please run:\n  npx update-browserslist-db@latest\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\n\nPWA v1.2.0\nmode      generateSW\nprecache  18 entries (1554.73 KiB)\nfiles generated\n  dist/sw.js\n  dist/workbox-abeb32eb.js\n"
+  },
+  "frontend-lint": {
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "cwd": "frontend",
+    "timeout_seconds": 90,
+    "exit_code": 1,
+    "tail": "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-explicit-any\n\n<isolated-source>/frontend/src/utils/apiError.ts\n  2:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n<isolated-source>/frontend/src/utils/video.ts\n  10:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any\n\n\u2716 126 problems (115 errors, 11 warnings)\n\n"
+  },
+  "mobile-typecheck": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "mobile",
+    "timeout_seconds": 90,
+    "exit_code": 0,
+    "tail": "\n> kaya-health-mobile@1.0.0 typecheck\n> tsc --noEmit\n\n"
+  },
+  "frontend-audit": {
+    "command": [
+      "npm",
+      "audit",
+      "--json",
+      "--ignore-scripts"
+    ],
+    "cwd": "frontend",
+    "timeout_seconds": 90,
+    "exit_code": 1,
+    "tail": "ad and executed\",\n          \"url\": \"https://github.com/advisories/GHSA-5xrq-8626-4rwp\",\n          \"severity\": \"critical\",\n          \"cwe\": [\n            \"CWE-22\",\n            \"CWE-862\"\n          ],\n          \"cvss\": {\n            \"score\": 9.8,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\"\n          },\n          \"range\": \"<3.2.6\"\n        },\n        {\n          \"source\": 1193683,\n          \"name\": \"vitest\",\n          \"dependency\": \"vitest\",\n          \"title\": \"Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock\",\n          \"url\": \"https://github.com/advisories/GHSA-82fw-gwwq-j7x9\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-22\"\n          ],\n          \"cvss\": {\n            \"score\": 5.9,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N\"\n          },\n          \"range\": \">=2.1.0 <4.1.11\"\n        },\n        \"vite\",\n        \"vite-node\"\n      ],\n      \"effects\": [],\n      \"range\": \"<=4.1.10\",\n      \"nodes\": [\n        \"node_modules/vitest\"\n      ],\n      \"fixAvailable\": {\n        \"name\": \"vitest\",\n        \"version\": \"4.1.11\",\n        \"isSemVerMajor\": true\n      }\n    }\n  },\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 0,\n      \"moderate\": 6,\n      \"high\": 8,\n      \"critical\": 1,\n      \"total\": 15\n    },\n    \"dependencies\": {\n      \"prod\": 72,\n      \"dev\": 541,\n      \"optional\": 121,\n      \"peer\": 8,\n      \"peerOptional\": 0,\n      \"total\": 687\n    }\n  }\n}\n"
+  },
+  "mobile-audit": {
+    "command": [
+      "npm",
+      "audit",
+      "--json",
+      "--ignore-scripts"
+    ],
+    "cwd": "mobile",
+    "timeout_seconds": 90,
+    "exit_code": 1,
+    "tail": ": \"uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided\",\n          \"url\": \"https://github.com/advisories/GHSA-w5hq-g745-h8pq\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-787\",\n            \"CWE-1285\"\n          ],\n          \"cvss\": {\n            \"score\": 7.5,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N\"\n          },\n          \"range\": \"<11.1.1\"\n        }\n      ],\n      \"effects\": [\n        \"@expo/bunyan\",\n        \"@expo/rudder-sdk-node\",\n        \"xcode\"\n      ],\n      \"range\": \"<11.1.1\",\n      \"nodes\": [\n        \"node_modules/uuid\",\n        \"node_modules/xcode/node_modules/uuid\"\n      ],\n      \"fixAvailable\": {\n        \"name\": \"expo\",\n        \"version\": \"57.0.22\",\n        \"isSemVerMajor\": true\n      }\n    },\n    \"xcode\": {\n      \"name\": \"xcode\",\n      \"severity\": \"moderate\",\n      \"isDirect\": false,\n      \"via\": [\n        \"uuid\"\n      ],\n      \"effects\": [\n        \"@expo/config-plugins\"\n      ],\n      \"range\": \">=0.9.2\",\n      \"nodes\": [\n        \"node_modules/xcode\"\n      ],\n      \"fixAvailable\": {\n        \"name\": \"expo\",\n        \"version\": \"57.0.22\",\n        \"isSemVerMajor\": true\n      }\n    }\n  },\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 0,\n      \"moderate\": 25,\n      \"high\": 16,\n      \"critical\": 1,\n      \"total\": 42\n    },\n    \"dependencies\": {\n      \"prod\": 880,\n      \"dev\": 1,\n      \"optional\": 12,\n      \"peer\": 35,\n      \"peerOptional\": 0,\n      \"total\": 927\n    }\n  }\n}\n"
+  },
+  "backend-audit": {
+    "command": [
+      "python3",
+      "-m",
+      "pip_audit",
+      "-r",
+      "requirements.deploy.txt",
+      "--no-deps",
+      "--disable-pip",
+      "--format",
+      "json"
+    ],
+    "cwd": "backend",
+    "timeout_seconds": 90,
+    "exit_code": 1,
+    "tail": "/Users/genovesimaria/opt/anaconda3/bin/python3: No module named pip_audit\n"
+  },
+  "infrastructure": {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "infra/azure/tests",
+      "-v"
+    ],
+    "cwd": ".",
+    "timeout_seconds": 90,
+    "exit_code": 0,
+    "tail": "test_group_scope_and_no_runtime_or_paid_extras (test_foundation.CompiledFoundationTests) ... ok\ntest_logs_capped_and_empty_consumption_environment (test_foundation.CompiledFoundationTests) ... ok\ntest_network_delegations_and_postgres_restriction (test_foundation.CompiledFoundationTests) ... ok\ntest_only_four_narrow_identity_grants (test_foundation.CompiledFoundationTests) ... ok\ntest_own_vault_registry_and_identity (test_foundation.CompiledFoundationTests) ... ok\ntest_postgres_child_writes_are_serialized (test_foundation.CompiledFoundationTests) ... ok\ntest_region_and_password_have_no_unsafe_defaults (test_foundation.CompiledFoundationTests) ... ok\ntest_single_small_private_postgres_and_two_databases (test_foundation.CompiledFoundationTests) ... ok\ntest_storage_disallows_anonymous_and_shared_key (test_foundation.CompiledFoundationTests) ... ok\ntest_defaults_are_nonsecret_and_region_explicit (test_foundation.ParameterTests) ... ok\ntest_reserved_or_malformed_administrator_rejected (test_foundation.ParameterTests) ... ok\ntest_unreviewed_region_rejected (test_foundation.ParameterTests) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 9.040s\n\nOK\n"
+  }
+}

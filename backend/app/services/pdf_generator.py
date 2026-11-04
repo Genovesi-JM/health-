@@ -1,278 +1,86 @@
-from __future__ import annotations
-"""
-PDF Generation Service — Simple templates for prescriptions and referrals.
-
-Uses a lightweight HTML-to-text approach for MVP (no heavy PDF lib dependency).
-Falls back to a simple text-based PDF using reportlab if available,
-otherwise generates a structured text file.
-"""
-import io
-import logging
+"""Bounded, paginated internal clinical PDFs. No signature/provider claim."""
 from datetime import datetime
-from typing import List, Optional
-
-logger = logging.getLogger(__name__)
-
-
-def _try_reportlab() -> bool:
-    try:
-        import reportlab  # noqa: F401
-        return True
-    except ImportError:
-        return False
+from functools import lru_cache
+import io
+from pathlib import Path
+import unicodedata
+from xml.sax.saxutils import escape
 
 
-def generate_prescription_pdf(
-    patient_name: str,
-    patient_dob: Optional[str],
-    doctor_name: str,
-    doctor_license: str,
-    medications: List[dict],
-    instructions: Optional[str] = None,
-    date: Optional[datetime] = None,
-) -> bytes:
-    """Generate a prescription PDF (or text fallback).
-
-    Each medication dict: {name, dosage, frequency, duration, notes}
-    """
-    date = date or datetime.utcnow()
-    date_str = date.strftime("%d/%m/%Y")
-
-    if _try_reportlab():
-        return _prescription_reportlab(
-            patient_name, patient_dob, doctor_name, doctor_license,
-            medications, instructions, date_str,
-        )
-    return _prescription_text(
-        patient_name, patient_dob, doctor_name, doctor_license,
-        medications, instructions, date_str,
-    )
+@lru_cache(maxsize=1)
+def _fonts():
+    import reportlab
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    folder = Path(reportlab.__file__).resolve().parent / 'fonts'
+    pdfmetrics.registerFont(TTFont('KayaDocument', str(folder / 'Vera.ttf')))
+    pdfmetrics.registerFont(TTFont('KayaDocumentBold', str(folder / 'VeraBd.ttf')))
+    pdfmetrics.registerFontFamily('KayaDocument', normal='KayaDocument', bold='KayaDocumentBold', italic='KayaDocument', boldItalic='KayaDocumentBold')
+    return pdfmetrics.getFont('KayaDocument').face.charToGlyph
 
 
-def generate_referral_pdf(
-    patient_name: str,
-    patient_dob: Optional[str],
-    doctor_name: str,
-    doctor_license: str,
-    destination: str,
-    specialty: Optional[str],
-    reason: Optional[str],
-    urgency: str,
-    date: Optional[datetime] = None,
-) -> bytes:
-    """Generate a referral PDF (or text fallback)."""
-    date = date or datetime.utcnow()
-    date_str = date.strftime("%d/%m/%Y")
-
-    if _try_reportlab():
-        return _referral_reportlab(
-            patient_name, patient_dob, doctor_name, doctor_license,
-            destination, specialty, reason, urgency, date_str,
-        )
-    return _referral_text(
-        patient_name, patient_dob, doctor_name, doctor_license,
-        destination, specialty, reason, urgency, date_str,
-    )
+def _text(value):
+    text = unicodedata.normalize('NFC', str(value or '')).replace('\r\n','\n').replace('\r','\n').replace('\t','    ')
+    glyphs = _fonts()
+    if any(character != '\n' and (ord(character) < 32 or ord(character) not in glyphs) for character in text):
+        raise ValueError('Unsupported PDF character; preserve source and request review')
+    return escape(text).replace('\n', '<br/>')
 
 
-# ═══════════════════════════════════════════════════════════════
-# ReportLab implementations
-# ═══════════════════════════════════════════════════════════════
-
-def _prescription_reportlab(
-    patient_name, patient_dob, doctor_name, doctor_license,
-    medications, instructions, date_str,
-) -> bytes:
+def _render(title, patient_name, patient_dob, doctor_name, doctor_license, date, sections):
+    # Missing renderer/fonts fail; plain text is never labelled application/pdf.
+    from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.platypus import CondPageBreak, KeepTogether, Paragraph, SimpleDocTemplate, Spacer
+    _fonts()
+    output = io.BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=A4, leftMargin=48, rightMargin=48,
+        topMargin=48, bottomMargin=68, title=title, author='Kaya', pageCompression=1)
+    body = ParagraphStyle('body', fontName='KayaDocument', fontSize=10, leading=15, spaceAfter=8,
+        textColor=colors.HexColor('#172b39'), splitLongWords=1)
+    heading = ParagraphStyle('heading', parent=body, fontName='KayaDocumentBold', fontSize=11, spaceBefore=12, keepWithNext=False)
+    title_style = ParagraphStyle('title', parent=heading, fontSize=18, leading=24, spaceBefore=0, spaceAfter=12)
+    minor = ParagraphStyle('minor', parent=body, fontSize=8, leading=12, textColor=colors.HexColor('#455d6b'))
+    flow = [Paragraph(_text(title), title_style),
+        Paragraph(_text('Registo clínico interno. Assinatura e envio externo não validados.'), minor),
+        Paragraph(_text('Data: '+(date or datetime.utcnow()).strftime('%d/%m/%Y')), body),
+        Paragraph('Paciente', heading), Paragraph(_text(patient_name), body)]
+    if patient_dob: flow.append(Paragraph(_text('Data de nascimento: '+patient_dob), body))
+    for label, values in sections:
+        flow += [CondPageBreak(60), Paragraph(_text(label), heading)]
+        for value in values:
+            if value is not None and str(value).strip(): flow.append(Paragraph(_text(value), body))
+    flow += [Spacer(1, 12), KeepTogether([Paragraph('Profissional responsável', heading),
+        Paragraph(_text(doctor_name), body), Paragraph(_text('Cédula: '+(doctor_license or 'Não indicada')), body)])]
 
-    buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    w, h = A4
-
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, h - 50, "RECEITA MÉDICA")
-    c.setFont("Helvetica", 10)
-    c.drawString(50, h - 70, f"Data: {date_str}")
-
-    y = h - 100
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, y, "Paciente:")
-    c.setFont("Helvetica", 11)
-    c.drawString(120, y, f"{patient_name}" + (f"  (DN: {patient_dob})" if patient_dob else ""))
-
-    y -= 30
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, y, "Medicação:")
-    y -= 20
-
-    c.setFont("Helvetica", 10)
-    for i, med in enumerate(medications, 1):
-        name = med.get("name", "")
-        dosage = med.get("dosage", "")
-        freq = med.get("frequency", "")
-        dur = med.get("duration", "")
-        notes = med.get("notes", "")
-
-        line = f"{i}. {name} — {dosage}, {freq}"
-        if dur:
-            line += f", durante {dur}"
-        c.drawString(60, y, line)
-        y -= 15
-        if notes:
-            c.drawString(70, y, f"   Obs: {notes}")
-            y -= 15
-
-    if instructions:
-        y -= 15
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(50, y, "Instruções:")
-        y -= 15
-        c.setFont("Helvetica", 10)
-        for line in instructions.split("\n"):
-            c.drawString(60, y, line)
-            y -= 15
-
-    y -= 40
-    c.setFont("Helvetica", 10)
-    c.drawString(50, y, f"Médico: Dr(a). {doctor_name}")
-    y -= 15
-    c.drawString(50, y, f"Cédula: {doctor_license}")
-    y -= 30
-    c.drawString(50, y, "Assinatura: ______________________________")
-
-    c.save()
-    return buf.getvalue()
+    def footer(canvas, document):
+        canvas.saveState(); canvas.setStrokeColor(colors.HexColor('#d8e3e7'))
+        canvas.line(48, 50, A4[0]-48, 50); canvas.setFont('KayaDocument', 8)
+        canvas.setFillColor(colors.HexColor('#455d6b'))
+        canvas.drawString(48, 35, 'Kaya | Documento clínico interno')
+        canvas.drawRightString(A4[0]-48, 35, f'Página {document.page}')
+        canvas.restoreState()
+    doc.build(flow, onFirstPage=footer, onLaterPages=footer)
+    return output.getvalue()
 
 
-def _referral_reportlab(
-    patient_name, patient_dob, doctor_name, doctor_license,
-    destination, specialty, reason, urgency, date_str,
-) -> bytes:
-    from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
-
-    buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    w, h = A4
-
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, h - 50, "GUIA DE REFERÊNCIA")
-    c.setFont("Helvetica", 10)
-    c.drawString(50, h - 70, f"Data: {date_str}")
-
-    y = h - 100
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, y, "Paciente:")
-    c.setFont("Helvetica", 11)
-    c.drawString(120, y, f"{patient_name}" + (f"  (DN: {patient_dob})" if patient_dob else ""))
-
-    y -= 30
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, y, "Destino:")
-    c.setFont("Helvetica", 11)
-    c.drawString(120, y, destination)
-
-    if specialty:
-        y -= 20
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(50, y, "Especialidade:")
-        c.setFont("Helvetica", 11)
-        c.drawString(140, y, specialty)
-
-    y -= 20
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, y, "Urgência:")
-    c.setFont("Helvetica", 11)
-    c.drawString(120, y, urgency.upper())
-
-    if reason:
-        y -= 30
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(50, y, "Motivo:")
-        y -= 15
-        c.setFont("Helvetica", 10)
-        for line in reason.split("\n"):
-            c.drawString(60, y, line)
-            y -= 15
-
-    y -= 40
-    c.setFont("Helvetica", 10)
-    c.drawString(50, y, f"Médico: Dr(a). {doctor_name}")
-    y -= 15
-    c.drawString(50, y, f"Cédula: {doctor_license}")
-    y -= 30
-    c.drawString(50, y, "Assinatura: ______________________________")
-
-    c.save()
-    return buf.getvalue()
+def generate_prescription_pdf(patient_name, patient_dob, doctor_name, doctor_license,
+        medications, instructions=None, date=None):
+    sections = []
+    for index, medication in enumerate(medications, 1):
+        values = [medication['name'], 'Dose: '+medication['dosage'], 'Frequência: '+medication['frequency']]
+        if medication.get('duration'): values.append('Duração: '+medication['duration'])
+        if medication.get('notes'): values.append('Observações: '+medication['notes'])
+        sections.append((f'Medicação {index}', values))
+    if instructions: sections.append(('Instruções', [instructions]))
+    return _render('Prescrição', patient_name, patient_dob, doctor_name, doctor_license, date, sections)
 
 
-# ═══════════════════════════════════════════════════════════════
-# Text fallback (when reportlab is not installed)
-# ═══════════════════════════════════════════════════════════════
-
-def _prescription_text(
-    patient_name, patient_dob, doctor_name, doctor_license,
-    medications, instructions, date_str,
-) -> bytes:
-    lines = [
-        "=" * 60,
-        "RECEITA MÉDICA",
-        "=" * 60,
-        f"Data: {date_str}",
-        "",
-        f"Paciente: {patient_name}" + (f"  (DN: {patient_dob})" if patient_dob else ""),
-        "",
-        "MEDICAÇÃO:",
-    ]
-    for i, med in enumerate(medications, 1):
-        line = f"  {i}. {med.get('name', '')} — {med.get('dosage', '')}, {med.get('frequency', '')}"
-        if med.get("duration"):
-            line += f", durante {med['duration']}"
-        lines.append(line)
-        if med.get("notes"):
-            lines.append(f"     Obs: {med['notes']}")
-
-    if instructions:
-        lines.extend(["", "INSTRUÇÕES:", instructions])
-
-    lines.extend([
-        "",
-        f"Médico: Dr(a). {doctor_name}",
-        f"Cédula: {doctor_license}",
-        "",
-        "Assinatura: ______________________________",
-        "=" * 60,
-    ])
-    return "\n".join(lines).encode("utf-8")
-
-
-def _referral_text(
-    patient_name, patient_dob, doctor_name, doctor_license,
-    destination, specialty, reason, urgency, date_str,
-) -> bytes:
-    lines = [
-        "=" * 60,
-        "GUIA DE REFERÊNCIA",
-        "=" * 60,
-        f"Data: {date_str}",
-        "",
-        f"Paciente: {patient_name}" + (f"  (DN: {patient_dob})" if patient_dob else ""),
-        f"Destino: {destination}",
-    ]
-    if specialty:
-        lines.append(f"Especialidade: {specialty}")
-    lines.append(f"Urgência: {urgency.upper()}")
-    if reason:
-        lines.extend(["", "MOTIVO:", reason])
-
-    lines.extend([
-        "",
-        f"Médico: Dr(a). {doctor_name}",
-        f"Cédula: {doctor_license}",
-        "",
-        "Assinatura: ______________________________",
-        "=" * 60,
-    ])
-    return "\n".join(lines).encode("utf-8")
+def generate_referral_pdf(patient_name, patient_dob, doctor_name, doctor_license,
+        destination, specialty, reason, urgency, date=None):
+    sections = [('Destino', [destination])]
+    if specialty: sections.append(('Especialidade', [specialty]))
+    sections.append(('Urgência registada', [{'routine':'Rotina','urgent':'Urgente','emergency':'Emergência'}.get(urgency, urgency)]))
+    if reason: sections.append(('Motivo', [reason]))
+    return _render('Guia de referência', patient_name, patient_dob, doctor_name, doctor_license, date, sections)

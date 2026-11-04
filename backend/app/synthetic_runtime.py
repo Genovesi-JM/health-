@@ -1,0 +1,225 @@
+from __future__ import annotations
+# backend/app/main.py
+"""
+KAYA Backend — Digital Triage & Teleconsultation
+Transformed from GeoVision drone SaaS into healthcare SaaS.
+"""
+
+from pathlib import Path
+
+import os
+from urllib.parse import urlparse
+
+# Reject alternate ASGI imports before loading settings, routers or databases.
+# This selector supports the isolated audit harness; it is not a sandbox.
+_backend = Path(__file__).resolve().parents[1]
+if (
+    os.environ.get("KAYA_EXECUTION_MODE") != "synthetic"
+    or os.environ.get("ENV") != "test"
+    or (_backend / ".env").exists()
+):
+    raise RuntimeError("Synthetic runtime requires KAYA_EXECUTION_MODE=synthetic, ENV=test and no backend/.env; clinical launch remains on HOLD")
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .config import settings
+from .database import init_db_engine
+from .middleware import SecurityHeadersMiddleware, RateLimitMiddleware, HTTPSRedirectMiddleware
+
+# Core routers (kept from original)
+from .routers import auth, admin, me, mfa
+
+# Health platform routers (new)
+from .routers import (
+    patients,
+    patient_documents,
+    doctors,
+    triage,
+    consultations,
+    appointments,
+    prescriptions,
+    prescription_requests,
+    messages,
+    nurse,
+    shop_devices,
+    doctor_portal,
+    corporate,
+    health_billing,
+    compliance,
+    health_dashboard,
+    chatbot,
+    readings,
+    medications,
+    family,
+    notifications,
+    credentials,
+    clinician_workspace,
+    clinical_operations,
+    teleconsultation,
+    onboarding,
+    compliance_review,
+    verification_actions,
+    verification_webhooks,
+    organisations,
+    caregiver,
+    public_contact,
+    public_facilities,
+)
+
+from .seed_data import seed_all
+
+
+def create_application() -> FastAPI:
+    """Build and configure the FastAPI instance."""
+    application = FastAPI(
+        title=settings.app_name,
+        description="Plataforma de Triage Digital & Teleconsulta — API",
+        version="1.0.0",
+    )
+
+    # Safe startup diagnostics (no secrets)
+    try:
+        print(
+            "[HealthPlatform] Config: "
+            f"env={settings.env} "
+            f"backend_base={settings.backend_base} "
+            f"frontend_base={settings.frontend_base} "
+            f"google_client_id_set={bool(settings.google_client_id)} "
+            f"google_client_secret_set={bool(settings.google_client_secret)}"
+        )
+        cors_env = os.getenv("CORS_ORIGINS", "")
+        if cors_env.strip():
+            print(f"[HealthPlatform] CORS_ORIGINS(env)={cors_env}")
+    except Exception:
+        pass
+
+    # CORS
+    default_origins = {
+        "http://127.0.0.1:8001",
+        "http://localhost:8001",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://genovesi-jm.github.io",
+    }
+    try:
+        parsed = urlparse(settings.frontend_base)
+        if parsed.scheme and parsed.netloc:
+            default_origins.add(f"{parsed.scheme}://{parsed.netloc}")
+    except Exception:
+        pass
+
+    env_origins = os.getenv("CORS_ORIGINS", "")
+    if env_origins.strip():
+        allow_origins = [o.strip() for o in env_origins.split(",") if o.strip()]
+    else:
+        allow_origins = sorted(default_origins)
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=allow_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Kaya-Error-Code"],
+    )
+
+    # Security middleware (order matters: outermost first)
+    application.add_middleware(SecurityHeadersMiddleware)
+    application.add_middleware(RateLimitMiddleware)
+    application.add_middleware(HTTPSRedirectMiddleware)
+
+    init_db_engine()
+
+    # Ensure DB schema is up-to-date (add missing columns)
+    try:
+        from .database import ensure_legacy_schema
+        ensure_legacy_schema()
+        print("[HealthPlatform] Schema drift check completed.")
+    except Exception as exc:
+        print(f"[HealthPlatform] Schema drift check failed (non-fatal): {exc}")
+
+    # Seed test data (admin, patients, doctors)
+    # In production, seed is disabled by default to prevent demo users being created.
+    # Set SEED_DEMO_DATA=true to override.
+    _is_prod = settings.env in ("prod", "production")
+    if not _is_prod or settings.seed_demo_data:
+        try:
+            result = seed_all()
+            print(f"[HealthPlatform] Seed complete: {result}")
+        except Exception as exc:
+            print(f"[HealthPlatform] Seed data failed (non-fatal): {exc}")
+    else:
+        print("[HealthPlatform] Demo seed skipped in production (set SEED_DEMO_DATA=true to enable).")
+
+    # ── Core routers (auth, admin, user profile) ──
+    application.include_router(auth.router)       # /auth/*
+    application.include_router(mfa.router)        # /auth/mfa/* — TOTP + recovery codes
+    application.include_router(admin.router)      # /admin/*
+    application.include_router(me.router)         # /me
+
+    # ── Health platform routers ──
+    application.include_router(patient_documents.router)
+    application.include_router(patients.router)           # /api/v1/patients/*
+    application.include_router(doctors.router)            # /api/v1/doctors/*
+    application.include_router(triage.router)             # /api/v1/triage/*
+    application.include_router(appointments.router)
+    application.include_router(consultations.router)      # /api/v1/consultations/*, /api/v1/doctor/*
+    application.include_router(prescriptions.router)      # /api/v1/consultations/*/prescription|referral, /api/v1/files/*
+    application.include_router(prescription_requests.router)  # /api/v1/prescription-requests, /api/v1/doctor/prescription-requests
+    application.include_router(messages.router)               # /api/v1/consultations/*/messages, /api/v1/{doctor,patient}/message-threads
+    application.include_router(nurse.router)                  # /api/v1/nurse/dashboard, /api/v1/nurse/queue
+    application.include_router(shop_devices.router)           # /api/v1/shop/devices, /api/v1/shop/orders
+    application.include_router(doctor_portal.router)          # /api/v1/doctor/dashboard, /api/v1/doctor/agenda, /api/v1/doctor/patients
+    application.include_router(corporate.router)          # /api/v1/corporate/*
+    application.include_router(health_billing.router)     # /api/v1/billing/*
+    application.include_router(compliance.router)         # /api/v1/compliance/*
+    application.include_router(health_dashboard.router)   # /api/v1/dashboard/*
+    application.include_router(chatbot.router)            # /api/v1/chatbot/*
+    application.include_router(readings.router)           # /api/v1/readings/*
+    application.include_router(medications.router)        # /api/v1/medications/*
+    application.include_router(family.router)             # /api/v1/family/*
+    application.include_router(notifications.router)      # /api/v1/notifications/*
+    application.include_router(credentials.router)        # /api/v1/credentials/*
+    application.include_router(clinician_workspace.router) # /api/v1/clinician/patients/*/360
+    application.include_router(clinical_operations.router) # escalation, PEM preparation, clinician revenue
+    application.include_router(teleconsultation.router) # teleconsultation readiness, attendance, lifecycle
+    application.include_router(onboarding.router)       # /api/v1/onboarding/* — resumable multi-step wizard
+    application.include_router(compliance_review.router) # /api/v1/compliance/cases/* — reviewer state-machine actions
+    application.include_router(verification_actions.router)  # /api/v1/verification/* — provider integration
+    application.include_router(verification_webhooks.router) # /api/v1/webhooks/{sumsub,veremark,certn}
+    application.include_router(organisations.router)      # /api/v1/organisations/* — clinic/lab/pharmacy onboarding
+    application.include_router(caregiver.router)          # /api/v1/caregiver/* — dependant management
+    application.include_router(public_contact.router)     # /api/v1/contact — public contact form
+    application.include_router(public_facilities.router)  # /api/v1/public/facilities — clinic/hospital map
+
+    # ── Deprecated drone/shop routers (disabled) ──
+    # The following routers are from the original GeoVision platform and
+    # are no longer included. They are NOT deleted to allow gradual migration.
+    # - projects, ai, accounts, kpi (GeoVision-specific)
+    # - products, orders, customer_accounts, employees (e-commerce)
+    # - datasets, risk, payments, shop, contacts (drone platform)
+
+    @application.get("/health", tags=["system"])
+    @application.get("/api/v1/health", tags=["system"])
+    def healthcheck() -> dict:
+        return {"status": "ok", "platform": "health"}
+
+    # ── Optional in-process document-expiry scheduler ────────────────
+    # Off by default (EXPIRY_SCAN_ENABLED); when on, runs the expiry scan
+    # on a fixed interval. Started/stopped with the app lifecycle.
+    if settings.expiry_scan_enabled:
+        from .services.scheduler import scheduler
+
+        @application.on_event("startup")
+        async def _start_expiry_scheduler() -> None:  # pragma: no cover - lifecycle glue
+            scheduler.start()
+
+        @application.on_event("shutdown")
+        async def _stop_expiry_scheduler() -> None:  # pragma: no cover - lifecycle glue
+            await scheduler.stop()
+
+    return application
+
+
+# No module-level ASGI app: deployment entry points must use app.main:app.

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { apiErrorMessage } from '../utils/apiError';
 import type { Patient } from '../types';
 import { User, Save, AlertCircle, Plus, Trash2, Users, Pill, Activity, Building2 } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
@@ -52,7 +53,7 @@ export default function PatientProfilePage() {
 
   // ── Medications ───────────────────────────────────────────
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [medsLoading, setMedsLoading] = useState(false);
+  const [medsLoading, setMedsLoading] = useState(true);
   const [medsError, setMedsError] = useState('');
   const [showMedForm, setShowMedForm] = useState(false);
   const [newMedName, setNewMedName] = useState('');
@@ -62,7 +63,7 @@ export default function PatientProfilePage() {
 
   // ── Family / Dependents ───────────────────────────────────
   const [dependents, setDependents] = useState<Dependent[]>([]);
-  const [depsLoading, setDepsLoading] = useState(false);
+  const [depsLoading, setDepsLoading] = useState(true);
   const [showDepForm, setShowDepForm] = useState(false);
   const [newDepName, setNewDepName] = useState('');
   const [newDepDob, setNewDepDob] = useState('');
@@ -70,8 +71,8 @@ export default function PatientProfilePage() {
   const [savingDep, setSavingDep] = useState(false);
 
   useEffect(() => {
-    api.get('/api/v1/patients/me')
-      .then((r: any) => {
+    api.get<Patient>('/api/v1/patients/me')
+      .then((r) => {
         const p = r.data;
         setProfile(p);
         setDob(p.date_of_birth || '');
@@ -86,16 +87,14 @@ export default function PatientProfilePage() {
       .finally(() => setLoading(false));
 
     // Load medications from backend
-    setMedsLoading(true);
-    api.get('/api/v1/medications/me')
-      .then((r: any) => setMedications(r.data))
+    api.get<Medication[]>('/api/v1/medications/me')
+      .then((r) => setMedications(r.data))
       .catch(() => setMedsError('Não foi possível carregar os medicamentos.'))
       .finally(() => setMedsLoading(false));
 
     // Load family members from backend
-    setDepsLoading(true);
-    api.get('/api/v1/family/me')
-      .then((r: any) => setDependents(r.data))
+    api.get<Dependent[]>('/api/v1/family/me')
+      .then((r) => setDependents(r.data))
       .catch(() => {})
       .finally(() => setDepsLoading(false));
   }, []);
@@ -119,8 +118,8 @@ export default function PatientProfilePage() {
         await api.post('/api/v1/patients/profile', body);
       }
       setMsg(t('profile.saved'));
-    } catch (err: any) {
-      setMsg(err.response?.data?.detail || t('profile.save_error'));
+    } catch (err) {
+      setMsg(apiErrorMessage(err, t('profile.save_error')));
     }
     setSaving(false);
   };
@@ -159,7 +158,7 @@ export default function PatientProfilePage() {
     setSavingDep(true);
     try {
       const age = newDepDob ? calcAge(newDepDob) : 99;
-      const r: any = await api.post('/api/v1/family', {
+      const r = await api.post<Dependent>('/api/v1/family', {
         full_name: newDepName.trim(),
         relationship: newDepRel,
         date_of_birth: newDepDob || null,

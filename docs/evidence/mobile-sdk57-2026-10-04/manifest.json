@@ -1,0 +1,15 @@
+{
+  "android-standalone-verification.json": "658ec1df1da335a69141681f522191e3966ff97f85c226714a9fd3419f0d9303",
+  "npm-audit-production.json": "62bb64117a78968dc31ff82bdcd463800a369556ee6b7dae19e97a74ce8f9edc",
+  "audit-summary.json": "3e68897f0253d26eea70163a6a42964af5f1086aa116a0e7b636187401baf991",
+  "sbom-generation.json": "96318b22baa20af84685c8bf2189c656a67eada3d2947357685ac8fc433104bb",
+  "report.json": "e5b71d825ad41607858c49a5181d2720feae2cb2d030a61739777195edfdb7cc",
+  "npm-audit-all.json": "62bb64117a78968dc31ff82bdcd463800a369556ee6b7dae19e97a74ce8f9edc",
+  "sbom-production.cdx.json": "7060462403ce8cf1f639c77a5913589662874a103e663ca18096269471ac7f1f",
+  "shared-native-source-verification.json": "c2755fe7bf9275008d0816ce9a480a8dd41ecad4d5fd3744d31143a639e87acd",
+  "production-dependency-closure-verification.json": "1872d38b7b5a3ece08f268927282e7686ec93eaeb09b34ba7c2cc9257f1fd73e",
+  "android-build-verification.json": "78d9939493875b338043a67033f4b8ea85311f977ce7ee2975c90c8401bc619f",
+  "migration-source-manifest.json": "b1003ba449b9186ece32c2802086bd268190193d8f53032f8df9246b02cd97e1",
+  "npm-audit-production-before.json": "32526f0f009c61e7bb0cafdc8a28e6b7962e958610cf87fc4185dd4750f65e0e",
+  "sbom-all.cdx.json": "d3f2309b8a7d86e70bc9de8db8b0258fe2b1274bed58572a4b0142c392c647a2"
+}

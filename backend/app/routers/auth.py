@@ -14,7 +14,7 @@ import json
 import secrets
 import traceback
 from datetime import datetime, timedelta
-from typing import List, Optional, Set
+from typing import List, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -40,15 +40,16 @@ from ..models import (
     User,
     UserProfile,
 )
-from ..health_models import ClinicianCredential, Doctor, Patient
+from ..health_models import ClinicianCredential, Doctor, Patient, OnboardingDraft, HealthAuditLog
 from ..services.credential_verification import normalise_country
 from ..oauth2 import create_access_token, verify_access_token
 from ..schemas import AuthResponse, LoginRequest, RegisterRequest
 from ..utils import hash_password, verify_password
+from ..services.mfa import assert_mfa_session, mfa_is_mandatory
+from ..identity import canonical_account_role
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-ADMIN_EMAILS: Set[str] = {"genovesi.maria@geovisionops.com"}
 DEFAULT_MODULES = ["kpi", "projects", "store", "alerts"]
 ALLOWED_SECTORS = {"agro", "mining", "demining", "construction", "infrastructure", "solar", "health", "general"}
 
@@ -175,9 +176,7 @@ def _ensure_default_account(db: Session, user: User, sector_focus: str | None = 
 
 
 def resolve_role(user: User) -> str:
-    email = (getattr(user, "email", "") or "").strip().lower()
-    if email in ADMIN_EMAILS:
-        return "admin"
+    # Privilege comes only from trusted provisioning, never an email address.
     role = getattr(user, "role", None)
     return role or "cliente"
 
@@ -234,8 +233,7 @@ def _find_or_link_identity(
     user = db.query(User).filter(User.email == email_lower).first()
 
     if not user:
-        role = "admin" if email_lower in ADMIN_EMAILS else "cliente"
-        user = User(email=email_lower, password_hash=None, role=role, is_active=True)
+        user = User(email=email_lower, password_hash=None, role="patient", is_active=True)
         db.add(user)
         db.flush()
 
@@ -261,13 +259,10 @@ def _find_or_link_identity(
     return user
 
 
-def _build_auth_response(db: Session, user: User) -> dict:
-    desired_role = "admin" if (user.email or "").strip().lower() in ADMIN_EMAILS else (user.role or "cliente")
-    if user.role != desired_role:
-        user.role = desired_role
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+def _build_auth_response(db: Session, user: User, *, mfa_verified: bool = False) -> dict:
+    if not user.is_active:
+        raise HTTPException(401, "User inactive")
+    assert_mfa_session(user, {"mfa_verified": mfa_verified, "role": user.role}, db)
 
     profile = _ensure_profile(db, user)
     account = _ensure_default_account(db, user)
@@ -276,6 +271,7 @@ def _build_auth_response(db: Session, user: User) -> dict:
     access_token = create_access_token({
         "sub": user.email, "email": user.email,
         "role": role, "uid": user.id,
+        "mfa_verified": mfa_verified,
     })
     refresh_token = _create_refresh_token(db, user.id)
 
@@ -305,7 +301,7 @@ def _build_auth_response(db: Session, user: User) -> dict:
 # Auth Endpoints
 # ═══════════════════════════════════════════════════════════════
 
-@router.post("/register", response_model=AuthResponse, status_code=201)
+@router.post("/register", status_code=201)
 def register(payload: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     email = (payload.email or "").strip().lower()
 
@@ -322,7 +318,10 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
         requested_role = "patient"
     if requested_role not in {"patient", "doctor", "nurse"}:
         raise HTTPException(status_code=400, detail="Tipo de conta inválido.")
-    role = "admin" if email in ADMIN_EMAILS else requested_role
+    role = requested_role
+    # A requested profession opens an application. Public registration still
+    # creates a non-clinical account; human approval grants the professional
+    # role later, followed by a fresh sign-in and mandatory MFA.
 
     credential_data = None
     if role in {"doctor", "nurse"}:
@@ -370,7 +369,9 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
             "status": "draft",
         }
 
-    user = User(email=email, password_hash=hash_password(payload.password), role=role, is_active=True)
+    # Canonical identity (Phase 12): a submitted profession is not an access role.
+    user = User(email=email, password_hash=hash_password(payload.password),
+                role=canonical_account_role(role), is_active=True)
     db.add(user)
     db.flush()
 
@@ -406,16 +407,26 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     db.refresh(user)
     db.refresh(account)
 
+    log_audit(db, "register", user_id=user.id, user_email=user.email,
+              resource_type="user", resource_id=user.id, request=request)
+
+    # Professional (mandatory-MFA) roles get an enrollment token, not a session:
+    # they must complete MFA at /auth/mfa/setup + /verify before any access.
+    if mfa_is_mandatory(user.role):
+        from datetime import timedelta as _td
+        enroll_token = create_access_token(
+            {"sub": user.email, "uid": user.id, "mfa_enroll": True},
+            expires_delta=_td(minutes=15),
+        )
+        return {"mfa_enrollment_required": True, "enrollment_token": enroll_token,
+                "email": user.email}
+
     access_token = create_access_token({
         "sub": user.email, "email": user.email,
         "role": user.role, "uid": user.id,
     })
     refresh_token = _create_refresh_token(db, user.id)
 
-    log_audit(db, "register", user_id=user.id, user_email=user.email,
-              resource_type="user", resource_id=user.id, request=request)
-
-    from app.services.mfa import mfa_is_mandatory
     return AuthResponse(access_token=access_token, user=user, account=account,
                         refresh_token=refresh_token,
                         mfa_enrolled=False,
@@ -461,6 +472,18 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         log_audit(db, "login_mfa_challenge", user_id=user.id, user_email=user.email, request=request)
         return {"mfa_required": True, "mfa_token": challenge}
 
+    # Mandatory-MFA role that has not enrolled yet: issue a short-lived enrollment
+    # token that unlocks ONLY /auth/mfa/setup and /auth/mfa/verify, so the user can
+    # self-enroll securely and immediately complete login. No full session token is
+    # granted until a valid TOTP code is verified.
+    if mfa_is_mandatory(resolve_role(user)) and not (mfa_row and mfa_row.enabled):
+        enroll_token = create_access_token(
+            {"sub": user.email, "uid": user.id, "mfa_enroll": True},
+            expires_delta=_td(minutes=15),
+        )
+        log_audit(db, "login_mfa_enrollment_required", user_id=user.id, user_email=user.email, request=request)
+        return {"mfa_enrollment_required": True, "enrollment_token": enroll_token, "email": user.email}
+
     resp = _build_auth_response(db, user)
     log_audit(db, "login", user_id=user.id, user_email=user.email, request=request)
     return AuthResponse(**resp)
@@ -498,6 +521,11 @@ def refresh_token_endpoint(payload: RefreshTokenRequest, db: Session = Depends(g
     user = db.query(User).filter(User.id == rt.user_id).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User inactive")
+
+    # Existing refresh rows do not carry MFA assurance. Never upgrade a
+    # legacy/unverified refresh token into a privileged session. Require a
+    # fresh MFA login until assurance-aware refresh families are implemented.
+    assert_mfa_session(user, {}, db)
 
     rt.revoked = True
     db.add(rt)
@@ -554,6 +582,9 @@ def get_current_user(
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(401, "User inactive")
+    assert_mfa_session(user, payload, db)
 
     profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
     membership = db.query(AccountMember).filter(AccountMember.user_id == user.id).first()
@@ -577,10 +608,30 @@ def get_current_user(
     except Exception:
         pass
 
+    application = db.query(ClinicianCredential).filter(
+        ClinicianCredential.user_id == user.id,
+    ).first()
+    completed_onboarding = db.query(OnboardingDraft.id).join(
+        HealthAuditLog, HealthAuditLog.resource_id == OnboardingDraft.id,
+    ).filter(
+        OnboardingDraft.user_id == user.id,
+        OnboardingDraft.role == "patient",
+        OnboardingDraft.status == "submitted",
+        HealthAuditLog.resource_type == "onboarding_draft",
+        HealthAuditLog.action == "patient_onboarding_completed",
+    ).first()
+
     return {
+        "id": user.id,
+        "is_active": user.is_active,
         "email": user.email,
         "name": getattr(profile, "full_name", None) or "",
         "role": resolve_role(user),
+        "professional_application": {
+            "profession": application.profession,
+            "status": application.status,
+        } if application else None,
+        "patient_onboarding_complete": completed_onboarding is not None,
         "company": getattr(profile, "company", None) or getattr(profile, "org_name", None) or "",
         "account_id": getattr(account, "id", "") if account else "",
         "account_name": getattr(account, "name", "") if account else "",
@@ -962,6 +1013,10 @@ def google_callback(code: str | None = None, state: str | None = None,
             raw_data=userinfo,
         )
 
+        # OAuth callbacks have no second-factor completion UI yet. Fail
+        # closed rather than granting full tokens to MFA-protected accounts.
+        assert_mfa_session(user, {}, db)
+
         _ensure_profile(db, user, full_name=name)
         account = _ensure_default_account(db, user)
 
@@ -1023,6 +1078,8 @@ def google_onboarding(
 
     token = authorization.split()[1].strip()
     claims = verify_access_token(token)
+    if claims.get("mfa_challenge"):
+        raise HTTPException(401, "MFA verification incomplete")
     user_id = claims.get("uid")
     email = claims.get("sub")
     if not email:
@@ -1034,10 +1091,10 @@ def google_onboarding(
     if not user and email:
         user = db.query(User).filter(User.email == email).first()
     if not user:
-        user = User(email=email, password_hash=None, role="cliente", is_active=True)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        raise HTTPException(401, "User not found")
+    if not user.is_active:
+        raise HTTPException(401, "User inactive")
+    assert_mfa_session(user, claims, db)
 
     membership = db.query(AccountMember).filter(AccountMember.user_id == user.id).first()
     if membership:
@@ -1045,6 +1102,7 @@ def google_onboarding(
         new_token = create_access_token({
             "sub": user.email, "email": user.email,
             "role": user.role, "uid": user.id,
+            "mfa_verified": claims.get("mfa_verified") is True,
         })
         return AuthResponse(access_token=new_token, user=user, account=account)
 
@@ -1077,6 +1135,7 @@ def google_onboarding(
     new_token = create_access_token({
         "sub": user.email, "email": user.email,
         "role": user.role, "uid": user.id,
+        "mfa_verified": claims.get("mfa_verified") is True,
     })
     return AuthResponse(access_token=new_token, user=user, account=account)
 
@@ -1182,6 +1241,8 @@ def microsoft_callback(code: str | None = None, state: str | None = None,
             db, provider="microsoft", provider_user_id=ms_id,
             email=email, display_name=name, raw_data=userinfo,
         )
+
+        assert_mfa_session(user, {}, db)
 
         _ensure_profile(db, user, full_name=name)
         account = _ensure_default_account(db, user)

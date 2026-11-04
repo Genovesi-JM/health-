@@ -3,7 +3,7 @@ import secrets
 import warnings
 from pathlib import Path
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from typing import Optional
 
 _INSECURE_DEFAULT = "CHANGE_ME"
@@ -57,6 +57,21 @@ class Settings(BaseSettings):
         if v and v.startswith("postgres://"):
             return v.replace("postgres://", "postgresql://", 1)
         return v
+
+    # Health files: auto preserves local/S3 development only. Hosted environments
+    # must explicitly choose azure_blob or s3; no fallback is permitted there.
+    health_storage_provider: str = "auto"
+    azure_storage_account_name: Optional[str] = None
+    azure_storage_container: Optional[str] = None
+    # Optional user-assigned managed identity; unset selects system-assigned.
+    azure_storage_managed_identity_client_id: Optional[str] = None
+    azure_storage_signed_url_seconds: int = 300
+
+    # Patient document processing is opt-in and requires a private ClamAV service.
+    # No OCR provider is contacted; only local PDF text extraction is supported.
+    patient_documents_enabled: bool = False
+    patient_document_clamav_host: Optional[str] = None
+    patient_document_clamav_port: int = 3310
 
     # DigitalOcean Spaces (S3-compatible storage)
     do_spaces_key: Optional[str] = None
@@ -135,6 +150,7 @@ class Settings(BaseSettings):
     # POST /api/v1/compliance/expiry/scan endpoint).
     expiry_scan_enabled: bool = False
     expiry_scan_interval_hours: int = 24
+    consultation_request_ttl_hours: int = Field(default=24, ge=1, le=168)
 
     # Pydantic v2 settings: accept extra env vars (ignore unknown variables)
     model_config = {

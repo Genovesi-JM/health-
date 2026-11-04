@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Native approved consent catalog, durable decisions, history and withdrawal, with exact onboarding and service-market context",
+  "runtime": {
+    "node": "24.21.0",
+    "npm": "11.18.0"
+  },
+  "source_manifest": "source-manifest.json",
+  "source_manifest_files": 99,
+  "source_manifest_sha256": "c5b9bf975ae1b03043a331e19bbd4b9b447441d9f3383eb5a2b3d85e19b7f608",
+  "source_manifest_matches_shared_and_candidate_at_validation": true,
+  "policy_routes": 288,
+  "policy_sha256": "f9cdca7900446fdb0bb0615111e2abe7fa710a2ba0a85ec93d3829278afd843e",
+  "checks": {
+    "mobile_tests": {
+      "passed": 199,
+      "failed": 0,
+      "added_since_176_checkpoint": 23,
+      "log": "mobile-tests.log"
+    },
+    "typecheck": "passed",
+    "git_diff_check": "passed",
+    "hermes_exports": {
+      "informational-ios": {
+        "modules": 592,
+        "hermes_bytes": 1462169,
+        "hermes_sha256": "71a580f3638eae78552b906cd6a1043311eb0cfa03cad9bd5c4ddf8953ce367e",
+        "log": "bundle-informational-ios.log"
+      },
+      "informational-android": {
+        "modules": 590,
+        "hermes_bytes": 1467244,
+        "hermes_sha256": "9450b59398c07794917df975955727dc711e26c17022b842fe6b177f3e997c2c",
+        "log": "bundle-informational-android.log"
+      },
+      "legacy-ios": {
+        "modules": 1068,
+        "hermes_bytes": 3191092,
+        "hermes_sha256": "106657e314f97408a79fae7a40b1ace92c1bfc7c0a9b3e034761fa1ce1a27404",
+        "log": "bundle-legacy-ios.log"
+      },
+      "legacy-android": {
+        "modules": 1021,
+        "hermes_bytes": 3113732,
+        "hermes_sha256": "5de333501d0fcf063c4e5cfe9f2d3211f0a8a906ba69eda13096d329748f9a81",
+        "log": "bundle-legacy-android.log"
+      }
+    },
+    "independent_review": "Parent review completed; immediate cross-source access revocation and explicit refresh after definitive noncommit were fixed. Cross-language denial parsing aligned with the final backend contract."
+  },
+  "changes": {
+    "consent_controls": "Authenticated exact server catalog/state, explicit AO/PT selector and Portuguese notices, full plain server title/text/purpose/version. Default empty/unavailable catalog stays unavailable. No fabricated approved legal text or prechecked new grants. Optional purposes are decided separately. Settings and booking/document/triage links open these controls.",
+    "decisions": "Grant/refuse/withdraw are explicit confirmed actions using document ID/version/hash/country/language and global expected revision. Minimal owner/key/exact payload is reserved in SecureStore before POST. Every uncertain error retains identity. Only locked structured consent_not_committed proof or exact positive receipt clears the matching UUID. Exact recovery can return the original grant event plus a later withdrawn state without regranting.",
+    "access_lifecycle": "Session-bound API captures owner generation before storage or chained awaits. First401/403 from any parallel consent read immediately clears whole view and invalidates late siblings. Blur/account replacement invalidates outstanding callbacks. Focus/foreground refresh; definitive stale/catalog rejection clears choices/state until refresh.",
+    "history": "Owner history paginates20 rows, preserves loaded rows on transient failures, requires refresh after422 cursor error, and renders actual retained language. PT state accepts another-language latest event only for a non-effective withdrawal/refusal, rejecting mismatched grants. Withdrawal remains available for a prior grant after document retirement.",
+    "onboarding": "Reads approved catalog and consent state for explicit profile country; displays exact required texts and stores only the five selected references plus revision. Optional decisions are not bundled. Old boolean declarations do not become grants. Service country and step7 catalogue remain synchronized. Completed draft retry preserves server completion and cannot regrant after withdrawal.",
+    "document_market": "New private uploads reserve explicit AO/PT and consent_language pt inside the unchanged file/key recovery payload and multipart body. Legacy pending uploads without country remain lookup-recoverable and cannot be silently rewritten or resent. Metadata preserves nullable stored country/language; unknown legacy processing is hidden. consent_required403 preserves loaded personal document/review content while auth failures still clear access.",
+    "care_market": "Fresh booking payload includes consent_language pt; legacy uncertain booking bodies preserve an absent field exactly. Native self-adult triage requires explicit country and pt language and uses session-bound chained calls. Unsupported guardian/pediatric context remains rejected."
+  },
+  "native_artifact": {
+    "rebuilt": false,
+    "reason": "Only JS/TS and generated policy changed. Native dependencies, lock, config, assets, HOLD plugin and informational entry are byte-identical to the previous validated snapshot. Four Hermes exports cover current source.",
+    "existing_apk": "artifacts/native/kaya-sdk57-pdf-informational-test-arm64.apk",
+    "existing_apk_sha256": "5767c8986bcb7e83bb215b24fe0819774afe3bf57f9d5666c7d4786e1826e96f",
+    "snapshot": "Earlier09df949 PDF/auth/HOLD checkpoint, policy277; this older APK does not include subsequent JS waves."
+  },
+  "dependencies": {
+    "changed": false,
+    "lock_sha256": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+    "new_dependencies": 0,
+    "audit": "Existing audit/SBOM remain tied to unchanged lock; no fresh advisory database run. Previously documented unpatched tooling advisories remain; no risk acceptance."
+  },
+  "limits": [
+    "Informational App.tsx and HOLD remain unchanged; no live clinical/provider requests or production activation.",
+    "Current operational screens verified by helpers, protocol/session regressions, TypeScript and both platform Hermes exports; no operational device/UI runtime claim.",
+    "Catalog stays empty until legally approved documents are supplied through the server process; implementation does not provide or approve legal texts.",
+    "No native recompilation for this JS-only wave. The existing standalone informational APK remains an older source snapshot.",
+    "iOS native compilation remains blocked by unaccepted Xcode license; no agreement accepted."
+  ],
+  "repository_actions": "Native edits left unstaged; no commit by this agent. Parent owns documentation/checkpoint."
+}

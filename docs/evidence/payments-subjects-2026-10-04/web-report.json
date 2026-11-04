@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Durable patient payment recovery and truthful regional checkout",
+  "runtime": {
+    "node": "24.21.0"
+  },
+  "source_files": 221,
+  "source_manifest_sha256": "946fa28b0874e9167d29403707aaff24e7a547390b6c6517e0200212a3f69f30",
+  "owned_files": {
+    "frontend/src/components/PaymentModal.tsx": "0398d52d67690f3bde3d6b0437bb241e47df21dcbf177b338b204ba1f3c38fa4",
+    "frontend/src/components/PaymentModal.test.tsx": "37d95c104e9bb4c43604a1278523dd1e42c4541d34367831613ba49355110f86",
+    "frontend/src/utils/pendingPayment.ts": "7dc3dc9c41ad110c5b3ad35183411a195d0c81dfb7322056c17eaa1a1a7aaacb",
+    "frontend/src/utils/pendingPayment.test.ts": "21c3678ed2be465351319c478e10104c0a85151df16ef19c80c561abfbed8ec9",
+    "frontend/src/pages/ConsultationsPage.tsx": "2a1fab148ba243c5e94186bfdb8c7317d9871e55a1e45d8fb0b4e61cedf17ce1",
+    "frontend/src/pages/ConsultationsPage.payment.test.tsx": "719b8d22d40599d74c02529775dbee485bf75b65e714ada97d6d2bc0561d1e13"
+  },
+  "validation": {
+    "web_tests": {
+      "passed": 389,
+      "failed": 0,
+      "files": 55,
+      "log": "web-tests.log"
+    },
+    "new_payment_tests": 48,
+    "typescript": "passed",
+    "eslint": "passed",
+    "production_build": "passed",
+    "prototype_checks": "passed",
+    "route_graph_shell_precache_api_auth_cache_isolation": "passed",
+    "git_diff_check": "passed",
+    "independent_review": "Web review agent: no confirmed P1/P2 after reviewing modal/helper/page payment wiring; no source edits by reviewer."
+  },
+  "changes": [
+    "Persist only owner, consultation identifier, provider and UUID before checkout; survive close/reload/account return. Exact status and replay preserve original body/key after every ambiguous error. Matching cleanup protects newer saved attempts.",
+    "Structured noncommit clears only the absent UUID. Existing-payment-attempt reason discovers the retained server UUID/provider and performs exact lookup. Legacy/no-UUID attempt remains read-only.",
+    "Server paid status alone never marks care paid: recorded terminal receipt must explicitly apply payment with no financial review. Terminal failed receipt permits explicit fresh selection; all other receipts remain locked.",
+    "Explicit AO/PT catalog; unknown country does not default AO; PT fresh checkout disabled pending quote; no fabricated enabled fallback. Currency comes from server; checkout links accept absolute HTTPS only.",
+    "Single in-flight polling and session/close guards; transfer/reference instructions preserved on transient replay failure, cleared from display on401/403 while UUID remains.",
+    "Paid and historical consultations expose recovery-only status access. onPaid refreshes authoritative consultation list rather than optimistic mutation."
+  ],
+  "limits": [
+    "No live provider integration or browser payment execution was performed.",
+    "LocalStorage across tabs is not transactional; server-side existing-attempt serialization and exact UUID receipt recovery remain authoritative.",
+    "No billing activation, dependencies, environment changes or deployment. HOLD preserved."
+  ],
+  "repository_actions": "All payment edits left unstaged; no commit by this agent."
+}

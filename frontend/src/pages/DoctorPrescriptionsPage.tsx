@@ -1,430 +1,136 @@
-import { useState, useEffect } from 'react';
-import {
-  FileText, AlertTriangle, CheckCircle2, X, ChevronDown, ChevronUp,
-  Activity, Calendar, Stethoscope, AlertCircle, RefreshCw,
-  Search, Loader2, SidebarOpen, Pill, Heart,
-  ShieldCheck,
-} from 'lucide-react';
-import api from '../api';
+import { useEffect, useRef, useState } from 'react';
+import api, { getSession } from '../api';
+import { apiErrorMessage } from '../utils/apiError';
+import { useRenewalRequests } from '../hooks/useRenewalRequests';
+import { canDecideRenewal, clearPendingRenewal, verifyDecisionReceipt, readPendingRenewal, renewalActionLabels, renewalActions, renewalCountryName, renewalDigest, renewalNotCommitted, renewalStatusLabels, savePendingRenewal } from '../utils/prescriptionRenewals';
+import type { PendingRenewal, RenewalAction, RenewalDecisionBody, RenewalRequest } from '../utils/prescriptionRenewals';
 
-interface RxRequest {
-  id: string;
-  patient_id: string;
-  doctor_id: string;
-  medication_name: string;
-  dose?: string;
-  frequency?: string;
-  reason?: string;
-  status: string;
-  risk_level?: string;
-  risk_alert?: string;
-  doctor_note?: string;
-  adjusted_dose?: string;
-  adjusted_frequency?: string;
-  created_at: string;
-  decided_at?: string;
-  patient_name?: string;
-  patient_age?: number;
-  patient_gender?: string;
-  chronic_conditions?: string[];
-  allergies?: string[];
-}
-
-interface ClinicalSummary {
-  identity: { id: string; name: string; age: number | null; gender: string | null; blood_type: string | null; date_of_birth: string | null; city: string | null };
-  chronic_conditions: string[];
-  allergies: string[];
-  current_medications: { id: string; name: string; dosage: string | null; frequency: string | null }[];
-  last_consultations: { id: string; specialty: string; status: string; scheduled_at: string | null }[];
-  last_vitals: { reading_type: string; value: number | null; unit: string | null; measured_at: string }[];
-  previous_prescriptions: { id: string; medication_name: string; status: string; created_at: string }[];
-  risk_flags: string[];
-}
-
-interface PemStatus {
-  provider: string;
-  network: string;
-  configured: boolean;
-  mode: string;
-  message: string;
-  requirements: Record<string, boolean>;
-}
-
-const riskConfig = {
-  low:    { label: 'Baixo risco',  color: '#059669', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)' },
-  medium: { label: 'Risco médio', color: '#d97706', bg: 'rgba(234,179,8,0.1)',   border: 'rgba(234,179,8,0.3)'   },
-  high:   { label: 'Alto risco',  color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.3)'   },
-};
-
-const actionMap: Record<string, string> = {
-  approve:            '✓ Aprovada',
-  adjust:             '~ Dose ajustada',
-  consult_requested:  '📅 Consulta solicitada',
-  exams_requested:    '🔬 Exames pedidos',
-  reject:             '✗ Recusada',
-};
-
-type Action = 'approve' | 'adjust' | 'consult_requested' | 'exams_requested' | 'reject';
-
+const BASE = '/api/v1/doctor/prescription-requests';
+const uncertain = 'A decisão ainda não foi confirmada. Recupere o resultado antes de decidir novamente; um erro ou uma pesquisa sem resultado não prova que falhou.';
 export default function DoctorPrescriptionsPage() {
-  const [requests, setRequests] = useState<RxRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [noteFor, setNoteFor] = useState<{ id: string; action: Action } | null>(null);
-  const [noteText, setNoteText] = useState('');
-  const [adjDoseText, setAdjDoseText] = useState('');
-  const [adjFreqText, setAdjFreqText] = useState('');
-  const [submitting, setSubmitting] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const session = getSession();
+  return <DoctorRenewals key={`${session?.userId}:${session?.token}`} />;
+}
+function DoctorRenewals() {
   const [filter, setFilter] = useState<'pending' | 'all'>('pending');
-  const [quickView, setQuickView] = useState<RxRequest | null>(null);
-  const [clinicalSummary, setClinicalSummary] = useState<ClinicalSummary | null>(null);
-  const [clinicalLoading, setClinicalLoading] = useState(false);
-  const [pemStatus, setPemStatus] = useState<PemStatus | null>(null);
-
-  const load = async () => {
-    setLoading(true); setError('');
+  const feed = useRenewalRequests('doctor', filter);
+  const [restored] = useState(() => {
+    try { return { pending: readPendingRenewal(feed.owner, 'decision'), error: '' }; }
+    catch { return { pending: null, error: 'Não foi possível ler a referência guardada. Resolva o armazenamento antes de decidir.' }; }
+  });
+  const [pending, setPending] = useState<PendingRenewal | null>(restored.pending);
+  const [storageError, setStorageError] = useState(restored.error);
+  const [selected, setSelected] = useState<{ request: RenewalRequest; epoch: number } | null>(null);
+  const [action, setAction] = useState<RenewalAction | ''>('');
+  const [note, setNote] = useState('');
+  const [adjustedDose, setAdjustedDose] = useState('');
+  const [adjustedFrequency, setAdjustedFrequency] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [acknowledged, setAcknowledged] = useState<{ request: RenewalRequest; epoch: number } | null>(null);
+  const [memoryIdentity, setMemoryIdentity] = useState<{ key: string; epoch: number } | null>(null);
+  const mutation = useRef(false); const bodyMemory = useRef<RenewalDecisionBody | null>(null);
+  useEffect(() => { if (feed.accessLost) bodyMemory.current = null; }, [feed.accessLost]);
+  const request = selected?.epoch === feed.accessEpoch ? selected.request : null;
+  const locked = !!pending && memoryIdentity?.key === pending.key && memoryIdentity.epoch === feed.accessEpoch;
+  const restoreStorage = () => {
+    if (!feed.current() || mutation.current) return;
+    try { const saved = readPendingRenewal(feed.owner, 'decision'); if (saved) { setPending(saved); bodyMemory.current = null; setMemoryIdentity(null); } setStorageError(''); }
+    catch { setStorageError('Não foi possível ler a referência. Nenhuma nova decisão foi enviada.'); }
+  };
+  const finish = (receipt: Awaited<ReturnType<typeof verifyDecisionReceipt>>, attempt: PendingRenewal) => {
+    feed.apply(receipt.request); setAcknowledged({ request: receipt.request, epoch: feed.accessEpoch });
+    clearPendingRenewal(attempt); setPending(readPendingRenewal(feed.owner, 'decision')); bodyMemory.current = null;
+    setNotice(`Decisão confirmada. Estado atual: ${renewalStatusLabels[receipt.request.status]}.`);
+    setSelected(null); setAction(''); setNote(''); setAdjustedDose(''); setAdjustedFrequency('');
+  };
+  const recover = async () => {
+    const active = feed.capture(); if (!pending || !active() || mutation.current) return;
+    mutation.current = true; setBusy(true); setError(''); setNotice('');
     try {
-      const params = filter === 'all' ? { status: 'all' } : { status: 'pending' };
-      const { data } = await api.get<RxRequest[]>('/api/v1/doctor/prescription-requests', { params });
-      setRequests(data);
-      if (data.length > 0) setExpanded(data[0].id);
-    } catch (e: any) {
-      setError(e?.response?.data?.detail ?? 'Erro ao carregar pedidos.');
-    } finally { setLoading(false); }
+      const response = await api.get(`${BASE}/decisions/${encodeURIComponent(pending.key)}`, feed.config());
+      if (!active()) return;
+      const received = await verifyDecisionReceipt(response.data, pending);
+      if (active()) finish(received, pending);
+    } catch (failure) { if (active()) { feed.invalidateAccess(failure); setError(`${uncertain} ${apiErrorMessage(failure, '')}`); } }
+    finally { if (feed.current()) { mutation.current = false; setBusy(false); } }
   };
-
-  useEffect(() => { load(); }, [filter]);
-  useEffect(() => {
-    api.get<PemStatus>('/api/v1/clinical-operations/integrations/pem/status')
-      .then(response => setPemStatus(response.data))
-      .catch(() => {});
-  }, []);
-
-  const openQuickView = async (rx: RxRequest) => {
-    if (quickView?.id === rx.id) { setQuickView(null); setClinicalSummary(null); return; }
-    setQuickView(rx);
-    setClinicalSummary(null);
-    setClinicalLoading(true);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const active = feed.capture(); if (!active() || mutation.current || storageError || (!pending && (!request || !canDecideRenewal(request)))) return;
+    mutation.current = true; setBusy(true); setError(''); setNotice('');
+    let attempt = pending;
     try {
-      const { data } = await api.get<ClinicalSummary>(`/api/v1/doctor/patients/${rx.patient_id}/clinical-summary`);
-      setClinicalSummary(data);
-    } catch {
-      // summary may not be available if no consultation yet — fall back to basic data
-    } finally {
-      setClinicalLoading(false);
-    }
+      const body: RenewalDecisionBody = bodyMemory.current ?? { action: action as RenewalAction, expected_revision: request?.revision ?? 0,
+        doctor_note: note.trim() || null, adjusted_dose: action === 'adjust' ? adjustedDose.trim() || null : null,
+        adjusted_frequency: action === 'adjust' ? adjustedFrequency.trim() || null : null };
+      if (!renewalActions.includes(body.action) || (body.doctor_note?.length ?? 0) > 4000 || (body.adjusted_dose?.length ?? 0) > 100 || (body.adjusted_frequency?.length ?? 0) > 100) throw new Error('Reveja os campos da decisão.');
+      const digest = await renewalDigest(body); if (!active()) return;
+      if (attempt && digest !== attempt.digest) throw new Error('O texto e a ação não coincidem com a decisão original. Reintroduza exatamente os mesmos campos ou verifique o resultado guardado.');
+      if (!attempt) {
+        if (!request?.country || !canDecideRenewal(request)) throw new Error('Atualize e reveja o pedido antes de decidir.');
+        attempt = { owner: feed.owner, kind: 'decision', key: crypto.randomUUID(), digest, country: request.country, consent_language: 'pt', target: request.id };
+      }
+      try { savePendingRenewal(attempt); }
+      catch (failure) { setStorageError('Não foi possível guardar a referência. Nenhuma nova decisão foi enviada; verifique o armazenamento.'); throw failure; }
+      if (!active()) return;
+      setPending(attempt); bodyMemory.current = body; setMemoryIdentity({ key: attempt.key, epoch: feed.accessEpoch });
+      const response = await api.post(`${BASE}/${encodeURIComponent(attempt.target)}/decide`, body, { headers: { ...feed.config().headers, 'Idempotency-Key': attempt.key } });
+      if (!active()) return;
+      const received = await verifyDecisionReceipt(response.data, attempt);
+      if (active()) finish(received, attempt);
+    } catch (failure) {
+      if (!active()) return;
+      feed.invalidateAccess(failure);
+      if (attempt && renewalNotCommitted(failure)) {
+        try { clearPendingRenewal(attempt); setPending(readPendingRenewal(feed.owner, 'decision')); bodyMemory.current = null; setMemoryIdentity(null); }
+        catch { setStorageError('O servidor não registou a decisão, mas a referência local não pôde ser removida. Verifique o armazenamento.'); }
+        setError(apiErrorMessage(failure, 'A decisão não foi registada. Atualize o pedido antes de decidir.')); setSelected(null); void feed.load();
+      } else setError(`${attempt ? `${uncertain} ` : ''}${apiErrorMessage(failure, failure instanceof Error ? failure.message : 'Não foi possível confirmar a decisão.')}`);
+    } finally { if (feed.current()) { mutation.current = false; setBusy(false); } }
   };
-
-  const decide = async (id: string, action: Action, note?: string, adjDose?: string, adjFreq?: string) => {
-    setSubmitting(id);
-    try {
-      const { data } = await api.post<RxRequest>(`/api/v1/doctor/prescription-requests/${id}/decide`, {
-        action, doctor_note: note || undefined,
-        adjusted_dose: adjDose || undefined, adjusted_frequency: adjFreq || undefined,
-      });
-      setRequests(prev => prev.map(r => r.id === id ? data : r));
-    } catch (e: any) {
-      alert(e?.response?.data?.detail ?? 'Erro ao processar decisão.');
-    } finally { setSubmitting(null); setNoteFor(null); setNoteText(''); setAdjDoseText(''); setAdjFreqText(''); }
-  };
-
-  const handleAction = (rx: RxRequest, action: Action) => {
-    if (action === 'reject' || action === 'adjust') { setNoteFor({ id: rx.id, action }); setNoteText(''); setAdjDoseText(''); setAdjFreqText(''); }
-    else decide(rx.id, action);
-  };
-
-  const pending = requests.filter(r => r.status === 'pending');
-  const done    = requests.filter(r => r.status !== 'pending');
-  const shown   = pending.filter(r =>
-    !search || (r.patient_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    r.medication_name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  return (
-    <div style={{ display: 'flex', gap: '1rem', maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <section style={{
-          display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '0.75rem', alignItems: 'center',
-          marginBottom: '1rem', padding: '0.85rem 1rem', border: `1px solid ${pemStatus?.configured ? '#a7f3d0' : '#fde68a'}`,
-          borderRadius: 12, background: pemStatus?.configured ? '#ecfdf5' : '#fffbeb',
-        }}>
-          <span style={{ display: 'grid', placeItems: 'center', width: 36, height: 36, borderRadius: 10, background: pemStatus?.configured ? '#d1fae5' : '#fef3c7', color: pemStatus?.configured ? '#047857' : '#b45309' }}>
-            <ShieldCheck size={19} />
-          </span>
-          <div>
-            <strong style={{ display: 'block', fontSize: '0.78rem' }}>Prescrição eletrónica · PEM / BDNP Portugal</strong>
-            <span style={{ display: 'block', marginTop: '0.15rem', color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-              {pemStatus?.message || 'A verificar a ligação certificada…'}
-            </span>
-          </div>
-          <span style={{ padding: '0.25rem 0.55rem', borderRadius: 999, background: pemStatus?.configured ? '#047857' : '#b45309', color: '#fff', fontSize: '0.58rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
-            {pemStatus?.configured ? 'Gateway configurado' : 'Preparação apenas'}
-          </span>
-        </section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileText size={20} style={{ color: '#ef4444' }} /> Prescrições Pendentes
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>Contexto clínico completo disponível</p>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {pending.length > 0 && <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '0.35rem 0.75rem', borderRadius: 999 }}>{pending.length} pendentes</span>}
-            <button onClick={load} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.75rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
-              <RefreshCw size={13} /> Actualizar
-            </button>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 180, position: 'relative' }}>
-            <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input className="form-input" placeholder="Pesquisar…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '2.1rem' }} />
-          </div>
-          {(['pending', 'all'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', border: `1.5px solid ${filter === f ? 'var(--brand-primary)' : 'var(--border)'}`, background: filter === f ? 'var(--brand-light)' : 'var(--bg-card)', color: filter === f ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: filter === f ? 700 : 500, fontSize: '0.8rem', cursor: 'pointer' }}>
-              {f === 'pending' ? 'Pendentes' : 'Todos'}
-            </button>
-          ))}
-        </div>
-
-        {loading && <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}><Loader2 size={28} style={{ display: 'block', margin: '0 auto 0.5rem' }} />A carregar…</div>}
-        {!loading && error && <div style={{ padding: '1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', color: '#dc2626', fontSize: '0.85rem' }}>{error}</div>}
-        {!loading && !error && shown.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-            <CheckCircle2 size={40} style={{ color: '#10b981', margin: '0 auto 0.75rem', display: 'block' }} />
-            <div style={{ fontWeight: 700, color: '#10b981' }}>Tudo em dia!</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>Sem prescrições pendentes.</div>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {shown.map(rx => {
-            const risk = riskConfig[(rx.risk_level as keyof typeof riskConfig) ?? 'low'];
-            const isOpen = expanded === rx.id;
-            const isBusy = submitting === rx.id;
-            return (
-              <div key={rx.id} className="card" style={{ padding: 0, overflow: 'hidden', border: rx.risk_level === 'high' ? `2px solid ${risk.border}` : undefined }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', cursor: 'pointer', background: rx.risk_level === 'high' ? 'rgba(239,68,68,0.03)' : undefined }}
-                  onClick={() => setExpanded(isOpen ? null : rx.id)}>
-                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: risk.bg, color: risk.color, fontWeight: 800, fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `2px solid ${risk.border}` }}>
-                    {(rx.patient_name ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700 }}>{rx.patient_name ?? 'Paciente'}{rx.patient_age ? ` · ${rx.patient_age} anos` : ''}</div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 500, marginTop: '0.1rem' }}>💊 {rx.medication_name}{rx.dose ? ` — ${rx.dose}` : ''}{rx.frequency ? ` ${rx.frequency}` : ''}</div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem', flexShrink: 0 }}>
-                    {rx.risk_level && <span style={{ fontSize: '0.73rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 999, background: risk.bg, color: risk.color }}>{risk.label}</span>}
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(rx.created_at).toLocaleDateString('pt-PT')}</span>
-                    <button onClick={e => { e.stopPropagation(); openQuickView(rx); }} style={{ fontSize: '0.72rem', background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      <SidebarOpen size={13} /> Perfil
-                    </button>
-                    {isOpen ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />}
-                  </div>
-                </div>
-
-                {rx.risk_alert && (
-                  <div style={{ display: 'flex', gap: '0.6rem', padding: '0.6rem 1.25rem', background: rx.risk_level === 'high' ? 'rgba(239,68,68,0.07)' : 'rgba(234,179,8,0.06)', borderTop: '1px solid var(--border)' }}>
-                    <AlertCircle size={15} style={{ color: risk.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: '0.8rem', color: risk.color, fontWeight: 500 }}>{rx.risk_alert}</span>
-                  </div>
-                )}
-
-                {isOpen && (
-                  <div style={{ padding: '1.25rem', borderTop: rx.risk_alert ? undefined : '1px solid var(--border)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                      {(rx.chronic_conditions ?? []).length > 0 && (
-                        <DetailBlock title="🩺 Condições crónicas">
-                          {(rx.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
-                        </DetailBlock>
-                      )}
-                      {(rx.allergies ?? []).length > 0 && (
-                        <DetailBlock title="⚠️ Alergias">
-                          {(rx.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
-                        </DetailBlock>
-                      )}
-                    </div>
-                    {rx.reason && (
-                      <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.025)', border: '1px solid var(--border)', marginBottom: '1.25rem', fontSize: '0.83rem' }}>
-                        <span style={{ fontWeight: 700 }}>Motivo: </span>{rx.reason}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <ActionBtn onClick={() => handleAction(rx, 'approve')} disabled={isBusy} color="#059669" bg="rgba(16,185,129,0.1)" border="rgba(16,185,129,0.3)" icon={<CheckCircle2 size={15} />} label={isBusy ? '…' : 'Aprovar'} />
-                      <ActionBtn onClick={() => handleAction(rx, 'adjust')} disabled={isBusy} color="#d97706" bg="rgba(234,179,8,0.1)" border="rgba(234,179,8,0.3)" icon={<Stethoscope size={15} />} label="Ajustar dose" />
-                      <ActionBtn onClick={() => handleAction(rx, 'consult_requested')} disabled={isBusy} color="#3b82f6" bg="rgba(59,130,246,0.1)" border="rgba(59,130,246,0.3)" icon={<Calendar size={15} />} label="Solicitar consulta" />
-                      <ActionBtn onClick={() => handleAction(rx, 'exams_requested')} disabled={isBusy} color="#8b5cf6" bg="rgba(139,92,246,0.1)" border="rgba(139,92,246,0.3)" icon={<Activity size={15} />} label="Pedir exames" />
-                      <ActionBtn onClick={() => handleAction(rx, 'reject')} disabled={isBusy} color="#dc2626" bg="rgba(239,68,68,0.08)" border="rgba(239,68,68,0.25)" icon={<X size={15} />} label="Recusar" />
-                    </div>
-                    {noteFor?.id === rx.id && (
-                      <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
-                        <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: '0.4rem' }}>
-                          {noteFor.action === 'reject' ? 'Motivo da recusa *' : 'Ajuste pretendido *'}
-                        </label>
-                        {noteFor.action === 'adjust' && (
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <input className="form-input" placeholder="Nova dose" value={adjDoseText} onChange={e => setAdjDoseText(e.target.value)} />
-                            <input className="form-input" placeholder="Nova frequência" value={adjFreqText} onChange={e => setAdjFreqText(e.target.value)} />
-                          </div>
-                        )}
-                        <textarea className="form-input" rows={2} value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Justificação clínica…" style={{ resize: 'vertical', marginBottom: '0.6rem' }} />
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button onClick={() => decide(rx.id, noteFor.action, noteText, adjDoseText, adjFreqText)} disabled={!noteText.trim()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>Confirmar</button>
-                          <button onClick={() => setNoteFor(null)} style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: 'none', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>Cancelar</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {done.length > 0 && (
-          <div style={{ marginTop: '2rem' }}>
-            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Processadas ({done.length})</div>
-            {done.map(rx => (
-              <div key={rx.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 1rem', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', marginBottom: '0.4rem', opacity: 0.6 }}>
-                <CheckCircle2 size={15} style={{ color: '#10b981' }} />
-                <span style={{ flex: 1, fontSize: '0.82rem', fontWeight: 500 }}>{rx.patient_name ?? 'Paciente'} — {rx.medication_name}</span>
-                <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontWeight: 600 }}>{actionMap[rx.status] ?? rx.status}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {quickView && (
-        <div style={{ width: 290, flexShrink: 0 }}>
-          <div className="card" style={{ padding: '1.25rem', position: 'sticky', top: '1rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontWeight: 800, fontSize: '0.88rem' }}>Perfil Clínico</span>
-              <button onClick={() => { setQuickView(null); setClinicalSummary(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
-            </div>
-
-            {clinicalLoading && (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'var(--text-muted)' }}>
-                <Loader2 size={20} style={{ display: 'block', margin: '0 auto 0.4rem' }} />
-                <span style={{ fontSize: '0.8rem' }}>A carregar histórico…</span>
-              </div>
-            )}
-
-            {!clinicalLoading && (
-              <>
-                {/* Identity */}
-                <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--brand-light)', color: 'var(--brand-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem', fontSize: '0.9rem' }}>
-                    {((clinicalSummary?.identity.name ?? quickView.patient_name) ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
-                  </div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{clinicalSummary?.identity.name ?? quickView.patient_name ?? 'Paciente'}</div>
-                  <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>
-                    {clinicalSummary?.identity.age ?? quickView.patient_age ?? '—'} anos
-                    {(clinicalSummary?.identity.gender ?? quickView.patient_gender) ? ` · ${clinicalSummary?.identity.gender ?? quickView.patient_gender}` : ''}
-                    {clinicalSummary?.identity.blood_type ? ` · ${clinicalSummary.identity.blood_type}` : ''}
-                  </div>
-                </div>
-
-                {/* Risk flags */}
-                {(clinicalSummary?.risk_flags ?? []).length > 0 && (
-                  <div style={{ marginBottom: '0.85rem', padding: '0.6rem 0.75rem', borderRadius: '8px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                    <SectionLabel>⚠️ Alertas de risco</SectionLabel>
-                    {clinicalSummary!.risk_flags.map((f, i) => <div key={i} style={{ fontSize: '0.76rem', color: '#dc2626', marginBottom: '0.2rem' }}>• {f}</div>)}
-                  </div>
-                )}
-
-                {/* Chronic conditions */}
-                {((clinicalSummary?.chronic_conditions ?? quickView.chronic_conditions) ?? []).length > 0 && (
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel>🩺 Condições crónicas</SectionLabel>
-                    {(clinicalSummary?.chronic_conditions ?? quickView.chronic_conditions ?? []).map((c: string) => <Tag key={c} label={c} color="rgba(59,130,246,0.1)" textColor="#3b82f6" />)}
-                  </div>
-                )}
-
-                {/* Allergies */}
-                {((clinicalSummary?.allergies ?? quickView.allergies) ?? []).length > 0 && (
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel>⚠️ Alergias</SectionLabel>
-                    {(clinicalSummary?.allergies ?? quickView.allergies ?? []).map((a: string) => <Tag key={a} label={a} color="rgba(239,68,68,0.1)" textColor="#dc2626" />)}
-                  </div>
-                )}
-
-                {/* Current medications */}
-                {clinicalSummary && clinicalSummary.current_medications.length > 0 && (
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel><Pill size={11} style={{ display: 'inline', marginRight: 3 }} />Medicações actuais</SectionLabel>
-                    {clinicalSummary.current_medications.map(m => (
-                      <div key={m.id} style={{ fontSize: '0.77rem', padding: '0.25rem 0', borderBottom: '1px solid var(--border)' }}>
-                        <span style={{ fontWeight: 600 }}>{m.name}</span>
-                        {m.dosage && <span style={{ color: 'var(--text-muted)' }}> · {m.dosage}</span>}
-                        {m.frequency && <span style={{ color: 'var(--text-muted)' }}> · {m.frequency}</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Latest vitals */}
-                {clinicalSummary && clinicalSummary.last_vitals.length > 0 && (
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel><Heart size={11} style={{ display: 'inline', marginRight: 3 }} />Últimas medições</SectionLabel>
-                    {clinicalSummary.last_vitals.slice(0, 5).map((v, i) => (
-                      <div key={i} style={{ fontSize: '0.77rem', display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0', borderBottom: '1px solid var(--border)' }}>
-                        <span style={{ textTransform: 'capitalize' }}>{v.reading_type.replace(/_/g, ' ')}</span>
-                        <span style={{ fontWeight: 600 }}>{v.value ?? '—'}{v.unit ? ` ${v.unit}` : ''}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Last consultations */}
-                {clinicalSummary && clinicalSummary.last_consultations.length > 0 && (
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <SectionLabel>📋 Consultas anteriores</SectionLabel>
-                    {clinicalSummary.last_consultations.slice(0, 3).map(c => (
-                      <div key={c.id} style={{ fontSize: '0.77rem', padding: '0.2rem 0', borderBottom: '1px solid var(--border)' }}>
-                        {c.specialty.replace(/_/g, ' ')} · <span style={{ color: 'var(--text-muted)' }}>{c.status}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Current request */}
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-                  <SectionLabel>💊 Pedido actual</SectionLabel>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{quickView.medication_name}</div>
-                  {quickView.dose && <div style={{ fontSize: '0.77rem', color: 'var(--text-muted)' }}>{quickView.dose} · {quickView.frequency}</div>}
-                  {quickView.reason && <div style={{ fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>"{quickView.reason}"</div>}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>{children}</div>;
-}
-function DetailBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>{title}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>{children}</div>
-    </div>
-  );
-}
-function Tag({ label, color, textColor }: { label: string; color: string; textColor: string }) {
-  return <span style={{ display: 'inline-block', padding: '0.18rem 0.55rem', borderRadius: 999, background: color, color: textColor, fontSize: '0.75rem', fontWeight: 600, width: 'fit-content', marginBottom: '0.18rem' }}>{label}</span>;
-}
-function ActionBtn({ onClick, disabled, color, bg, border, icon, label }: { onClick: () => void; disabled?: boolean; color: string; bg: string; border: string; icon: React.ReactNode; label: string }) {
-  return (
-    <button onClick={onClick} disabled={disabled} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.9rem', borderRadius: '10px', background: bg, color, border: `1.5px solid ${border}`, fontWeight: 700, fontSize: '0.82rem', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
-      {icon} {label}
-    </button>
-  );
+  return <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem' }}>
+    <h1>Pedidos de renovação recebidos</h1>
+    <p>A lista contém os dados de cada pedido atribuído. Uma decisão guardada na Kaya não confirma envio a uma farmácia ou a uma rede externa.</p>
+    {error && <p role="alert">{error}</p>}{notice && !feed.accessLost && <p role="status">{notice}</p>}
+    {storageError && <div role="alert">{storageError} <button disabled={busy} onClick={restoreStorage}>Verificar armazenamento</button></div>}
+    {feed.accessLost && <p role="alert">O acesso precisa de nova confirmação. Atualize a lista antes de continuar.</p>}
+    {pending && <section className="card" aria-label="Recuperar decisão de renovação">
+      <h2>Decisão por confirmar</h2><p>{uncertain}</p><p>{renewalCountryName(pending.country)} · Pedido {pending.target} · Identificador {pending.key}</p>
+      <p>As notas clínicas não são guardadas no armazenamento do navegador. Pode verificar o resultado sem as reintroduzir.</p>
+      <button disabled={busy || feed.accessLost || !!storageError} onClick={() => void recover()}>Verificar decisão guardada</button>
+    </section>}
+    {!feed.accessLost && (pending || request) && <form className="card" onSubmit={submit} style={{ padding: '1rem', margin: '1rem 0', display: 'grid', gap: '.75rem' }}>
+      <h2>{pending ? 'Repetir a decisão original' : `Decidir pedido de ${request?.medication_name}`}</h2>
+      {request && <p>{[request.dose, request.frequency].filter(Boolean).join(' · ')} · {renewalCountryName(request.country)} · Revisão {request.revision}</p>}
+      <fieldset disabled={busy || locked || !!storageError} style={{ border: 0, padding: 0, display: 'grid', gap: '.75rem' }}>
+        <label>Ação<select aria-label="Ação" value={action} onChange={event => setAction(event.target.value as RenewalAction | '')} required><option value="">Escolha a decisão</option>{renewalActions.map(item => <option key={item} value={item}>{renewalActionLabels[item]}</option>)}</select></label>
+        <label>Nota clínica<textarea aria-label="Nota clínica" value={note} onChange={event => setNote(event.target.value)} maxLength={4000} /></label>
+        {action === 'adjust' && <><label>Dose ajustada<input aria-label="Dose ajustada" value={adjustedDose} onChange={event => setAdjustedDose(event.target.value)} maxLength={100} /></label>
+          <label>Frequência ajustada<input aria-label="Frequência ajustada" value={adjustedFrequency} onChange={event => setAdjustedFrequency(event.target.value)} maxLength={100} /></label></>}
+      </fieldset>
+      <button disabled={busy || !!storageError || (!locked && !action)} type="submit">{busy ? 'A confirmar…' : pending ? 'Repetir a mesma decisão' : 'Confirmar decisão'}</button>
+      {!pending && <button type="button" disabled={busy} onClick={() => { setSelected(null); setAction(''); setNote(''); setAdjustedDose(''); setAdjustedFrequency(''); }}>Descartar rascunho</button>}
+    </form>}
+    {acknowledged && acknowledged.epoch === feed.accessEpoch && !feed.accessLost && <section className="card" aria-label="Decisão confirmada">
+      <h2>{renewalStatusLabels[acknowledged.request.status]}: {acknowledged.request.medication_name}</h2>
+      {acknowledged.request.doctor_note && <p>{acknowledged.request.doctor_note}</p>}
+      {acknowledged.request.standalone_prescription_id && <p>O registo da receita foi criado na Kaya.</p>}
+    </section>}
+    <h2>Histórico atribuído</h2>
+    <label>Estado<select aria-label="Estado" value={filter} disabled={busy} onChange={event => setFilter(event.target.value === 'all' ? 'all' : 'pending')}><option value="pending">Pendentes</option><option value="all">Todos os estados</option></select></label>{' '}
+    <button disabled={busy || feed.loading} onClick={() => void feed.load()}>Atualizar pedidos</button>
+    {feed.error && <p role="alert">{feed.error}</p>}{feed.loading && <p>A carregar pedidos…</p>}
+    {feed.loaded && !feed.loading && !feed.items.length && <p>Não há pedidos neste filtro.</p>}
+    <p>{feed.items.length} pedidos carregados{feed.nextCursor ? '; existem mais páginas.' : '.'}</p>
+    {feed.items.map(item => <article key={item.id} className="card" style={{ marginTop: '.75rem', padding: '1rem' }}>
+      <h3>{item.medication_name}</h3><p>{item.patient_name || 'Paciente'} · {renewalCountryName(item.country)} · {new Date(item.created_at).toLocaleString('pt-PT')}</p>
+      <p>{[item.dose, item.frequency].filter(Boolean).join(' · ')}</p>{item.reason && <p>Motivo: {item.reason}</p>}
+      <p>Estado: {renewalStatusLabels[item.status]}</p>{item.doctor_note && <p>Nota: {item.doctor_note}</p>}
+      {canDecideRenewal(item) ? <button disabled={busy || !!pending || !!request || !!storageError} onClick={() => { setSelected({ request: item, epoch: feed.accessEpoch }); setAction(''); setNote(''); setAdjustedDose(''); setAdjustedFrequency(''); }}>Rever decisão — {item.medication_name}</button>
+        : item.decision_state === 'legacy_review_required' && <p>Registo anterior: requer revisão explícita. Não é possível decidir neste fluxo.</p>}
+    </article>)}
+    {feed.nextCursor && <button disabled={busy || feed.loading || feed.restartRequired} onClick={() => void feed.load(feed.nextCursor!)}>Carregar mais pedidos</button>}
+  </div>;
 }

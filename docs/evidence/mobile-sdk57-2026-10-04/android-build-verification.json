@@ -1,0 +1,18 @@
+{
+  "source_lock_sha256": "a73130c9f1e3b5577df82000f11aa61cdef86f5e28a9df952776af2ec02e0a41",
+  "apk_sha256": "f63720d78781ae5fd83e65dc5a61ef99347fde6b14cd48b7b335b2d604c24ba3",
+  "apk_bytes": 73741142,
+  "packaged_manifest_permissions": [
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.INTERNET",
+    "android.permission.SYSTEM_ALERT_WINDOW",
+    "android.permission.USE_BIOMETRIC",
+    "android.permission.USE_FINGERPRINT",
+    "android.permission.VIBRATE",
+    "com.kayahealth.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ],
+  "hold_blocked_permissions_present": [],
+  "artifact": "local debug APK; requires Metro; not a distribution or device-runtime validation"
+}

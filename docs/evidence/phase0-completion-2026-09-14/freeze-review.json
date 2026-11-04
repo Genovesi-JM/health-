@@ -1,0 +1,116 @@
+{
+  "date": "2026-09-14",
+  "scope": "Phase 0 local source launch freeze and release entry-point audit; no clinical product fixes",
+  "verdict": "PASS for verified local source entry points; clinical release remains HOLD",
+  "head": "a860f8bae48095fb97abf493e37e6340111652e3",
+  "checks": [
+    {
+      "command": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest backend/phase0_tests -q --tb=short",
+      "exit_code": 0,
+      "passed": 38,
+      "duration_seconds": 4.99,
+      "coverage": [
+        "all ordinary and extended HTTP methods return 503",
+        "clinical, authentication, webhook, health and unknown routes denied",
+        "invalid JSON and caller-supplied override headers cannot select runtime",
+        "WebSocket handshake denied",
+        "unknown execution modes fail closed",
+        "synthetic selector rejects non-test environment and operator dotenv",
+        "direct synthetic import guard runs before settings/database imports",
+        "no eager synthetic ASGI app",
+        "synthetic runtime excluded by reviewed Docker source allowlist",
+        "Python startup has no database imports or subprocess work",
+        "Python startup rejects synthetic and unknown selectors",
+        "Docker default runtime starts app.main:app without pre-start migration",
+        "manual deployment scripts exit before sentinel external commands",
+        "Compose/Render mode fixed to hold and checked-in autodeploy controls disabled"
+      ]
+    },
+    {
+      "check": "YAML parse with PyYAML plus semantic hold assertions for both Compose files, Render and Pages",
+      "result": "PASS"
+    },
+    {
+      "check": "bash -n for both manual deployment scripts",
+      "result": "PASS"
+    },
+    {
+      "check": "Python compile() syntax for main.py, synthetic_runtime.py and start.py; no imports or bytecode writes",
+      "result": "PASS"
+    },
+    {
+      "check": "git diff --check",
+      "exit_code": 0
+    },
+    {
+      "check": "Original create_application AST compared with HEAD:backend/app/main.py",
+      "result": "IDENTICAL; only synthetic module import guard and removal of module-level app differ from preserved runtime"
+    }
+  ],
+  "findings_closed": [
+    {
+      "id": "FREEZE-01",
+      "finding": "Docker startup ran Alembic before the held API",
+      "change": "Removed startup migration; exec-form gunicorn starts only held API; default execution mode hold"
+    },
+    {
+      "id": "FREEZE-02",
+      "finding": "Python start.py migrated, stamped and repaired schemas before held API",
+      "change": "Server entry point now rejects non-hold modes and starts held API without database work"
+    },
+    {
+      "id": "FREEZE-03",
+      "finding": "Alternate synthetic module exposed an unguarded eager ASGI application",
+      "change": "Guard executes before clinical imports and module exports no eager app; guarded factory retained for isolated synthetic audit"
+    },
+    {
+      "id": "FREEZE-04",
+      "finding": "Manual deployment scripts could pull unheld remote main and mutate remote containers",
+      "change": "Unconditional early HOLD exit before arguments or external commands; tested against sentinel binaries"
+    },
+    {
+      "id": "FREEZE-05",
+      "finding": "Other hosted definitions did not pin hold or disable source auto deployment",
+      "change": "Both Compose definitions and Render pin hold; Render autoDeployTrigger off; corrected legacy gunicorn target to app.main:app; Pages false condition verified"
+    }
+  ],
+  "toolchain": {
+    "python": "3.8.8",
+    "executable": "/Users/genovesimaria/opt/anaconda3/bin/python3",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "fastapi": "0.111.0",
+    "starlette": "0.37.2",
+    "httpx": "0.28.1",
+    "pytest": "6.2.3"
+  },
+  "reference": {
+    "url": "https://render.com/docs/blueprint-spec",
+    "accessed": "2026-09-14",
+    "supported_claim": "autoDeployTrigger: off disables Git-based service auto deploys; this is not a control on existing deployed artifacts or independent Blueprint auto-sync settings"
+  },
+  "limits": [
+    "This is source and in-process offline test evidence, not a running-container or remote-deployment attestation.",
+    "No Docker image build/start, database connection/migration, provider call, SSH, remote/cloud mutation, git push or deployment occurred.",
+    "Already-running remote systems, cloud settings, Blueprint auto sync, remote main and previously built browser/mobile clients remain UNKNOWN and require human/infrastructure release gates.",
+    "The synthetic selector supports an isolated test harness; ENV=test and absence of backend/.env are not a security sandbox and do not by themselves block live environment credentials or network access.",
+    "Direct deployment configuration overrides, running legacy scripts from older checkouts, or editing the hold controls can still bypass checked-in policy; no operator authorization is implied.",
+    "Health probes intentionally return 503 under HOLD; infrastructure may mark a newly started held runtime unhealthy.",
+    "Compose definitions can start database/cache services when explicitly executed; none were executed here. The held API itself performs no database work.",
+    "Security/privacy/clinical/provider flaws behind the held original runtime remain assigned to later phases; the unchanged factory was not declared safe for clinical use."
+  ],
+  "file_sha256": {
+    "backend/app/main.py": "5126a2c51f0d899b581e0e8a7c05027f55c64c8b9c076ec13eb6f9a408b1c105",
+    "backend/app/synthetic_runtime.py": "a1f8bb0b59f2218f83dc542960e01ced99d8fa888bb83e93443595991df5c60b",
+    "backend/start.py": "bb4fc489e5f49834032ac40c70177593eba66fee617cdfcdc8418f076541f2bf",
+    "backend/Dockerfile": "744eb4a3fdc5159abad364cb692a90f1b1dcb53a57d07b4bf09baf7efc763220",
+    "backend/.dockerignore": "97426c52d272bf6d0391957e72c0f66479a633edb502b0a0f3a80ebd62109f26",
+    "docker-compose.yml": "436156dec0a2ed6c7a95cf7781701e27353d87ebd9884bdb4d31e4cca494aece",
+    "docker-compose.prod.yml": "2a9b9cc55634557707d81cf099daa675f23eff6d6693d600adf3a66d02cf98c4",
+    "render.yaml": "0e4041ebbe58dfe251458214a5b24dd37e3a3a2db0a8e265b8de3eb4e9f78534",
+    "deploy/setup-droplet.sh": "41a80c6db86366c43c444f0793d9d33d569ff33d5470536509fb741cb65e520f",
+    "deploy/update.sh": "556f1f6d8bba07f49070d47baac66faa37be6e6be529538b98b32b371db6d3b2",
+    ".github/workflows/deploy.yml": "4b72eb29fc670c357998a32c44e52a27a4a04d275310207de1883912161fc664",
+    "backend/phase0_tests/test_launch_hold.py": "9d26b324175c2eeaab408f511e77e3cdca62fc7ea355d659592410a0a9ffd0e3",
+    "backend/phase0_tests/test_release_boundaries.py": "093f453b03e9c4558c95319f2764e44ea6332cdab0079594049d807f8009906b"
+  }
+}

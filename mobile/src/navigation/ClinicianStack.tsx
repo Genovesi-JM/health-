@@ -2,12 +2,16 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import DoctorDashboardScreen from '../screens/DoctorDashboardScreen';
+import DoctorConsultationsScreen from '../screens/DoctorConsultationsScreen';
+import DoctorConsultationDetailScreen from '../screens/DoctorConsultationDetailScreen';
 import NurseDashboardScreen from '../screens/NurseDashboardScreen';
 import ClinicianPatient360Screen from '../screens/ClinicianPatient360Screen';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export type ClinicianStackParamList = {
   DoctorDashboard: undefined;
+  DoctorConsultations: undefined;
+  DoctorConsultationDetail: { consultationId: string; patientName?: string };
   NurseDashboard: undefined;
   Patient360: { patientId: string };
 };
@@ -22,7 +26,7 @@ export default function ClinicianStack({ role }: { role: 'doctor' | 'nurse' }) {
       initialRouteName={role === 'doctor' ? 'DoctorDashboard' : 'NurseDashboard'}
       screenOptions={{
         headerTintColor: TEAL,
-        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: '#f8fafc' },
       }}
@@ -31,6 +35,16 @@ export default function ClinicianStack({ role }: { role: 'doctor' | 'nurse' }) {
         name="DoctorDashboard"
         component={DoctorDashboardScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="DoctorConsultations"
+        component={DoctorConsultationsScreen}
+        options={{ title: 'Consultas atribuídas' }}
+      />
+      <Stack.Screen
+        name="DoctorConsultationDetail"
+        component={DoctorConsultationDetailScreen}
+        options={{ title: 'Registo da consulta' }}
       />
       <Stack.Screen
         name="NurseDashboard"
@@ -45,4 +59,3 @@ export default function ClinicianStack({ role }: { role: 'doctor' | 'nurse' }) {
     </Stack.Navigator>
   );
 }
-

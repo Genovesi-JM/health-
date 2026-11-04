@@ -1,0 +1,11 @@
+Starting Metro Bundler
+
+Android Bundled 1978ms index.js (590 modules)
+
+› android bundles (1):
+_expo/static/js/android/index-6167ffd6ae6dd8e04ce3451a73dd939d.hbc (1.5MB)
+
+› Files (1):
+metadata.json (150B)
+
+Exported: ../bundle-native-pages-reschedule-informational-android
