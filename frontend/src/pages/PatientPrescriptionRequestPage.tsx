@@ -1,287 +1,167 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import api, { getSession } from '../api';
 import { apiErrorMessage } from '../utils/apiError';
-import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  Pill, CheckCircle2, X, Clock, ChevronDown, ChevronUp,
-  AlertTriangle, Loader2, Send, ArrowLeft,
-} from 'lucide-react';
-import api from '../api';
-import { useT, type Lang } from '../i18n/LanguageContext';
+import { allConsentEffective, parseConsentState, type ConsentCountry } from '../utils/consent';
+import { clearPendingRenewal, verifyCreationReceipt, readPendingRenewal, renewalCountryName, renewalDigest, renewalNotCommitted, renewalStatusLabels, savePendingRenewal } from '../utils/prescriptionRenewals';
+import type { PendingRenewal, RenewalCreate, RenewalRequest } from '../utils/prescriptionRenewals';
+import { useRenewalRequests } from '../hooks/useRenewalRequests';
 
-const LOCALES: Record<Lang, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES', zh: 'zh-CN' };
-
-interface Doctor {
-  id: string;
-  display_name: string;
-  title?: string;
-  specialization?: string;
-}
-
-interface RxRequest {
-  id: string;
-  medication_name: string;
-  dose?: string;
-  frequency?: string;
-  reason?: string;
-  status: string;
-  doctor_note?: string;
-  adjusted_dose?: string;
-  adjusted_frequency?: string;
-  created_at: string;
-  decided_at?: string;
-}
-
-const STATUS_CONFIG: Record<string, { key: string; color: string; bg: string; icon: React.ReactNode }> = {
-  pending:           { key: 'ppr.st_pending', color: '#d97706', bg: 'rgba(234,179,8,0.1)',    icon: <Clock size={13} /> },
-  approve:           { key: 'ppr.st_approve', color: '#059669', bg: 'rgba(16,185,129,0.1)',   icon: <CheckCircle2 size={13} /> },
-  adjust:            { key: 'ppr.st_adjust',  color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',   icon: <CheckCircle2 size={13} /> },
-  consult_requested: { key: 'ppr.st_consult', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)',   icon: <Clock size={13} /> },
-  exams_requested:   { key: 'ppr.st_exams',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',   icon: <Clock size={13} /> },
-  reject:            { key: 'ppr.st_reject',  color: '#dc2626', bg: 'rgba(239,68,68,0.1)',    icon: <X size={13} /> },
-};
+interface Doctor { id: string; display_name: string | null; specialization?: string | null; practice_country: ConsentCountry }
+const BASE = '/api/v1/prescription-requests';
+const uncertain = 'O resultado ainda não foi confirmado. Recupere este pedido antes de enviar outro; uma pesquisa sem resultado não prova que falhou.';
 
 export default function PatientPrescriptionRequestPage() {
-  const { t, lang } = useT();
-  const locale = LOCALES[lang] || 'pt-PT';
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  // Pre-fill from query params (coming from SelfCare "Renovar" button)
-  const initMed  = searchParams.get('med')  ?? '';
-  const initDose = searchParams.get('dose') ?? '';
-  const initFreq = searchParams.get('freq') ?? '';
-
-  // Form state
-  const [medName, setMedName]     = useState(initMed);
-  const [dose, setDose]           = useState(initDose);
-  const [frequency, setFrequency] = useState(initFreq);
-  const [reason, setReason]       = useState('');
-  const [doctorId, setDoctorId]   = useState('');
-  const [doctors, setDoctors]     = useState<Doctor[]>([]);
-  const [loadingDocs, setLoadingDocs] = useState(true);
-
-  // Submissions
-  const [submitting, setSubmitting]   = useState(false);
-  const [successMsg, setSuccessMsg]   = useState('');
-  const [errorMsg, setErrorMsg]       = useState('');
-
-  // History
-  const [history, setHistory]         = useState<RxRequest[]>([]);
-  const [loadingHist, setLoadingHist] = useState(true);
-  const [expandedId, setExpandedId]   = useState<string | null>(null);
-
-  // Show form toggle
-  const [showForm, setShowForm]       = useState(!!initMed);
-
-  useEffect(() => {
-    api.get('/api/v1/doctors').then(r => {
-      setDoctors(r.data);
-      if (r.data.length === 1) setDoctorId(r.data[0].id);
-    }).catch(() => {}).finally(() => setLoadingDocs(false));
-
-    api.get<RxRequest[]>('/api/v1/prescription-requests')
-      .then(r => setHistory(r.data))
-      .catch(() => {})
-      .finally(() => setLoadingHist(false));
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!medName.trim() || !doctorId) return;
-    setSubmitting(true); setErrorMsg(''); setSuccessMsg('');
+  const session = getSession();
+  return <PatientRenewals key={`${session?.userId}:${session?.token}`} />;
+}
+function PatientRenewals() {
+  const feed = useRenewalRequests('patient');
+  const { capture, config, current, invalidateAccess } = feed;
+  const [params] = useSearchParams();
+  const [restored] = useState(() => {
+    try { return { pending: readPendingRenewal(feed.owner, 'creation'), error: '' }; }
+    catch { return { pending: null, error: 'Não foi possível ler a referência de recuperação. Resolva o armazenamento antes de enviar.' }; }
+  });
+  const [pending, setPending] = useState<PendingRenewal | null>(restored.pending);
+  const [storageError, setStorageError] = useState(restored.error);
+  const [country, setCountry] = useState<ConsentCountry>(restored.pending?.country ?? 'AO');
+  const [doctorId, setDoctorId] = useState(restored.pending?.target ?? '');
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctorMarket, setDoctorMarket] = useState<ConsentCountry | null>(null);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [doctorError, setDoctorError] = useState('');
+  const [medication, setMedication] = useState(() => restored.pending ? '' : (params.get('med') ?? '').slice(0, 300));
+  const [dose, setDose] = useState(() => restored.pending ? '' : (params.get('dose') ?? '').slice(0, 100));
+  const [frequency, setFrequency] = useState(() => restored.pending ? '' : (params.get('freq') ?? '').slice(0, 100));
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [memoryIdentity, setMemoryIdentity] = useState<{ key: string; epoch: number } | null>(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [acknowledged, setAcknowledged] = useState<{ request: RenewalRequest; epoch: number } | null>(null);
+  const mutation = useRef(false); const discovery = useRef(0); const bodyMemory = useRef<RenewalCreate | null>(null);
+  const advanceDiscovery = useCallback(() => ++discovery.current, []);
+  useEffect(() => { if (feed.accessLost) { bodyMemory.current = null; advanceDiscovery(); } }, [advanceDiscovery, feed.accessLost]);
+  const loadDoctors = useCallback(async () => {
+    const active = capture(); if (!active()) return;
+    const sequence = ++discovery.current; setLoadingDoctors(true); setDoctorError('');
     try {
-      const { data } = await api.post<RxRequest>('/api/v1/prescription-requests', {
-        doctor_id: doctorId,
-        medication_name: medName.trim(),
-        dose: dose.trim() || undefined,
-        frequency: frequency.trim() || undefined,
-        reason: reason.trim() || undefined,
-      });
-      setHistory(h => [data, ...h]);
-      setSuccessMsg(t('ppr.success'));
-      setMedName(''); setDose(''); setFrequency(''); setReason(''); setDoctorId('');
-      setShowForm(false);
-    } catch (err: unknown) {
-      setErrorMsg(apiErrorMessage(err, t('ppr.error')));
-    } finally {
-      setSubmitting(false);
-    }
+      const response = await api.get<Doctor[]>('/api/v1/doctors/', { ...config(), params: { country } });
+      if (!active() || sequence !== discovery.current) return;
+      if (!Array.isArray(response.data)) throw new Error('Lista de médicos inválida.');
+      setDoctors(response.data.filter(item => item.practice_country === country)); setDoctorMarket(country);
+    } catch (failure) {
+      if (!active() || sequence !== discovery.current) return;
+      invalidateAccess(failure); setDoctors([]); setDoctorMarket(null); setDoctorError(apiErrorMessage(failure, 'Não foi possível carregar os médicos deste país. Tente novamente.'));
+    } finally { if (active() && sequence === discovery.current) setLoadingDoctors(false); }
+  }, [capture, config, country, invalidateAccess]);
+  useEffect(() => { void Promise.resolve().then(() => loadDoctors()); return () => { advanceDiscovery(); }; }, [advanceDiscovery, loadDoctors]);
+
+  const restoreStorage = () => {
+    if (!current() || mutation.current) return;
+    try {
+      const saved = readPendingRenewal(feed.owner, 'creation');
+      if (saved) { setPending(saved); setCountry(saved.country); setDoctorId(saved.target); bodyMemory.current = null; setMemoryIdentity(null); }
+      setStorageError('');
+    } catch { setStorageError('Não foi possível ler a referência de recuperação. Nenhum pedido novo foi enviado.'); }
   };
-
-  const pending = history.filter(r => r.status === 'pending').length;
-
-  return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.83rem', padding: '0.35rem 0.6rem', borderRadius: '8px' }}>
-          <ArrowLeft size={16} />
-        </button>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Pill size={20} style={{ color: 'var(--brand-primary)' }} /> {t('ppr.title')}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.82rem' }}>
-            {t('ppr.subtitle')}
-          </p>
-        </div>
-        <button
-          onClick={() => setShowForm(f => !f)}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', borderRadius: '10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
-        >
-          <Send size={14} /> {t('ppr.new_request')}
-        </button>
-      </div>
-
-      {/* Pending badge */}
-      {pending > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', borderRadius: '10px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#d97706', fontWeight: 600 }}>
-          <Clock size={15} /> {pending} {pending > 1 ? t('ppr.pending_many') : t('ppr.pending_one')}
-        </div>
-      )}
-
-      {/* Success / Error banners */}
-      {successMsg && (
-        <div style={{ display: 'flex', gap: '0.6rem', padding: '0.8rem 1rem', borderRadius: '10px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', marginBottom: '1rem', color: '#059669', fontSize: '0.83rem', fontWeight: 500 }}>
-          <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: 1 }} />{successMsg}
-        </div>
-      )}
-      {errorMsg && (
-        <div style={{ display: 'flex', gap: '0.6rem', padding: '0.8rem 1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', marginBottom: '1rem', color: '#dc2626', fontSize: '0.83rem', fontWeight: 500 }}>
-          <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />{errorMsg}
-        </div>
-      )}
-
-      {/* New request form */}
-      {showForm && (
-        <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 1.25rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-            <Send size={16} style={{ color: 'var(--brand-primary)' }} /> {t('ppr.form_title')}
-          </h2>
-
-          {/* Safety notice */}
-          <div style={{ display: 'flex', gap: '0.6rem', padding: '0.75rem 1rem', borderRadius: '10px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', marginBottom: '1.25rem', fontSize: '0.8rem', color: '#3b82f6' }}>
-            <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>{t('ppr.safety_pre')} {t('ppr.safety_post')}</span>
-          </div>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label className="form-label">{t('ppr.med')} *</label>
-              <input className="form-input" placeholder={t('ppr.med_ph')} value={medName} onChange={e => setMedName(e.target.value)} required />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div>
-                <label className="form-label">{t('ppr.dose')}</label>
-                <input className="form-input" placeholder={t('ppr.dose_ph')} value={dose} onChange={e => setDose(e.target.value)} />
-              </div>
-              <div>
-                <label className="form-label">{t('ppr.freq')}</label>
-                <input className="form-input" placeholder={t('ppr.freq_ph')} value={frequency} onChange={e => setFrequency(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <label className="form-label">{t('ppr.reason')}</label>
-              <textarea className="form-input" rows={3} placeholder={t('ppr.reason_ph')} value={reason} onChange={e => setReason(e.target.value)} style={{ resize: 'vertical' }} />
-            </div>
-            <div>
-              <label className="form-label">{t('ppr.doctor')} *</label>
-              {loadingDocs ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', padding: '0.5rem 0' }}><Loader2 size={14} style={{ display: 'inline', marginRight: 6 }} />{t('ppr.loading_docs')}</div>
-              ) : doctors.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', padding: '0.5rem 0' }}>{t('ppr.no_docs')}</div>
-              ) : (
-                <select className="form-input" value={doctorId} onChange={e => setDoctorId(e.target.value)} required>
-                  <option value="">{t('ppr.select_doctor')}</option>
-                  {doctors.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.title ? `${d.title} ` : ''}{d.display_name}{d.specialization ? ` · ${d.specialization}` : ''}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
-              <button type="button" onClick={() => setShowForm(false)} style={{ padding: '0.55rem 1.1rem', borderRadius: '10px', background: 'none', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.83rem', cursor: 'pointer' }}>
-                {t('common.cancel')}
-              </button>
-              <button type="submit" disabled={submitting || !medName.trim() || !doctorId} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.25rem', borderRadius: '10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.83rem', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
-                {submitting ? <Loader2 size={15} /> : <Send size={15} />}
-                {submitting ? t('ppr.sending') : t('ppr.send')}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* History */}
-      <div>
-        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
-          {t('ppr.history')}
-        </div>
-        {loadingHist && (
-          <div style={{ textAlign: 'center', padding: '2.5rem 0', color: 'var(--text-muted)' }}>
-            <Loader2 size={24} style={{ display: 'block', margin: '0 auto 0.5rem' }} /> {t('common.loading')}
-          </div>
-        )}
-        {!loadingHist && history.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            {t('ppr.no_history')}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          {history.map(req => {
-            const sc = STATUS_CONFIG[req.status] ?? { key: '', color: '#6b7280', bg: 'rgba(107,114,128,0.1)', icon: null };
-            const scLabel = sc.key ? t(sc.key) : req.status;
-            const isOpen = expandedId === req.id;
-            const hasDecision = req.doctor_note || req.adjusted_dose || req.adjusted_frequency;
-            return (
-              <div key={req.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.9rem 1.1rem', cursor: hasDecision ? 'pointer' : 'default' }}
-                  onClick={() => hasDecision && setExpandedId(isOpen ? null : req.id)}
-                >
-                  <Pill size={18} style={{ color: 'var(--brand-primary)', flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{req.medication_name}</div>
-                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-                      {req.dose && <span>{req.dose} · </span>}
-                      {req.frequency && <span>{req.frequency} · </span>}
-                      {new Date(req.created_at).toLocaleDateString(locale)}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 999, background: sc.bg, color: sc.color }}>
-                      {sc.icon} {scLabel}
-                    </span>
-                    {hasDecision && (isOpen ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />)}
-                  </div>
-                </div>
-                {isOpen && hasDecision && (
-                  <div style={{ padding: '0.85rem 1.1rem', borderTop: '1px solid var(--border)', background: 'rgba(0,0,0,0.018)', fontSize: '0.82rem' }}>
-                    {(req.adjusted_dose || req.adjusted_frequency) && (
-                      <div style={{ marginBottom: '0.5rem', fontWeight: 600 }}>
-                        {t('ppr.adjusted')} {req.adjusted_dose ?? req.dose}{req.adjusted_frequency ? ` · ${req.adjusted_frequency}` : ''}
-                      </div>
-                    )}
-                    {req.doctor_note && (
-                      <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                        "{req.doctor_note}"
-                      </div>
-                    )}
-                    {req.decided_at && (
-                      <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
-                        {t('ppr.decided_at')} {new Date(req.decided_at).toLocaleString(locale)}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
+  const finish = (request: RenewalRequest, attempt: PendingRenewal) => {
+    setAcknowledged({ request, epoch: feed.accessEpoch }); feed.apply(request);
+    clearPendingRenewal(attempt);
+    const retained = readPendingRenewal(feed.owner, 'creation'); setPending(retained); bodyMemory.current = null;
+    setNotice(`Pedido confirmado. Estado atual: ${renewalStatusLabels[request.status]}.`);
+    if (!retained) { setMedication(''); setDose(''); setFrequency(''); setReason(''); setDoctorId(''); }
+  };
+  const recover = async () => {
+    const active = capture(); if (!pending || !active() || mutation.current) return;
+    mutation.current = true; setBusy(true); setError(''); setNotice('');
+    try {
+      const response = await api.get(`${BASE}/requests/${encodeURIComponent(pending.key)}`, config());
+      if (!active()) return;
+      const received = await verifyCreationReceipt(response.data, pending);
+      if (active()) finish(received, pending);
+    } catch (failure) { if (active()) { invalidateAccess(failure); setError(`${uncertain} ${apiErrorMessage(failure, '')}`); } }
+    finally { if (current()) { mutation.current = false; setBusy(false); } }
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const active = capture(); if (!active() || mutation.current || storageError) return;
+    mutation.current = true; setBusy(true); setError(''); setNotice('');
+    let attempt = pending;
+    try {
+      const body: RenewalCreate = bodyMemory.current ?? { country, consent_language: 'pt', doctor_id: doctorId,
+        medication_name: medication.trim(), dose: dose.trim() || null, frequency: frequency.trim() || null, reason: reason.trim() || null };
+      if (!body.medication_name || body.medication_name.length > 300 || !body.doctor_id || (body.dose?.length ?? 0) > 100 || (body.frequency?.length ?? 0) > 100 || (body.reason?.length ?? 0) > 4000) throw new Error('Reveja os campos do pedido.');
+      if (!attempt) {
+        if (doctorMarket !== country || !doctors.some(item => item.id === doctorId && item.practice_country === country)) throw new Error('Selecione um médico atualmente disponível neste país.');
+        const response = await api.get('/api/v1/compliance/consent-state', { ...config(), params: { country, language: 'pt' } });
+        if (!active()) return;
+        if (!allConsentEffective(parseConsentState(response.data, country))) throw new Error('Reveja os consentimentos atuais deste país antes de enviar um novo pedido.');
+      }
+      const digest = await renewalDigest(body); if (!active()) return;
+      if (attempt && digest !== attempt.digest) throw new Error('O texto não coincide com o pedido original. Reintroduza exatamente os mesmos campos ou recupere o resultado pelo identificador.');
+      attempt ??= { owner: feed.owner, kind: 'creation', key: crypto.randomUUID(), digest, country, consent_language: 'pt', target: doctorId };
+      try { savePendingRenewal(attempt); }
+      catch (failure) { setStorageError('Não foi possível guardar a referência. Nenhum novo envio foi iniciado; verifique o armazenamento.'); throw failure; }
+      if (!active()) return;
+      setPending(attempt); bodyMemory.current = body; setMemoryIdentity({ key: attempt.key, epoch: feed.accessEpoch });
+      const response = await api.post(BASE, body, { headers: { ...config().headers, 'Idempotency-Key': attempt.key } });
+      if (!active()) return;
+      const received = await verifyCreationReceipt(response.data, attempt);
+      if (active()) finish(received, attempt);
+    } catch (failure) {
+      if (!active()) return;
+      invalidateAccess(failure);
+      if (attempt && renewalNotCommitted(failure)) {
+        try { clearPendingRenewal(attempt); setPending(readPendingRenewal(feed.owner, 'creation')); bodyMemory.current = null; }
+        catch { setStorageError('O servidor não registou este pedido, mas a referência local não pôde ser removida. Verifique o armazenamento.'); }
+        setError(apiErrorMessage(failure, 'O pedido não foi registado. Reveja os dados e tente novamente.'));
+      } else setError(`${attempt ? `${uncertain} ` : ''}${apiErrorMessage(failure, failure instanceof Error ? failure.message : 'Não foi possível confirmar o pedido.')}`);
+    } finally { if (current()) { mutation.current = false; setBusy(false); } }
+  };
+  const locked = !!pending && memoryIdentity?.key === pending.key && memoryIdentity.epoch === feed.accessEpoch;
+  const shownDoctors = doctorMarket === country ? doctors : [];
+  return <div style={{ maxWidth: 760, margin: '0 auto', padding: '1.5rem' }}>
+    <h1>Pedidos de renovação</h1>
+    <p>Envie um pedido para avaliação do médico. O envio não constitui uma aprovação ou uma receita.</p>
+    {error && <p role="alert">{error}</p>}{notice && !feed.accessLost && <p role="status">{notice}</p>}
+    {storageError && <div role="alert">{storageError} <button disabled={busy} onClick={restoreStorage}>Verificar armazenamento</button></div>}
+    {feed.accessLost && <p role="alert">O acesso precisa de nova confirmação. Atualize o histórico antes de continuar.</p>}
+    {pending && <section className="card" aria-label="Recuperar pedido de renovação">
+      <h2>Pedido por confirmar</h2><p>{uncertain}</p><p>{renewalCountryName(pending.country)} · Identificador {pending.key}</p>
+      <p>Os textos clínicos não são guardados no armazenamento do navegador. Após reabrir, pode verificar o resultado sem os reintroduzir.</p>
+      <button disabled={busy || feed.accessLost || !!storageError} onClick={() => void recover()}>Verificar pedido guardado</button>
+    </section>}
+    {!feed.accessLost && <form className="card" onSubmit={submit} style={{ display: 'grid', gap: '1rem', padding: '1rem', marginTop: '1rem' }}>
+      <h2>{pending ? 'Repetir o pedido original' : 'Novo pedido'}</h2>
+      <fieldset disabled={busy || locked || !!storageError} style={{ border: 0, padding: 0, display: 'grid', gap: '.75rem' }}>
+        <label>País do pedido<select aria-label="País do pedido" value={country} disabled={!!pending} onChange={event => { advanceDiscovery(); setCountry(event.target.value === 'PT' ? 'PT' : 'AO'); setDoctorId(''); }}><option value="AO">Angola</option><option value="PT">Portugal</option></select></label>
+        <Link to={`/consents?country=${country}`}>Rever consentimentos deste país</Link>
+        {pending ? <p>Médico do pedido original: {pending.target}</p> : <>
+          <label>Médico<select aria-label="Médico" value={doctorId} onChange={event => setDoctorId(event.target.value)} disabled={loadingDoctors} required><option value="">Escolha um médico</option>{shownDoctors.map(item => <option key={item.id} value={item.id}>{item.display_name || 'Médico'}{item.specialization ? ` · ${item.specialization}` : ''}</option>)}</select></label>
+          {loadingDoctors && <p>A carregar médicos…</p>}{doctorError && <p role="alert">{doctorError}</p>}{!loadingDoctors && !doctorError && !shownDoctors.length && <p>Não há médicos disponíveis neste país.</p>}
+          <button type="button" onClick={() => void loadDoctors()}>Atualizar médicos</button>
+        </>}
+        <label>Medicamento<input aria-label="Medicamento" value={medication} onChange={event => setMedication(event.target.value)} maxLength={300} required /></label>
+        <label>Dose<input aria-label="Dose" value={dose} onChange={event => setDose(event.target.value)} maxLength={100} /></label>
+        <label>Frequência<input aria-label="Frequência" value={frequency} onChange={event => setFrequency(event.target.value)} maxLength={100} /></label>
+        <label>Motivo<textarea aria-label="Motivo" value={reason} onChange={event => setReason(event.target.value)} maxLength={4000} /></label>
+      </fieldset>
+      <button type="submit" disabled={busy || !!storageError || (!locked && (!medication.trim() || !doctorId))}>{busy ? 'A confirmar…' : pending ? 'Repetir o mesmo pedido' : 'Enviar pedido para avaliação'}</button>
+    </form>}
+    {acknowledged && acknowledged.epoch === feed.accessEpoch && !feed.accessLost && <p>Último pedido confirmado: {acknowledged.request.medication_name} · {renewalStatusLabels[acknowledged.request.status]}</p>}
+    <h2>Histórico de pedidos</h2><p>Os estados abaixo refletem os pedidos carregados; não indicam entrega numa farmácia ou numa rede externa.</p>
+    <button disabled={busy || feed.loading} onClick={() => void feed.load()}>Atualizar histórico</button>
+    {feed.error && <p role="alert">{feed.error}</p>}{feed.loading && <p>A carregar pedidos…</p>}
+    {feed.loaded && !feed.loading && !feed.items.length && <p>Não há pedidos neste histórico.</p>}
+    {feed.items.map(item => <article key={item.id} className="card" style={{ padding: '1rem', marginTop: '.75rem' }}>
+      <h3>{item.medication_name}</h3><p>{[item.dose, item.frequency].filter(Boolean).join(' · ')}</p>
+      <p>{renewalStatusLabels[item.status]} · {renewalCountryName(item.country)} · {new Date(item.created_at).toLocaleString('pt-PT')}</p>
+      {item.doctor_name && <p>Médico: {item.doctor_name}</p>}{item.reason && <p>Motivo: {item.reason}</p>}
+      {item.doctor_note && <p>Nota do médico: {item.doctor_note}</p>}{(item.adjusted_dose || item.adjusted_frequency) && <p>Ajuste registado: {[item.adjusted_dose, item.adjusted_frequency].filter(Boolean).join(' · ')}</p>}
+      {item.decision_state === 'legacy_review_required' && <p>Registo anterior: requer revisão antes de uma nova decisão.</p>}
+    </article>)}
+    {feed.nextCursor && <button disabled={busy || feed.loading || feed.restartRequired} onClick={() => void feed.load(feed.nextCursor!)}>Carregar mais pedidos</button>}
+  </div>;
 }

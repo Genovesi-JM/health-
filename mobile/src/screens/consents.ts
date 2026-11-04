@@ -85,6 +85,18 @@ export function parseConsentHistory(value: unknown, previousCursor: string | nul
   return { items, next_cursor: data.next_cursor as string | null };
 }
 export function consentQuery(country: ConsentCountry): string { return `?country=${country}&language=pt`; }
+export async function requireCurrentCareConsent(api: Pick<ConsentApi, 'get'>, country: ConsentCountry, assertCurrent = () => {}): Promise<void> {
+  if (!countryValid(country)) return invalid();
+  assertCurrent();
+  const response = await api.get(`/api/v1/compliance/consent-state${consentQuery(country)}`);
+  assertCurrent();
+  const state = parseConsentState(response.data, country);
+  const missing = REQUIRED_CONSENT_PURPOSES.filter(purpose => !state.states.some(item => item.purpose === purpose && item.effective));
+  if (!state.available || missing.length) throw { response: { status: 403, data: { detail: {
+    code: 'consent_required', country, language: 'pt', missing_purposes: missing,
+    message: 'Reveja e registe os consentimentos atuais deste país antes de enviar um novo pedido. O histórico e a recuperação de pedidos anteriores continuam disponíveis.',
+  } } } };
+}
 export function newConsentAttempt(ownerId: string, reference: ConsentReference, action: ConsentAction, revision: number, key?: string): ConsentAttempt {
   const generated = key ?? globalThis.crypto?.randomUUID?.() ?? 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, char => { const value = Math.floor(Math.random() * 16); return (char === 'x' ? value : (value & 3) | 8).toString(16); });
   return validateAttempt({ ownerId, key: generated, payload: { ...reference, action, expected_revision: revision } }, ownerId);

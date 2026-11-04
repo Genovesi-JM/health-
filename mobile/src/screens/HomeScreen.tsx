@@ -10,9 +10,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
 import { useLanguage } from '../i18n/LanguageContext';
 import { canRetainNotificationsAfterError, loadUnreadNotificationCount } from './notifications';
+import { loadRenewalPresence, renewalAccessLost } from './prescriptionRequests';
 
 interface DashboardData {
-  pending_requests?: number;
+  has_requests?: boolean;
   unread_notifications?: number;
 }
 
@@ -31,6 +32,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [notificationError, setNotificationError] = useState(false);
+  const [renewalError, setRenewalError] = useState(false);
   const active = useRef(false);
   const requestVersion = useRef(0);
   const owner = useRef(user?.id);
@@ -45,16 +47,17 @@ export default function HomeScreen() {
     try {
       const [notifRes, rxRes] = await Promise.allSettled([
         loadUnreadNotificationCount(api),
-        api.get('/api/v1/prescription-requests?limit=1'),
+        loadRenewalPresence(api),
       ]);
       if (!active.current || version !== requestVersion.current || owner.current !== requestedOwner) return;
       setNotificationError(notifRes.status === 'rejected');
-      if (notifRes.status === 'rejected' && !canRetainNotificationsAfterError(notifRes.reason)) {
+      setRenewalError(rxRes.status === 'rejected');
+      if (notifRes.status === 'rejected' && !canRetainNotificationsAfterError(notifRes.reason) || rxRes.status === 'rejected' && renewalAccessLost(rxRes.reason)) {
         setData({});
       } else {
         setData(current => ({
           unread_notifications: notifRes.status === 'fulfilled' ? notifRes.value : current.unread_notifications,
-          pending_requests: rxRes.status === 'fulfilled' ? (rxRes.value.data?.length ?? 0) : current.pending_requests,
+          has_requests: rxRes.status === 'fulfilled' ? rxRes.value : current.has_requests,
         }));
       }
     } catch { /* silent */ }
@@ -69,6 +72,7 @@ export default function HomeScreen() {
       owner.current = user?.id;
       setData({});
       setNotificationError(false);
+      setRenewalError(false);
       setLoading(!!user?.id);
       setRefreshing(false);
     }
@@ -123,7 +127,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Notification / pending badge ── */}
-        {((data.unread_notifications ?? 0) > 0 || (data.pending_requests ?? 0) > 0) && (
+        {((data.unread_notifications ?? 0) > 0 || data.has_requests) && (
           <View style={styles.alertRow}>
             {(data.unread_notifications ?? 0) > 0 && (
               <TouchableOpacity
@@ -136,10 +140,10 @@ export default function HomeScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-            {(data.pending_requests ?? 0) > 0 && (
+            {data.has_requests && (
               <View style={[styles.alertBadge, { backgroundColor: '#ede9fe' }]}>
                 <Text style={[styles.alertBadgeText, { color: '#6d28d9' }]}>
-                  💊 {data.pending_requests} receita{(data.pending_requests ?? 0) > 1 ? 's' : ''} pendente{(data.pending_requests ?? 0) > 1 ? 's' : ''}
+                  💊 Ver pedidos de renovação{renewalError ? ' · por atualizar' : ''}
                 </Text>
               </View>
             )}

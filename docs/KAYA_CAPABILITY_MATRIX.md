@@ -25,7 +25,7 @@ States: NOT_BUILT, MOCK, SYNTHETIC_ONLY, DISABLED_PENDING_GATE, PILOT, LIVE. No 
 | Human-confirmed appointment coordination (`appointment_coordination=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | Yes | 20 | `/consultations`, `/doctor/queue`, `/doctor/agenda`, `/doctor/disponibilidade` |
 | Symptom triage and self-care advice (`triage=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 13 | `/triage`, `/self-care` |
 | Video consultations (`teleconsultation=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 8 | `/telemedicina`, `/doctor/consultas` |
-| Prescriptions and referrals (`prescribing_referrals=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 7 | `/prescricoes/pedido`, `/doctor/prescricoes` |
+| Prescriptions and referrals (`prescribing_referrals=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 12 | `/prescricoes/pedido`, `/doctor/prescricoes` |
 | Clinical messaging (`clinical_messaging=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 4 | `/doctor/mensagens` |
 | Clinical workspaces and care delivery (`clinical_operations=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 23 | `/preview/nurse`, `/preview/clinician/patient`, `/clinician/patients/:patientId`, `/chronic-care`, `/nurse`, `/doctor/dashboard`, `/doctor/profile`, `/doctor/pacientes`, `/doctor/avaliacoes`, `/doctor/suporte` |
 | Health records and measurements (`health_tracking=false`) | DISABLED_PENDING_GATE | PRESERVED_SOURCE | No | 33 | `/patients`, `/dashboard`, `/patient/profile`, `/patient/readings`, `/patient/documents` |
@@ -152,6 +152,11 @@ All bindings below have default state disabled. The inventory parses mounted sou
 | GET | `/api/v1/prescription-requests` | `prescribing_referrals=false` |
 | GET | `/api/v1/doctor/prescription-requests` | `prescribing_referrals=false` |
 | POST | `/api/v1/doctor/prescription-requests/{request_id}/decide` | `prescribing_referrals=false` |
+| GET | `/api/v1/consultation-document-requests/{request_key}` | `prescribing_referrals=false` |
+| GET | `/api/v1/doctor/prescription-requests/decisions/{request_key}` | `prescribing_referrals=false` |
+| GET | `/api/v1/doctor/prescription-requests/page` | `prescribing_referrals=false` |
+| GET | `/api/v1/prescription-requests/page` | `prescribing_referrals=false` |
+| GET | `/api/v1/prescription-requests/requests/{request_key}` | `prescribing_referrals=false` |
 | POST | `/api/v1/consultations/{consultation_id}/messages` | `clinical_messaging=false` |
 | GET | `/api/v1/consultations/{consultation_id}/messages` | `clinical_messaging=false` |
 | GET | `/api/v1/doctor/message-threads` | `clinical_messaging=false` |

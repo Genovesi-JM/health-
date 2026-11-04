@@ -1,6 +1,6 @@
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { getInitials } from '../api';
+import { getInitials, getSession } from '../api';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
@@ -27,21 +27,26 @@ export function Sidebar({ open, onClose }: Props) {
   const displayName = user?.name || user?.email?.split('@')[0] || t('sidebar.user_fallback');
   const roleLabel = role === 'admin' ? t('sidebar.role_admin') : role === 'doctor' ? t('sidebar.role_doctor') : t('sidebar.role_patient');
 
-  // Live pending prescription-request count (doctor only)
-  const [pendingRxCount, setPendingRxCount] = useState<number>(0);
+  // Use the server's global count, never the size of a bounded page.
+  const [pendingRenewals, setPendingRenewals] = useState<{ owner: string; count: number } | null>(null);
+  const owner = String(user?.id ?? '');
+  const pendingRxCount = role === 'doctor' && pendingRenewals?.owner === owner ? pendingRenewals.count : 0;
   useEffect(() => {
-    if (role !== 'doctor') return;
-    api.get('/api/v1/doctor/prescription-requests', { params: { status: 'pending' } })
-      .then(r => setPendingRxCount(Array.isArray(r.data) ? r.data.length : 0))
-      .catch(() => {});
-    // Refresh every 2 minutes while sidebar is mounted
-    const id = setInterval(() => {
-      api.get('/api/v1/doctor/prescription-requests', { params: { status: 'pending' } })
-        .then(r => setPendingRxCount(Array.isArray(r.data) ? r.data.length : 0))
-        .catch(() => {});
-    }, 2 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [role]);
+    const session = getSession();
+    if (role !== 'doctor' || !owner || session?.userId !== owner || !session.token) return;
+    let active = true;
+    const current = () => active && getSession()?.userId === owner && getSession()?.token === session.token;
+    const refresh = () => {
+      api.get('/api/v1/doctor/dashboard', { headers: { Authorization: `Bearer ${session.token}` } })
+        .then(response => {
+          if (!current()) return;
+          const count: unknown = response.data.pending_prescription_requests;
+          setPendingRenewals(Number.isSafeInteger(count) && (count as number) >= 0 ? { owner, count: count as number } : null);
+        }).catch(() => { if (current()) setPendingRenewals(null); });
+    };
+    refresh(); const id = setInterval(refresh, 2 * 60 * 1000);
+    return () => { active = false; clearInterval(id); };
+  }, [owner, role]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
