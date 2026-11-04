@@ -1,5 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { Heart, Target, Eye, Stethoscope, Headphones, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
@@ -27,9 +28,7 @@ export default function AboutPage() {
       <section className="landing-hero" style={{ minHeight: '55vh' }}>
         <div className="landing-hero-bg" />
         <div className="landing-hero-content">
-          <div className="landing-hero-icon" style={{ background: 'rgba(255,255,255,0.15)' }}>
-            <Heart size={40} />
-          </div>
+          <HeroArt name="family" />
           <p style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' }}>
             {t('about.badge')}
           </p>

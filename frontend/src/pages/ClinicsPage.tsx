@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import {
   Building2, TrendingUp, Calendar, Video, Activity,
   Shield, Clock, Users, ArrowRight,
@@ -71,6 +72,7 @@ export default function ClinicsPage() {
       {/* ── Hero ── */}
       <section className="lp-page-hero">
         <div className="lp-tag"><Stethoscope size={12} /> Para Profissionais de Saúde</div>
+        <HeroArt name="hospital" />
         <h1>Trabalhe de forma<br /><span className="lp-hero__accent">independente e digital.</span></h1>
         <p>
           Seja médico individual, clínica ou instituição — há um lugar para si no KAYA.

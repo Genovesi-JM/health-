@@ -1,5 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X, ChevronDown } from 'lucide-react';
+import {
+  Heart, Menu, X, ChevronDown, Users, Stethoscope, Video, HeartPulse,
+  Building2, Briefcase, Ambulance, HelpCircle, Phone, type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { getSession, getInitials } from '../api';
 import { useT } from '../i18n/LanguageContext';
@@ -8,33 +11,33 @@ import kayaLogo from '/kaya-logo.svg';
 
 interface NavGroup {
   label: string;
-  links: { to: string; label: string; sub?: string }[];
+  links: { to: string; label: string; sub?: string; icon: LucideIcon }[];
 }
 
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Para Pacientes',
     links: [
-      { to: '/patients',    label: 'Pacientes',        sub: 'Marque consultas e acompanhe a saúde' },
-      { to: '/especialistas', label: 'Especialistas',  sub: 'Encontre o médico certo' },
-      { to: '/telemedicina', label: 'Teleconsulta',    sub: 'Consulta online imediata' },
-      { to: '/chronic-care', label: 'Cuidado Crónico', sub: 'Hipertensão, diabetes, asma' },
+      { to: '/patients',      label: 'Pacientes',        sub: 'Marque consultas e acompanhe a saúde', icon: Users },
+      { to: '/especialistas', label: 'Especialistas',    sub: 'Encontre o médico certo',               icon: Stethoscope },
+      { to: '/telemedicina',  label: 'Teleconsulta',     sub: 'Consulta online imediata',              icon: Video },
+      { to: '/chronic-care',  label: 'Cuidado Crónico',  sub: 'Hipertensão, diabetes, asma',           icon: HeartPulse },
     ],
   },
   {
-    label: 'Para Clínicas',
+    label: 'Para Hospitais',
     links: [
-      { to: '/clinics',   label: 'Para Profissionais', sub: 'Médicos, clínicas e instituições' },
-      { to: '/empresas',  label: 'Empresas',             sub: 'Saúde ocupacional para equipas' },
+      { to: '/clinics',  label: 'Hospitais & Clínicas', sub: 'Médicos, clínicas e transferências', icon: Building2 },
+      { to: '/empresas', label: 'Empresas',             sub: 'Saúde ocupacional para equipas',     icon: Briefcase },
     ],
   },
   {
     label: 'Soluções',
     links: [
-      { to: '/devices',   label: 'Devices & Kits',   sub: 'Tensiómetros, glicómetros e mais' },
-      { to: '/pricing',   label: 'Preços',            sub: 'Planos para pacientes e clínicas' },
-      { to: '/urgencia',  label: 'Urgência',          sub: 'Pré-alerta hospitalar' },
-      { to: '/faq',       label: 'FAQ',               sub: 'Perguntas frequentes' },
+      { to: '/urgencia', label: 'Transporte & Urgência', sub: 'Ambulância e pré-alerta hospitalar', icon: Ambulance },
+      { to: '/about',    label: 'Sobre a KAYA',          sub: 'A nossa missão e visão',             icon: Heart },
+      { to: '/faq',      label: 'FAQ',                   sub: 'Perguntas frequentes',               icon: HelpCircle },
+      { to: '/contacto', label: 'Contacto',              sub: 'Fale com a equipa KAYA',             icon: Phone },
     ],
   },
 ];
@@ -58,9 +61,7 @@ export function Navbar() {
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--text-primary)', flexShrink: 0 }}>
           <img src={kayaLogo} alt="KAYA" style={{ width: 36, height: 36, display: 'block' }} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-            <span style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.08em', color: '#0f172a' }}>
-              KAYA
-            </span>
+            <span className="nav-wordmark">KAYA</span>
             <span style={{ fontSize: '0.62rem', color: '#0d9488', fontWeight: 500 }}>Saúde na sua mão</span>
           </div>
         </Link>
@@ -77,10 +78,14 @@ export function Navbar() {
               </button>
               {openGroup === group.label && (
                 <div className="nav-dropdown">
+                  <span className="nav-dropdown__glow" aria-hidden="true" />
                   {group.links.map(l => (
                     <Link key={l.to} to={l.to} className={`nav-dropdown__item${isActive(l.to) ? ' nav-dropdown__item--active' : ''}`}>
-                      <span className="nav-dropdown__label">{l.label}</span>
-                      {l.sub && <span className="nav-dropdown__sub">{l.sub}</span>}
+                      <span className="nav-dropdown__chip"><l.icon size={17} /></span>
+                      <span className="nav-dropdown__text">
+                        <span className="nav-dropdown__label">{l.label}</span>
+                        {l.sub && <span className="nav-dropdown__sub">{l.sub}</span>}
+                      </span>
                     </Link>
                   ))}
                 </div>

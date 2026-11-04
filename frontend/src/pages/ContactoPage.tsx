@@ -1,5 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { Mail, MapPin, MessageSquare, Building2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 
@@ -23,6 +24,7 @@ export default function ContactoPage() {
 
       <section className="lp-page-hero" style={{ paddingBottom: '2rem' }}>
         <div className="lp-tag">Contacto</div>
+        <HeroArt name="telehealth" />
         <h1>Fale connosco.</h1>
         <p>Tem dúvidas, quer ser parceiro ou explorar soluções corporativas? Estamos disponíveis.</p>
       </section>

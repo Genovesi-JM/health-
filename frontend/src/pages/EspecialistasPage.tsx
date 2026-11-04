@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import {
   Stethoscope, Heart, HeartPulse, Activity, Brain, Eye,
   Bone, Apple, Wind, Baby, ChevronRight, Video, Calendar,
@@ -40,6 +41,7 @@ export default function EspecialistasPage() {
 
       <section className="lp-page-hero" style={{ paddingBottom: '3rem' }}>
         <div className="lp-tag">Especialidades Médicas</div>
+        <HeroArt name="professional" />
         <h1>Encontre o especialista certo.</h1>
         <p>Presencial ou teleconsulta — consulte qualquer especialidade com médicos verificados e parceiros de confiança.</p>
 

@@ -5,7 +5,8 @@ import type { ReactNode } from 'react';
 
 export type SpotName =
   | 'family' | 'professional' | 'prescription' | 'ambulance'
-  | 'accessible' | 'scheduled' | 'assisted' | 'emergency';
+  | 'accessible' | 'scheduled' | 'assisted' | 'emergency'
+  | 'telehealth' | 'hospital' | 'company' | 'chronic';
 
 const CREAM = '#f7f4ec';
 const TEAL = '#14b8a6';
@@ -132,6 +133,58 @@ export default function Spot({ name }: { name: SpotName }) {
           <path d="M32 50 h6 l3 -8 l5 14 l3 -6 h12" fill="none" stroke={FOREST} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="37" cy="62" r="5.5" fill="#123" /><circle cx="37" cy="62" r="2" fill={MINT} />
           <circle cx="63" cy="62" r="5.5" fill="#123" /><circle cx="63" cy="62" r="2" fill={MINT} />
+        </Frame>
+      );
+    case 'telehealth':
+      return (
+        <Frame>
+          {/* phone screen with a clinician + video dot */}
+          <rect x="30" y="22" width="36" height="42" rx="7" fill={CREAM} />
+          <rect x="34" y="27" width="28" height="26" rx="4" fill="#0e3a32" />
+          <circle cx="48" cy="36" r="5" fill={MINT} />
+          <path d="M42 48 a6 6 0 0 1 12 0" fill={MINT} />
+          <circle cx="48" cy="59" r="2" fill={FOREST} />
+          {/* video bubble */}
+          <circle cx="64" cy="26" r="8" fill={TEAL} />
+          <path d="M60 23 v6 l5 -3 Z" fill={CREAM} />
+        </Frame>
+      );
+    case 'hospital':
+      return (
+        <Frame>
+          <rect x="30" y="34" width="36" height="32" rx="5" fill={CREAM} />
+          <rect x="37" y="24" width="22" height="12" rx="3" fill={FOREST} />
+          <rect x="46.4" y="26" width="3.2" height="8" rx="1.4" fill={CREAM} />
+          <rect x="43" y="28.4" width="10" height="3.2" rx="1.4" fill={CREAM} />
+          <g fill={WIN}>
+            <rect x="35" y="40" width="8" height="8" rx="2" /><rect x="53" y="40" width="8" height="8" rx="2" />
+            <rect x="35" y="52" width="8" height="8" rx="2" /><rect x="53" y="52" width="8" height="8" rx="2" />
+          </g>
+          <rect x="44" y="54" width="8" height="12" rx="2" fill={TEAL} />
+        </Frame>
+      );
+    case 'company':
+      return (
+        <Frame tone={MINT}>
+          <rect x="28" y="30" width="24" height="34" rx="4" fill={CREAM} />
+          <rect x="50" y="38" width="20" height="26" rx="4" fill="#eadfcb" />
+          <g fill={WIN}>
+            <rect x="32" y="35" width="6" height="6" rx="1.5" /><rect x="42" y="35" width="6" height="6" rx="1.5" />
+            <rect x="32" y="45" width="6" height="6" rx="1.5" /><rect x="42" y="45" width="6" height="6" rx="1.5" />
+            <rect x="55" y="43" width="5" height="5" rx="1.2" /><rect x="62" y="43" width="5" height="5" rx="1.2" />
+          </g>
+          <circle cx="40" cy="27" r="4" fill={TEAL} />
+          <circle cx="60" cy="33" r="3.4" fill={GOLD} />
+        </Frame>
+      );
+    case 'chronic':
+      return (
+        <Frame>
+          <Heart x={48} y={36} s={1.9} fill={CREAM} />
+          <path d="M28 40 h9 l4 -9 l6 18 l4 -9 h17" fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="68" cy="31" r="3.4" fill={RED}>
+            <animate attributeName="r" values="3;4.4;3" dur="1.6s" repeatCount="indefinite" />
+          </circle>
         </Frame>
       );
     default:

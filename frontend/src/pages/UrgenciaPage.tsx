@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { AlertTriangle, Smartphone, Building2, CheckCircle2, Clock, ArrowRight, Phone, Activity, HeartPulse } from 'lucide-react';
 
 export default function UrgenciaPage() {
@@ -8,10 +9,11 @@ export default function UrgenciaPage() {
     <div className="landing-wrapper">
       <Navbar />
 
-      <section className="lp-page-hero" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(15,23,42,0) 60%)' }}>
+      <section className="lp-page-hero">
         <div className="lp-tag" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
           <AlertTriangle size={13} /> Urgência
         </div>
+        <HeroArt name="emergency" />
         <h1>Vou para a urgência.<br />O hospital já sabe.</h1>
         <p>
           Envie os seus sintomas e dados vitais <strong>antes de chegar</strong>. O hospital parceiro recebe um pré-alerta

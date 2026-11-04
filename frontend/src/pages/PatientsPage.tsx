@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import {
   Calendar, Video, Activity, Heart, Pill, Bell, Users,
   ArrowRight, CheckCircle2, Shield, Clock, FileText,
@@ -103,6 +104,7 @@ export default function PatientsPage() {
       {/* ── Page Hero ── */}
       <section className="lp-page-hero">
         <div className="lp-tag"><Heart size={12} /> Para Pacientes</div>
+        <HeroArt name="family" />
         <h1>A sua saúde, organizada.<br /><span className="lp-hero__accent">Simples, rápida e contínua.</span></h1>
         <p>
           Marque consultas, envie leituras antes de chegar, renove receitas e acompanhe a saúde da família —

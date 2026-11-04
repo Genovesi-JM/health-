@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { Building2, Users, TrendingUp, Shield, RefreshCw, Clock, CheckCircle2, ArrowRight, Mail } from 'lucide-react';
 
 const FEATURES = [
@@ -23,8 +24,9 @@ export default function EmpresasPage() {
     <div className="landing-wrapper">
       <Navbar />
 
-      <section className="lp-page-hero" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(15,23,42,0) 60%)' }}>
+      <section className="lp-page-hero">
         <div className="lp-tag" style={{ background: 'rgba(124,58,237,0.12)', color: '#a78bfa' }}><Building2 size={13} /> Para Empresas</div>
+        <HeroArt name="company" />
         <h1>A saúde da sua equipa,<br />organizada e acessível.</h1>
         <p>Reduza absentismo. Melhore produtividade. Ofereça aos seus colaboradores um benefício de saúde real — sem burocracia.</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>

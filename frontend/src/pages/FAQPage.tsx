@@ -1,5 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
@@ -42,6 +43,7 @@ export default function FAQPage() {
 
       <section className="lp-page-hero" style={{ paddingBottom: '2rem' }}>
         <div className="lp-tag">Perguntas Frequentes</div>
+        <HeroArt name="professional" />
         <h1>Perguntas Frequentes</h1>
         <p>Tudo o que precisa de saber sobre o KAYA — simples e transparente.</p>
       </section>

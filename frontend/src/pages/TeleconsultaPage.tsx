@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { Video, CheckCircle2, Clock, Shield, Wifi, Monitor, ArrowRight, Stethoscope, Brain, Heart, Activity, HeartPulse } from 'lucide-react';
 
 const STEPS = [
@@ -33,6 +34,7 @@ export default function TeleconsultaPage() {
 
       <section className="lp-page-hero">
         <div className="lp-tag" style={{ background: 'rgba(8,145,178,0.12)', color: '#22d3ee' }}>Teleconsulta</div>
+        <HeroArt name="telehealth" />
         <h1>Médico em casa. Agora mesmo.</h1>
         <p>Consulta médica por vídeo com especialistas verificados — sem deslocação, sem espera, com toda a segurança.</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>

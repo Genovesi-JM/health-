@@ -196,3 +196,88 @@
 /* let the accent word in the hero carry a soft editorial italic */
 .cine-title .accent { font-style: italic; }
 .cine-journey__head { font-weight: 600; letter-spacing: 0; font-size: .9rem; }
+
+/* ============================================================
+   NAVBAR + DROPDOWNS — cinematic premium
+   ============================================================ */
+.nav-wordmark {
+  font-family: var(--k-display); font-optical-sizing: auto;
+  font-size: 1.18rem; font-weight: 600; letter-spacing: 0.005em; color: var(--k-ink);
+}
+.navbar {
+  background: rgba(247, 244, 236, 0.82);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid rgba(22, 48, 43, 0.08);
+}
+.nav-group__trigger { color: var(--k-ink-soft); font-weight: 600; border-radius: 999px; }
+.nav-group__trigger:hover,
+.nav-group__trigger--active { color: var(--k-teal-d); background: rgba(15, 118, 110, 0.07); }
+
+/* dark cinematic dropdown panel */
+.nav-dropdown {
+  position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  min-width: 324px; padding: 0.55rem; border-radius: 18px;
+  background: linear-gradient(170deg, #0e3a32, #0a2620);
+  border: 1px solid rgba(94, 234, 212, 0.14);
+  box-shadow: 0 30px 70px rgba(2, 17, 15, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  animation: navDrop 0.22s cubic-bezier(.22, .61, .36, 1);
+}
+@keyframes navDrop {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.nav-dropdown__glow {
+  position: absolute; top: -45%; right: -22%; width: 72%; height: 95%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.22), transparent 70%); pointer-events: none;
+}
+.nav-dropdown__item {
+  position: relative; display: flex; flex-direction: row; align-items: center; gap: 0.75rem;
+  padding: 0.65rem 0.75rem; border-radius: 12px; text-decoration: none;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.nav-dropdown__item:hover,
+.nav-dropdown__item--active { background: rgba(94, 234, 212, 0.1); transform: translateX(2px); }
+.nav-dropdown__chip {
+  flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: rgba(45, 212, 191, 0.14); border: 1px solid rgba(45, 212, 191, 0.22); color: #5eead4;
+  transition: background 0.18s ease;
+}
+.nav-dropdown__item:hover .nav-dropdown__chip { background: rgba(45, 212, 191, 0.24); }
+.nav-dropdown__text { display: flex; flex-direction: column; }
+.nav-dropdown__label { font-size: 0.92rem; font-weight: 650; color: #f2fffb; }
+.nav-dropdown__sub { font-size: 0.78rem; color: #9fd3c8; margin-top: 0.1rem; }
+
+/* ============================================================
+   SITE-WIDE CINEMATIC DEPTH — filmic grain + ambient glow
+   Applies to every dark section so the whole site feels cinematic,
+   not just the hero.
+   ============================================================ */
+.cine-hero, .cine-transport, .cine-care, .landing-wrapper .lp-final-cta,
+.landing-wrapper .lp-page-hero, .landing-hero { position: relative; isolation: isolate; }
+
+.cine-hero::after, .cine-transport::after, .cine-care::after,
+.landing-wrapper .lp-final-cta::after,
+.landing-wrapper .lp-page-hero::after, .landing-hero::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 150px 150px; opacity: 0.05; mix-blend-mode: soft-light;
+}
+/* keep content above the grain */
+.cine-hero__grid, .cine-transport > .cine-wrap, .cine-care > .cine-wrap,
+.landing-wrapper .lp-final-cta > *, .landing-wrapper .lp-page-hero > *,
+.landing-hero > * { position: relative; z-index: 1; }
+
+/* a soft ambient glow orb for the shared sub-page heroes */
+.landing-wrapper .lp-page-hero::before,
+.landing-hero::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  top: -30%; right: -8%; width: 46%; height: 150%;
+  background: radial-gradient(circle at 60% 40%, rgba(94,234,212,0.16), transparent 62%);
+  filter: blur(6px);
+}
+
+/* ---------- sub-page hero illustration ---------- */
+.hero-art { display: flex; justify-content: center; margin-bottom: 1.1rem; }
+.hero-art .kaya-spot { width: 116px; height: 102px; filter: drop-shadow(0 14px 26px rgba(2,17,15,0.45)); }
