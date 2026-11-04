@@ -185,3 +185,11 @@
 .cine-pillar__icon { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; background: rgba(45,212,191,.14); color: #5eead4; margin-bottom: .9rem; }
 .cine-pillar__t { font-size: 1.05rem; font-weight: 700; color: #f4fffc; }
 .cine-pillar__d { font-size: .87rem; color: #a7ddd2; line-height: 1.55; margin-top: .4rem; }
+
+/* ---------- hero illustrated scene ---------- */
+.kaya-scene { width: 100%; height: auto; max-width: 540px; display: block; margin: 0 auto; overflow: visible; }
+.kaya-scene__cap {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  margin-top: .4rem; font-size: .84rem; font-weight: 600; color: #cdeee6;
+}
+@media (max-width: 900px) { .kaya-scene { max-width: 420px; } }

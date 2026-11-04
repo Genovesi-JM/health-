@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import CareJourneyScene from '../components/CareJourneyScene';
 import {
   HeartPulse, Calendar, Video, RefreshCw, Search,
   Activity, ArrowRight, CheckCircle2, Shield, Zap,
@@ -19,13 +20,12 @@ const TRANSPORT_TIERS = [
   { icon: Calendar,      color: '#22d3ee', title: 'Transporte agendado',       desc: 'Transporte de paciente planeado, com operador qualificado e destino certo.' },
   { icon: Stethoscope,   color: '#5eead4', title: 'Transferência assistida',   desc: 'Apoio clínico definido, equipa e equipamento para o percurso.' },
   { icon: Ambulance,     color: '#ef4444', title: 'Emergência pré-hospitalar', desc: 'Despacho, governação clínica e resposta quando o tempo conta.' },
-  { icon: Plane,         color: '#f59e0b', title: 'Evacuação aérea',           desc: 'Via aeromédica, com origem e destino coordenados.' },
 ];
 
 const CARE_PILLARS = [
   { icon: Home,        title: 'Saúde pessoal & familiar', desc: 'Historial, documentos, medicação e lembretes organizados. Cuidadores acedem com permissões explícitas.' },
   { icon: Stethoscope, title: 'Cuidado profissional',     desc: 'Médicos e enfermeiros: consulta, revisão e acompanhamento dentro do âmbito verificado.' },
-  { icon: Pill,        title: 'Continuidade de receitas', desc: 'Pedido de revisão ou renovação ligado a uma decisão autorizada e a uma farmácia válida.' },
+  { icon: FileText,    title: 'Receita digital · e-prescription', desc: 'Receba e renove receitas digitalmente — ligadas a uma decisão médica autorizada e a uma farmácia válida.' },
   { icon: Ambulance,   title: 'Transporte & ambulância',  desc: 'O caminho físico até ao cuidado — agendado ou de emergência — ligado à sua consulta.' },
 ];
 
@@ -215,28 +215,8 @@ export default function LandingPage() {
 
           {/* Journey card — the route to care */}
           <div className="cine-stage reveal" data-d="2">
-            <div className="cine-journey">
-              <div className="cine-journey__head"><span className="cine-live" /> Jornada de cuidado KAYA</div>
-              <ul className="cine-steps">
-                <span className="cine-journey__pulse" />
-                <li className="cine-step">
-                  <div className="cine-step__node"><FileText size={17} /></div>
-                  <div><div className="cine-step__t">Pedido de cuidado</div><div className="cine-step__d">Organize o historial e peça a consulta — ou o transporte certo.</div></div>
-                </li>
-                <li className="cine-step">
-                  <div className="cine-step__node"><UserCheck size={17} /></div>
-                  <div><div className="cine-step__t">Profissional aceita</div><div className="cine-step__d">Um médico ou enfermeiro revê dentro do âmbito autorizado.</div></div>
-                </li>
-                <li className="cine-step cine-step--alert">
-                  <div className="cine-step__node"><Ambulance size={17} /></div>
-                  <div><div className="cine-step__t">Transporte a caminho</div><div className="cine-step__d">Transporte agendado ou ambulância, com handover clínico.</div></div>
-                </li>
-                <li className="cine-step">
-                  <div className="cine-step__node"><Heart size={17} /></div>
-                  <div><div className="cine-step__t">Chegada ao cuidado</div><div className="cine-step__d">Plano claro, próximo passo e acompanhamento visível.</div></div>
-                </li>
-              </ul>
-            </div>
+            <CareJourneyScene />
+            <div className="kaya-scene__cap"><span className="cine-live" /> Da casa ao cuidado — e de volta.</div>
           </div>
         </div>
       </section>
@@ -245,11 +225,11 @@ export default function LandingPage() {
       <section id="transporte" className="cine-transport">
         <div className="cine-wrap">
           <div className="cine-head reveal">
-            <span className="cine-tag"><Ambulance size={13} /> Transporte &amp; Ambulância · Prioridade</span>
+            <span className="cine-tag"><Ambulance size={13} /> Transporte &amp; Ambulância · Para pacientes e hospitais</span>
             <h2 className="cine-h2">O caminho até ao cuidado — resolvido.</h2>
             <p className="cine-lead">
-              Transporte de pacientes e ambulância coordenados com a sua consulta. Do agendamento à chegada,
-              com o operador qualificado e o handover clínico certo.
+              Transporte de pacientes e ambulância para quem precisa de chegar ao cuidado e para hospitais que
+              recebem e transferem doentes. Do agendamento à chegada, com operador qualificado e handover clínico.
             </p>
           </div>
           <div className="cine-tgrid">
@@ -318,15 +298,14 @@ export default function LandingPage() {
         <div className="lp-section__header">
           <div className="lp-tag">Ecossistema KAYA</div>
           <h2>Um sistema de saúde completo.</h2>
-          <p>Do paciente à clínica, do device ao médico — tudo conectado numa só plataforma.</p>
+          <p>Do paciente ao hospital, do pedido à chegada — cuidado, receita digital e transporte numa só plataforma.</p>
         </div>
         <div className="ecosystem-grid">
           {[
-            { icon: Users,     color: '#0d9488', to: '/patients',    label: 'Para Pacientes',    desc: 'Marcações, vitals, teleconsulta, família.' },
-            { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Parceiros',     desc: 'Médicos particulares, clínicas e hospitais.' },
+            { icon: Users,     color: '#0d9488', to: '/patients',    label: 'Para Pacientes',    desc: 'Consultas, receita digital, família e transporte.' },
+            { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Hospitais & Clínicas', desc: 'Médicos, clínicas e hospitais — e transporte de doentes.' },
             { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: 'Cuidado Crónico',   desc: 'Hipertensão, diabetes, asma — contínuos.' },
-            { icon: Activity,  color: '#d97706', to: '/devices',     label: 'Smart Devices',     desc: 'Tensiómetros, glicómetros, oxímetros.' },
-            { icon: TrendingUp,color: '#7c3aed', to: '/pricing',     label: 'Preços Simples',    desc: 'Grátis para começar, premium ao crescer.' },
+            { icon: Ambulance, color: '#0e7490', to: '/urgencia',    label: 'Transporte & Urgência', desc: 'Transporte agendado, ambulância e pré-alerta.' },
             { icon: Phone,     color: '#059669', to: '/contacto',    label: 'Contacto',          desc: 'Fale com a equipa KAYA.' },
           ].map(item => (
             <Link key={item.to} to={item.to} className="ecosystem-card">
@@ -355,29 +334,6 @@ export default function LandingPage() {
               <tp.icon size={22} style={{ color: 'var(--accent-teal)' }} />
               <h4>{tp.label}</h4>
               <p>{tp.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══ PRICING ══════════════════════════════════════ */}
-      <section className="lp-section">
-        <div className="lp-section__header">
-          <div className="lp-tag">Preços simples</div>
-          <h2>Comece grátis. Evolua quando precisar.</h2>
-        </div>
-        <div className="lp-pricing">
-          {[
-            { label: 'Basic',   price: 'Gratuito',      sub: 'Para começar',      features: ['Triagem básica', 'Historial limitado', 'Marcação de consulta', '1 perfil'],                                                                    cta: 'Começar Grátis',    featured: false },
-            { label: 'Premium', price: '3.500 Kz/mês',  sub: 'Dia-a-dia',         features: ['Tudo do Basic', 'Teleconsulta incluída', 'Renovação de medicação', 'Lembretes', 'Registo de sinais vitais', '3 perfis'],                    cta: 'Experimentar',      featured: true  },
-            { label: 'Família', price: '7.500 Kz/mês',  sub: 'Para a família',    features: ['Tudo do Premium', 'Até 6 perfis', 'Painel familiar', 'Perfis pediátricos', 'Prioridade no suporte'],                                          cta: 'Plano Família',     featured: false },
-          ].map(p => (
-            <div key={p.label} className={`lp-price-card${p.featured ? ' lp-price-card--featured' : ''}`}>
-              <div className="lp-price-label">{p.label}</div>
-              <div className="lp-price-amount">{p.price}</div>
-              <div className="lp-price-sub">{p.sub}</div>
-              <ul>{p.features.map(f => (<li key={f}><CheckCircle2 size={13} style={{ color: p.featured ? '#fff' : '#0d9488' }} /> {f}</li>))}</ul>
-              <Link to="/register" className="lp-price-cta" style={p.featured ? { background: '#fff', color: '#0d9488' } : {}}>{p.cta}</Link>
             </div>
           ))}
         </div>

@@ -167,3 +167,32 @@
 
 /* smoother type rendering */
 .landing-wrapper, .cine { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* ============================================================
+   EDITORIAL DISPLAY TYPE — Fraunces serif for headlines
+   (moves the brand away from the standard sans-serif SaaS look)
+   ============================================================ */
+:root { --k-display: 'Fraunces', 'Georgia', 'Times New Roman', serif; }
+
+.cine-title,
+.cine-h2,
+.landing-wrapper .lp-page-hero h1,
+.landing-hero-title,
+.landing-wrapper .section-header h2,
+.landing-wrapper .lp-section__header h2,
+.landing-wrapper .lp-final-cta h2,
+.cine-journey__head {
+  font-family: var(--k-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+.cine-title { font-weight: 600; letter-spacing: -0.02em; }
+.cine-h2,
+.landing-wrapper .section-header h2,
+.landing-wrapper .lp-section__header h2,
+.landing-wrapper .lp-final-cta h2 { font-weight: 600; }
+.landing-wrapper .lp-page-hero h1,
+.landing-hero-title { font-weight: 600; }
+/* let the accent word in the hero carry a soft editorial italic */
+.cine-title .accent { font-style: italic; }
+.cine-journey__head { font-weight: 600; letter-spacing: 0; font-size: .9rem; }
