@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import CareJourneyScene from '../components/CareJourneyScene';
+import Spot, { type SpotName } from '../components/Spots';
 import {
   HeartPulse, Calendar, Video, RefreshCw, Search,
   Activity, ArrowRight, CheckCircle2, Shield, Zap,
@@ -16,17 +17,17 @@ import {
 import '../landing-cinematic.css';
 
 const TRANSPORT_TIERS = [
-  { icon: Accessibility, color: '#2dd4bf', title: 'Mobilidade acessível',     desc: 'Apoio não-clínico ao passageiro — chegar à consulta com dignidade.' },
-  { icon: Calendar,      color: '#22d3ee', title: 'Transporte agendado',       desc: 'Transporte de paciente planeado, com operador qualificado e destino certo.' },
-  { icon: Stethoscope,   color: '#5eead4', title: 'Transferência assistida',   desc: 'Apoio clínico definido, equipa e equipamento para o percurso.' },
-  { icon: Ambulance,     color: '#ef4444', title: 'Emergência pré-hospitalar', desc: 'Despacho, governação clínica e resposta quando o tempo conta.' },
+  { spot: 'accessible', color: '#2dd4bf', title: 'Mobilidade acessível',     desc: 'Apoio não-clínico ao passageiro — chegar à consulta com dignidade.' },
+  { spot: 'scheduled', color: '#22d3ee', title: 'Transporte agendado',       desc: 'Transporte de paciente planeado, com operador qualificado e destino certo.' },
+  { spot: 'assisted', color: '#5eead4', title: 'Transferência assistida',   desc: 'Apoio clínico definido, equipa e equipamento para o percurso.' },
+  { spot: 'emergency', color: '#ef4444', title: 'Emergência pré-hospitalar', desc: 'Despacho, governação clínica e resposta quando o tempo conta.' },
 ];
 
 const CARE_PILLARS = [
-  { icon: Home,        title: 'Saúde pessoal & familiar', desc: 'Historial, documentos, medicação e lembretes organizados. Cuidadores acedem com permissões explícitas.' },
-  { icon: Stethoscope, title: 'Cuidado profissional',     desc: 'Médicos e enfermeiros: consulta, revisão e acompanhamento dentro do âmbito verificado.' },
-  { icon: FileText,    title: 'Receita digital · e-prescription', desc: 'Receba e renove receitas digitalmente — ligadas a uma decisão médica autorizada e a uma farmácia válida.' },
-  { icon: Ambulance,   title: 'Transporte & ambulância',  desc: 'O caminho físico até ao cuidado — agendado ou de emergência — ligado à sua consulta.' },
+  { spot: 'family', title: 'Saúde pessoal & familiar', desc: 'Historial, documentos, medicação e lembretes organizados. Cuidadores acedem com permissões explícitas.' },
+  { spot: 'professional', title: 'Cuidado profissional',     desc: 'Médicos e enfermeiros: consulta, revisão e acompanhamento dentro do âmbito verificado.' },
+  { spot: 'prescription', title: 'Receita digital · e-prescription', desc: 'Receba e renove receitas digitalmente — ligadas a uma decisão médica autorizada e a uma farmácia válida.' },
+  { spot: 'ambulance', title: 'Transporte & ambulância',  desc: 'O caminho físico até ao cuidado — agendado ou de emergência — ligado à sua consulta.' },
 ];
 
 const SPECIALTIES = [
@@ -236,7 +237,7 @@ export default function LandingPage() {
             {TRANSPORT_TIERS.map((t, i) => (
               <div key={t.title} className="cine-tcard reveal" data-d={String((i % 4) + 1)} style={{ '--tc': t.color } as React.CSSProperties}>
                 <span className="cine-tcard__step">0{i + 1}</span>
-                <div className="cine-tcard__icon"><t.icon size={22} /></div>
+                <div className="cine-tcard__art"><Spot name={t.spot as SpotName} /></div>
                 <div className="cine-tcard__t">{t.title}</div>
                 <div className="cine-tcard__d">{t.desc}</div>
               </div>
@@ -265,7 +266,7 @@ export default function LandingPage() {
           <div className="cine-pillars">
             {CARE_PILLARS.map((p, i) => (
               <div key={p.title} className="cine-pillar reveal" data-d={String((i % 4) + 1)}>
-                <div className="cine-pillar__icon"><p.icon size={22} /></div>
+                <div className="cine-pillar__art"><Spot name={p.spot as SpotName} /></div>
                 <div className="cine-pillar__t">{p.title}</div>
                 <div className="cine-pillar__d">{p.desc}</div>
               </div>

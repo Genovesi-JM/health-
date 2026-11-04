@@ -193,3 +193,8 @@
   margin-top: .4rem; font-size: .84rem; font-weight: 600; color: #cdeee6;
 }
 @media (max-width: 900px) { .kaya-scene { max-width: 420px; } }
+
+/* ---------- spot illustrations in cards ---------- */
+.kaya-spot { width: 66px; height: 58px; display: block; overflow: visible; }
+.cine-tcard__art { margin: -2px 0 .7rem -4px; }
+.cine-pillar__art { margin: -2px 0 .7rem -4px; }
