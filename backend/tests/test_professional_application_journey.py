@@ -222,7 +222,7 @@ def test_stale_verified_doctor_profile_cannot_bypass_current_credential(client, 
     db_session.add(renewal)
     db_session.commit()
     decision = client.post(f"/api/v1/doctor/prescription-requests/{renewal.id}/decide",
-                           headers=headers, json={"action": "approve"})
+                           headers=headers, json={"action": "approve", "expected_revision": 0})
     assert decision.status_code == 403, decision.text
     db_session.refresh(renewal)
     assert renewal.status == "pending"

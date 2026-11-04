@@ -700,46 +700,53 @@ class FileDownloadResponse(BaseModel):
 # ── Prescription Requests (renewal / pre-consult) ──
 
 class PrescriptionRequestCreate(BaseModel):
-    doctor_id: str
-    medication_name: str
-    dose: Optional[str] = None
-    frequency: Optional[str] = None
-    reason: Optional[str] = None
+    doctor_id: str = Field(min_length=1, max_length=36)
+    country: Literal['AO', 'PT']
+    consent_language: str = Field(default='pt', pattern=r'^[a-z]{2}(-[A-Z]{2})?$', max_length=10)
+    medication_name: str = Field(min_length=1, max_length=300)
+    dose: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    frequency: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    reason: Optional[str] = Field(default=None, max_length=4000)
+    model_config = {'extra': 'forbid', 'str_strip_whitespace': True}
+
 
 class PrescriptionRequestDecide(BaseModel):
-    # Valid actions and the status they produce:
-    #   approve           → approved
-    #   adjust / adjusted → adjusted
-    #   consult_requested → consult_requested
-    #   exams_requested   → exams_requested
-    #   reject / rejected → rejected
-    action: str
-    doctor_note: Optional[str] = None
-    adjusted_dose: Optional[str] = None
-    adjusted_frequency: Optional[str] = None
+    action: Literal['approve', 'adjust', 'adjusted', 'consult_requested', 'exams_requested', 'reject', 'rejected']
+    expected_revision: int = Field(ge=0, strict=True)
+    doctor_note: Optional[str] = Field(default=None, max_length=4000)
+    adjusted_dose: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    adjusted_frequency: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    model_config = {'extra': 'forbid', 'str_strip_whitespace': True}
+
 
 class PrescriptionRequestOut(BaseModel):
     id: str
     patient_id: str
     doctor_id: str
+    country: Optional[str] = None
+    consent_language: Optional[str] = None
+    request_key: Optional[str] = None
+    revision: int
+    decision_id: Optional[str] = None
+    standalone_prescription_id: Optional[str] = None
+    decision_state: Literal['pending', 'decided', 'legacy_review_required']
     medication_name: str
-    dose: Optional[str]
-    frequency: Optional[str]
-    reason: Optional[str]
+    dose: Optional[str] = None
+    frequency: Optional[str] = None
+    reason: Optional[str] = None
     status: str
-    risk_level: Optional[str]
-    risk_alert: Optional[str]
-    doctor_note: Optional[str]
-    adjusted_dose: Optional[str]
-    adjusted_frequency: Optional[str]
+    doctor_note: Optional[str] = None
+    adjusted_dose: Optional[str] = None
+    adjusted_frequency: Optional[str] = None
     created_at: datetime
-    decided_at: Optional[datetime]
-    # enriched patient info (populated by router)
+    decided_at: Optional[datetime] = None
     patient_name: Optional[str] = None
-    patient_age: Optional[int] = None
-    patient_gender: Optional[str] = None
-    chronic_conditions: Optional[list] = None
-    allergies: Optional[list] = None
+    doctor_name: Optional[str] = None
+
+    @field_serializer('created_at', 'decided_at')
+    def serialize_utc(self, value: Optional[datetime]):
+        if value is None: return None
+        return value.replace(tzinfo=timezone.utc).isoformat() if value.tzinfo is None else value.astimezone(timezone.utc).isoformat()
 
 
 # ── Device Readings ──

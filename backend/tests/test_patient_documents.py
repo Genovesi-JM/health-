@@ -281,18 +281,16 @@ def test_stale_review_never_overwrites_confirmed_text(client, documents):
 
 
 @pytest.mark.parametrize("status", ["pending", "rejected", "cancelled", "approved", "adjusted"])
-def test_prescription_request_document_access_requires_accepted_decision(client, documents, db_session, status):
+def test_legacy_prescription_request_without_evidence_never_grants_record_access(client, documents, db_session, status):
     document = process(client, documents, upload(client, documents).json()).json()
     doctor_headers, credential = clinician(db_session, documents, consultation_status="cancelled")
     doctor = db_session.query(Doctor).filter_by(user_id=credential.user_id).one()
     db_session.add(PrescriptionRequest(patient_id=documents["patient"].id, doctor_id=doctor.id,
                                       medication_name="Synthetic medication", status=status))
     db_session.commit()
-    accepted = status in {"approved", "adjusted"}
-    assert client.get(f"{ROOT}/{document['id']}", headers=doctor_headers).status_code == (200 if accepted else 403)
+    assert client.get(f"{ROOT}/{document['id']}", headers=doctor_headers).status_code == 403
     summary = client.get(f"/api/v1/doctor/patients/{documents['patient'].id}/clinical-summary", headers=doctor_headers)
-    assert summary.status_code == 200
-    assert bool(summary.json()["uploaded_files"]) == accepted
+    assert summary.status_code == 403
 
 
 def test_separate_session_cas_prevents_stale_processing(db_session, client, documents):
@@ -463,3 +461,19 @@ def test_document_migration_round_trip_on_disposable_database(tmp_path):
         assert connection.exec_driver_sql("SELECT id FROM patient_documents").scalar_one() == "synthetic-document"
         migration.downgrade()
     engine.dispose()
+
+
+def test_current_retained_renewal_approval_grants_document_relationship(client, documents, db_session):
+    from consent_fixtures import grant_all
+    document = process(client, documents, upload(client, documents).json()).json()
+    doctor_headers, credential = clinician(db_session, documents, consultation_status="cancelled")
+    doctor = db_session.query(Doctor).filter_by(user_id=credential.user_id).one()
+    grant_all(db_session, documents['patient']); db_session.commit()
+    created = client.post('/api/v1/prescription-requests', headers=documents['headers'] | {'Idempotency-Key': str(uuid4())},
+        json={'doctor_id': doctor.id, 'country': 'AO', 'medication_name': 'Synthetic medication', 'dose': 'Test dose', 'frequency': 'Test frequency'})
+    assert created.status_code == 201, created.text
+    assert client.get(f"{ROOT}/{document['id']}", headers=doctor_headers).status_code == 403
+    result = client.post(f"/api/v1/doctor/prescription-requests/{created.json()['id']}/decide",
+        headers=doctor_headers | {'Idempotency-Key': str(uuid4())}, json={'action': 'approve', 'expected_revision': 0})
+    assert result.status_code == 200, result.text
+    assert client.get(f"{ROOT}/{document['id']}", headers=doctor_headers).status_code == 200

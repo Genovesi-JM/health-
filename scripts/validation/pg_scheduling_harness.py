@@ -35,7 +35,7 @@ from app.health_models import (Patient, Doctor, ClinicianCredential, PatientCons
                               ClinicalCareTask, HealthAuditLog, HealthPayment, Notification,
                               TeleconsultationSession, TeleconsultationParticipant)
 from app.oauth2 import create_access_token
-from app.routers import appointments, consultations, notifications, teleconsultation, compliance, readings, triage
+from app.routers import appointments, consultations, notifications, teleconsultation, compliance, readings, triage, prescription_requests, prescriptions
 from app.services.consultation_lifecycle import transition
 from app.services.mfa import generate_secret
 
@@ -47,6 +47,8 @@ application.include_router(teleconsultation.router)
 application.include_router(compliance.router)
 application.include_router(readings.router)
 application.include_router(triage.router)
+application.include_router(prescription_requests.router)
+application.include_router(prescriptions.router)
 sys.path.insert(0, str(pathlib.Path.cwd()/"tests"))
 from consent_fixtures import grant_all, references, seed_episode
 client = TestClient(application)
@@ -1256,6 +1258,203 @@ def triage_answer_and_completion_races():
     return {'forced_races': 10, 'completed_triage_rejects_late_answers': True, 'concurrent_completion_preserves_one_consistent_result': True}
 
 
+
+def renewal_create(patient,doctor,key=None):
+    return client.post('/api/v1/prescription-requests',headers=patient['headers']|{'Idempotency-Key':key or str(uuid4())},
+        json={'doctor_id':doctor['id'],'country':'AO','medication_name':'Synthetic renewal','dose':'Synthetic dose','frequency':'Synthetic frequency'})
+
+
+def renewal_decide(doctor,item,key=None,action='approve'):
+    return client.post(f'/api/v1/doctor/prescription-requests/{item["id"]}/decide',headers=doctor['headers']|{'Idempotency-Key':key or str(uuid4())},
+        json={'action':action,'expected_revision':0})
+
+
+def renewal_exact_and_competing_decisions():
+    from app.health_models import PrescriptionRequest, PrescriptionRequestDecision, StandalonePrescription
+    for same in (True,False):
+        for _ in range(5):
+            p=person('patient');d=person('doctor');key=str(uuid4())
+            item=renewal_create(p,d).json()
+            responses=together([lambda:renewal_decide(d,item,key),lambda:renewal_decide(d,item,key if same else None,'approve' if same else 'reject')])
+            statuses(responses,(200,200) if same else (200,409))
+            with Session(engine) as db:
+                row=db.get(PrescriptionRequest,item['id'])
+                decision=db.query(PrescriptionRequestDecision).filter_by(request_id=item['id']).one()
+                records=db.query(StandalonePrescription).filter_by(prescription_request_id=item['id']).all()
+                assert row.revision==1 and row.status==decision.action
+                assert len(records)==(1 if row.status=='approved' else 0)
+                if records: assert records[0].valid_until is None and records[0].pharmacy_status=='not_submitted'
+                assert db.query(HealthAuditLog).filter_by(action='renewal_decided',resource_id=item['id']).count()==1
+                assert db.query(Notification).filter_by(related_entity_id=item['id']).count()==2
+            if same: assert responses[0].json()['decision']==responses[1].json()['decision']
+    return {'forced_races':10,'exact_decision_one_event_record_audit_notice':True,'conflicting_decision_cannot_overwrite_winner':True}
+
+
+def renewal_duplicate_creation_and_withdrawal():
+    from app.health_models import PrescriptionRequest, PrescriptionRequestDecision
+    for mode in ('duplicate','create_withdrawal','decide_withdrawal'):
+        for _ in range(4):
+            p=person('patient');d=person('doctor');key=str(uuid4())
+            if mode=='duplicate':
+                results=together([lambda:renewal_create(p,d,key),lambda:renewal_create(p,d,key)])
+                statuses(results,(201,201));assert results[0].json()['id']==results[1].json()['id']
+                with Session(engine) as db: assert db.query(PrescriptionRequest).filter_by(patient_id=p['id']).count()==1
+                continue
+            body=consent_body(p)
+            item=renewal_create(p,d).json() if mode=='decide_withdrawal' else None
+            operation=(lambda:renewal_decide(d,item,key)) if item else (lambda:renewal_create(p,d,key))
+            result,denial=together([operation,lambda:decide(p,body)],table='patients')
+            assert denial.status_code==200 and result.status_code in (200,201,409),[(r.status_code,r.text) for r in (result,denial)]
+            with Session(engine) as db:
+                if item:
+                    assert db.query(PrescriptionRequestDecision).filter_by(request_id=item['id']).count()==(1 if result.status_code==200 else 0)
+                else:assert db.query(PrescriptionRequest).filter_by(patient_id=p['id']).count()==(1 if result.status_code==201 else 0)
+            if result.status_code in (200,201):assert operation().status_code==result.status_code
+            assert renewal_create(p,d).status_code==409
+    return {'forced_races':12,'creation_uuid_deduplication':True,'withdrawal_serializes_creation_and_decision':True,'exact_receipt_recovery_survives_withdrawal':True}
+
+
+def renewal_rollback_and_retention():
+    from app.health_models import PrescriptionRequest, PrescriptionRequestDecision, StandalonePrescription
+    p=person('patient');d=person('doctor');item=renewal_create(p,d).json();key=str(uuid4())
+    def fail(*args):raise RuntimeError('Synthetic renewal persistence failure')
+    event.listen(StandalonePrescription,'before_insert',fail)
+    try: assert renewal_decide(d,item,key).status_code==503
+    finally:event.remove(StandalonePrescription,'before_insert',fail)
+    with Session(engine) as db:
+        assert db.get(PrescriptionRequest,item['id']).status=='pending'
+        assert db.query(PrescriptionRequestDecision).filter_by(request_id=item['id']).count()==0
+    result=renewal_decide(d,item,key);assert result.status_code==200,result.text
+    receipt=result.json()
+    for table,identifier in [('prescription_requests',item['id']),('prescription_request_decisions',receipt['decision']['id']),
+                             ('standalone_prescriptions',receipt['decision']['standalone_prescription_id'])]:
+        try:
+            with engine.begin() as conn:conn.execute(text(f'DELETE FROM {table} WHERE id=:id'),{'id':identifier})
+            raise AssertionError('Retained renewal deleted')
+        except Exception as error:assert 'renewal_evidence_is_retained' in str(error)
+    return {'atomic_failure_leaves_pending_and_retry_creates_once':True,'sql_retention_preserves_request_decision_and_record':True}
+
+
+def renewal_migration():
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    spec=importlib.util.spec_from_file_location('pg_renewal_migration',pathlib.Path('alembic/versions/prescription_renewals_v1.py'))
+    migration=importlib.util.module_from_spec(spec);spec.loader.exec_module(migration)
+    with engine.begin() as conn,Operations.context(MigrationContext.configure(conn)):
+        migration.upgrade()
+        try:migration.downgrade();raise AssertionError('Retained renewal removed')
+        except RuntimeError as error:assert 'Retained renewal evidence' in str(error)
+    schema='synthetic_renewal_'+uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}');conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        conn.exec_driver_sql('CREATE TABLE users (id VARCHAR(36) PRIMARY KEY,email VARCHAR(200) UNIQUE)')
+        conn.exec_driver_sql('CREATE TABLE patients (id VARCHAR(36) PRIMARY KEY,user_id VARCHAR(36) UNIQUE)')
+        conn.exec_driver_sql('CREATE TABLE doctors (id VARCHAR(36) PRIMARY KEY,user_id VARCHAR(36) UNIQUE,slug VARCHAR(200) UNIQUE)')
+        conn.exec_driver_sql('CREATE TABLE prescription_requests (id VARCHAR(36) PRIMARY KEY,patient_id VARCHAR(36),doctor_id VARCHAR(36),medication_name VARCHAR(300),dose VARCHAR(100),frequency VARCHAR(100),reason TEXT,status VARCHAR(30),doctor_note TEXT,adjusted_dose VARCHAR(100),adjusted_frequency VARCHAR(100),created_at TIMESTAMP,decided_at TIMESTAMP)')
+        conn.exec_driver_sql('CREATE TABLE standalone_prescriptions (id VARCHAR(36) PRIMARY KEY,prescription_request_id VARCHAR(36) UNIQUE,patient_id VARCHAR(36),doctor_id VARCHAR(36),medication_name VARCHAR(300),dosage VARCHAR(100),frequency VARCHAR(100),duration VARCHAR(100),instructions TEXT,issue_date TIMESTAMP,valid_until TIMESTAMP,created_at TIMESTAMP)')
+        with Operations.context(MigrationContext.configure(conn)):
+            migration.upgrade();migration.downgrade()
+            conn.exec_driver_sql("INSERT INTO prescription_requests(id) VALUES('legacy')")
+            migration.upgrade();migration.upgrade()
+            assert tuple(conn.execute(text("SELECT country,consent_language,request_key,creation_evidence_json,revision FROM prescription_requests WHERE id='legacy'")).one())==(None,None,None,None,0)
+        conn.exec_driver_sql('SET LOCAL search_path TO public');conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'fresh_upgrade_and_exact_adoption':True,'no_legacy_scope_or_approval_backfill':True,'retained_downgrade_refused':True}
+
+
+def document_episode(p,d):
+    with Session(engine,expire_on_commit=False) as db:
+        item=Consultation(patient_id=p['id'],doctor_id=d['id'],country='AO',consent_language='pt',status='completed')
+        db.add(item);db.flush();seed_episode(db,item);db.commit();return item.id
+
+
+def document_payload(kind):
+    return {'medications':[{'name':'Synthetic medication','dosage':'Synthetic dose','frequency':'Synthetic frequency'}]} if kind=='prescription' else {'destination':'Synthetic clinic','reason':'Synthetic only'}
+
+
+def document_post(d,episode,kind,key):
+    return client.post(f'/api/v1/consultations/{episode}/{kind}',headers=d['headers']|{'Idempotency-Key':key},json=document_payload(kind))
+
+
+class DocumentStorage:
+    def __init__(self):self.objects={};self.writes=[];self.lost=False
+    def write_retained_bytes(self,data,key):
+        if key in self.objects: assert self.objects[key]==data
+        self.objects[key]=data;self.writes.append(key)
+        if self.lost:self.lost=False;raise RuntimeError('Synthetic lost object response')
+    def download_bytes(self,key):return self.objects[key]
+
+
+def document_concurrent_exact():
+    from app.clinical_document_models import ClinicalDocumentRequest
+    from unittest.mock import patch
+    store=DocumentStorage()
+    with patch.object(prescriptions,'get_health_storage',lambda:store):
+        for kind in ('prescription','referral'):
+            for _ in range(5):
+                p=person('patient');d=person('doctor');episode=document_episode(p,d);key=str(uuid4())
+                results=together([lambda:document_post(d,episode,kind,key),lambda:document_post(d,episode,kind,key)])
+                statuses(results,(200,200));assert results[0].json()==results[1].json()
+                with Session(engine) as db:
+                    assert db.query(ClinicalDocumentRequest).filter_by(consultation_id=episode).count()==1
+                    assert db.query(HealthAuditLog).filter_by(resource_id=results[0].json()['id'],action=kind+'_recorded').count()==1
+        assert len(store.objects)==len(store.writes)==10
+    return {'forced_races':10,'one_record_pdf_key_and_audit_for_exact_uuid':True}
+
+
+def document_withdrawal_serialization():
+    from app.clinical_document_models import ClinicalDocumentRequest
+    from unittest.mock import patch
+    store=DocumentStorage()
+    with patch.object(prescriptions,'get_health_storage',lambda:store):
+        for kind in ('prescription','referral'):
+            for _ in range(3):
+                p=person('patient');d=person('doctor');episode=document_episode(p,d);key=str(uuid4());body=consent_body(p)
+                outcome,withdrawal=together([lambda:document_post(d,episode,kind,key),lambda:decide(p,body)],table='patients')
+                assert withdrawal.status_code==200 and outcome.status_code in (200,403),[(r.status_code,r.text) for r in (outcome,withdrawal)]
+                with Session(engine) as db:assert db.query(ClinicalDocumentRequest).filter_by(consultation_id=episode).count()==(1 if outcome.status_code==200 else 0)
+                if outcome.status_code==200:assert document_post(d,episode,kind,key).json()['id']==outcome.json()['id']
+                assert document_post(d,episode,kind,str(uuid4())).status_code==403
+    return {'forced_races':6,'fresh_prescribing_requires_current_consent_under_lock':True,'retained_decision_replay_survives_withdrawal':True}
+
+
+def document_delivery_and_migration():
+    from app.clinical_document_models import ClinicalDocumentRequest
+    from app.health_models import Prescription
+    from unittest.mock import patch
+    import importlib.util
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    p=person('patient');d=person('doctor');episode=document_episode(p,d);key=str(uuid4());store=DocumentStorage();store.lost=True
+    with patch.object(prescriptions,'get_health_storage',lambda:store):
+        assert document_post(d,episode,'prescription',key).status_code==503
+        with Session(engine) as db:
+            row=db.query(ClinicalDocumentRequest).filter_by(consultation_id=episode).one();row_id=row.id;record_id=row.prescription_id
+            assert db.get(Prescription,record_id).file_storage_key is None
+        assert document_post(d,episode,'prescription',key).json()['id']==record_id
+        assert len(store.objects)==1 and store.writes[0]==store.writes[1]
+    for table,identifier in [('clinical_document_requests',row_id),('prescriptions',record_id)]:
+        try:
+            with engine.begin() as conn:conn.execute(text(f'DELETE FROM {table} WHERE id=:id'),{'id':identifier})
+            raise AssertionError('Retained document deleted')
+        except Exception as error:assert 'clinical_document_is_retained' in str(error)
+    spec=importlib.util.spec_from_file_location('pg_document_migration',pathlib.Path('alembic/versions/clinical_document_requests_v1.py'))
+    migration=importlib.util.module_from_spec(spec);spec.loader.exec_module(migration)
+    with engine.begin() as conn,Operations.context(MigrationContext.configure(conn)):
+        migration.upgrade()
+        try:migration.downgrade();raise AssertionError('Retained document removed')
+        except RuntimeError as error:assert 'Retained clinical documents' in str(error)
+    schema='synthetic_document_'+uuid4().hex
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA {schema}');conn.exec_driver_sql(f'SET LOCAL search_path TO {schema}')
+        database.Base.metadata.create_all(conn)
+        with Operations.context(MigrationContext.configure(conn)):
+            migration.upgrade();migration.downgrade();migration.upgrade();migration.upgrade()
+            assert conn.execute(text('SELECT COUNT(*) FROM clinical_document_requests')).scalar()==0
+        conn.exec_driver_sql('SET LOCAL search_path TO public');conn.exec_driver_sql(f'DROP SCHEMA {schema} CASCADE')
+    return {'lost_storage_reply_keeps_one_record_and_known_key':True,'postgres_retention':True,'migration_adoption_fresh_and_empty_downgrade':True,'retained_downgrade_refused':True}
+
+
 cases={}
 for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_different_doctors',same_patient_different_doctors),
                 ('immediate_acceptance_same_doctor',immediate_accept_same_doctor),('immediate_acceptance_competing_doctors',immediate_accept_same_patient),
@@ -1285,7 +1484,14 @@ for name,fn in [('same_slot_reservation',same_slot),('overlapping_patient_differ
                 ('reading_same_identity_and_cross_market', reading_same_identity_and_cross_market),
                 ('reading_withdrawal_vs_ingestion', reading_withdrawal_vs_ingestion),
                 ('reading_scope_migration', reading_scope_migration),
-                ('triage_answer_and_completion_races', triage_answer_and_completion_races)]:
+                ('triage_answer_and_completion_races', triage_answer_and_completion_races),
+                ('renewal_exact_and_competing_decisions',renewal_exact_and_competing_decisions),
+                ('renewal_duplicate_creation_and_withdrawal',renewal_duplicate_creation_and_withdrawal),
+                ('renewal_rollback_and_retention',renewal_rollback_and_retention),
+                ('renewal_migration',renewal_migration),
+                ('document_concurrent_exact',document_concurrent_exact),
+                ('document_withdrawal_serialization',document_withdrawal_serialization),
+                ('document_delivery_and_migration',document_delivery_and_migration)]:
     started=time.monotonic()
     try:
         result=fn();cases[name]={'passed':True,'seconds':round(time.monotonic()-started,3),**result}

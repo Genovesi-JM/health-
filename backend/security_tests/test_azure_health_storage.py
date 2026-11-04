@@ -353,7 +353,9 @@ def test_authorized_document_download_reports_actual_azure_ttl(azure_sdk, monkey
         query.filter.return_value.first.return_value = value
         queries.append(query)
     database = Mock()
-    database.query.side_effect = queries
+    retained_query = Mock()
+    retained_query.filter_by.return_value.first.return_value = None
+    database.query.side_effect = queries + [retained_query]
     monkeypatch.setattr(prescriptions, "get_health_storage", lambda: storage)
     monkeypatch.setattr(prescriptions, "_has_document_access", lambda *a: True)
     response = prescriptions.download_file("synthetic-document", user=SimpleNamespace(), db=database)
@@ -393,3 +395,70 @@ def test_file_response_requires_explicit_expiry_metadata():
 
     with pytest.raises(ValidationError):
         FileDownloadResponse(file_id="synthetic", download_url="https://example.invalid", filename="synthetic.pdf")
+
+
+def test_retained_azure_pdf_recovers_lost_upload_and_never_overwrites(azure_sdk, monkeypatch):
+    from uuid import uuid4
+    storage = HealthStorageService()
+    key = f'health/clinical-documents/{uuid4()}.pdf'
+    data = b'%PDF-1.7\nsynthetic retained bytes'
+    blob_type = type(storage._private_azure_blob(key))
+    original = blob_type.upload_blob
+    def lost(self, content, **kwargs):
+        original(self, content, **kwargs)
+        raise TimeoutError('synthetic lost upload response')
+    monkeypatch.setattr(blob_type, 'upload_blob', lost)
+    storage.write_retained_bytes(data, key)
+    storage.write_retained_bytes(data, key)
+    assert azure_sdk.objects == {key: data}
+    uploads = [call for call in azure_sdk.calls if call[0] == 'upload']
+    assert len(uploads) == 1 and uploads[0][2]['overwrite'] is False
+    with pytest.raises(HealthStorageError): storage.write_retained_bytes(b'%PDF-1.7\nconflicting bytes', key)
+    assert azure_sdk.objects[key] == data
+
+
+def test_retained_azure_container_missing_is_not_object_absence(azure_sdk):
+    from uuid import uuid4
+    storage = HealthStorageService()
+    azure_sdk.missing_code = 'ContainerNotFound'
+    # A container permission/configuration failure must not initiate an upload.
+    azure_sdk.privacy_error = RuntimeError('synthetic inaccessible container')
+    with pytest.raises(HealthStorageError): storage.write_retained_bytes(b'%PDF-1.7\nsynthetic', f'health/clinical-documents/{uuid4()}.pdf')
+    assert not any(call[0] == 'upload' for call in azure_sdk.calls)
+
+
+def test_retained_local_pdf_atomic_create_and_content_conflict(monkeypatch, tmp_path):
+    from uuid import uuid4
+    monkeypatch.setattr(settings, 'health_storage_provider', 'local')
+    monkeypatch.setattr(health_storage, 'LOCAL_UPLOAD_DIR', tmp_path)
+    storage = HealthStorageService(); key = f'health/clinical-documents/{uuid4()}.pdf'
+    data = b'%PDF-1.7\nsynthetic'
+    storage.write_retained_bytes(data, key); storage.write_retained_bytes(data, key)
+    assert (tmp_path/key).read_bytes() == data
+    with pytest.raises(HealthStorageError): storage.write_retained_bytes(b'%PDF-1.7\nother', key)
+    assert (tmp_path/key).read_bytes() == data
+    assert len(list((tmp_path/key).parent.iterdir())) == 1
+
+
+def test_retained_s3_uses_conditional_create_and_recovers_exact_bytes(monkeypatch):
+    from uuid import uuid4
+    from botocore.exceptions import ClientError
+    monkeypatch.setattr(settings, 'health_storage_provider', 's3')
+    monkeypatch.setenv('DO_SPACES_KEY', 'synthetic'); monkeypatch.setenv('DO_SPACES_SECRET', 'synthetic')
+    storage = HealthStorageService(); objects = {}; writes = []
+    class Client:
+        def get_object(self, **kwargs):
+            key = kwargs['Key']
+            if key not in objects: raise ClientError({'Error': {'Code': 'NoSuchKey'}}, 'GetObject')
+            return {'Body': io.BytesIO(objects[key])}
+        def put_object(self, **kwargs):
+            writes.append(kwargs); assert kwargs['IfNoneMatch'] == '*'
+            assert kwargs['Key'] not in objects
+            objects[kwargs['Key']] = kwargs['Body']
+            raise TimeoutError('synthetic uploaded but response lost')
+    storage._client = Client()
+    key = f'health/clinical-documents/{uuid4()}.pdf'; data = b'%PDF-1.7\nsynthetic'
+    storage.write_retained_bytes(data, key); storage.write_retained_bytes(data, key)
+    assert objects == {key: data} and len(writes) == 1
+    with pytest.raises(HealthStorageError): storage.write_retained_bytes(b'%PDF-1.7\nwrong', key)
+    assert len(writes) == 1

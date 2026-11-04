@@ -15,7 +15,8 @@ ACCEPTED_TYPES = ("application/pdf", "image/jpeg", "image/png")
 
 def doctor_has_document_relationship(doctor_id: str, patient_id: str, db) -> bool:
     """Document sharing starts after clinical acceptance, not a directed request."""
-    from app.health_models import CareEscalation, Consultation, PrescriptionRequest
+    from app.health_models import CareEscalation, Consultation
+    from app.services.prescription_renewals import has_accepted_renewal
 
     return bool(
         db.query(Consultation.id).filter(
@@ -26,10 +27,7 @@ def doctor_has_document_relationship(doctor_id: str, patient_id: str, db) -> boo
             CareEscalation.assigned_doctor_id == doctor_id, CareEscalation.patient_id == patient_id,
             CareEscalation.status.in_(("accepted", "resolved")),
         ).first()
-        or db.query(PrescriptionRequest.id).filter(
-            PrescriptionRequest.doctor_id == doctor_id, PrescriptionRequest.patient_id == patient_id,
-            PrescriptionRequest.status.in_(("approved", "adjusted")),
-        ).first()
+        or has_accepted_renewal(db, doctor_id, patient_id)
     )
 
 

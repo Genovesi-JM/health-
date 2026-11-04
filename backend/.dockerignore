@@ -186,3 +186,7 @@
 !app/services/consent_retention.py
 !alembic/versions/consent_runtime_v1.py
 !alembic/versions/reading_consent_scope_v1.py
+
+!app/services/prescription_renewals.py
+!app/services/renewal_retention.py
+!alembic/versions/prescription_renewals_v1.py

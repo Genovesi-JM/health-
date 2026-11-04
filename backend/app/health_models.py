@@ -1017,6 +1017,13 @@ class PrescriptionRequest(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    creation_evidence_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    creation_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default='0')
     medication_name: Mapped[str] = mapped_column(String(300), nullable=False)
     dose: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -1033,6 +1040,33 @@ class PrescriptionRequest(Base):
 
     patient = relationship("Patient", backref="prescription_requests")
     doctor = relationship("Doctor", backref="prescription_requests")
+
+
+    __table_args__ = (Index('uq_renewal_patient_request', 'patient_id', 'request_key', unique=True),)
+
+
+class PrescriptionRequestDecision(Base):
+    """One immutable clinical decision and exact authorization proof per renewal."""
+    __tablename__ = 'prescription_request_decisions'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    request_id: Mapped[str] = mapped_column(String(36), ForeignKey('prescription_requests.id', ondelete='RESTRICT'), nullable=False)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey('patients.id', ondelete='RESTRICT'), nullable=False)
+    doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey('doctors.id', ondelete='RESTRICT'), nullable=False)
+    actor_user_id: Mapped[str] = mapped_column(String(36), ForeignKey('users.id', ondelete='RESTRICT'), nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    consent_language: Mapped[str] = mapped_column(String(10), nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    action: Mapped[str] = mapped_column(String(30), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+    consent_evidence_json: Mapped[str] = mapped_column(Text, nullable=False)
+    content_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    __table_args__ = (
+        Index('uq_renewal_decision_request', 'request_id', unique=True),
+        Index('uq_renewal_decision_actor_key', 'actor_user_id', 'request_key', unique=True),
+    )
 
 
 # ── Standalone Prescription (issued from a prescription request, no consultation) ──
@@ -1053,6 +1087,9 @@ class StandalonePrescription(Base):
     )
     patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    renewal_decision_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey('prescription_request_decisions.id', ondelete='RESTRICT'), nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     medication_name: Mapped[str] = mapped_column(String(300), nullable=False)
     dosage: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -1068,6 +1105,7 @@ class StandalonePrescription(Base):
     prescription_request = relationship("PrescriptionRequest", backref="standalone_prescription", uselist=False)
     patient = relationship("Patient", backref="standalone_prescriptions")
     doctor = relationship("Doctor", backref="standalone_prescriptions")
+    __table_args__ = (Index('uq_standalone_renewal_decision', 'renewal_decision_id', unique=True),)
 
 
 # ── Device Reading (patient home monitoring) ──────────────────────────────────
@@ -1645,3 +1683,8 @@ from .services.clinical_retention import register_retention_guards
 register_retention_guards(Base.metadata)
 from .services.consent_retention import register_consent_guards
 register_consent_guards(Base.metadata)
+
+from .services.renewal_retention import register_renewal_guards
+register_renewal_guards(Base.metadata)
+
+from . import clinical_document_models  # Register retained document artifacts after core tables.

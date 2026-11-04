@@ -214,7 +214,7 @@ def assert_doctor_can_access_patient(
     A doctor is allowed to access a patient's data when at least one of the
     following is true:
     - The patient has an accepted consultation assigned to this doctor.
-    - The patient has an open prescription request directed at this doctor.
+    - An approved/adjusted renewal has valid retained decision evidence.
 
     A directed request is not acceptance and does not grant record access.
 
@@ -236,16 +236,10 @@ def assert_doctor_can_access_patient(
     if consultation_exists:
         return
 
-    # Check for any prescription request from this patient to this doctor
-    request_exists = (
-        db.query(PrescriptionRequest.id)
-        .filter(
-            PrescriptionRequest.doctor_id == doctor.id,
-            PrescriptionRequest.patient_id == patient_id,
-        )
-        .first()
-    )
-    if request_exists:
+    # A directed request is not acceptance. Retained, scoped clinical decisions
+    # may establish care; legacy statuses without evidence never do.
+    from app.services.prescription_renewals import has_accepted_renewal
+    if has_accepted_renewal(db, doctor.id, patient_id):
         return
 
     # A doctor who accepted a nurse escalation now owns that episode and needs
