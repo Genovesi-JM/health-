@@ -4899,3 +4899,35 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   .health-snapshot__empty { align-items: flex-start; flex-wrap: wrap; padding: 1rem; }
   .health-snapshot__empty .btn { margin-left: 50px; }
 }
+
+/* KAYA's public entrance uses a calmer, editorial healthcare language. */
+.landing-wrapper { background: #f7f5ef; }
+.kaya-hero {
+  max-width: 1480px;
+  min-height: min(820px, 90svh);
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+  gap: clamp(2rem, 5vw, 6rem);
+  padding: clamp(6rem, 10vw, 10rem) clamp(1.25rem, 5vw, 5rem) 5rem;
+}
+.kaya-hero__title {
+  max-width: 11ch;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(3.6rem, 7vw, 7.2rem);
+  font-weight: 400;
+  line-height: .99;
+  letter-spacing: -.065em;
+  color: #172d2c;
+}
+.kaya-hero__title .lp-hero__accent { color: #147a70; }
+.kaya-hero__sub { max-width: 36rem; font-size: clamp(1.05rem, 1.4vw, 1.25rem); line-height: 1.65; color: #4b625d; }
+.kaya-hero .lp-hero__badge { padding: 0 0 .45rem; border: 0; border-bottom: 1px solid #92b7a9; border-radius: 0; background: none; letter-spacing: .12em; text-transform: uppercase; }
+.kaya-hero .lp-cta { border-radius: 3px; min-height: 52px; box-shadow: none; }
+.kaya-hero .lp-hero__stats { border-top: 1px solid #cad7cd; padding-top: 1.4rem; }
+.kaya-panel { border: 1px solid #cad7cd; border-radius: 3px; box-shadow: 16px 16px 0 #e2e8dc; }
+.kaya-panel__header { background: #e8eee8; }
+.kaya-panel__status { border-radius: 2px; }
+@media (max-width: 860px) {
+  .kaya-hero { min-height: 0; grid-template-columns: 1fr; padding: 6rem 1.25rem 3.5rem; }
+  .kaya-hero__title { margin-inline: auto; font-size: clamp(3.2rem, 12vw, 5rem); }
+  .kaya-panel { box-shadow: 8px 8px 0 #e2e8dc; }
+}
