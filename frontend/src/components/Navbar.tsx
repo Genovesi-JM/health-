@@ -21,14 +21,16 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/patients',      label: 'Pacientes',        sub: 'Marque consultas e acompanhe a saúde', icon: Users },
       { to: '/especialistas', label: 'Especialistas',    sub: 'Encontre o médico certo',               icon: Stethoscope },
       { to: '/telemedicina',  label: 'Teleconsulta',     sub: 'Consulta online imediata',              icon: Video },
+      { to: '/urgencia',      label: 'Transporte & Ambulância', sub: 'Agendado, assistido ou de emergência', icon: Ambulance },
       { to: '/chronic-care',  label: 'Cuidado Crónico',  sub: 'Hipertensão, diabetes, asma',           icon: HeartPulse },
     ],
   },
   {
     label: 'Para Hospitais',
     links: [
-      { to: '/clinics',  label: 'Hospitais & Clínicas', sub: 'Médicos, clínicas e transferências', icon: Building2 },
-      { to: '/empresas', label: 'Empresas',             sub: 'Saúde ocupacional para equipas',     icon: Briefcase },
+      { to: '/clinics',  label: 'Hospitais & Clínicas',   sub: 'Médicos, clínicas e transferências', icon: Building2 },
+      { to: '/urgencia', label: 'Transporte de doentes',  sub: 'Transferências e ambulância',         icon: Ambulance },
+      { to: '/empresas', label: 'Empresas',               sub: 'Saúde ocupacional para equipas',     icon: Briefcase },
     ],
   },
   {

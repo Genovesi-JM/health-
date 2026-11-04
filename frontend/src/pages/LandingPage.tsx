@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import CareJourneyScene from '../components/CareJourneyScene';
+import JourneyScroll from '../components/JourneyScroll';
 import Spot, { type SpotName } from '../components/Spots';
 import {
   HeartPulse, Calendar, Video, RefreshCw, Search,
@@ -221,6 +222,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ══ SCROLL-DRIVEN JOURNEY ══════════════════════════ */}
+      <JourneyScroll />
 
       {/* ══ TRANSPORTE & AMBULÂNCIA — PRIORIDADE ═══════════ */}
       <section id="transporte" className="cine-transport">

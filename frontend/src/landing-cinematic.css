@@ -198,3 +198,29 @@
 .kaya-spot { width: 66px; height: 58px; display: block; overflow: visible; }
 .cine-tcard__art { margin: -2px 0 .7rem -4px; }
 .cine-pillar__art { margin: -2px 0 .7rem -4px; }
+
+/* ============================================================
+   SCROLL-DRIVEN JOURNEY (scrollytelling)
+   ============================================================ */
+.jscroll { position: relative; height: 340vh; background: linear-gradient(180deg, #082e28 0%, #061f1b 100%); }
+.jscroll__sticky { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; overflow: hidden; color: #eafbf7; }
+.jscroll__sticky::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .05; mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 150px 150px;
+}
+.jscroll__grid { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; width: 100%; padding: 2rem clamp(1rem,5vw,4rem); display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(2rem,5vw,4rem); align-items: center; }
+@media (max-width: 900px) { .jscroll { height: 300vh; } .jscroll__grid { grid-template-columns: 1fr; gap: 1.2rem; } .jscroll__art { order: -1; } }
+.jscroll__steps .cine-h2 { margin: .85rem 0 .5rem; }
+.jsteps { list-style: none; margin: 1.4rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.jstep { display: flex; gap: .85rem; padding: .7rem .85rem; border-radius: 14px; border: 1px solid transparent; opacity: .5; transition: opacity .3s ease, background .3s ease, border-color .3s ease; }
+.jstep--done { opacity: .82; }
+.jstep--on { opacity: 1; background: rgba(94,234,212,.08); border-color: rgba(94,234,212,.22); }
+.jstep__dot { flex: 0 0 30px; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: .85rem; background: rgba(94,234,212,.12); color: #5eead4; border: 1px solid rgba(94,234,212,.25); transition: background .3s, color .3s; }
+.jstep--on .jstep__dot { background: #14b8a6; color: #04110f; }
+.jstep__body { display: flex; flex-direction: column; }
+.jstep__t { font-weight: 650; color: #f2fffb; font-size: .95rem; }
+.jstep__d { font-size: .82rem; color: #a7ddd2; margin-top: .1rem; line-height: 1.4; }
+.jscroll__hint { margin-top: 1.3rem; font-size: .8rem; color: #7fbfb2; letter-spacing: .02em; }
+.jscroll__art { position: relative; }
+.jscroll__svg { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; overflow: visible; }
