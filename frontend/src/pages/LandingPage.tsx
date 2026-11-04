@@ -115,6 +115,14 @@ const TRIAGE_OUTCOMES = [
   { icon: Calendar,         color: '#16a34a', bg: 'rgba(22,163,74,0.08)',   border: 'rgba(22,163,74,0.2)',   label: '🟢 Consulta Agendada',  sub: 'Marcação na clínica mais próxima.' },
 ];
 
+const AUDIENCE_HIGHLIGHTS: Record<string, string[]> = {
+  pacientes:     ['Triagem e teleconsulta', 'Receitas e renovações', 'Historial sempre acessível', 'Perfis para a família'],
+  medicos:       ['Agenda e marcações', 'Teleconsulta integrada', 'Historial clínico do paciente', 'Sem mensalidades de entrada'],
+  especialistas: ['Segunda opinião médica', 'Encaminhamentos simples', 'Rede de especialidades', 'Presencial ou online'],
+  clinicas:      ['Painel para a equipa', 'Triagem digital pré-consulta', 'Gestão de agenda', 'Continuidade de cuidados'],
+  dispositivos:  ['Tensiómetro e glicómetro', 'Oxímetro e balança', 'Dados enviados ao médico', 'Alertas de risco'],
+};
+
 export default function LandingPage() {
   const [activeAudience, setActiveAudience] = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -199,15 +207,20 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Panel content — image only */}
-          <div className={`kaya-panel__body kaya-panel__body--img${animating ? ' kaya-panel__body--out' : ''}`}
-               style={{ background: aud.imgColor }}>
-            <img
-              src={`/kaya-panel-${aud.key}.png`}
-              alt={aud.label}
-              className="kaya-panel__img"
-              onError={(e) => { (e.target as HTMLImageElement).src = `/kaya-panel-${aud.key}.svg`; }}
-            />
+          {/* Panel content — audience-specific highlights */}
+          <div className={`kaya-panel__body${animating ? ' kaya-panel__body--out' : ''}`}
+               style={{ background: aud.imgColor, padding: '1.4rem 1.6rem', minHeight: 232 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.1rem' }}>
+              <span style={{ fontSize: '1.7rem', lineHeight: 1 }}>{aud.icon}</span>
+              <span style={{ fontWeight: 700, fontSize: '1.05rem', color: aud.color }}>{aud.label}</span>
+            </div>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.7rem' }}>
+              {(AUDIENCE_HIGHLIGHTS[aud.key] || []).map(h => (
+                <li key={h} style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  <CheckCircle2 size={16} style={{ color: aud.color, flexShrink: 0 }} /> {h}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
@@ -480,6 +493,7 @@ export default function LandingPage() {
         <p>Junte-se a um ecossistema de saúde digital construído para Angola — e para o mundo.</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
           <Link to="/register" className="lp-cta lp-cta--white">Criar conta gratuita</Link>
+          <Link to="/login" className="lp-cta lp-cta--white-outline"><ArrowRight size={15} /> Entrar no Portal</Link>
           <Link to="/contacto" className="lp-cta lp-cta--white-outline"><Phone size={15} /> Falar connosco</Link>
         </div>
         <div style={{ marginTop: '2rem', display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>

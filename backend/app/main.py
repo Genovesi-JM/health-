@@ -119,7 +119,8 @@ def create_application() -> FastAPI:
     # Ensure DB schema is up-to-date (add missing columns)
     try:
         from .database import ensure_legacy_schema
-        ensure_legacy_schema()
+        if os.getenv("KAYA_MANAGED_SCHEMA") != "true":
+            ensure_legacy_schema()
         print("[HealthPlatform] Schema drift check completed.")
     except Exception as exc:
         print(f"[HealthPlatform] Schema drift check failed (non-fatal): {exc}")
@@ -180,6 +181,12 @@ def create_application() -> FastAPI:
     # - projects, ai, accounts, kpi (GeoVision-specific)
     # - products, orders, customer_accounts, employees (e-commerce)
     # - datasets, risk, payments, shop, contacts (drone platform)
+
+    @application.get("/ready", tags=["system"])
+    def readiness():
+        from app.azure_release import verify_schema
+        verify_schema()
+        return {"status": "ready", "scope": "private_staging"}
 
     @application.get("/health", tags=["system"])
     @application.get("/api/v1/health", tags=["system"])

@@ -20,7 +20,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:
@@ -46,6 +46,19 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Ensure Alembic's bookkeeping table can hold our descriptive revision
+        # identifiers. Alembic's built-in version table hardcodes
+        # version_num VARCHAR(32); some revision ids in this project exceed 32
+        # characters, which SQLite silently accepts but PostgreSQL rejects with
+        # StringDataRightTruncation. Pre-create a wider column (idempotent, and
+        # portable across SQLite/Postgres) so Alembic reuses it as-is.
+        with connection.begin():
+            connection.exec_driver_sql(
+                "CREATE TABLE IF NOT EXISTS alembic_version ("
+                "version_num VARCHAR(255) NOT NULL, "
+                "CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
+            )
+
         context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
