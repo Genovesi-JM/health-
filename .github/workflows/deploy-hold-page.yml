@@ -6,6 +6,7 @@ on:
     paths:
       - docs/launch-hold/**
       - .github/workflows/deploy-hold-page.yml
+      - .github/workflows/deploy.yml
   workflow_dispatch:
 
 permissions:
