@@ -6,8 +6,8 @@ import { createShellPrecache, isOnDemandScript } from './build/shellPrecache'
 
 const shellPrecache = createShellPrecache()
 
-// Base path: /health-/ for GitHub Pages, / for DigitalOcean
-// Set VITE_BASE_PATH=/ when building for production (DO)
+// Base path: /health-/ for GitHub Pages, / for Azure (served at domain root).
+// Set VITE_BASE_PATH=/ when building for the Azure Container Apps / static deploy.
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/health-/',
   plugins: [
