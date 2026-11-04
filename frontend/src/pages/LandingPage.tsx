@@ -9,7 +9,25 @@ import {
   Clock, ChevronRight, Heart, Pill, AlertTriangle,
   TrendingUp, Lock, Smartphone, MonitorSmartphone,
   Baby, Brain, Eye, Bone, Apple, Wind,
+  Ambulance, Plane, Navigation, Accessibility, Siren,
+  FileText, UserCheck, Home,
 } from 'lucide-react';
+import '../landing-cinematic.css';
+
+const TRANSPORT_TIERS = [
+  { icon: Accessibility, color: '#2dd4bf', title: 'Mobilidade acessível',     desc: 'Apoio não-clínico ao passageiro — chegar à consulta com dignidade.' },
+  { icon: Calendar,      color: '#22d3ee', title: 'Transporte agendado',       desc: 'Transporte de paciente planeado, com operador qualificado e destino certo.' },
+  { icon: Stethoscope,   color: '#5eead4', title: 'Transferência assistida',   desc: 'Apoio clínico definido, equipa e equipamento para o percurso.' },
+  { icon: Ambulance,     color: '#ef4444', title: 'Emergência pré-hospitalar', desc: 'Despacho, governação clínica e resposta quando o tempo conta.' },
+  { icon: Plane,         color: '#f59e0b', title: 'Evacuação aérea',           desc: 'Via aeromédica, com origem e destino coordenados.' },
+];
+
+const CARE_PILLARS = [
+  { icon: Home,        title: 'Saúde pessoal & familiar', desc: 'Historial, documentos, medicação e lembretes organizados. Cuidadores acedem com permissões explícitas.' },
+  { icon: Stethoscope, title: 'Cuidado profissional',     desc: 'Médicos e enfermeiros: consulta, revisão e acompanhamento dentro do âmbito verificado.' },
+  { icon: Pill,        title: 'Continuidade de receitas', desc: 'Pedido de revisão ou renovação ligado a uma decisão autorizada e a uma farmácia válida.' },
+  { icon: Ambulance,   title: 'Transporte & ambulância',  desc: 'O caminho físico até ao cuidado — agendado ou de emergência — ligado à sua consulta.' },
+];
 
 const SPECIALTIES = [
   { icon: Stethoscope, label: 'Clínica Geral',   color: '#0d9488' },
@@ -139,6 +157,22 @@ export default function LandingPage() {
     return () => clearInterval(t);
   }, []);
 
+  // Cinematic scroll reveal
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll('.reveal:not(.reveal--in)'));
+    if (!('IntersectionObserver' in window) || els.length === 0) {
+      els.forEach(el => el.classList.add('reveal--in'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('reveal--in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   const switchAudience = (idx: number) => {
     if (idx === activeAudience) return;
     setAnimating(true);
@@ -148,79 +182,114 @@ export default function LandingPage() {
   const aud = AUDIENCES[activeAudience];
 
   return (
-    <div className="landing-wrapper">
+    <div className="landing-wrapper cine">
       <Navbar />
 
-      {/* ══ HERO ══════════════════════════════════════════ */}
-      <section className="kaya-hero">
-        {/* LEFT — text */}
-        <div className="kaya-hero__left">
-          <div className="lp-hero__badge">
-            <HeartPulse size={13} /> Plataforma de saúde digital — Angola, África
+      {/* ══ CINEMATIC HERO ════════════════════════════════ */}
+      <section className="cine-hero">
+        <div className="cine-aurora" />
+        <div className="cine-hero__grid">
+          <div className="reveal reveal--in">
+            <span className="cine-eyebrow"><Navigation size={13} /> Luanda · Angola — Cuidado digital + transporte</span>
+            <h1 className="cine-title">Cuidado que <span className="accent">chega até si.</span></h1>
+            <p className="cine-sub">
+              Consultas, receitas e acompanhamento contínuo — e o <strong style={{ color: '#eafbf7' }}>transporte seguro
+              ou a ambulância</strong> que o leva ao cuidado certo. A sua saúde começa em casa.
+            </p>
+            <div className="cine-ctas">
+              <Link to="/register" className="cine-btn cine-btn--primary"><Calendar size={17} /> Criar conta grátis</Link>
+              <Link to="/login" className="cine-btn cine-btn--ghost"><ArrowRight size={17} /> Entrar no Portal</Link>
+              <a href="#transporte" className="cine-btn cine-btn--alert"><Ambulance size={17} /> Transporte &amp; ambulância</a>
+            </div>
+            <div className="cine-stats">
+              {[
+                { v: '4 + 1', l: 'Serviços de cuidado + transporte' },
+                { v: '24/7',  l: 'Coordenação digital' },
+                { v: '100%',  l: 'Médico real decide' },
+                { v: 'Luanda', l: 'Primeiro piloto' },
+              ].map(s => (
+                <div key={s.l}><span className="cine-stat__v">{s.v}</span><span className="cine-stat__l">{s.l}</span></div>
+              ))}
+            </div>
           </div>
-          <h1 className="kaya-hero__title">
-            Saúde na sua mão.<br />
-            <span className="lp-hero__accent">KAYA.</span>
-          </h1>
-          <p className="kaya-hero__sub">
-            Triagem, teleconsulta, receitas digitais e acompanhamento crónico —
-            construído para que a tua saúde comece em casa.
-          </p>
-          <div className="kaya-hero__ctas">
-            <Link to="/register" className="lp-cta lp-cta--primary"><Calendar size={17} /> Criar conta grátis</Link>
-            <Link to="/login" className="lp-cta lp-cta--secondary"><ArrowRight size={17} /> Entrar no Portal</Link>
+
+          {/* Journey card — the route to care */}
+          <div className="cine-stage reveal" data-d="2">
+            <div className="cine-journey">
+              <div className="cine-journey__head"><span className="cine-live" /> Jornada de cuidado KAYA</div>
+              <ul className="cine-steps">
+                <span className="cine-journey__pulse" />
+                <li className="cine-step">
+                  <div className="cine-step__node"><FileText size={17} /></div>
+                  <div><div className="cine-step__t">Pedido de cuidado</div><div className="cine-step__d">Organize o historial e peça a consulta — ou o transporte certo.</div></div>
+                </li>
+                <li className="cine-step">
+                  <div className="cine-step__node"><UserCheck size={17} /></div>
+                  <div><div className="cine-step__t">Profissional aceita</div><div className="cine-step__d">Um médico ou enfermeiro revê dentro do âmbito autorizado.</div></div>
+                </li>
+                <li className="cine-step cine-step--alert">
+                  <div className="cine-step__node"><Ambulance size={17} /></div>
+                  <div><div className="cine-step__t">Transporte a caminho</div><div className="cine-step__d">Transporte agendado ou ambulância, com handover clínico.</div></div>
+                </li>
+                <li className="cine-step">
+                  <div className="cine-step__node"><Heart size={17} /></div>
+                  <div><div className="cine-step__t">Chegada ao cuidado</div><div className="cine-step__d">Plano claro, próximo passo e acompanhamento visível.</div></div>
+                </li>
+              </ul>
+            </div>
           </div>
-          <div className="lp-hero__stats" style={{ justifyContent: 'flex-start', marginTop: '2rem' }}>
-            {[
-              { value: '13', label: 'Especialidades' },
-              { value: '24/7', label: 'Suporte digital' },
-              { value: '100%', label: 'Médico real' },
-              { value: 'Grátis', label: 'Registo' },
-            ].map(s => (
-              <div key={s.label} className="lp-stat">
-                <span className="lp-stat__val">{s.value}</span>
-                <span className="lp-stat__lbl">{s.label}</span>
+        </div>
+      </section>
+
+      {/* ══ TRANSPORTE & AMBULÂNCIA — PRIORIDADE ═══════════ */}
+      <section id="transporte" className="cine-transport">
+        <div className="cine-wrap">
+          <div className="cine-head reveal">
+            <span className="cine-tag"><Ambulance size={13} /> Transporte &amp; Ambulância · Prioridade</span>
+            <h2 className="cine-h2">O caminho até ao cuidado — resolvido.</h2>
+            <p className="cine-lead">
+              Transporte de pacientes e ambulância coordenados com a sua consulta. Do agendamento à chegada,
+              com o operador qualificado e o handover clínico certo.
+            </p>
+          </div>
+          <div className="cine-tgrid">
+            {TRANSPORT_TIERS.map((t, i) => (
+              <div key={t.title} className="cine-tcard reveal" data-d={String((i % 4) + 1)} style={{ '--tc': t.color } as React.CSSProperties}>
+                <span className="cine-tcard__step">0{i + 1}</span>
+                <div className="cine-tcard__icon"><t.icon size={22} /></div>
+                <div className="cine-tcard__t">{t.title}</div>
+                <div className="cine-tcard__d">{t.desc}</div>
               </div>
             ))}
           </div>
+          <div className="cine-transport__cta reveal">
+            <Link to="/urgencia" className="cine-btn cine-btn--alert"><Siren size={17} /> Emergência &amp; pré-alerta</Link>
+            <Link to="/register" className="cine-btn cine-btn--ghost"><ArrowRight size={17} /> Pedir transporte</Link>
+          </div>
+          <p className="cine-note">
+            Transporte agendado e ambulância médica são serviços distintos, com operador qualificado e requisitos próprios. Luanda — fase piloto.
+          </p>
         </div>
+      </section>
 
-        {/* RIGHT — interactive panel */}
-        <div className="kaya-panel">
-          {/* Panel header with status */}
-          <div className="kaya-panel__header">
-            <span className="kaya-panel__title">Portal KAYA</span>
-            <span className="kaya-panel__status">● ATIVO</span>
+      {/* ══ PILARES DE CUIDADO ═════════════════════════════ */}
+      <section className="cine-care">
+        <div className="cine-wrap">
+          <div className="cine-head center reveal">
+            <span className="cine-eyebrow"><HeartPulse size={13} /> Cuidado conectado</span>
+            <h2 className="cine-h2">Saúde pessoal. Cuidado profissional. Continuidade.</h2>
+            <p className="cine-lead" style={{ margin: '0 auto' }}>
+              Quatro serviços de cuidado ligados ao transporte — para que nada se perca entre a necessidade e a chegada.
+            </p>
           </div>
-
-          {/* Audience buttons */}
-          <div className="kaya-panel__tabs">
-            {AUDIENCES.map((a, i) => (
-              <button
-                key={a.key}
-                className={`kaya-tab${i === activeAudience ? ' kaya-tab--active' : ''}`}
-                style={i === activeAudience ? { borderColor: a.color, color: a.color } : {}}
-                onClick={() => switchAudience(i)}
-              >
-                {a.icon} {a.label}
-              </button>
+          <div className="cine-pillars">
+            {CARE_PILLARS.map((p, i) => (
+              <div key={p.title} className="cine-pillar reveal" data-d={String((i % 4) + 1)}>
+                <div className="cine-pillar__icon"><p.icon size={22} /></div>
+                <div className="cine-pillar__t">{p.title}</div>
+                <div className="cine-pillar__d">{p.desc}</div>
+              </div>
             ))}
-          </div>
-
-          {/* Panel content — audience-specific highlights */}
-          <div className={`kaya-panel__body${animating ? ' kaya-panel__body--out' : ''}`}
-               style={{ background: aud.imgColor, padding: '1.4rem 1.6rem', minHeight: 232 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.1rem' }}>
-              <span style={{ fontSize: '1.7rem', lineHeight: 1 }}>{aud.icon}</span>
-              <span style={{ fontWeight: 700, fontSize: '1.05rem', color: aud.color }}>{aud.label}</span>
-            </div>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.7rem' }}>
-              {(AUDIENCE_HIGHLIGHTS[aud.key] || []).map(h => (
-                <li key={h} style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  <CheckCircle2 size={16} style={{ color: aud.color, flexShrink: 0 }} /> {h}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       </section>
