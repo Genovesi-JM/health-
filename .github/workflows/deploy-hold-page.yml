@@ -1,12 +1,8 @@
 name: Deploy Kaya informational page
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - docs/launch-hold/**
-      - .github/workflows/deploy-hold-page.yml
-      - .github/workflows/deploy.yml
+  # Disabled: the full redesigned site now deploys from deploy.yml on push to main.
+  # Kept for manual use only (run this workflow to restore the holding page).
   workflow_dispatch:
 
 permissions:
