@@ -6,7 +6,7 @@ import {
   Building2, TrendingUp, Calendar, Video, Activity,
   Shield, Clock, Users, ArrowRight,
   BarChart2, Zap, FileText, Mail, Stethoscope,
-  Banknote, Smartphone, HeartPulse, UserCheck, Globe,
+  Banknote, Smartphone, HeartPulse, UserCheck, Globe, Pill,
 } from 'lucide-react';
 
 const DOCTOR_BENEFITS = [
@@ -71,20 +71,23 @@ export default function ClinicsPage() {
 
       {/* ── Hero ── */}
       <section className="lp-page-hero">
-        <div className="lp-tag"><Stethoscope size={12} /> Para Profissionais de Saúde</div>
+        <div className="lp-tag"><Stethoscope size={12} /> Para Hospitais, Clínicas e Farmácias</div>
         <HeroArt name="hospital" />
-        <h1>Trabalhe de forma<br /><span className="lp-hero__accent">independente e digital.</span></h1>
+        <h1>Parcerias de saúde,<br /><span className="lp-hero__accent">ligadas ao cuidado.</span></h1>
         <p>
-          Seja médico individual, clínica ou instituição — há um lugar para si no KAYA.
-          Receba pacientes online, gerencie a sua agenda e cresça sem burocracia.
+          Médicos, clínicas, hospitais e farmácias parceiras — há um lugar para si no KAYA.
+          Receba pacientes, ligue-se à receita digital e ao transporte de doentes, e cresça sem burocracia.
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
           <a href="mailto:parcerias@kaya.ao" className="lp-cta lp-cta--primary">
             <Stethoscope size={15} /> Candidatar-me como médico
           </a>
           <Link to="/contacto" className="lp-cta lp-cta--secondary">
-            <Building2 size={15} /> Inscrever a minha clínica
+            <Building2 size={15} /> Hospital ou clínica
           </Link>
+          <a href="mailto:parcerias@kaya.ao?subject=Farm%C3%A1cia%20parceira" className="lp-cta lp-cta--secondary">
+            <Pill size={15} /> Farmácia parceira
+          </a>
         </div>
         <p style={{ marginTop: '1.25rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
           Sem compromissos. Sem custos de entrada. Respondemos em 24h.

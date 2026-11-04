@@ -29,7 +29,6 @@ import ContactoPage from './pages/ContactoPage';
 import PatientsPage from './pages/PatientsPage';
 import ClinicsPage from './pages/ClinicsPage';
 import ChronicCarePage from './pages/ChronicCarePage';
-import DevicesPage from './pages/DevicesPage';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -125,7 +124,6 @@ export default function App() {
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/clinics" element={<ClinicsPage />} />
           <Route path="/chronic-care" element={<ChronicCarePage />} />
-          <Route path="/devices" element={<DevicesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

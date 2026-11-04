@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 export type SpotName =
   | 'family' | 'professional' | 'prescription' | 'ambulance'
   | 'accessible' | 'scheduled' | 'assisted' | 'emergency'
-  | 'telehealth' | 'hospital' | 'company' | 'chronic';
+  | 'telehealth' | 'hospital' | 'company' | 'chronic' | 'pharmacy';
 
 const CREAM = '#f7f4ec';
 const TEAL = '#14b8a6';
@@ -185,6 +185,22 @@ export default function Spot({ name }: { name: SpotName }) {
           <circle cx="68" cy="31" r="3.4" fill={RED}>
             <animate attributeName="r" values="3;4.4;3" dur="1.6s" repeatCount="indefinite" />
           </circle>
+        </Frame>
+      );
+    case 'pharmacy':
+      return (
+        <Frame>
+          {/* pharmacy cross sign */}
+          <rect x="33" y="21" width="30" height="30" rx="8" fill={FOREST} />
+          <rect x="46" y="27" width="4" height="18" rx="2" fill={CREAM} />
+          <rect x="39" y="34" width="18" height="4" rx="2" fill={CREAM} />
+          {/* capsule pill */}
+          <g transform="rotate(38 52 61)">
+            <rect x="39" y="55" width="26" height="12" rx="6" fill={CREAM} />
+            <rect x="52" y="55" width="13" height="12" rx="6" fill={MINT} />
+            <rect x="39" y="55" width="26" height="12" rx="6" fill="none" stroke="#cfe9e1" strokeWidth="1.3" />
+          </g>
+          <circle cx="68" cy="30" r="3.4" fill={GOLD} />
         </Frame>
       );
     default:

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   Heart, Menu, X, ChevronDown, Users, Stethoscope, Video, HeartPulse,
-  Building2, Briefcase, Ambulance, HelpCircle, Phone, type LucideIcon,
+  Building2, Briefcase, Ambulance, HelpCircle, Phone, Pill, type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import { getSession, getInitials } from '../api';
@@ -26,9 +26,10 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Para Hospitais',
+    label: 'Para Parceiros',
     links: [
       { to: '/clinics',  label: 'Hospitais & Clínicas',   sub: 'Médicos, clínicas e transferências', icon: Building2 },
+      { to: '/clinics',  label: 'Farmácias parceiras',    sub: 'Dispensa ligada à receita digital',  icon: Pill },
       { to: '/urgencia', label: 'Transporte de doentes',  sub: 'Transferências e ambulância',         icon: Ambulance },
       { to: '/empresas', label: 'Empresas',               sub: 'Saúde ocupacional para equipas',     icon: Briefcase },
     ],

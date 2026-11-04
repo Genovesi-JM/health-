@@ -27,7 +27,7 @@ const TRANSPORT_TIERS = [
 const CARE_PILLARS = [
   { spot: 'family', title: 'Saúde pessoal & familiar', desc: 'Historial, documentos, medicação e lembretes organizados. Cuidadores acedem com permissões explícitas.' },
   { spot: 'professional', title: 'Cuidado profissional',     desc: 'Médicos e enfermeiros: consulta, revisão e acompanhamento dentro do âmbito verificado.' },
-  { spot: 'prescription', title: 'Receita digital · e-prescription', desc: 'Receba e renove receitas digitalmente — ligadas a uma decisão médica autorizada e a uma farmácia válida.' },
+  { spot: 'prescription', title: 'Receita digital · e-prescription', desc: 'Receba e renove receitas digitalmente — com decisão médica autorizada e dispensa em farmácias parceiras.' },
   { spot: 'ambulance', title: 'Transporte & ambulância',  desc: 'O caminho físico até ao cuidado — agendado ou de emergência — ligado à sua consulta.' },
 ];
 
@@ -309,6 +309,7 @@ export default function LandingPage() {
           {[
             { icon: Users,     color: '#0d9488', to: '/patients',    label: 'Para Pacientes',    desc: 'Consultas, receita digital, família e transporte.' },
             { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Hospitais & Clínicas', desc: 'Médicos, clínicas e hospitais — e transporte de doentes.' },
+            { icon: Pill,      color: '#0f766e', to: '/clinics',     label: 'Farmácias parceiras', desc: 'Dispensa de receitas em farmácias parceiras.' },
             { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: 'Cuidado Crónico',   desc: 'Hipertensão, diabetes, asma — contínuos.' },
             { icon: Ambulance, color: '#0e7490', to: '/urgencia',    label: 'Transporte & Urgência', desc: 'Transporte agendado, ambulância e pré-alerta.' },
             { icon: Phone,     color: '#059669', to: '/contacto',    label: 'Contacto',          desc: 'Fale com a equipa KAYA.' },
