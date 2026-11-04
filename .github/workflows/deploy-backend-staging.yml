@@ -1,0 +1,74 @@
+name: Deploy backend (staging · hold image, internal)
+
+# Builds the Kaya backend HOLD image in ACR and rolls the staging Container App
+# to it. Staging must stay HELD and INTERNAL (clinical launch HOLD): the job
+# fails if ingress is external, so a mistake can never expose the clinical API.
+# Auth to Azure via GitHub OIDC — no long-lived cloud secrets in the repo.
+#
+# Prerequisites (one-time, see infra/azure/cicd-oidc-setup.md):
+#   - Repo Actions variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#   - The federated identity has AcrPush on the registry and Contributor on the app.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend-staging.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: kaya-backend-staging
+  cancel-in-progress: false
+
+env:
+  AZ_RESOURCE_GROUP: rg-kaya-pilot-weu
+  AZ_ACR: acrkaypilotiloie6xix66qg
+  AZ_APP: ca-kaya-staging-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging   # add required reviewers in repo Settings → Environments for a gate
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: azure/login@v2 # TODO: pin to a commit SHA per supply-chain policy (Phase 35)
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build hold image in ACR (default stage = production = app.main:app HOLD)
+        run: |
+          az acr build -r "$AZ_ACR" \
+            -t "kaya-hold:${{ github.sha }}" \
+            -t "kaya-hold:latest" \
+            ./backend
+
+      - name: Roll staging Container App to the new hold image (internal, unchanged ingress)
+        run: |
+          az containerapp update -n "$AZ_APP" -g "$AZ_RESOURCE_GROUP" \
+            --image "$AZ_ACR.azurecr.io/kaya-hold:${{ github.sha }}"
+
+      - name: Guard — staging must stay INTERNAL (clinical HOLD)
+        run: |
+          EXT=$(az containerapp show -n "$AZ_APP" -g "$AZ_RESOURCE_GROUP" \
+            --query "properties.configuration.ingress.external" -o tsv)
+          echo "ingress.external = $EXT"
+          if [ "$EXT" != "false" ]; then
+            echo "::error::Staging ingress is external. The clinical backend must stay internal until the launch HOLD is lifted." && exit 1
+          fi
+
+      - name: Smoke check — held API responds from inside the environment
+        # Readiness is proven by the Container App's own TCP probe; we only assert
+        # the revision became healthy. (No external curl — staging is internal.)
+        run: |
+          STATE=$(az containerapp revision list -n "$AZ_APP" -g "$AZ_RESOURCE_GROUP" \
+            --query "reverse(sort_by([].{n:name,h:properties.healthState,c:properties.createdTime}, &c))[0].h" -o tsv)
+          echo "latest revision healthState = $STATE"
+          if [ "$STATE" != "Healthy" ]; then echo "::error::Latest revision is not Healthy" && exit 1; fi

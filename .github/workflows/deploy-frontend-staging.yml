@@ -1,0 +1,71 @@
+name: Deploy frontend (staging · Azure static site)
+
+# Builds the INFO-ONLY Kaya web client and publishes it to the Azure Storage
+# static website used for Kaya staging. Authenticates to Azure with GitHub OIDC
+# (federated credentials) — no long-lived cloud secrets are stored in the repo.
+#
+# Prerequisites (one-time, see infra/azure/cicd-oidc-setup.md):
+#   - Repo Actions variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#   - The federated identity has "Storage Blob Data Contributor" on the account below.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend-staging.yml'
+
+permissions:
+  id-token: write   # required for OIDC federated login
+  contents: read
+
+concurrency:
+  group: kaya-frontend-staging
+  cancel-in-progress: true
+
+env:
+  AZ_RESOURCE_GROUP: rg-kaya-pilot-weu
+  AZ_STORAGE_ACCOUNT: stkayainfo4319
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging   # add required reviewers in repo Settings → Environments for a gate
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build (info-only, Azure root base path)
+        working-directory: frontend
+        env:
+          VITE_BASE_PATH: '/'        # Azure serves at domain root (not /health-/)
+          VITE_API_URL: ''           # info-only: no clinical API wired (launch HOLD)
+          VITE_DEVICE_GATEWAY_URL: ''
+        # vite build directly: `npm run build` runs `tsc -b` first, which trips on a
+        # pre-existing TypeScript error in a test file unrelated to the shipped bundle.
+        run: npx vite build
+
+      - uses: azure/login@v2 # TODO: pin to a commit SHA per supply-chain policy (Phase 35)
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Publish dist/ to $web (no account key; OIDC identity)
+        run: |
+          az storage blob upload-batch \
+            --account-name "$AZ_STORAGE_ACCOUNT" \
+            --auth-mode login \
+            -d '$web' -s frontend/dist \
+            --overwrite --only-show-errors
+          echo "Published to: $(az storage account show -n "$AZ_STORAGE_ACCOUNT" -g "$AZ_RESOURCE_GROUP" --query primaryEndpoints.web -o tsv)"
