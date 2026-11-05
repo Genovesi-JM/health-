@@ -1,8 +1,10 @@
 from __future__ import annotations
+import os
 # backend/app/database.py — FINAL ESTÁVEL
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.engine import make_url
 from .config import settings
 
 # Lazy initialization: do NOT create the engine/session at import time. Tests
@@ -28,7 +30,7 @@ def init_db_engine(database_url: str | None = None) -> None:
     global DATABASE_URL, engine, SessionLocal
     if database_url is None:
         database_url = settings.database_url
-    if engine is not None and str(getattr(engine, 'url', None)) == database_url:
+    if engine is not None and engine.url == make_url(database_url):
         # Already initialized with same URL
         return
 
@@ -48,7 +50,8 @@ def init_db_engine(database_url: str | None = None) -> None:
     # Auto-create tables (works for both SQLite and PostgreSQL)
     # Import models so all tables are registered on Base.metadata
     from . import models, health_models  # noqa: F401
-    Base.metadata.create_all(bind=engine)
+    if os.environ.get("KAYA_MANAGED_SCHEMA", "").lower() != "true":
+        Base.metadata.create_all(bind=engine)
 
 
 def get_db():
@@ -64,6 +67,8 @@ def get_db():
 
 def ensure_user_role_column() -> None:
     """Adds the role column if missing (legacy SQLite dev data)."""
+    if os.environ.get("KAYA_MANAGED_SCHEMA", "").lower() == "true":
+        return
     if engine is None:
         init_db_engine()
     inspector = inspect(engine)
@@ -85,6 +90,8 @@ def ensure_legacy_schema() -> None:
     ALTER TABLE ADD COLUMN for the missing ones. This keeps create_application
     resilient when running against older DB files.
     """
+    if os.environ.get("KAYA_MANAGED_SCHEMA", "").lower() == "true":
+        return
     if engine is None:
         init_db_engine()
     inspector = inspect(engine)
@@ -356,5 +363,6 @@ def ensure_legacy_schema() -> None:
 
 
 # Initialize the engine by default outside of tests so imports have a usable DB connection.
-if getattr(settings, "env", "dev") != "test":
+if (getattr(settings, "env", "dev") != "test"
+        and os.environ.get("KAYA_MANAGED_SCHEMA", "").lower() != "true"):
     init_db_engine()

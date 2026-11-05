@@ -2,7 +2,11 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
+import os
 import sys
+
+# Alembic owns schema changes. Model imports must never bootstrap tables.
+os.environ["KAYA_MANAGED_SCHEMA"] = "true"
 from pathlib import Path
 
 # permite importar app/*
@@ -20,7 +24,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:
@@ -39,17 +43,31 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
-    with connectable.connect() as connection:
+    def migrate(connection):
+        # Existing historical revision names exceed Alembic's 32-character default.
+        connection.exec_driver_sql(
+            "CREATE TABLE IF NOT EXISTS alembic_version ("
+            "version_num VARCHAR(255) NOT NULL PRIMARY KEY)"
+        )
+        if connection.dialect.name == "postgresql":
+            connection.exec_driver_sql(
+                "ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(255)"
+            )
         context.configure(connection=connection, target_metadata=target_metadata)
-
         with context.begin_transaction():
             context.run_migrations()
+
+    # Release tooling supplies an owner connection and controls the transaction.
+    connection = config.attributes.get("connection")
+    if connection is not None:
+        migrate(connection)
+        return
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.", poolclass=pool.NullPool,
+    )
+    with connectable.begin() as connection:
+        migrate(connection)
 
 
 if context.is_offline_mode():

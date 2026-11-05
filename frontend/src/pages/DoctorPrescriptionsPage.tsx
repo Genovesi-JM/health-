@@ -53,7 +53,7 @@ function DoctorRenewals() {
       if (!active()) return;
       const received = await verifyDecisionReceipt(response.data, pending);
       if (active()) finish(received, pending);
-    } catch (failure) { if (active()) { feed.invalidateAccess(failure); setError(`${uncertain} ${apiErrorMessage(failure, '')}`); } }
+    } catch (failure) { if (active()) { feed.invalidateAccess(failure); setError(`${uncertain} ${apiErrorMessage(failure, failure instanceof Error ? failure.message : '')}`); } }
     finally { if (feed.current()) { mutation.current = false; setBusy(false); } }
   };
   const submit = async (event: React.FormEvent) => {

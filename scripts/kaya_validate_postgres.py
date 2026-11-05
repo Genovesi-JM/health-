@@ -25,9 +25,11 @@ def main() -> int:
                         help="Directory containing initdb, pg_ctl and createdb")
     parser.add_argument("--git", default="git", help="Git executable")
     parser.add_argument("--staged", action="store_true", help="Validate the index snapshot")
+    parser.add_argument("--schema-file", type=Path,
+                        help="Reviewed synthetic SQL fixture to load instead of ORM create_all")
     args = parser.parse_args()
     pg = args.postgres_bin.resolve()
-    for name in ("initdb", "pg_ctl", "createdb"):
+    for name in ("initdb", "pg_ctl", "createdb", "psql"):
         if not (pg / name).is_file():
             parser.error(f"Missing PostgreSQL executable: {pg / name}")
     if os.geteuid() == 0:
@@ -71,6 +73,11 @@ def main() -> int:
         "DATABASE_URL": f"postgresql+psycopg2://kaya_synthetic@/kaya_schedule_synthetic?host={work}/socket&port=55439",
         "ACCOUNTS_DATABASE_URL": "sqlite:///" + str(work / "unused-accounts.db"),
     }
+    if args.schema_file:
+        schema = args.schema_file.resolve()
+        if not schema.is_file() or args.schema_file.is_symlink():
+            parser.error("Expected a regular reviewed synthetic SQL fixture")
+        env["KAYA_MANAGED_SCHEMA"] = "true"
     print(f"Disposable workspace: {work}", flush=True)
     started = False
     code = 1
@@ -89,6 +96,12 @@ def main() -> int:
         subprocess.run([str(pg / "createdb"), "-h", str(work / "socket"), "-p", "55439",
                         "-U", "kaya_synthetic", "kaya_schedule_synthetic"],
                        env=env, check=True, timeout=30)
+        if args.schema_file:
+            with (work / "schema-load.log").open("w") as log:
+                subprocess.run([str(pg / "psql"), "-h", str(work / "socket"), "-p", "55439",
+                                "-U", "kaya_synthetic", "-d", "kaya_schedule_synthetic",
+                                "-v", "ON_ERROR_STOP=1", "-f", str(schema)],
+                               env=env, check=True, stdout=log, stderr=subprocess.STDOUT, timeout=60)
         with (work / "validation.log").open("w") as log:
             result = subprocess.run([sys.executable, "pg_scheduling_harness.py"],
                                     cwd=work / "source/backend", env=env, stdout=log,
@@ -103,7 +116,9 @@ def main() -> int:
         if report_path.exists():
             report = json.loads(report_path.read_text())
             from importlib.metadata import version
-            report.update(cluster_stopped=stopped, source_sha256=manifest,
+            report.update(schema_source="reviewed_sql_fixture" if args.schema_file else "orm_create_all",
+                          schema_fixture_sha256=hashlib.sha256(schema.read_bytes()).hexdigest() if args.schema_file else None,
+                          cluster_stopped=stopped, source_sha256=manifest,
                           snapshot="index" if args.staged else "working_tree",
                           driver="psycopg2-binary==" + version("psycopg2-binary"),
                           harness_sha256=hashlib.sha256(harness.read_bytes()).hexdigest())

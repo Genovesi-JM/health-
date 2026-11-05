@@ -1,15 +1,7 @@
-"""KAYA operational application factory.
+"""Operational factory for isolated synthetic checks.
 
-This is the real, guard-free FastAPI factory used by the operational entry point
-(`app.operational:app`) for local development and for the container image that
-ships to Azure. It assembles the same routers, middleware, and health checks the
-platform has always had.
-
-The Phase-0 launch-hold artifacts remain in place and untouched:
-  * `app.main:app` is the 503 hold stub (still referenced by the freeze tests).
-  * `app.synthetic_runtime` is the test-harness factory behind its ENV guard.
-This module deliberately does NOT import either of them, so those holds stay
-exactly as they were while the operational service runs the real app.
+The Azure production/default image still starts app.main:app (clinical HOLD).
+Managed-schema sessions neither create tables nor seed demo users at startup.
 """
 from __future__ import annotations
 
@@ -134,7 +126,8 @@ def create_app() -> FastAPI:
 
     # Seed demo data outside production (so local login works out of the box).
     _is_prod = settings.env in ("prod", "production")
-    if not _is_prod or settings.seed_demo_data:
+    if (os.environ.get("KAYA_MANAGED_SCHEMA", "").lower() != "true"
+            and (not _is_prod or settings.seed_demo_data)):
         try:
             result = seed_all()
             print(f"[KAYA] seed complete: {result}")

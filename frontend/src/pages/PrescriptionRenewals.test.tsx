@@ -39,7 +39,7 @@ beforeEach(() => {
     if (url === '/api/v1/doctors/') return response([doctor]);
     return response(page());
   });
-  vi.mocked(api.post).mockImplementation(async (_url, body, config) => ({ data: renewalRow({ ...body, request_key: String(config?.headers?.['Idempotency-Key']) }) }));
+  vi.mocked(api.post).mockImplementation(async (_url, body, config) => ({ data: renewalRow({ ...(typeof body === 'object' && body !== null ? body : {}), request_key: String(config?.headers?.['Idempotency-Key']) }) }));
 });
 it('requires an explicit doctor and sends trimmed exact request with Portugal scope after current consent', async () => {
   vi.mocked(api.get).mockImplementation((url, config) => url.includes('consent-state') ? response(readingsConsentState('PT')) : url === '/api/v1/doctors/' ? response([{ ...doctor, practice_country: (config?.params as { country: string }).country }]) : response(page([])));

@@ -49,13 +49,12 @@ jobs:
         working-directory: frontend
         env:
           VITE_BASE_PATH: '/'        # Azure serves at domain root (not /health-/)
-          VITE_API_URL: ''           # info-only: no clinical API wired (launch HOLD)
+          VITE_API_URL: ''
+          VITE_OPERATIONAL_HOLD: 'true' # blocks API calls and renders the informational page
           VITE_DEVICE_GATEWAY_URL: ''
-        # vite build directly: `npm run build` runs `tsc -b` first, which trips on a
-        # pre-existing TypeScript error in a test file unrelated to the shipped bundle.
-        run: npx vite build
+        run: npm run build
 
-      - uses: azure/login@v2 # TODO: pin to a commit SHA per supply-chain policy (Phase 35)
+      - uses: azure/login@2035af27c2cea8ff426397d10e3edb28906b51df # v2.3.1
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}

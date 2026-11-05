@@ -28,9 +28,9 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Process liveness only: the HOLD intentionally returns HTTP 503.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+  CMD python -c "import socket; socket.create_connection(('127.0.0.1', 8000), timeout=3).close()"
 
 # Phase 0: start only the held API. No migration or schema repair at startup.
 CMD ["gunicorn", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
@@ -47,6 +47,15 @@ USER appuser
 ENV PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
     KAYA_DISABLE_RATE_LIMIT=1
 CMD ["python", "-m", "pytest", "security_tests", "-q", "-p", "no:cacheprovider", "--disable-warnings"]
+
+# Owner migration tooling is available only through this explicit build target.
+FROM runtime AS staging-migration
+HEALTHCHECK NONE
+COPY --chown=appuser:appuser accounts_alembic/ ./accounts_alembic/
+COPY --chown=appuser:appuser accounts_alembic.ini ./
+COPY --chown=appuser:appuser scripts/azure_schema.py scripts/staging_api_smoke.py ./scripts/
+ENV KAYA_MANAGED_SCHEMA=true
+CMD ["python", "scripts/azure_schema.py", "check"]
 
 # The default target remains the non-root production runtime, without test tools.
 FROM runtime AS production

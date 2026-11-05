@@ -50,6 +50,8 @@ jobs:
           if failed:
               raise SystemExit('Backend isolated checks failed: ' + json.dumps(failed))
           PY
+      - name: Staging schema and HOLD regressions (no live services)
+        run: python -m pytest backend/staging_tests backend/security_tests/test_docker_allowlist.py -q
       - name: Retain isolated backend reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
