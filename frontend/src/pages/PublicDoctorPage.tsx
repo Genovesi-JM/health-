@@ -194,7 +194,7 @@ export default function PublicDoctorPage() {
             </div>
             {priceText() && (
               <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                💰 {priceText()}
+                {priceText()}
               </div>
             )}
           </div>

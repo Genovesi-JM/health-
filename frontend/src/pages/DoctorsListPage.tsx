@@ -127,9 +127,9 @@ export default function DoctorsListPage() {
           </select>
           <select className="form-input" style={{ minWidth: 180 }} value={consultType} onChange={e => setConsultType(e.target.value)}>
             <option value="">{t('dlist.consult_type')}</option>
-            <option value="teleconsulta">📹 {t('appt.teleconsulta')}</option>
-            <option value="presencial">🏥 {t('appt.presencial')}</option>
-            <option value="domicilio">🏠 {t('appt.domicilio')}</option>
+            <option value="teleconsulta">{t('appt.teleconsulta')}</option>
+            <option value="presencial">{t('appt.presencial')}</option>
+            <option value="domicilio">{t('appt.domicilio')}</option>
           </select>
           {activeFilters > 0 && (
             <button onClick={() => { setSpecialty(''); setConsultType(''); }} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.5rem 0.85rem', borderRadius: '8px', border: 'none', background: 'rgba(239,68,68,0.08)', color: '#dc2626', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>

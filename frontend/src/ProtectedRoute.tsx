@@ -1,7 +1,6 @@
 import { Outlet, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
-import ChatWidget from './components/ChatWidget';
 import { Activity, Calendar, Home, Menu, User } from 'lucide-react';
 import { useState } from 'react';
 import { useT } from './i18n/LanguageContext';
@@ -101,7 +100,6 @@ export function ProtectedRoute() {
           </nav>
         )}
       </div>
-      <ChatWidget />
     </div>
   );
 }

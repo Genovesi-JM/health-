@@ -329,10 +329,10 @@ function ReadingsPanel({ patientId, patientName }: Props) {
                     {!med.is_current && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>({t('prp.historic')})</span>}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                    {med.dosage && <span style={{ marginRight: '0.65rem' }}>💊 {med.dosage}</span>}
-                    {med.frequency && <span style={{ marginRight: '0.65rem' }}>🔁 {med.frequency}</span>}
-                    {med.reason && <span style={{ marginRight: '0.65rem' }}>📋 {med.reason}</span>}
-                    {med.prescribed_by && <span>👤 {med.prescribed_by}</span>}
+                    {med.dosage && <span style={{ marginRight: '0.65rem' }}>{med.dosage}</span>}
+                    {med.frequency && <span style={{ marginRight: '0.65rem' }}>{med.frequency}</span>}
+                    {med.reason && <span style={{ marginRight: '0.65rem' }}>{med.reason}</span>}
+                    {med.prescribed_by && <span>{med.prescribed_by}</span>}
                   </div>
                 </div>
               </div>

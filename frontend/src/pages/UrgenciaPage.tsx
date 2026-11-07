@@ -23,7 +23,7 @@ export default function UrgenciaPage() {
     <div className="landing-wrapper">
       <Navbar />
 
-      <section className="lp-page-hero" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(15,23,42,0) 60%)' }}>
+      <section className="lp-page-hero" style={{ background: 'rgba(239,68,68,0.06)' }}>
         <div className="lp-tag" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
           <AlertTriangle size={13} /> {t('urg.tag')}
         </div>

@@ -177,7 +177,7 @@ export default function DoctorPatientsPage() {
 
               <Link
                 to={`/clinician/patients/${selected.id}`}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, borderRadius: 10, background: 'linear-gradient(135deg, #0f766e, #14b8a6)', color: '#fff', fontSize: '0.78rem', fontWeight: 800, textDecoration: 'none' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, borderRadius: 10, background: 'var(--brand-primary)', color: '#fff', fontSize: '0.78rem', fontWeight: 800, textDecoration: 'none' }}
               >
                 {t('dpat.open_360')}
               </Link>

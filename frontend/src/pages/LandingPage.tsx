@@ -141,7 +141,7 @@ export default function LandingPage() {
                 style={i === activeAudience ? { borderColor: a.color, color: a.color } : {}}
                 onClick={() => switchAudience(i)}
               >
-                {a.icon} {t(a.labelKey)}
+                {t(a.labelKey)}
               </button>
             ))}
           </div>

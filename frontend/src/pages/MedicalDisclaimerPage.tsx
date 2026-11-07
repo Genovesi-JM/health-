@@ -41,7 +41,7 @@ export default function MedicalDisclaimerPage() {
         <div style={{ background: '#fee2e2', border: '2px solid #ef4444', borderRadius: '10px',
           padding: '1rem 1.25rem', marginBottom: '2rem' }}>
           <div style={{ fontWeight: 700, color: '#b91c1c', fontSize: '1rem', marginBottom: '0.4rem' }}>
-            🚨 This platform is NOT an emergency service
+            This platform is NOT an emergency service
           </div>
           <p style={{ margin: 0, color: '#7f1d1d', fontSize: '0.9rem', lineHeight: 1.6 }}>
             If you or someone you know is experiencing a medical emergency — including chest pain,
@@ -86,17 +86,15 @@ export default function MedicalDisclaimerPage() {
           </ul>
         </LegalSection>
 
-        <LegalSection title="3. Triage and AI-Assisted Features">
+        <LegalSection title="3. Digital Triage">
           <p>
-            The triage tool and any AI-assisted features (including the health chatbot) are designed
-            to help users understand possible next steps, not to diagnose conditions.
+            The digital triage tool is designed to help users understand possible next steps,
+            not to diagnose conditions.
           </p>
           <ul>
             <li>Triage results indicate suggested urgency levels only.</li>
-            <li>The AI chatbot does not have access to your full medical history and cannot provide
-              clinical advice.</li>
-            <li>AI responses may contain errors and should not be acted upon without professional
-              verification.</li>
+            <li>Triage guidance does not replace a clinical assessment and should be confirmed by a
+              licensed professional.</li>
           </ul>
         </LegalSection>
 

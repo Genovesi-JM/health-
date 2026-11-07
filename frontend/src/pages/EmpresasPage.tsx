@@ -23,8 +23,8 @@ export default function EmpresasPage() {
     <div className="landing-wrapper">
       <Navbar />
 
-      <section className="lp-page-hero" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(15,23,42,0) 60%)' }}>
-        <div className="lp-tag" style={{ background: 'rgba(124,58,237,0.12)', color: '#a78bfa' }}><Building2 size={13} /> {t('emp.tag')}</div>
+      <section className="lp-page-hero" style={{ background: 'var(--brand-light)' }}>
+        <div className="lp-tag" style={{ background: 'var(--brand-light)', color: 'var(--brand-primary)' }}><Building2 size={13} /> {t('emp.tag')}</div>
         <h1>{t('emp.title1')}<br />{t('emp.title2')}</h1>
         <p>{t('emp.subtitle')}</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>

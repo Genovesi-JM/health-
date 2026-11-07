@@ -283,8 +283,8 @@ export default function PatientProfilePage() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{med.medication_name}</div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  {med.dosage && <span style={{ marginRight: '0.75rem' }}>💊 {med.dosage}</span>}
-                  {med.frequency && <span>🔁 {med.frequency}</span>}
+                  {med.dosage && <span style={{ marginRight: '0.75rem' }}>{med.dosage}</span>}
+                  {med.frequency && <span>{med.frequency}</span>}
                 </div>
               </div>
               <button className="btn btn-sm" style={{ color: '#fca5a5', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}

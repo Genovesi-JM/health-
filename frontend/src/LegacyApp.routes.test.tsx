@@ -11,7 +11,6 @@ const state = vi.hoisted(() => ({
 vi.mock('./AuthContext', () => ({ useAuth: () => state.auth, AuthProvider: ({ children }: { children: ReactNode }) => children }));
 vi.mock('./api', () => ({ default: { get: state.get } }));
 vi.mock('./components/Sidebar', () => ({ Sidebar: () => null }));
-vi.mock('./components/ChatWidget', () => ({ default: () => null }));
 vi.mock('./components/LanguageSelector', () => ({ default: () => null }));
 vi.mock('./components/InstallPrompt', () => ({ default: () => null }));
 vi.mock('./pages/AboutPage', async () => {

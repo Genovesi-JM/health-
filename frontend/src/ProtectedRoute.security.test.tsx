@@ -12,7 +12,6 @@ vi.mock('./api', () => ({ default: { get } }));
 vi.mock('./AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('./i18n/LanguageContext', () => ({ useT: () => ({ t: (key: string) => key }) }));
 vi.mock('./components/Sidebar', () => ({ Sidebar: () => null }));
-vi.mock('./components/ChatWidget', () => ({ default: () => null }));
 vi.mock('./components/LanguageSelector', () => ({ default: () => null }));
 
 function mount(pathname = '/dashboard') {

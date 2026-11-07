@@ -10,7 +10,6 @@ vi.mock('./api', () => ({ default: { get, post: vi.fn() } }));
 vi.mock('./AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('./i18n/LanguageContext', () => ({ useT: () => ({ lang: 'pt', t: (key: string) => key }) }));
 vi.mock('./components/Sidebar', () => ({ Sidebar: () => null }));
-vi.mock('./components/ChatWidget', () => ({ default: () => null }));
 vi.mock('./components/LanguageSelector', () => ({ default: () => null }));
 
 const workspace = {

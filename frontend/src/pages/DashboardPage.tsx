@@ -126,7 +126,7 @@ export default function DashboardPage() {
             {firstName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="dash-greeting-title">{t('dash.hello')} {firstName} 👋</h1>
+            <h1 className="dash-greeting-title">{t('dash.hello')} {firstName}</h1>
             <p className="dash-greeting-subtitle">{t('dash.subtitle')}</p>
           </div>
         </div>
@@ -147,9 +147,7 @@ export default function DashboardPage() {
       {state && state.current_state !== 'no_triage' && (
         <div className="dash-status-card">
           <div className="dash-status-bar" style={{
-            background: state.last_triage_risk
-              ? `linear-gradient(90deg, ${risk.color}, ${risk.color}88)`
-              : 'linear-gradient(90deg, var(--accent-teal), var(--accent-cyan))',
+            background: state.last_triage_risk ? risk.color : 'var(--accent-teal)',
           }} />
           <div className="dash-status-content">
             <div className="dash-status-icon" style={{

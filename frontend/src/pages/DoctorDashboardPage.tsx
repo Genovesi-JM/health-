@@ -126,19 +126,19 @@ export default function DoctorDashboardPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
 
       {/* ── HERO ── */}
-      <div style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)', borderRadius: '20px', padding: '1.75rem 2rem', marginBottom: '1.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--brand-primary)', borderRadius: '12px', padding: '1.75rem 2rem', marginBottom: '1.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', right: '-20px', top: '-20px', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
         <div style={{ position: 'absolute', right: '60px', bottom: '-40px', width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.75, marginBottom: '0.25rem', fontWeight: 500 }}>{greeting} 👋</div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.75, marginBottom: '0.25rem', fontWeight: 500 }}>{greeting}</div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.2rem', color: '#fff' }}>
               {title} {name}
             </h1>
             <p style={{ margin: '0 0 1.25rem', opacity: 0.85, fontSize: '0.88rem' }}>
               {specialty && <span>{specialty} · </span>}
               <span style={{ fontWeight: 600 }}>Hoje: {confirmedToday} consultas confirmadas</span>
-              {waitingQ > 0 && <span style={{ marginLeft: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 }}>🔴 {waitingQ} em espera</span>}
+              {waitingQ > 0 && <span style={{ marginLeft: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 }}>{waitingQ} em espera</span>}
             </p>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
               <HeroBtn to="/doctor/consultas" icon={<Video size={14} />} label="Entrar Online" primary />
@@ -201,7 +201,7 @@ export default function DoctorDashboardPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', borderRadius: 999, background: appt.type === 'teleconsulta' ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)', color: appt.type === 'teleconsulta' ? '#3b82f6' : '#059669', fontWeight: 600 }}>
-                      {appt.type === 'teleconsulta' ? '📹 Telec.' : '🏥 Presencial'}
+                      {appt.type === 'teleconsulta' ? 'Teleconsulta' : 'Presencial'}
                     </span>
                     <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', borderRadius: 999, fontWeight: 600, background: appt.status === 'confirmed' ? 'rgba(16,185,129,0.1)' : appt.status === 'waiting' ? 'rgba(239,68,68,0.1)' : 'rgba(234,179,8,0.1)', color: appt.status === 'confirmed' ? '#059669' : appt.status === 'waiting' ? '#dc2626' : '#d97706' }}>
                       {appt.status === 'confirmed' ? 'Confirmada' : appt.status === 'waiting' ? 'A aguardar' : appt.status === 'in_progress' ? 'Em curso' : 'Pendente'}
@@ -227,7 +227,7 @@ export default function DoctorDashboardPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{rx.patient_name ?? 'Paciente'}</div>
-                  <div style={{ fontSize: '0.77rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.15rem' }}>💊 {rx.medication_name}</div>
+                  <div style={{ fontSize: '0.77rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.15rem' }}>{rx.medication_name}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end' }}>
 

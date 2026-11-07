@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { getSession } from '../api';
 import type { ConsultationQueueItem } from '../types';
-import { ClipboardList, CheckCircle2, Play, X, User, Stethoscope, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
+import { ClipboardList, CheckCircle2, Clock3, Play, X, User, Stethoscope, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 import PatientReadingsPanel from '../components/PatientReadingsPanel';
 import { specialtyLabel } from '../constants/specialties';
@@ -299,7 +299,7 @@ function DoctorQueueScope({ onAccessLost }: { onAccessLost: () => void }) {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                   <InfoRow icon={<Stethoscope size={13} />} label="Especialidade" value={specialtyLabel(selected.specialty, t)} />
-                  <InfoRow icon={<span>📋</span>} label="Motivo" value={selected.chief_complaint || 'Não indicado'} />
+                  <InfoRow icon={<ClipboardList size={13} />} label="Motivo" value={selected.chief_complaint || 'Não indicado'} />
                   {riskMeta && (
                     <InfoRow
                       icon={<AlertTriangle size={13} />}
@@ -311,7 +311,7 @@ function DoctorQueueScope({ onAccessLost }: { onAccessLost: () => void }) {
                       }
                     />
                   )}
-                  <InfoRow icon={<span>📅</span>} label="Pedido em" value={new Date(selected.created_at).toLocaleString('pt-PT')} />
+                  <InfoRow icon={<Clock3 size={13} />} label="Pedido em" value={new Date(selected.created_at).toLocaleString('pt-PT')} />
                 </div>
               </div>
 
