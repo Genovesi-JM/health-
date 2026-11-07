@@ -313,7 +313,7 @@ def test_entra_not_configured_without_tenant(monkeypatch):
     for attr in ("entra_tenant_id", "entra_client_id", "entra_client_secret"):
         monkeypatch.setattr(settings, attr, None, raising=False)
     provider = EntraVerifiedIdProvider()
-    assert provider.mode == ProviderMode.MOCK
+    assert provider.mode == ProviderMode.UNAVAILABLE
     result = provider.create_presentation_request(DigitalCredentialRequest(
         reference_id="apl-1", subject_name="Ana Manuel",
         credential_types=("MedicalLicenceCredential",),
@@ -322,26 +322,28 @@ def test_entra_not_configured_without_tenant(monkeypatch):
     assert "message" in result.raw
 
 
-def test_entra_live_mode_when_configured(monkeypatch):
+def test_entra_credentials_do_not_activate_unimplemented_adapter(monkeypatch):
     monkeypatch.setattr(settings, "entra_tenant_id", "tenant-123", raising=False)
     monkeypatch.setattr(settings, "entra_client_id", "client-123", raising=False)
     monkeypatch.setattr(settings, "entra_client_secret", "secret-xyz", raising=False)
     provider = EntraVerifiedIdProvider()
-    assert provider.mode == ProviderMode.LIVE
+    assert provider.mode == ProviderMode.UNAVAILABLE
     result = provider.create_presentation_request(DigitalCredentialRequest(
         reference_id="apl-1", subject_name="Ana Manuel",
     ))
-    assert result.status == VerificationStatus.ACTION_REQUIRED
+    assert result.status == VerificationStatus.NOT_CONFIGURED
+    assert result.action_url is None
 
 
-def test_entra_parse_webhook_maps_verified(monkeypatch):
+def test_entra_parse_webhook_cannot_claim_verified(monkeypatch):
     monkeypatch.setattr(settings, "entra_tenant_id", "t", raising=False)
     monkeypatch.setattr(settings, "entra_client_id", "c", raising=False)
     monkeypatch.setattr(settings, "entra_client_secret", "s", raising=False)
     result = EntraVerifiedIdProvider().parse_webhook({
         "requestStatus": "presentation_verified", "state": "apl-1",
     })
-    assert result.status == VerificationStatus.COMPLETED
+    assert result.status == VerificationStatus.NOT_CONFIGURED
+    assert result.provider_reference is None
 
 
 def test_get_digital_credential_provider_selector():

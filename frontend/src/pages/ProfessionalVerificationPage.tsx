@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, CheckCircle2, ExternalLink, FileCheck2, Loader2, ShieldCheck, Upload } from 'lucide-react';
 import api from '../api';
 import { useAuth } from '../AuthContext';
@@ -31,7 +31,7 @@ const LABELS: Record<string, string> = {
 };
 
 export default function ProfessionalVerificationPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useT();
   const navigate = useNavigate();
   const [credential, setCredential] = useState<Credential | null>(null);
@@ -57,8 +57,6 @@ export default function ProfessionalVerificationPage() {
     if (credential?.practice_country !== credential?.licence_country) base.push('local_registration');
     return base;
   }, [credential]);
-
-  if (user && !['doctor', 'nurse'].includes(user.role)) return <Navigate to="/dashboard" replace />;
 
   const upload = async (kind: string, file?: File) => {
     if (!file) return;
@@ -109,12 +107,13 @@ export default function ProfessionalVerificationPage() {
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
   if (!credential) return <div className="empty-state"><AlertCircle /><p>{error || 'Processo não encontrado.'}</p></div>;
 
-  const locked = ['pending_review', 'verified', 'suspended'].includes(credential.status);
+  const locked = ['pending_review', 'verified', 'suspended', 'revoked', 'expired'].includes(credential.status);
   const complete = requiredKinds.every(kind => credential.evidence.some(item => item.kind === kind));
   const statusText: Record<string, string> = {
     draft: 'Documentos por completar', needs_info: 'Informação adicional necessária',
     pending_review: 'Em revisão pela equipa KAYA', verified: 'Profissional verificado',
     rejected: 'Verificação recusada', suspended: 'Verificação suspensa',
+    revoked: 'Acesso profissional revogado', expired: 'Documento profissional expirado',
   };
 
   return (
@@ -135,6 +134,16 @@ export default function ProfessionalVerificationPage() {
         <p>{t('verification.subtitle')}</p>
       </div>
       <div style={{ maxWidth: 860, margin: '0 auto', display: 'grid', gap: '1rem' }}>
+        {!['doctor', 'nurse'].includes(user?.role ?? '') && (
+          <div role="status" className="card" style={{ padding: '1rem' }}>
+            A sua candidatura está separada do acesso clínico. Após aprovação, entre novamente para configurar a autenticação em dois passos.
+          </div>
+        )}
+        {credential.status === 'verified' && !['doctor', 'nurse'].includes(user?.role ?? '') && (
+          <button className="btn btn-primary" onClick={() => { logout(); navigate('/login', { replace: true }); }}>
+            Entrar para concluir o acesso profissional
+          </button>
+        )}
         <div className="card" style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ width: 46, height: 46, borderRadius: 12, display: 'grid', placeItems: 'center', background: credential.status === 'verified' ? '#dcfce7' : '#ecfeff', color: credential.status === 'verified' ? '#15803d' : '#0f766e' }}>
             <ShieldCheck size={24} />
@@ -148,6 +157,7 @@ export default function ProfessionalVerificationPage() {
           <span className={`badge ${credential.status === 'verified' ? 'badge-success' : credential.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`}>
             {credential.automated_score}% completo
           </span>
+          <button className="btn btn-secondary btn-sm" onClick={load}>Actualizar estado</button>
         </div>
 
         {(credential.review_notes || credential.rejection_reason) && (
@@ -262,7 +272,7 @@ export default function ProfessionalVerificationPage() {
         </div>
 
         {error && <div className="toast error" style={{ position: 'relative', inset: 'auto' }}>{error}</div>}
-        {credential.status === 'verified' ? (
+        {credential.status === 'verified' && ['doctor', 'nurse'].includes(user?.role ?? '') ? (
           <button className="btn btn-primary btn-lg" onClick={() => navigate(user?.role === 'doctor' ? '/doctor/dashboard' : '/nurse')}>
             Entrar no painel clínico
           </button>

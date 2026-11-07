@@ -1,0 +1,14 @@
+{
+  "fixture": "temporary synthetic Git repository; removed after verification",
+  "checks": {
+    "detect_untracked_current_source": true,
+    "detect_removed_historical_source": true,
+    "detect_tracked_dotenv_current_and_history": true,
+    "ignore_inline_allow_comments": true,
+    "exclude_local_dotenv_log_database": true,
+    "omit_synthetic_credential_value_from_evidence_and_output": true
+  },
+  "current_findings": 2,
+  "history_findings": 2,
+  "scanner_version": "8.30.1"
+}

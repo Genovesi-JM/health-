@@ -1,0 +1,169 @@
+{
+  "node": "v25.6.1",
+  "npm": "11.18.0",
+  "environment": {
+    "PATH": "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/home",
+    "TMPDIR": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/tmp",
+    "LANG": "en_US.UTF-8",
+    "TZ": "UTC",
+    "CI": "1",
+    "NPM_CONFIG_USERCONFIG": "/dev/null",
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+    "NODE_OPTIONS": "--require=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/client-no-network.cjs"
+  },
+  "checks": {
+    "build": {
+      "command": [
+        "/opt/homebrew/bin/npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend",
+      "timeout_seconds": 180,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 43.769,
+      "log": "client-build.log",
+      "log_sha256": "164135fe9c0a42f62f70cae2a26b6cd3585c0661ea4738fa4eb0b5e2e70be66f"
+    },
+    "new-code-lint": {
+      "command": [
+        "/opt/homebrew/bin/node",
+        "node_modules/eslint/bin/eslint.js",
+        "src/App.tsx",
+        "src/main.tsx",
+        "src/phase1",
+        "src/App.phase1.test.tsx",
+        "--format=json",
+        "--output-file=/Users/genovesimaria/Documents/kaya-web/docs/evidence/phase1-2026-09-14/client-new-code-lint.json"
+      ],
+      "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend",
+      "timeout_seconds": 120,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 4.564,
+      "log": "client-new-code-lint.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "mobile-typecheck": {
+      "command": [
+        "/opt/homebrew/bin/npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/mobile",
+      "timeout_seconds": 120,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 18.071,
+      "log": "client-mobile-typecheck.log",
+      "log_sha256": "82690030b78088b64f357fdad2af0518e8c303be020a379661c4a158e1bd041f"
+    },
+    "tests": {
+      "command": [
+        "/opt/homebrew/bin/npm",
+        "test",
+        "--",
+        "--maxWorkers=2",
+        "--minWorkers=1",
+        "--testTimeout=10000",
+        "--hookTimeout=10000",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile=/Users/genovesimaria/Documents/kaya-web/docs/evidence/phase1-2026-09-14/client-tests.json"
+      ],
+      "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend",
+      "timeout_seconds": 240,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 18.633,
+      "log": "client-tests.log",
+      "log_sha256": "77802611053754ff77d4a5c4476f00495963aac461e350b012704c20859fad39",
+      "result_json": "client-tests.json"
+    }
+  },
+  "test_scope": "All four previously tracked test files plus three new Phase 1 test files. The three original untracked user tests are excluded and preserved by hash in the source manifest.",
+  "dependency_provenance": "Exact Phase 0 clean npm-ci installations reused with matching unchanged lockfiles; no new dependency installation or audit.",
+  "test_counts": {
+    "numTotalTests": 38,
+    "numPassedTests": 38,
+    "numFailedTests": 0,
+    "numPendingTests": 0
+  },
+  "test_files": [
+    {
+      "name": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend/src/App.phase1.test.tsx",
+      "status": "passed"
+    },
+    {
+      "name": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend/src/ProtectedRoute.security.test.tsx",
+      "status": "passed"
+    },
+    {
+      "name": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend/src/components/ExtractedDataConfirmation.test.tsx",
+      "status": "passed"
+    },
+    {
+      "name": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend/src/i18n/translations.test.ts",
+      "status": "passed"
+    },
+    {
+      "name": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend/src/pages/ChooseAccountTypePage.test.tsx",
+      "status": "passed"
+    },
+    {
+      "name": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend/src/phase1/egress.test.ts",
+      "status": "passed"
+    },
+    {
+      "name": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend/src/phase1/entrypoints.test.ts",
+      "status": "passed"
+    }
+  ],
+  "new_code_lint_counts": {
+    "errorCount": 0,
+    "warningCount": 0
+  },
+  "superseded_checks": {
+    "initial-tests": {
+      "command": [
+        "/opt/homebrew/bin/npm",
+        "test",
+        "--",
+        "--maxWorkers=2",
+        "--minWorkers=1",
+        "--testTimeout=10000",
+        "--hookTimeout=10000",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile=/Users/genovesimaria/Documents/kaya-web/docs/evidence/phase1-2026-09-14/client-tests.json"
+      ],
+      "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-clients-review/frontend",
+      "timeout_seconds": 240,
+      "exit_code": 1,
+      "timed_out": false,
+      "duration_seconds": 22.957,
+      "log": "client-tests-initial.log",
+      "log_sha256": "643cf2f176d7788ad41ad90f656a3b8da8e22ecbbbeb0199914728ec6abf2194",
+      "result_json": "client-tests-initial.json"
+    }
+  },
+  "superseded_note": "The initial new static-import test used a file URL rewritten by Vite/jsdom, causing one collection error. Changed only that new test to the Node environment and npm working-directory resolution, then reran the complete suite.",
+  "visual_validation": {
+    "command": [
+      "/Users/genovesimaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-client-visual.cjs"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/kaya-web",
+    "exit_code": 0,
+    "log": "client-visual.log",
+    "log_sha256": "4557ec182dc05245a9a0840f659bc2bad94a2316e5f1e10778e1ea1474d57235",
+    "node": "v24.19.0",
+    "browser": "151.0.7922.34",
+    "widths": [
+      1280,
+      390
+    ]
+  }
+}

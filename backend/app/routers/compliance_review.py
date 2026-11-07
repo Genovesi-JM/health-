@@ -36,6 +36,7 @@ from app.health_models import (
 )
 from app.models import User
 from app.rbac import require_compliance_reviewer
+from app.services.credential_mutations import CredentialRevision, mutate_credential
 from app.services.verification.base import VerificationStatus
 from app.services.verification.state_machine import (
     InvalidTransitionError,
@@ -81,8 +82,16 @@ def _apply_transition(
     reviewer_notes: Optional[str],
 ) -> dict:
     """Validate + persist a transition + mirror onto Doctor + commit."""
-    previous = credential.status
+    revision = CredentialRevision.capture(credential)
+    previous = revision.status
     try:
+        from app.services.verification.state_machine import is_allowed
+        if not is_allowed(previous, new_status):
+            raise InvalidTransitionError(previous, new_status)
+        values = {"status": new_status}
+        if new_status in (VerificationStatus.COMPLETED.value, "verified"):
+            values.update(verified_at=datetime.utcnow(), verified_by=reviewer.id)
+        mutate_credential(db, credential, revision=revision, **values)
         transition = record_transition(
             db,
             entity_type=ENTITY_TYPE,
@@ -105,10 +114,6 @@ def _apply_transition(
                 "allowed": sorted(allowed_next(previous)),
             },
         )
-    credential.status = new_status
-    if new_status == VerificationStatus.COMPLETED.value or new_status == "verified":
-        credential.verified_at = datetime.utcnow()
-        credential.verified_by = reviewer.id
     _sync_doctor_status(db, credential)
     _notify_applicant(db, credential, new_status, reason_text)
     db.commit()

@@ -1,0 +1,30 @@
+# Kaya hazard log
+
+Clinical operations remain HOLD. No hazard has clinical approval or an accepted residual-risk signature. Human owners remain unassigned. Review at the next phase and before any release decision.
+
+| ID | Hazard and cause | Current control and evidence | Status and closure |
+| --- | --- | --- | --- |
+| H01 P0 | False reassurance from missing answers; score defaults to zero | evaluate_triage({}) reproduced LOW SELF_CARE in postchecks.json. Default HTTP API returns 503. | OPEN in original runtime; backend and clinical leads must prove incomplete inputs cannot produce reassurance |
+| H02 P0 | A person believes a hospital has been alerted or care is faster/safer | Unsupported multilingual text remains in translations.ts; no integration approval supplied | OPEN; product and clinical owners must remove claims and inspect released clients |
+| H03 High | Clinical information sent to an unapproved processor | AI and video source paths found; default HTTP entry held, no live provider used | OPEN; privacy owner must approve exact purpose/provider and require fail-closed egress tests |
+| H04 High | Clinical action by a person without verified authority | Limited auth regression suite passes; no exhaustive role/tenant/credential proof | OPEN; credentialing and security owners need negative tests and human decision audit evidence |
+| H05 High | Schema drift or seeded accounts create unsafe runtime state | Default hold bypasses all original startup imports; original startup preserved for isolated tests | OPEN for future runtime; database owner needs reviewed migration and restore evidence |
+| H06 High | Local engineering success mistaken for deployed safety | All new evidence is local or offline; existing runtime status unknown | OPEN; operations owner must supply exact-environment evidence and independent release approval |
+
+No clinical policy has been invented or approved by the coding agent. The hold reduces exposure in the default entry point; it does not establish treatment readiness or eliminate defects in preserved source.
+
+Phase 0 completion: the local API and startup/deployment freeze is verified by 38 negative tests; the full original/current suite comparison has matching failures and no phase regression. H01 through H06 remain open for future clinical release, with safely held technical work allowed. Remote state is not inferred from local evidence.
+
+## Phase 1 planning and perimeter additions
+
+The user's dated Angola/Luanda planning selection does not close any clinical hazard. Formal jurisdiction adoption is BLOCKED_EXTERNAL, all required human approvals remain OPEN, and clinical operations stay **HOLD**. The [pilot scope](KAYA_PILOT_SCOPE.md) defines the proposed coordination workflow and stop metrics. The [canonical policy](../policy/kaya_phase1_policy.json) and [capability matrix](KAYA_CAPABILITY_MATRIX.md) describe the intended technical boundary; final implementation/gate evidence is recorded by [execution status](KAYA_EXECUTION_STATUS.md), not inferred from this log.
+
+| ID | Hazard and cause | Current control / evidence required | Status and closure |
+| --- | --- | --- | --- |
+| H07 High | People use an unapproved service because a market choice, configuration state or “pilot” label resembles launch approval | Planning selection is recorded separately from formal adoption and clinical/legal/privacy gates; policy cannot grant approval; real participation remains disabled | OPEN; accountable operator, clinical lead and release board must provide scoped, dated approval evidence before admission |
+| H08 P0 | A person waits for unavailable care or believes an excluded urgent request was escalated | Proposed workflow excludes urgent/emergency care and Response; clinic, local wording, rota, holiday coverage and human escalation path are unapproved; failed_escalation_count must remain zero | OPEN; clinical and operations owners must approve exclusion wording and local handling, test handoff failures/out-of-hours states and exercise stop authority; no automatic reassurance or claimed hospital contact |
+| H09 High | A routine appointment is incorrectly confirmed, double-booked, assigned to an unauthorized professional or left beyond capacity | Booking, credentials and availability remain held; draft metrics require zero conflicts/invalid confirmations, complete staffing, queue cap and human confirmation | OPEN; clinic, credentialing and engineering owners must prove negative cases and audit integrity before a booking flow can operate |
+| H10 High | A user cannot understand the scope and treats coordination as advice or guaranteed care | Portuguese wording and comprehension evidence remain unapproved; 0.90 aggregate comprehension and at least 10 people are draft study thresholds, not measured results; individual failed critical checks prevent admission | OPEN; language/accessibility and clinical reviewers must validate comprehension with appropriately consented people; synthetic responses cannot close the hazard |
+| H11 High | An unsupported geography, cohort, language, condition-specific pathway or provider becomes reachable through route/configuration drift | Explicit policy limits planning to invited adults in Luanda and one unassigned clinic; every client route is intended to be informational; only public backend scope metadata is permitted while clinical routes return 503 | OPEN; independent security/product review must verify route/state/flag parity, invalid/unknown inputs, direct links and no unapproved provider side effects |
+
+Any real-data ingress during synthetic-only operation, unauthorized disclosure, excluded admission, failed approved escalation, invalid credential confirmation, booking-integrity failure, lost audit integrity or unavailable stop control requires HOLD and named human review. Recovery never auto-authorizes a release. H01–H06 remain open in the original clinical source and unknown deployed artifacts; unmounting legacy clients reduces local reach without proving clinical remediation or remote containment.

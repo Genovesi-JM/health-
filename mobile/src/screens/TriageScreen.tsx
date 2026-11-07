@@ -6,7 +6,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -14,8 +13,13 @@ import {
 } from 'react-native';
 
 import TriagePhotoGuide, { type ViewType } from '../components/TriagePhotoGuide';
-import api from '../services/api';
+import api, { sessions } from '../services/api';
+import type { AxiosRequestConfig } from 'axios';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../navigation/AppStack';
 import { apiErrorMessage } from '../utils/apiError';
+import { SELF_TRIAGE_NOTICE, startSelfTriage } from './selfTriage';
 
 type Step = 'start' | 'questions' | 'result';
 type Answer = string | number | boolean;
@@ -77,9 +81,9 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export default function TriageScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const [country, setCountry] = useState<'AO' | 'PT'>('AO');
   const [step, setStep] = useState<Step>('start');
-  const [ageGroup, setAgeGroup] = useState<'adult' | 'pediatric'>('adult');
-  const [guardian, setGuardian] = useState(false);
   const [category, setCategory] = useState('general');
   const [complaint, setComplaint] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -101,27 +105,27 @@ export default function TriageScreen() {
       setError('Descreva brevemente o principal problema de saúde.');
       return;
     }
-    if (ageGroup === 'pediatric' && !guardian) {
-      setError('Confirme que está a responder como responsável pela criança.');
-      return;
-    }
+    const version = sessions.version();
+    const client = { post: (path: string, body: unknown) => api.post(path, body, { _sessionVersion: version } as AxiosRequestConfig) };
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/api/v1/triage/start', {
+      const response = await startSelfTriage<{ triage_id: string; session_id: string; questions: TriageQuestion[] }>(client, {
+        country, consent_language: 'pt',
         chief_complaint: complaint.trim(),
-        age_group: ageGroup,
+        age_group: 'adult',
         category,
-        answered_by_guardian: ageGroup === 'pediatric' ? guardian : false,
+        answered_by_guardian: false,
       });
       setSessionId(response.data.triage_id ?? response.data.session_id);
       setQuestions(response.data.questions ?? []);
       setAnswers({});
       setStep('questions');
     } catch (startError) {
+      if (!sessions.current(version)) return;
       setError(apiErrorMessage(startError, 'Não foi possível iniciar a triagem.'));
     } finally {
-      setLoading(false);
+      if (sessions.current(version)) setLoading(false);
     }
   };
 
@@ -136,6 +140,8 @@ export default function TriageScreen() {
       );
       return;
     }
+    const version = sessions.version();
+    const client = { post: (path: string, body: unknown) => api.post(path, body, { _sessionVersion: version } as AxiosRequestConfig) };
     setLoading(true);
     setError('');
     try {
@@ -143,14 +149,15 @@ export default function TriageScreen() {
         question_key,
         answer,
       }));
-      await api.post(`/api/v1/triage/${sessionId}/answers`, { answers: answerList });
-      const response = await api.post(`/api/v1/triage/${sessionId}/complete`, {});
+      await client.post(`/api/v1/triage/${sessionId}/answers`, { answers: answerList });
+      const response = await client.post(`/api/v1/triage/${sessionId}/complete`, {});
       setResult(response.data);
       setStep('result');
     } catch (submitError) {
+      if (!sessions.current(version)) return;
       setError(apiErrorMessage(submitError, 'Não foi possível concluir a triagem.'));
     } finally {
-      setLoading(false);
+      if (sessions.current(version)) setLoading(false);
     }
   };
 
@@ -229,20 +236,15 @@ export default function TriageScreen() {
           </View>
         )}
 
+        <TouchableOpacity disabled={loading} onPress={() => navigation.navigate('ConsentGate', { country })} style={{ paddingVertical: 12 }}><Text>Rever consentimentos · {country === 'AO' ? 'Angola' : 'Portugal'} · Português</Text></TouchableOpacity>
+        {step === 'start' && <View style={{ marginVertical: 12 }}><Text style={{ marginBottom: 8 }}>País desta triagem</Text><View style={{ flexDirection: 'row', gap: 12 }}>{(['AO', 'PT'] as const).map(code => <TouchableOpacity key={code} disabled={loading} onPress={() => setCountry(code)} accessibilityRole="radio" accessibilityState={{ selected: country === code }} style={{ padding: 12, borderWidth: 1, borderColor: country === code ? '#0d9488' : '#94a3b8', borderRadius: 8 }}><Text>{code === 'AO' ? 'Angola' : 'Portugal'}</Text></TouchableOpacity>)}</View></View>}
         {step === 'start' && (
           <StartStep
-            ageGroup={ageGroup}
             category={category}
             complaint={complaint}
-            guardian={guardian}
             loading={loading}
-            onAgeGroup={value => {
-              setAgeGroup(value);
-              if (value === 'adult') setGuardian(false);
-            }}
             onCategory={setCategory}
             onComplaint={setComplaint}
-            onGuardian={setGuardian}
             onStart={() => void startTriage()}
           />
         )}
@@ -300,48 +302,18 @@ export default function TriageScreen() {
 }
 
 type StartStepProps = {
-  ageGroup: 'adult' | 'pediatric';
   category: string;
   complaint: string;
-  guardian: boolean;
   loading: boolean;
-  onAgeGroup: (value: 'adult' | 'pediatric') => void;
   onCategory: (value: string) => void;
   onComplaint: (value: string) => void;
-  onGuardian: (value: boolean) => void;
   onStart: () => void;
 };
 
 function StartStep(props: StartStepProps) {
   return (
     <View>
-      <Text style={styles.sectionTitle}>Para quem é esta triagem?</Text>
-      <View style={styles.segment}>
-        {(['adult', 'pediatric'] as const).map(value => (
-          <TouchableOpacity
-            key={value}
-            style={[styles.segmentButton, props.ageGroup === value && styles.segmentActive]}
-            onPress={() => props.onAgeGroup(value)}
-          >
-            <Text style={[
-              styles.segmentText,
-              props.ageGroup === value && styles.segmentTextActive,
-            ]}>
-              {value === 'adult' ? 'Adulto' : 'Criança'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      {props.ageGroup === 'pediatric' && (
-        <View style={styles.guardianRow}>
-          <Switch
-            value={props.guardian}
-            onValueChange={props.onGuardian}
-            trackColor={{ true: '#5eead4' }}
-          />
-          <Text style={styles.guardianText}>Sou responsável pela criança e respondo por ela.</Text>
-        </View>
-      )}
+      <Text style={styles.disclaimer}>{SELF_TRIAGE_NOTICE}</Text>
 
       <Text style={styles.sectionTitle}>Qual é a área principal?</Text>
       <View style={styles.categoryGrid}>

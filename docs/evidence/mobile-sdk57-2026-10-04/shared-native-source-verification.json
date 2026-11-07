@@ -1,0 +1,38 @@
+{
+  "assets/icon.png": {
+    "shared": "50b933c309214dd45cdb58c26762357183439039b6a8ff636fce2f6b373ddbd9",
+    "candidate": "50b933c309214dd45cdb58c26762357183439039b6a8ff636fce2f6b373ddbd9"
+  },
+  "assets/adaptive-icon.png": {
+    "shared": "5bf1b1f541e14e68d5af1f1f8b282716183a345103ee83760ccb129e532d250e",
+    "candidate": "5bf1b1f541e14e68d5af1f1f8b282716183a345103ee83760ccb129e532d250e"
+  },
+  "assets/splash.png": {
+    "shared": "2a2a405b3978e0d200392027011be1fcb8dae8ba3dd033b4cc7c89d611d59e45",
+    "candidate": "2a2a405b3978e0d200392027011be1fcb8dae8ba3dd033b4cc7c89d611d59e45"
+  },
+  "assets/favicon.png": {
+    "shared": "a0af7fe093340d54ac4d0e68446d68c26f9214534921fb37b41a5eb81dd37fbb",
+    "candidate": "a0af7fe093340d54ac4d0e68446d68c26f9214534921fb37b41a5eb81dd37fbb"
+  },
+  "package-lock.json": {
+    "shared": "a73130c9f1e3b5577df82000f11aa61cdef86f5e28a9df952776af2ec02e0a41",
+    "candidate": "a73130c9f1e3b5577df82000f11aa61cdef86f5e28a9df952776af2ec02e0a41"
+  },
+  "plugins/withInformationalHold.cjs": {
+    "shared": "287f2483e1bd1b06b19991804e82152518fac63b860e2b463bf315b7b4b506e2",
+    "candidate": "287f2483e1bd1b06b19991804e82152518fac63b860e2b463bf315b7b4b506e2"
+  },
+  "app.json": {
+    "shared": "c5621ce400851bb8c490414d8718aba8e772d010c38ff43f7858a6579f182990",
+    "candidate": "c5621ce400851bb8c490414d8718aba8e772d010c38ff43f7858a6579f182990"
+  },
+  "App.tsx": {
+    "shared": "77de87db55fdfeac887ff08d5c5e72746cdfaa70846b20dd1a7375cf577ce2b7",
+    "candidate": "77de87db55fdfeac887ff08d5c5e72746cdfaa70846b20dd1a7375cf577ce2b7"
+  },
+  "index.js": {
+    "shared": "1c6fdead8ecc9dcb31ca67379ac2b0c7c82bb553aafab2a788b1f47b4fdcfec4",
+    "candidate": "1c6fdead8ecc9dcb31ca67379ac2b0c7c82bb553aafab2a788b1f47b4fdcfec4"
+  }
+}

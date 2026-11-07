@@ -27,14 +27,14 @@ export default function SelfCarePage() {
   const [medications, setMedications] = useState<Medication[]>([]);
 
   useEffect(() => {
-    api.get('/api/v1/dashboard/patient-state')
-      .then((res: any) => setPatientState(res.data))
+    api.get<PatientState>('/api/v1/dashboard/patient-state')
+      .then(res => setPatientState(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
 
     // Load medications from backend
-    api.get('/api/v1/medications/me')
-      .then((res: any) => setMedications(res.data))
+    api.get<Medication[]>('/api/v1/medications/me')
+      .then(res => setMedications(res.data))
       .catch(() => {});
   }, []);
 
@@ -76,8 +76,8 @@ export default function SelfCarePage() {
 
       {/* Good News Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff',
-        borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1rem',
+        background: '#16a34a', color: '#fff',
+        borderRadius: '12px', padding: '1.25rem 1.5rem', marginBottom: '1rem',
         display: 'flex', alignItems: 'center', gap: '1rem',
         boxShadow: '0 4px 20px rgba(34,197,94,0.3)',
       }}>

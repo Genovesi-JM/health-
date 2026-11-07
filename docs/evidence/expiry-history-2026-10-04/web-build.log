@@ -1,0 +1,200 @@
+
+> frontend@0.0.0 prebuild
+> node scripts/test-prototype.cjs
+
+PASS all seven customer views render
+PASS every button has an accessible label
+PASS pharmacy category filters fictional records
+PASS search handles accented names and empty results
+PASS booking is added to session agenda
+PASS booking cancellation removes only selected sample
+PASS teleconsultation controls remain simulated
+PASS OCR demo adds a sample without file upload
+PASS ambulance simulation never promises dispatch
+PASS manual ambulance zone changes map bounds
+PASS reset restores the presentation examples
+PASS no persistent health data or outbound writes
+PASS mobile menu exposes every customer section
+PASS general care shortcut does not force pharmacy filter
+PASS ambulance confirmation preserves transport and pickup selections
+15 prototype checks passed.
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 1919 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/registerSW.js                                        0.15 kB
+dist/index.html                                           2.80 kB │ gzip:   1.16 kB
+dist/assets/index-DYdRC4jb.css                          141.57 kB │ gzip:  24.58 kB
+dist/assets/kaya-logo-Bj7q1pb-.js                         0.05 kB │ gzip:   0.07 kB
+dist/assets/check-BKsuILQS.js                             0.12 kB │ gzip:   0.14 kB
+dist/assets/chevron-down-DO81wI6a.js                      0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-up-X-Rz1LTs.js                        0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-right-Cx3bsR8R.js                     0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-left-CFnSrB-t.js                      0.13 kB │ gzip:   0.14 kB
+dist/assets/bluetooth-BhThFl_b.js                         0.14 kB │ gzip:   0.15 kB
+dist/assets/loader-circle-Baidcyjb.js                     0.14 kB │ gzip:   0.15 kB
+dist/assets/plus-rjPzKfgS.js                              0.15 kB │ gzip:   0.15 kB
+dist/assets/thermometer-RTTZuFQr.js                       0.16 kB │ gzip:   0.16 kB
+dist/assets/patientDocuments-CD2M5HSl.js                  0.16 kB │ gzip:   0.15 kB
+dist/assets/arrow-left-B42UsNPS.js                        0.17 kB │ gzip:   0.16 kB
+dist/assets/search-B9Q9Zr81.js                            0.17 kB │ gzip:   0.16 kB
+dist/assets/circle-check-BaIhfCm0.js                      0.17 kB │ gzip:   0.17 kB
+dist/assets/check-check-B5SdeJSx.js                       0.18 kB │ gzip:   0.17 kB
+dist/assets/trending-up-DtwluKv7.js                       0.18 kB │ gzip:   0.17 kB
+dist/assets/smartphone-CGyygOdn.js                        0.20 kB │ gzip:   0.18 kB
+dist/assets/circle-x-D2q94JJ-.js                          0.20 kB │ gzip:   0.18 kB
+dist/assets/pill-C_YQkKra.js                              0.21 kB │ gzip:   0.18 kB
+dist/assets/mail-G17bl3VJ.js                              0.21 kB │ gzip:   0.20 kB
+dist/assets/upload-_HiqccuB.js                            0.23 kB │ gzip:   0.19 kB
+dist/assets/copy-8BUkJw68.js                              0.23 kB │ gzip:   0.20 kB
+dist/assets/banknote-Cf1VLxfb.js                          0.24 kB │ gzip:   0.21 kB
+dist/assets/wind-CU5_wk8c.js                              0.25 kB │ gzip:   0.19 kB
+dist/assets/circle-alert-DIjhTG1k.js                      0.25 kB │ gzip:   0.19 kB
+dist/assets/eye-BzB3Eybj.js                               0.25 kB │ gzip:   0.20 kB
+dist/assets/funnel-BEnDMD8E.js                            0.25 kB │ gzip:   0.21 kB
+dist/assets/external-link-BbcrCjMV.js                     0.25 kB │ gzip:   0.20 kB
+dist/assets/map-pin-DttkYbrj.js                           0.26 kB │ gzip:   0.22 kB
+dist/assets/zap-mPOfP8az.js                               0.26 kB │ gzip:   0.21 kB
+dist/assets/triangle-alert-BEHKhsKU.js                    0.27 kB │ gzip:   0.21 kB
+dist/assets/book-open-D4qcbH-B.js                         0.28 kB │ gzip:   0.21 kB
+dist/assets/wifi-Bp4BBBN_.js                              0.28 kB │ gzip:   0.21 kB
+dist/assets/bone-DkqLYbVX.js                              0.30 kB │ gzip:   0.22 kB
+dist/assets/user-round-tazaZxjf.js                        0.30 kB │ gzip:   0.22 kB
+dist/assets/user-plus-BwBxHq2Q.js                         0.31 kB │ gzip:   0.23 kB
+dist/assets/apple-DbQ2kfTW.js                             0.32 kB │ gzip:   0.23 kB
+dist/assets/refresh-cw-CAYO5ZNL.js                        0.32 kB │ gzip:   0.23 kB
+dist/assets/phone-CMKt8v9S.js                             0.32 kB │ gzip:   0.23 kB
+dist/assets/save-Db-hSf6w.js                              0.33 kB │ gzip:   0.23 kB
+dist/assets/trash-2-KOXIRnBK.js                           0.33 kB │ gzip:   0.21 kB
+dist/assets/scale-C9JRrug7.js                             0.33 kB │ gzip:   0.22 kB
+dist/assets/camera-BCP4Aowy.js                            0.34 kB │ gzip:   0.25 kB
+dist/assets/key-round-DyaWe0-u.js                         0.35 kB │ gzip:   0.26 kB
+dist/assets/image-plus-Bh6rDwMW.js                        0.36 kB │ gzip:   0.25 kB
+dist/assets/droplets-DclU5qQ2.js                          0.37 kB │ gzip:   0.28 kB
+dist/assets/calendar-clock-CBjuiI45.js                    0.37 kB │ gzip:   0.25 kB
+dist/assets/baby-DSXtarPS.js                              0.40 kB │ gzip:   0.26 kB
+dist/assets/eye-off-BSOmeYNF.js                           0.43 kB │ gzip:   0.27 kB
+dist/assets/apiError-DNXWvHqO.js                          0.48 kB │ gzip:   0.28 kB
+dist/assets/brain-BWXdIwzL.js                             0.58 kB │ gzip:   0.31 kB
+dist/assets/weight-CbH2OdF5.js                            0.60 kB │ gzip:   0.35 kB
+dist/assets/video-C9k4Kg8W.js                             0.63 kB │ gzip:   0.39 kB
+dist/assets/KpiGrid-Bj866vam.js                           0.68 kB │ gzip:   0.33 kB
+dist/assets/specialties-BASE_lJr.js                       0.74 kB │ gzip:   0.38 kB
+dist/assets/AuthCallbackPage-CXpuFxXZ.js                  1.46 kB │ gzip:   0.74 kB
+dist/assets/FAQPage-DOoXATkL.js                           1.80 kB │ gzip:   0.88 kB
+dist/assets/appointments-TAbJHF2N.js                      2.24 kB │ gzip:   1.03 kB
+dist/assets/DoctorReviewsPage-DNmDwJxf.js                 2.44 kB │ gzip:   0.94 kB
+dist/assets/DoctorSuportePage-5cw33U2V.js                 2.61 kB │ gzip:   1.02 kB
+dist/assets/useConsultationPages-YvLHeHVn.js              2.65 kB │ gzip:   1.35 kB
+dist/assets/NurseDashboardPreviewShell-DB6eV1Y9.js        2.73 kB │ gzip:   0.90 kB
+dist/assets/ChooseAccountTypePage-CyidBLh8.js             2.84 kB │ gzip:   1.12 kB
+dist/assets/DocumentUpload-DOfRiJLZ.js                    3.01 kB │ gzip:   1.29 kB
+dist/assets/DoctorSecurityPage-CfB8EeR8.js                3.06 kB │ gzip:   1.28 kB
+dist/assets/UrgenciaPage-CoxehWoo.js                      3.35 kB │ gzip:   1.10 kB
+dist/assets/ConsentsPage-BJBtqjZQ.js                      3.53 kB │ gzip:   1.27 kB
+dist/assets/DoctorFinancePage-B26Qy08k.js                 3.72 kB │ gzip:   1.39 kB
+dist/assets/ServicesPage-D2bj-xUa.js                      3.77 kB │ gzip:   1.26 kB
+dist/assets/EmpresasPage-T5_aWxG0.js                      4.34 kB │ gzip:   1.38 kB
+dist/assets/TeleconsultaPage-Du57Rmld.js                  4.44 kB │ gzip:   1.35 kB
+dist/assets/AdminExpiryPage-v6r3aaIb.js                   4.81 kB │ gzip:   1.82 kB
+dist/assets/AdminApplicationsPage-CVjk7GdS.js             4.85 kB │ gzip:   1.80 kB
+dist/assets/SecuritySettingsPage-DIZr_dTQ.js              4.92 kB │ gzip:   1.73 kB
+dist/assets/AboutPage-VyUiLgHd.js                         4.95 kB │ gzip:   1.54 kB
+dist/assets/SettingsPage-CQzLCCxH.js                      5.01 kB │ gzip:   1.39 kB
+dist/assets/DoctorMessagesPage-D7VThVqm.js                5.26 kB │ gzip:   1.98 kB
+dist/assets/ContactoPage-B4yXrimy.js                      6.11 kB │ gzip:   1.89 kB
+dist/assets/EspecialistasPage-Dudytupb.js                 6.26 kB │ gzip:   2.11 kB
+dist/assets/DoctorAvailabilityPage-D0qUc-OR.js            6.37 kB │ gzip:   2.59 kB
+dist/assets/DoctorLivePage-C2rypLM-.js                    6.46 kB │ gzip:   2.47 kB
+dist/assets/MedicalDisclaimerPage-BtOxHxMX.js             6.54 kB │ gzip:   2.49 kB
+dist/assets/ChronicCarePage-BSw6ySrB.js                   6.62 kB │ gzip:   1.80 kB
+dist/assets/NotificationsPage-qW1IHMDk.js                 6.67 kB │ gzip:   2.64 kB
+dist/assets/SecurityMfaPage-DaxCWbvn.js                   6.70 kB │ gzip:   2.15 kB
+dist/assets/AdminDashboardPage-9PCHJ94Q.js                6.76 kB │ gzip:   2.13 kB
+dist/assets/AdminCredentialsPage-XwLFiRb_.js              6.98 kB │ gzip:   2.67 kB
+dist/assets/StorePage-B2CwAxk-.js                         7.09 kB │ gzip:   2.46 kB
+dist/assets/ClinicsPage-CVmcSxBy.js                       7.21 kB │ gzip:   1.80 kB
+dist/assets/ConsentGatePage-JLtlCqDH.js                   7.36 kB │ gzip:   2.18 kB
+dist/assets/OnboardingShell-DupqN1j6.js                   7.42 kB │ gzip:   2.61 kB
+dist/assets/Footer-DOc-aNsu.js                            7.43 kB │ gzip:   2.32 kB
+dist/assets/CorporateDashboardPage-B9ptGK0R.js            7.55 kB │ gzip:   2.11 kB
+dist/assets/DoctorApplyPage-Bj2GyW0C.js                   7.58 kB │ gzip:   2.33 kB
+dist/assets/TermsOfServicePage-DrDaNhBX.js                7.64 kB │ gzip:   2.71 kB
+dist/assets/SelfCarePage-LEDCYw5U.js                      7.94 kB │ gzip:   2.53 kB
+dist/assets/PricingPage-05VeY6rM.js                       7.94 kB │ gzip:   1.99 kB
+dist/assets/AdminPatientsPage-7ZIujX4p.js                 8.14 kB │ gzip:   2.52 kB
+dist/assets/PrivacyPolicyPage-BC6aIy60.js                 8.22 kB │ gzip:   2.88 kB
+dist/assets/DoctorPatientsPage-CuGCeuC4.js                8.45 kB │ gzip:   2.77 kB
+dist/assets/AdminDoctorsPage-C1dXvZPX.js                  8.50 kB │ gzip:   2.71 kB
+dist/assets/PatientsPage-UprAcJqq.js                      8.52 kB │ gzip:   2.08 kB
+dist/assets/CaregiverOnboardingPage-CEjopqLZ.js           8.70 kB │ gzip:   2.80 kB
+dist/assets/BookConsultationModal-97wAhnc4.js             8.70 kB │ gzip:   3.30 kB
+dist/assets/DevicesPage-BNs6rCyc.js                       8.80 kB │ gzip:   2.31 kB
+dist/assets/MapaPage-BZ9NgLqR.js                          9.08 kB │ gzip:   3.55 kB
+dist/assets/LoginPage-Dg_l4n1O.js                         9.34 kB │ gzip:   2.87 kB
+dist/assets/PublicDoctorPage-D2hr4Llt.js                  9.42 kB │ gzip:   2.99 kB
+dist/assets/DoctorsListPage-CAM0Ye_k.js                   9.45 kB │ gzip:   3.18 kB
+dist/assets/PatientPrescriptionRequestPage-D0dkRCnU.js   10.07 kB │ gzip:   2.95 kB
+dist/assets/PatientOnboardingPage-DoaNLiSy.js            10.63 kB │ gzip:   3.43 kB
+dist/assets/ProfessionalVerificationPage-Dk2H2A2q.js     10.73 kB │ gzip:   3.88 kB
+dist/assets/PatientReadingsPanel-CicClhuw.js             10.87 kB │ gzip:   3.42 kB
+dist/assets/DoctorAgendaPage-DJJ3Nc37.js                 10.89 kB │ gzip:   3.69 kB
+dist/assets/RegisterPage-COiV9hjy.js                     11.05 kB │ gzip:   3.70 kB
+dist/assets/TeleconsultationControl-CWvVXS2U.js          11.69 kB │ gzip:   4.56 kB
+dist/assets/OrganisationOnboardingPage-BtXx2h4U.js       12.10 kB │ gzip:   3.32 kB
+dist/assets/PatientReadingsPage-BWf7Uelu.js              12.56 kB │ gzip:   3.81 kB
+dist/assets/FamilyPage-DfzU2caC.js                       12.65 kB │ gzip:   3.63 kB
+dist/assets/NurseDashboardPage-DGxU8Mer.js               12.93 kB │ gzip:   3.87 kB
+dist/assets/PatientDocumentsPage-Cxz-U5LR.js             13.05 kB │ gzip:   4.83 kB
+dist/assets/DoctorProfileEditPage-DodLdw2f.js            13.69 kB │ gzip:   3.75 kB
+dist/assets/DoctorRegisterPage-DZdSSukp.js               13.95 kB │ gzip:   3.87 kB
+dist/assets/ConsultationCloseout-DvypLe0g.js             15.43 kB │ gzip:   5.04 kB
+dist/assets/PatientProfilePage-CjLtemly.js               15.64 kB │ gzip:   3.67 kB
+dist/assets/DoctorDashboardPage-KgpXO7Qq.js              15.66 kB │ gzip:   4.35 kB
+dist/assets/AdminCompliancePage-BrzWsnUu.js              18.45 kB │ gzip:   4.92 kB
+dist/assets/LandingPage-v1tR44IZ.js                      18.76 kB │ gzip:   4.43 kB
+dist/assets/DoctorPrescriptionsPage-DNsGBF6C.js          18.88 kB │ gzip:   4.96 kB
+dist/assets/DoctorQueuePage-D6AOjpyY.js                  19.11 kB │ gzip:   6.08 kB
+dist/assets/ProfessionalOnboardingPage-CjJ8jHrX.js       20.82 kB │ gzip:   5.52 kB
+dist/assets/DashboardPage-BSmHjLHH.js                    26.13 kB │ gzip:   5.97 kB
+dist/assets/TriagePage-DSlfm37b.js                       32.69 kB │ gzip:  10.34 kB
+dist/assets/ConsultationsPage-B0cQJTGo.js                33.50 kB │ gzip:   9.37 kB
+dist/assets/ClinicianPatientWorkspacePage-n0Ti7Nfe.js    39.38 kB │ gzip:  11.55 kB
+dist/assets/index-B2q4j8L8.js                           752.92 kB │ gzip: 236.26 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.41s
+
+PWA v1.2.0
+mode      generateSW
+precache  17 entries (922.98 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-e217238d.js
+
+> frontend@0.0.0 postbuild
+> node scripts/test-route-build.mjs
+
+{
+  "shell": {
+    "chunks": 1,
+    "bytes": 752919,
+    "gzip": 236262
+  },
+  "firstPublicRoute": {
+    "chunks": 21,
+    "bytes": 783607,
+    "gzip": 246500
+  },
+  "deferredJavaScriptChunks": 135,
+  "precacheEntries": 17
+}
+Built route graph, shell precache and API/auth cache isolation passed.

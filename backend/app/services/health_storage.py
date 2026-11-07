@@ -211,6 +211,71 @@ class HealthStorageService:
         )
         return key, f"{self.spaces_endpoint}/{self.spaces_bucket}/{key}"
 
+    def write_retained_bytes(self, data: bytes, key: str) -> None:
+        """Create one known immutable PDF object, or verify its exact prior bytes.
+
+        Used only with a committed clinical document request. A timeout may have
+        stored the bytes: exact comparison recovers that result without another
+        random object or overwriting a conflicting object. Provider errors never
+        become evidence that an object is absent.
+        """
+        import hmac
+        import tempfile
+        self._validate_key(key)
+        if (not re.fullmatch(r"health/clinical-documents/[0-9a-f-]{36}\.pdf", key)
+                or not isinstance(data, bytes) or not data.startswith(b"%PDF-")
+                or not 1 <= len(data) <= 2 * 1024 * 1024):
+            raise HealthStorageError("Invalid retained document object.")
+
+        def read_existing():
+            if self.provider == "azure_blob":
+                from azure.core.exceptions import ResourceNotFoundError
+                try:
+                    return self._private_azure_blob(key).download_blob().readall()
+                except ResourceNotFoundError as exc:
+                    if exc.error_code == "BlobNotFound": return None
+                    raise
+            if self._use_local:
+                try: return (LOCAL_UPLOAD_DIR / key).read_bytes()
+                except FileNotFoundError: return None
+            from botocore.exceptions import ClientError
+            try:
+                return self.client.get_object(Bucket=self.spaces_bucket, Key=key)["Body"].read()
+            except ClientError as exc:
+                if exc.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"): return None
+                raise
+
+        try:
+            existing = read_existing()
+            if existing is not None:
+                if not hmac.compare_digest(existing, data): raise HealthStorageError("Retained PDF object integrity mismatch.")
+                return
+            try:
+                if self.provider == "azure_blob":
+                    from azure.storage.blob import ContentSettings
+                    self._private_azure_blob(key).upload_blob(data, overwrite=False,
+                        content_settings=ContentSettings(content_type="application/pdf", cache_control="private, no-store"))
+                elif self._use_local:
+                    destination = LOCAL_UPLOAD_DIR / key
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    temporary = None
+                    try:
+                        with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as output:
+                            temporary = Path(output.name)
+                            output.write(data); output.flush(); os.fsync(output.fileno())
+                        os.link(temporary, destination)  # Atomic create, never replace.
+                    finally:
+                        if temporary is not None: temporary.unlink(missing_ok=True)
+                else:
+                    self.client.put_object(Bucket=self.spaces_bucket, Key=key, Body=data,
+                        ContentType="application/pdf", CacheControl="private, no-store", ACL="private", IfNoneMatch="*")
+            except Exception:
+                # Handles an exact concurrent create or a response lost after storage.
+                existing = read_existing()
+                if existing is None or not hmac.compare_digest(existing, data): raise
+        except Exception:
+            raise HealthStorageError("Retained PDF delivery could not be confirmed.") from None
+
     def upload_file(
         self,
         file_obj: BinaryIO,

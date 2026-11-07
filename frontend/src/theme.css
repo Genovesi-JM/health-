@@ -1,0 +1,91 @@
+/* ============================================================
+   KAYA theme tokens — light and dark.
+   One set of semantic tokens (--t-*) drives the public surface
+   (landing + sub-pages); the app shell (.lms) and the legacy app
+   tokens from index.css get matching dark overrides. The attribute
+   data-theme on <html> is "light" or "dark"; with no attribute the
+   OS preference decides. Loaded right after index.css.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+  --t-ink:        #16202a;
+  --t-ink-2:      #4a5663;
+  --t-mute:       #7a8794;
+  --t-rule:       rgba(22, 32, 42, 0.14);
+  --t-rule-2:     rgba(22, 32, 42, 0.3);
+  --t-teal:       #0f766e;
+  --t-teal-2:     #14b8a6;
+  --t-red:        #d93c3c;
+  --t-canvas:     linear-gradient(120deg, #e6ecfb 0%, #f3e9f5 35%, #e3f1fb 65%, #eef0ff 100%);
+  --t-canvas-flat:#eef1fb;
+  --t-canvas-solid:#f4f6fd;
+  --t-surface:    #ffffff;
+  --t-glass:      rgba(255, 255, 255, 0.55);
+  --t-glass-strong: rgba(255, 255, 255, 0.85);
+  --t-glass-border: rgba(255, 255, 255, 0.9);
+  --t-glass-nav:  rgba(240, 243, 252, 0.78);
+  --t-shadow:     rgba(90, 110, 160, 0.14);
+  --t-skel-a:     rgba(22, 32, 42, 0.08);
+  --t-skel-b:     rgba(22, 32, 42, 0.14);
+  --t-band:       #17202b;      /* the dark scroll-journey band, in both themes */
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --t-ink:        #eef3f6;
+  --t-ink-2:      #b9c6cf;
+  --t-mute:       #7fa39a;
+  --t-rule:       rgba(239, 233, 220, 0.14);
+  --t-rule-2:     rgba(239, 233, 220, 0.3);
+  --t-teal:       #5eead4;
+  --t-teal-2:     #14b8a6;
+  --t-red:        #f87171;
+  --t-canvas:     linear-gradient(120deg, #0b1a17 0%, #0f1f2a 40%, #0e211d 70%, #121a2a 100%);
+  --t-canvas-flat:#0e1b19;
+  --t-canvas-solid:#0b1a17;
+  --t-surface:    #152420;
+  --t-glass:      rgba(255, 255, 255, 0.06);
+  --t-glass-strong: rgba(255, 255, 255, 0.12);
+  --t-glass-border: rgba(255, 255, 255, 0.14);
+  --t-glass-nav:  rgba(11, 26, 23, 0.82);
+  --t-shadow:     rgba(0, 0, 0, 0.45);
+  --t-skel-a:     rgba(255, 255, 255, 0.06);
+  --t-skel-b:     rgba(255, 255, 255, 0.12);
+  --t-band:       #0b1411;
+
+  /* legacy app tokens from index.css (login, settings, inner pages) */
+  --bg-dark:      #0f1a17;
+  --bg-darker:    #0b1411;
+  --bg-card:      #152420;
+  --bg-sidebar:   #0f1a17;
+  --border:       rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.24);
+  --text-primary: #eef3f6;
+  --text-secondary: #b9c6cf;
+  --text-muted:   #7fa39a;
+  --brand-light:  rgba(94, 234, 212, 0.12);
+  --brand-border: rgba(94, 234, 212, 0.35);
+  --shadow-card:  none; --shadow-elevated: none; --shadow-soft: none; --shadow-medium: none; --shadow-premium: none;
+}
+[data-theme="dark"] body { background: var(--bg-dark); color: var(--text-primary); }
+[data-theme="dark"] .auth-card, [data-theme="dark"] .card { background: var(--bg-card); }
+
+/* app shell (La Meva Salut pattern) in dark */
+[data-theme="dark"] .lms {
+  --lms-bar: #1d3a35; --lms-bar-ink: #eef3f6; --lms-link: #7dd3fc;
+  --lms-ink: #eef3f6; --lms-ink-2: #c9d6d0; --lms-mute: #8fa39c;
+  --lms-rule: rgba(255, 255, 255, 0.14); --lms-soft: #1b2f2b; --lms-cta: #3f8f84;
+  --lms-band: #14201d; --lms-footer: #0b1411; --lms-bg: #0f1a17; --lms-surface: #152420; --lms-popline: #4a5663;
+}
+
+/* theme toggle control */
+.theme-toggle {
+  appearance: none; display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+  height: 34px; padding: 0 .7rem; border-radius: 999px; font: inherit; font-size: .8rem;
+  border: 1px solid var(--t-rule-2); background: var(--t-glass); color: var(--t-ink);
+}
+.theme-toggle:hover { background: var(--t-glass-strong); }
+.theme-toggle svg { width: 16px; height: 16px; }
+.lms .theme-toggle { border-color: rgba(0,0,0,.18); background: rgba(255,255,255,.35); color: var(--lms-bar-ink); }
+[data-theme="dark"] .lms .theme-toggle { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.08); }

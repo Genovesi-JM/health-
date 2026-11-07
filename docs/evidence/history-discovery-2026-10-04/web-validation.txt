@@ -1,0 +1,10 @@
+Kaya web validation snapshot, 2026-10-04 (before public-country edits)
+Vitest final run: 307 tests passed across 46 files.
+Start: 21:15:21; duration: 8.39 s.
+ESLint whole frontend: exit 0, no findings.
+TypeScript tsc -b: exit 0.
+Prototype: all 15 checks passed.
+Vite production build: exit 0; log /tmp/kaya-route-build-final.log.
+Generated route graph / service worker verification: passed.
+Git diff --check: exit 0.
+This is a recorded summary of tool output; it is not a rerun.

@@ -1,0 +1,11 @@
+Starting Metro Bundler
+
+iOS Bundled 2034ms index.js (592 modules)
+
+› ios bundles (1):
+_expo/static/js/ios/index-724448487f1a1dc53c94a2934f196cc7.hbc (1.5MB)
+
+› Files (1):
+metadata.json (142B)
+
+Exported: ../bundle-native-pages-reschedule-informational-ios

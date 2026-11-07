@@ -6,6 +6,8 @@
  * never proxies arbitrary local addresses or pretends a device is connected.
  */
 
+import { assertOperationalAccess } from '../phase1/policy';
+
 export type VitalSource = 'manual' | 'bluetooth' | 'wifi';
 
 export interface VitalReadings {
@@ -85,6 +87,7 @@ export function isBluetoothAvailable(): boolean {
  * patient.
  */
 export async function scanBluetooth(): Promise<DeviceInfo[]> {
+  assertOperationalAccess();
   if (!isBluetoothAvailable()) {
     throw new DeviceIntegrationError(
       'Bluetooth health devices require Chrome or Edge on a compatible device.',
@@ -115,6 +118,7 @@ export async function scanBluetooth(): Promise<DeviceInfo[]> {
 }
 
 export async function connectBluetooth(deviceId: string): Promise<DeviceInfo> {
+  assertOperationalAccess();
   const device = bluetoothDevices.get(deviceId);
   if (!device?.gatt) {
     throw new DeviceIntegrationError('Choose the Bluetooth device again.', 'bluetooth_device_missing');
@@ -160,6 +164,7 @@ async function readCharacteristic(
 
 /** Reads every supported standard characteristic exposed by the device. */
 export async function readBluetoothVitals(deviceId: string): Promise<VitalReadings> {
+  assertOperationalAccess();
   const server = bluetoothServers.get(deviceId);
   const device = bluetoothDevices.get(deviceId);
   if (!server?.connected) {
@@ -248,6 +253,7 @@ function requireWifiGateway(): string {
 }
 
 async function gatewayRequest(path: string, init: RequestInit): Promise<unknown> {
+  assertOperationalAccess();
   const response = await fetch(`${requireWifiGateway()}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init.headers },

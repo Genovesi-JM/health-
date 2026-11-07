@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
+import { useT } from '../i18n/LanguageContext';
 
 /**
  * PWA install prompt banner.
@@ -14,8 +15,11 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallPrompt() {
+  const { t } = useT();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showIosTip, setShowIosTip] = useState(false);
+  const [showIosTip] = useState(() => !window.matchMedia('(display-mode: standalone)').matches
+    && /iphone|ipad|ipod/i.test(navigator.userAgent)
+    && !(window.navigator as Navigator & { standalone?: boolean }).standalone);
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem('pwa_install_dismissed') === 'true'
   );
@@ -27,12 +31,7 @@ export default function InstallPrompt() {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
 
     // iOS detection — no beforeinstallprompt, needs manual "Add to Home Screen"
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
-      && !(window.navigator as unknown as { standalone?: boolean }).standalone;
-    if (isIos) {
-      setShowIosTip(true);
-      return;
-    }
+    if (showIosTip) return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -40,12 +39,11 @@ export default function InstallPrompt() {
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, [dismissed]);
+  }, [dismissed, showIosTip]);
 
   const dismiss = () => {
     localStorage.setItem('pwa_install_dismissed', 'true');
     setDeferredPrompt(null);
-    setShowIosTip(false);
     setDismissed(true);
   };
 
@@ -97,12 +95,10 @@ export default function InstallPrompt() {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary, #0f172a)',
           marginBottom: '0.15rem' }}>
-          Install KAYA
+          {t('install.title')}
         </div>
         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)', lineHeight: 1.4 }}>
-          {showIosTip
-            ? 'Tap the Share button, then "Add to Home Screen"'
-            : 'Add to your home screen for a faster, app-like experience'}
+          {showIosTip ? t('install.ios_tip') : t('install.desc')}
         </div>
       </div>
 
@@ -122,12 +118,12 @@ export default function InstallPrompt() {
               cursor: 'pointer',
               whiteSpace: 'nowrap',
             }}>
-            Install
+            {t('install.action')}
           </button>
         )}
         <button
           onClick={dismiss}
-          aria-label="Dismiss install prompt"
+          aria-label={t('install.dismiss')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
             color: 'var(--text-muted, #94a3b8)', padding: '0.25rem',

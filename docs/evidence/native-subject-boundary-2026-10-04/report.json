@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-04",
+  "source_files": 97,
+  "mobile_tests": 176,
+  "typescript": "passed",
+  "hermes_exports": {
+    "informational-ios": {
+      "_expo/static/js/ios/index-724448487f1a1dc53c94a2934f196cc7.hbc": {
+        "sha256": "3466bccc7d12b62bf046522ddc6e87cb868b2e0aa8ab0710173830358f58ee3d",
+        "bytes": 1461946
+      }
+    },
+    "informational-android": {
+      "_expo/static/js/android/index-6167ffd6ae6dd8e04ce3451a73dd939d.hbc": {
+        "sha256": "133454f43628e94c01fcf6874ecddcad314b9846ae73fe0a35e3ea272a133048",
+        "bytes": 1467013
+      }
+    },
+    "legacy-ios": {
+      "_expo/static/js/ios/entry-legacy-audit-08d3719b42e1a55e0d5bf4360debbe35.hbc": {
+        "sha256": "606b366230e2b1493cf6909c875c31f2ecb1fe5bbf9b15ad3f2952922629c63a",
+        "bytes": 3134798
+      }
+    },
+    "legacy-android": {
+      "_expo/static/js/android/entry-legacy-audit-35c0dca74ee3fbb93597b9f7339a34ed.hbc": {
+        "sha256": "010dee54aeed9ac6d1d35dbaeb444100ccb0d8be0af9ab5a59a7d31a53d03cba",
+        "bytes": 3057491
+      }
+    }
+  },
+  "scope": "Disable unsupported pediatric/guardian triage entry; helper rejects stale delegated payload before API dispatch. Prior pagination, expiry, document and access guards retained.",
+  "policy_routes": 284,
+  "native_rebuilt": false,
+  "existing_apk": "Earlier09df949 informational source/policy277; current source only verified in JS exports.",
+  "limits": [
+    "No clinical activation, real patient data, live providers or operational device workflow test.",
+    "Xcode native license/setup and two unresolved tooling advisories remain."
+  ]
+}

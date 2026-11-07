@@ -13,6 +13,7 @@ hashed (SHA-256). They let a user in when they lose their authenticator.
 import base64
 import hashlib
 import hmac
+import os
 import secrets
 import struct
 import time
@@ -107,4 +108,42 @@ MFA_MANDATORY_ROLES = frozenset({
 
 
 def mfa_is_mandatory(role: str) -> bool:
+    # A demo instance may relax the policy so seeded clinical accounts can sign in
+    # without an authenticator app. Honoured only inside the synthetic runtime, never
+    # in the held or production runtimes.
+    if (os.environ.get("KAYA_EXECUTION_MODE") == "synthetic"
+            and os.environ.get("KAYA_DEMO_RELAX_MFA", "").lower() == "true"):
+        return False
     return role in MFA_MANDATORY_ROLES
+
+
+def assert_mfa_session(user, claims: dict, db) -> None:
+    """Fail closed for partial tokens and sessions without required MFA.
+
+    Check the persisted role and enrollment on every request, so changing a
+    role or removing enrollment cannot leave an older bearer token privileged.
+    """
+    from fastapi import HTTPException
+    from app.health_models import MfaCredential
+
+    if claims.get("mfa_challenge"):
+        raise HTTPException(401, "MFA verification incomplete")
+    credential = db.query(MfaCredential).filter(MfaCredential.user_id == user.id).first()
+    enrolled = bool(credential and credential.enabled)
+    if mfa_is_mandatory(user.role) and not enrolled:
+        raise HTTPException(
+            403, detail="MFA enrollment is required before privileged access. Contact the administrator for secure enrollment.",
+            headers={"X-Kaya-Error-Code": "mfa_enrollment_required"},
+        )
+    if (mfa_is_mandatory(user.role) or enrolled) and claims.get("mfa_verified") is not True:
+        raise HTTPException(
+            401, detail="Sign in again and complete MFA.",
+            headers={"X-Kaya-Error-Code": "mfa_verification_required"},
+        )
+    if mfa_is_mandatory(user.role) and claims.get("role") != user.role:
+        # A previously MFA-verified applicant session cannot acquire a newly
+        # approved clinical role without a fresh sign-in for that role.
+        raise HTTPException(
+            401, detail="Your account access changed. Sign in again.",
+            headers={"X-Kaya-Error-Code": "session_role_changed"},
+        )

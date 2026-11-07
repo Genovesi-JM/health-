@@ -31,9 +31,11 @@ from app.health_models import (
     VerificationWebhookEvent,
 )
 from app.services.verification.base import VerificationResult
+from app.services.credential_mutations import CredentialRevision, mutate_credential
 from app.services.verification.certn import CertnQualificationProvider
 from app.services.verification.state_machine import (
     InvalidTransitionError,
+    is_allowed,
     record_transition,
 )
 from app.services.verification.sumsub import SumsubIdentityProvider
@@ -122,12 +124,16 @@ def _process(
         db.commit()
         return {"processed": False, "reason": "credential_not_found"}
 
+    revision = CredentialRevision.capture(credential)
     try:
+        if not is_allowed(revision.status, result.status.value):
+            raise InvalidTransitionError(revision.status, result.status.value)
+        mutate_credential(db, credential, revision=revision, status=result.status.value)
         record_transition(
             db,
             entity_type=ENTITY_TYPE,
             entity_id=credential.id,
-            previous_status=credential.status,
+            previous_status=revision.status,
             new_status=result.status.value,
             actor_user_id=None,
             actor_kind="webhook",
@@ -135,7 +141,6 @@ def _process(
             provider=provider_name,
             evidence_ref=result.provider_reference,
         )
-        credential.status = result.status.value
     except InvalidTransitionError:
         # Provider sent an event that violates the state graph — happens
         # with duplicate or out-of-order deliveries. Still record the dedup.

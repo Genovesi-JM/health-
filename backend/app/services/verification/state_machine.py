@@ -181,8 +181,9 @@ def is_allowed(from_status: Optional[str], to_status: str) -> bool:
         return to_status == VerificationStatus.NOT_STARTED.value or to_status in _ALLOWED.get(
             VerificationStatus.NOT_STARTED.value, set()
         )
-    if from_status == to_status:
+    if _LEGACY_ALIASES.get(from_status, from_status) == _LEGACY_ALIASES.get(to_status, to_status):
         # Re-emit same state — allowed for idempotent syncs from provider webhooks.
+        # Legacy/canonical spellings also describe the same reviewed state.
         return True
     return to_status in _ALLOWED.get(from_status, set())
 

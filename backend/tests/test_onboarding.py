@@ -107,14 +107,19 @@ def test_cannot_submit_when_steps_missing(client):
     assert set(payload["missing_steps"]) == set(range(2, 9))
 
 
-def test_submit_freezes_draft(client):
+def test_submit_freezes_draft(client, db_session):
+    from tests.test_patient_onboarding_completion import patient_payload
+
     a = _register_patient(client)
+    email = client.get("/auth/me", headers=_auth(a)).json()["email"]
+    payload = patient_payload(email, db=db_session)
+    db_session.commit()
     client.post("/api/v1/onboarding/start", headers=_auth(a), json={"role": "patient"})
     for step in range(1, 9):
         client.put(
             f"/api/v1/onboarding/steps/{step}",
             headers=_auth(a),
-            json={"data": {"step": step}, "completed": True},
+            json={"data": payload[str(step)], "completed": True},
         )
     r = client.post("/api/v1/onboarding/submit", headers=_auth(a))
     assert r.status_code == 200, r.text

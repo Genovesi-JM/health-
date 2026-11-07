@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AuthStack';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { normalizeAuth, type AuthUser } from '../contexts/authSession';
 
 type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Register'> };
 
@@ -48,22 +49,6 @@ function countryName(code: string) {
   return COUNTRIES.find(country => country.code === code)?.name || code;
 }
 
-const REQUIRED_CONSENTS = [
-  'terms_of_service',
-  'privacy_policy',
-  'medical_disclaimer',
-  'health_data_processing',
-  'telemedicine_consent',
-] as const;
-
-const CONSENT_LABELS: Record<string, string> = {
-  terms_of_service: 'Terms of Service',
-  privacy_policy: 'Privacy Policy',
-  medical_disclaimer: 'Medical Disclaimer',
-  health_data_processing: 'Health Data Processing',
-  telemedicine_consent: 'Telemedicine Consent',
-};
-
 export default function RegisterScreen({ navigation }: Props) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -81,15 +66,21 @@ export default function RegisterScreen({ navigation }: Props) {
   const [degreeTitle, setDegreeTitle] = useState('');
   const [countryPicker, setCountryPicker] = useState<CountryField | null>(null);
   const [loading, setLoading] = useState(false);
-  const [consents, setConsents] = useState<Record<string, boolean>>(
-    Object.fromEntries(REQUIRED_CONSENTS.map(c => [c, false])),
-  );
+  const [createdSession, setCreatedSession] = useState<AuthUser | null>(null);
+  const [recoveryError, setRecoveryError] = useState('');
 
-  const allChecked = REQUIRED_CONSENTS.every(c => consents[c]);
+  const registrationError = (err: any) => {
+    const detail = err.response?.data?.detail;
+    return typeof detail === 'string' ? detail : detail?.message || err.message || 'Please try again.';
+  };
 
-  const toggleConsent = (key: string) =>
-    setConsents(prev => ({ ...prev, [key]: !prev[key] }));
-
+  const continueCreatedAccount = async () => {
+    if (!createdSession) return;
+    setLoading(true); setRecoveryError('');
+    try { await login(createdSession); }
+    catch (err) { setRecoveryError(registrationError(err)); }
+    finally { setLoading(false); }
+  };
   const chooseCountry = (code: string) => {
     if (countryPicker === 'practice') setPracticeCountry(code);
     if (countryPicker === 'licence') setLicenceCountry(code);
@@ -101,13 +92,13 @@ export default function RegisterScreen({ navigation }: Props) {
     if (!email || !password) { Alert.alert('Error', 'Email and password are required.'); return; }
     if (password !== confirmPw) { Alert.alert('Error', 'Passwords do not match.'); return; }
     if (password.length < 6) { Alert.alert('Error', 'Password must be at least 6 characters.'); return; }
-    if (!allChecked) { Alert.alert('Error', 'Please accept all required consents.'); return; }
     if (role !== 'patient' && (!fullName || !authority || !licenceNumber || !institution || !degreeTitle)) {
       Alert.alert('Professional details required', 'Complete your licence and diploma details before continuing.');
       return;
     }
 
     setLoading(true);
+    let accountCreated = false;
     try {
       const body = {
         email: email.toLowerCase().trim(),
@@ -131,17 +122,29 @@ export default function RegisterScreen({ navigation }: Props) {
         } : {}),
       };
       const res = await api.post('/auth/register', body);
-      // Post consents (best-effort)
-      for (const ct of REQUIRED_CONSENTS) {
-        api.post('/api/v1/compliance/consent', { consent_type: ct }).catch(() => {});
-      }
-      await login(res.data);
+      const session = normalizeAuth(res.data);
+      accountCreated = true;
+      setCreatedSession(session);
+      await login(session);
     } catch (err: any) {
-      Alert.alert('Registration failed', err.response?.data?.detail ?? 'Please try again.');
+      if (accountCreated) setRecoveryError(registrationError(err));
+      else Alert.alert('Registration failed', registrationError(err));
     } finally {
       setLoading(false);
     }
   };
+
+  if (createdSession) return <View style={[styles.container, { justifyContent: 'center', padding: 24 }]}>
+    <Text style={styles.title}>Account created</Text>
+    <Text style={styles.subtitle}>Your account is saved. Continue to load your profile; you do not need to register again.</Text>
+    {!!recoveryError && <Text accessibilityRole="alert" style={{ color: '#b91c1c', marginBottom: 16 }}>{recoveryError}</Text>}
+    <TouchableOpacity style={styles.btn} onPress={continueCreatedAccount} disabled={loading}>
+      {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Continue</Text>}
+    </TouchableOpacity>
+    <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login')} disabled={loading}>
+      <Text style={styles.linkText}>Return to sign-in</Text>
+    </TouchableOpacity>
+  </View>;
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -242,20 +245,8 @@ export default function RegisterScreen({ navigation }: Props) {
           </View>
         </Modal>
 
-        {/* Consent checkboxes */}
-        <View style={styles.consentBox}>
-          <Text style={styles.consentHeader}>REQUIRED CONSENTS</Text>
-          {REQUIRED_CONSENTS.map(c => (
-            <TouchableOpacity key={c} style={styles.consentRow} onPress={() => toggleConsent(c)} activeOpacity={0.7}>
-              <View style={[styles.checkbox, consents[c] && styles.checkboxChecked]}>
-                {consents[c] && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.consentLabel}>{CONSENT_LABELS[c]}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity style={[styles.btn, !allChecked && styles.btnDisabled]} onPress={handleRegister} disabled={loading || !allChecked}>
+        {role === 'patient' && <Text style={styles.hint}>After creating your account, complete your profile and review the five patient consents together.</Text>}
+        <TouchableOpacity style={styles.btn} onPress={handleRegister} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Create Account</Text>}
         </TouchableOpacity>
 

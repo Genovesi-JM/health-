@@ -1,494 +1,205 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Activity, CalendarDays, Pill, FileText, HeartPulse, Users, UserRound,
+  Stethoscope, ClipboardCheck, Bell, ExternalLink, ArrowRight, Ambulance,
+} from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
 import { specialtyLabel } from '../constants/specialties';
+import { formatAppointmentTime } from '../utils/appointments';
 import type { PatientState, TriageHistoryItem, Consultation } from '../types';
+import type { ReadingSummary } from '../components/HealthSnapshot';
 import BookConsultationModal from '../components/BookConsultationModal';
-import KpiGrid from '../components/KpiGrid';
-import HealthSnapshot, { type ReadingSummary } from '../components/HealthSnapshot';
-import {
-  Activity, Calendar, ArrowRight, ChevronRight,
-  HeartPulse, AlertTriangle, CheckCircle2,
-  Clock, Shield, Zap, TrendingUp, Siren, User,
-  Droplets, Thermometer, Brain, Wind,
-} from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
+const RISK_PT: Record<string, string> = { LOW: 'baixo', MEDIUM: 'médio', HIGH: 'alto', URGENT: 'urgente' };
+
+/* "Directo a": two pages of four pastel tiles, like La Meva Salut's quick access. */
+const TILES: { to: string; label: string; color: string; icon: typeof Activity; book?: boolean }[][] = [
+  [
+    { to: '/patient/documents', label: 'Documentos e resultados', color: '#bfe7df', icon: FileText },
+    { to: '/triage',            label: 'Triagem',                color: '#ffc4a8', icon: Activity },
+    { to: '/prescricoes/pedido', label: 'Medicação',             color: '#b9c2d9', icon: Pill },
+    { to: '/consultations',     label: 'Teleconsulta',           color: '#f7b4de', icon: Stethoscope, book: true },
+  ],
+  [
+    { to: '/consultations',     label: 'Consultas e agenda',     color: '#f3a1a1', icon: CalendarDays },
+    { to: '/patient/readings',  label: 'Medições',               color: '#a9ddf4', icon: HeartPulse },
+    { to: '/transporte',        label: 'Transporte e ambulância', color: '#cdb8f0', icon: Ambulance },
+    { to: '/family',            label: 'Família',                color: '#eee59a', icon: Users },
+  ],
+];
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t, lang } = useT();
+  const locale = LOCALE_MAP[lang] || 'pt-PT';
   const [state, setState] = useState<PatientState | null>(null);
-  const [triageHistory, setTriageHistory] = useState<TriageHistoryItem[]>([]);
+  const [triages, setTriages] = useState<TriageHistoryItem[]>([]);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [readings, setReadings] = useState<ReadingSummary | null>(null);
+  const [pendingRx, setPendingRx] = useState<number>(0);
+  const [unread, setUnread] = useState<number>(0);
+  const [transport, setTransport] = useState<{ kind_label: string; status: string; destination: string; scheduled_for: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'summary' | 'triages' | 'consultations' | 'profile'>('summary');
   const [showBooking, setShowBooking] = useState(false);
-  const [chronicConditions, setChronicConditions] = useState<string[]>([]);
-  const [readingSummary, setReadingSummary] = useState<ReadingSummary | null>(null);
+  const [page, setPage] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const load = async () => {
-      try {
-        const [sRes, tRes, cRes, pRes, rRes] = await Promise.allSettled([
-          api.get('/api/v1/dashboard/patient-state'),
-          api.get('/api/v1/triage/history'),
-          api.get('/api/v1/consultations/me'),
-          api.get('/api/v1/patients/me'),
-          api.get('/api/v1/readings/me/summary?days=30'),
-        ]);
-        if (sRes.status === 'fulfilled') setState(sRes.value.data);
-        if (tRes.status === 'fulfilled') setTriageHistory(tRes.value.data.slice(0, 5));
-        if (cRes.status === 'fulfilled') setConsultations(cRes.value.data.slice(0, 5));
-        if (pRes.status === 'fulfilled') setChronicConditions(pRes.value.data?.chronic_conditions || []);
-        if (rRes.status === 'fulfilled') setReadingSummary(rRes.value.data);
-      } catch { /* ignore */ }
+      const [s, tr, c, r, rx, n, tp] = await Promise.allSettled([
+        api.get('/api/v1/dashboard/patient-state'),
+        api.get('/api/v1/triage/history'),
+        api.get('/api/v1/consultations/me'),
+        api.get('/api/v1/readings/me/summary?days=30'),
+        api.get('/api/v1/prescription-requests/me'),
+        api.get('/api/v1/notifications/unread-count'),
+        api.get('/api/v1/transport/requests/me'),
+      ]);
+      if (s.status === 'fulfilled') setState(s.value.data);
+      if (tr.status === 'fulfilled') setTriages(tr.value.data.slice(0, 3));
+      if (c.status === 'fulfilled') setConsultations(c.value.data);
+      if (r.status === 'fulfilled') setReadings(r.value.data);
+      if (rx.status === 'fulfilled') {
+        const items: unknown = Array.isArray(rx.value.data) ? rx.value.data : rx.value.data?.items;
+        setPendingRx(Array.isArray(items) ? items.filter((x: { status?: string }) => x.status === 'pending').length : 0);
+      }
+      if (tp.status === 'fulfilled' && Array.isArray(tp.value.data)) setTransport(tp.value.data.find((x: { status: string }) => ['requested', 'confirmed', 'en_route'].includes(x.status)) || null);
+      if (n.status === 'fulfilled') setUnread(Number(n.value.data?.count ?? n.value.data?.unread ?? 0) || 0);
       setLoading(false);
     };
     load();
   }, []);
 
-  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
-  const firstName = displayName.split(' ')[0];
-  const { t, lang } = useT();
-  const locale = LOCALE_MAP[lang] || 'pt-PT';
+  const onStripScroll = () => {
+    const el = stripRef.current; if (!el) return;
+    setPage(Math.round(el.scrollLeft / el.clientWidth));
+  };
+  const goPage = (i: number) => {
+    const el = stripRef.current; if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
+    setPage(i);
+  };
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
 
-  const riskConfig = (risk?: string) => {
-    switch (risk?.toUpperCase()) {
-      case 'URGENT': return { color: '#ef4444', bg: 'rgba(239,68,68,0.08)', label: t('risk.urgent'), icon: <Siren size={20} /> };
-      case 'HIGH': return { color: '#f97316', bg: 'rgba(249,115,22,0.08)', label: t('risk.high'), icon: <AlertTriangle size={20} /> };
-      case 'MEDIUM': return { color: '#eab308', bg: 'rgba(234,179,8,0.08)', label: t('risk.medium'), icon: <Clock size={20} /> };
-      default: return { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', label: t('risk.low'), icon: <CheckCircle2 size={20} /> };
-    }
-  };
-
-  const risk = riskConfig(state?.last_triage_risk);
-
-  /* Keep only distinct, high-frequency destinations above the fold. */
-  const quickActions = [
-    { icon: Activity, label: t('dash.qa_triage'), color: '#0d9488', bg: '#e0f7f5', to: '/triage' },
-    { icon: Calendar, label: t('dash.qa_appointments'), color: '#2563eb', bg: '#dbeafe', to: '/consultations' },
-    { icon: HeartPulse, label: t('sidebar.readings'), color: '#7c3aed', bg: '#ede9fe', to: '/patient/readings' },
-    { icon: User, label: t('dash.qa_profile'), color: '#64748b', bg: '#f1f5f9', to: '/patient/profile' },
-  ];
-
-  /* Chronic disease config — icons + colors */
-  const chronicConfig: Record<string, { icon: typeof HeartPulse; color: string; tip: string }> = {
-    diabetes: { icon: Activity, color: '#e17055', tip: t('dash.chronic_tip_diabetes') },
-    hipertensão: { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_hypertension') },
-    hipertensao: { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_hypertension') },
-    hypertension: { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_hypertension') },
-    asma: { icon: Wind, color: '#6c5ce7', tip: t('dash.chronic_tip_asthma') },
-    asthma: { icon: Wind, color: '#6c5ce7', tip: t('dash.chronic_tip_asthma') },
-    dpoc: { icon: Wind, color: '#636e72', tip: t('dash.chronic_tip_copd') },
-    copd: { icon: Wind, color: '#636e72', tip: t('dash.chronic_tip_copd') },
-    epilepsia: { icon: Zap, color: '#0984e3', tip: t('dash.chronic_tip_epilepsy') },
-    epilepsy: { icon: Zap, color: '#0984e3', tip: t('dash.chronic_tip_epilepsy') },
-    drepanocitose: { icon: Droplets, color: '#e84393', tip: t('dash.chronic_tip_sickle') },
-    'sickle cell': { icon: Droplets, color: '#e84393', tip: t('dash.chronic_tip_sickle') },
-    vih: { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
-    'vih/sida': { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
-    hiv: { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
-    'hiv/aids': { icon: Shield, color: '#fd79a8', tip: t('dash.chronic_tip_hiv') },
-    tuberculose: { icon: Thermometer, color: '#b2bec3', tip: t('dash.chronic_tip_tb') },
-    tuberculosis: { icon: Thermometer, color: '#b2bec3', tip: t('dash.chronic_tip_tb') },
-    'insuficiência renal': { icon: Droplets, color: '#00b894', tip: t('dash.chronic_tip_kidney') },
-    'kidney failure': { icon: Droplets, color: '#00b894', tip: t('dash.chronic_tip_kidney') },
-    'doença cardíaca': { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_heart') },
-    'heart disease': { icon: HeartPulse, color: '#d63031', tip: t('dash.chronic_tip_heart') },
-    'artrite reumatóide': { icon: Activity, color: '#e17055', tip: t('dash.chronic_tip_arthritis') },
-    'rheumatoid arthritis': { icon: Activity, color: '#e17055', tip: t('dash.chronic_tip_arthritis') },
-    parkinson: { icon: Brain, color: '#6c5ce7', tip: t('dash.chronic_tip_parkinson') },
-    alzheimer: { icon: Brain, color: '#636e72', tip: t('dash.chronic_tip_alzheimer') },
-    'esclerose múltipla': { icon: Brain, color: '#0984e3', tip: t('dash.chronic_tip_ms') },
-    'multiple sclerosis': { icon: Brain, color: '#0984e3', tip: t('dash.chronic_tip_ms') },
-    fibromialgia: { icon: Activity, color: '#a29bfe', tip: t('dash.chronic_tip_fibromyalgia') },
-    fibromyalgia: { icon: Activity, color: '#a29bfe', tip: t('dash.chronic_tip_fibromyalgia') },
-  };
-
-  const getChronicInfo = (condition: string) => {
-    const key = condition.toLowerCase().trim();
-    return chronicConfig[key] || { icon: HeartPulse, color: 'var(--accent-teal)', tip: t('dash.chronic_tip_default') };
-  };
+  const firstName = (user?.name || user?.email?.split('@')[0] || '').split(' ')[0];
+  const upcoming = consultations
+    .filter(c => ['scheduled', 'requested', 'in_progress'].includes(c.status) && c.scheduled_at)
+    .sort((a, b) => String(a.scheduled_at).localeCompare(String(b.scheduled_at)))[0];
+  const lastTriage = triages[0];
+  const bp = readings?.items?.find(i => i.reading_type === 'blood_pressure');
 
   return (
     <>
-      {/* ── Greeting Header (La Meva Salut style) ── */}
-      <div className="dash-greeting">
-        <div className="dash-greeting-bg" />
-        <div className="dash-greeting-content">
-          <div className="dash-greeting-avatar">
-            {firstName.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h1 className="dash-greeting-title">{t('dash.hello')} {firstName} 👋</h1>
-            <p className="dash-greeting-subtitle">{t('dash.subtitle')}</p>
-          </div>
-        </div>
-      </div>
+      <section className="lms-greet">
+        <h1>{t('dash.hello')} {firstName},</h1>
+        <p>Está no seu espaço de saúde digital.</p>
+      </section>
 
-      {/* URGENT BANNER */}
-      {state?.last_triage_action === 'ER_NOW' && state.current_state === 'triage_completed' && (
-        <div className="dash-urgent-banner">
-          <Siren size={24} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t('dash.urgent_title')}</div>
-            <div style={{ fontSize: '0.85rem', opacity: 0.95 }}>{t('dash.urgent_desc')}</div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Smart Status Card (compact) ── */}
-      {state && state.current_state !== 'no_triage' && (
-        <div className="dash-status-card">
-          <div className="dash-status-bar" style={{
-            background: state.last_triage_risk
-              ? `linear-gradient(90deg, ${risk.color}, ${risk.color}88)`
-              : 'linear-gradient(90deg, var(--accent-teal), var(--accent-cyan))',
-          }} />
-          <div className="dash-status-content">
-            <div className="dash-status-icon" style={{
-              background: state.last_triage_risk ? risk.bg : 'rgba(20,184,166,0.1)',
-              color: state.last_triage_risk ? risk.color : 'var(--accent-teal)',
-            }}>
-              {state.current_state === 'triage_in_progress' ? <Clock size={22} /> :
-               state.current_state === 'consultation_booked' ? <Calendar size={22} /> :
-               state.current_state === 'consultation_completed' ? <CheckCircle2 size={22} /> :
-               risk.icon}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="dash-status-label">{t('dash.current_state')}</div>
-              <div className="dash-status-title">{state.state_label || t('common.loading')}</div>
-              {state.last_triage_risk && (
-                <span className="dash-risk-badge" style={{ background: risk.bg, color: risk.color }}>
-                  {risk.icon} {risk.label}
-                </span>
-              )}
-            </div>
-            {state.next_action && state.next_action !== 'none' && state.next_action !== 'go_to_er' && (
-              <Link to={state.next_action === 'self_care' ? '/self-care' : state.next_action === 'book_consultation' ? '/consultations' : '/triage'} className="dash-status-action">
-                <Zap size={14} /> {state.next_action_label}
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Quick Actions Carousel (La Meva Salut style) ── */}
-      <div className="dash-section-header">
-        <h2>{t('dash.quick_actions')}</h2>
-      </div>
-      <div className="dash-carousel">
-        <div className="dash-carousel-track">
-          {quickActions.map(qa => (
-            <Link key={qa.label} to={qa.to} className="dash-action-card" onClick={qa.label === t('dash.qa_appointments') ? (e) => { e.preventDefault(); setShowBooking(true); } : undefined}>
-              <div className="dash-action-icon" style={{ background: qa.bg, color: qa.color }}>
-                <qa.icon size={26} />
-              </div>
-              <span className="dash-action-label">{qa.label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* ── KPI Summary Cards ── */}
-      <KpiGrid
-        ariaLabel={t('kpi.summary')}
-        items={[
-          { id: 'risk', label: t('dash.last_risk'), value: state?.last_triage_risk ? risk.label : '—', icon: <Shield size={18} />, color: state?.last_triage_risk ? risk.color : '#0d9488', tone: state?.last_triage_risk === 'URGENT' ? 'attention' : 'default' },
-          { id: 'triages', label: t('dash.tab_triages'), value: state?.triage_count ?? 0, icon: <TrendingUp size={18} />, color: '#8b5cf6' },
-          { id: 'consultations', label: t('dash.consultations_done'), value: state?.completed_consultations ?? 0, icon: <Calendar size={18} />, color: '#2563eb', tone: 'positive' },
-        ]}
-      />
-
-      <HealthSnapshot summary={readingSummary} />
-
-      {/* ── Chronic Diseases Section ── */}
-      <div className="dash-section-header" style={{ marginTop: '1.5rem' }}>
-        <h2>{t('dash.chronic_title')}</h2>
-      </div>
-      {chronicConditions.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-          {chronicConditions.map(condition => {
-            const info = getChronicInfo(condition);
-            const Icon = info.icon;
-            return (
-              <div key={condition} className="card" style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: '12px',
-                  background: `${info.color}14`, color: info.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <Icon size={22} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem', textTransform: 'capitalize' }}>{condition}</div>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{info.tip}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <HeartPulse size={28} style={{ color: 'var(--accent-teal)', opacity: 0.5 }} />
-          </div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>{t('dash.no_chronic')}</div>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 0.75rem' }}>{t('dash.no_chronic_desc')}</p>
-          <Link to="/patient/profile" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            <User size={14} /> {t('dash.update_profile')}
-          </Link>
-        </div>
-      )}
-
-      {/* ── Tab Navigation ── */}
-      <div className="tab-nav" style={{ marginTop: '1.5rem', marginBottom: '1.25rem' }}>
-        <button className={activeTab === 'summary' ? 'active' : ''} onClick={() => setActiveTab('summary')}>{t('dash.tab_summary')}</button>
-        <button className={activeTab === 'triages' ? 'active' : ''} onClick={() => setActiveTab('triages')}>{t('dash.tab_triages')}</button>
-        <button className={activeTab === 'consultations' ? 'active' : ''} onClick={() => setActiveTab('consultations')}>{t('dash.tab_consultations')}</button>
-        <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>{t('dash.tab_profile')}</button>
-      </div>
-
-      {/* TAB: Summary */}
-      {activeTab === 'summary' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem' }}>
-          {/* Recent Triages preview */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.recent_triages')}</h3>
-              <button onClick={() => setActiveTab('triages')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                {t('dash.view_all')} <ArrowRight size={13} />
-              </button>
-            </div>
-            <div style={{ padding: '0.5rem 0' }}>
-              {triageHistory.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon"><Activity size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-                  <div className="empty-state-title">{t('dash.no_triages')}</div>
-                  <div className="empty-state-desc">{t('dash.no_triages_desc')}</div>
-                  <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                    <Activity size={14} /> {t('dash.btn_start_triage')}
-                  </Link>
-                </div>
-              ) : (
-                <div className="table-container" style={{ border: 'none' }}>
-                  <table>
-                    <thead><tr><th>{t('table.complaint')}</th><th>{t('table.risk')}</th><th>{t('table.date')}</th></tr></thead>
-                    <tbody>
-                      {triageHistory.slice(0, 3).map(th => {
-                        const r = riskConfig(th.risk_level);
-                        return (
-                          <tr key={th.id}>
-                            <td style={{ color: 'var(--text-primary)' }}>{th.chief_complaint}</td>
-                            <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{th.risk_level || th.status}</span></td>
-                            <td>{new Date(th.created_at).toLocaleDateString(locale)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Consultations preview */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.consultations')}</h3>
-              <button onClick={() => setActiveTab('consultations')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                {t('dash.manage')} <ArrowRight size={13} />
-              </button>
-            </div>
-            <div style={{ padding: '0.5rem 0' }}>
-              {consultations.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon"><Calendar size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-                  <div className="empty-state-title">{t('dash.no_consultations')}</div>
-                  <div className="empty-state-desc">
-                    {state?.current_state === 'triage_completed'
-                      ? t('dash.triage_done_book')
-                      : t('dash.complete_triage_first')}
-                  </div>
-                  {state?.current_state === 'triage_completed' ? (
-                    <button onClick={() => setShowBooking(true)} className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                      <Calendar size={14} /> {t('dash.book_consultation')}
-                    </button>
-                  ) : (
-                    <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                      <Activity size={14} /> {t('dash.btn_start_triage')}
-                    </Link>
-                  )}
-                </div>
-              ) : (
-                <div className="table-container" style={{ border: 'none' }}>
-                  <table>
-                    <thead><tr><th>{t('table.specialty')}</th><th>{t('table.status')}</th><th>{t('table.date')}</th></tr></thead>
-                    <tbody>
-                      {consultations.slice(0, 3).map(c => (
-                        <tr key={c.id}>
-                          <td style={{ color: 'var(--text-primary)' }}>{specialtyLabel(c.specialty, t)}</td>
-                          <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
-                          <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : new Date(c.created_at).toLocaleDateString(locale)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB: Triages (full history) */}
-      {activeTab === 'triages' && (
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.recent_triages')}</h3>
-            <Link to="/triage" className="btn btn-primary btn-sm">
-              <Activity size={14} /> {t('dash.btn_start_triage')}
-            </Link>
-          </div>
-          <div style={{ padding: '0.5rem 0' }}>
-            {triageHistory.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon"><Activity size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-                <div className="empty-state-title">{t('dash.no_triages')}</div>
-                <div className="empty-state-desc">{t('dash.no_triages_desc')}</div>
-                <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                  <Activity size={14} /> {t('dash.btn_start_triage')}
-                </Link>
-              </div>
-            ) : (
-              <div className="table-container" style={{ border: 'none' }}>
-                <table>
-                  <thead><tr><th>{t('table.complaint')}</th><th>{t('table.risk')}</th><th>{t('table.recommendation')}</th><th>{t('table.score')}</th><th>{t('table.date')}</th></tr></thead>
-                  <tbody>
-                    {triageHistory.map(th => {
-                      const r = riskConfig(th.risk_level);
-                      return (
-                        <tr key={th.id}>
-                          <td style={{ color: 'var(--text-primary)' }}>{th.chief_complaint}</td>
-                          <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', borderRadius: '6px', background: r.bg, color: r.color, fontSize: '0.75rem', fontWeight: 600 }}>{th.risk_level || th.status}</span></td>
-                          <td style={{ fontSize: '0.82rem' }}>{th.recommended_action || '—'}</td>
-                          <td style={{ fontSize: '0.82rem' }}>{th.score != null ? th.score.toFixed(1) : '—'}</td>
-                          <td>{new Date(th.created_at).toLocaleDateString(locale)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB: Consultations (full list) */}
-      {activeTab === 'consultations' && (
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('dash.consultations')}</h3>
-            {state?.current_state === 'triage_completed' && (
-              <button onClick={() => setShowBooking(true)} className="btn btn-primary btn-sm">
-                <Calendar size={14} /> {t('dash.book_consultation')}
-              </button>
-            )}
-          </div>
-          <div style={{ padding: '0.5rem 0' }}>
-            {consultations.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon"><Calendar size={24} style={{ color: 'var(--accent-teal)' }} /></div>
-                <div className="empty-state-title">{t('dash.no_consultations')}</div>
-                <div className="empty-state-desc">
-                  {state?.current_state === 'triage_completed'
-                    ? t('dash.triage_done_book')
-                    : t('dash.complete_triage_first')}
-                </div>
-                {state?.current_state === 'triage_completed' ? (
-                  <button onClick={() => setShowBooking(true)} className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                    <Calendar size={14} /> {t('dash.book_consultation')}
+      <h2 className="lms-h2">Directo a</h2>
+      <div className="lms-strip">
+        <div className="lms-strip__pages" ref={stripRef} onScroll={onStripScroll}>
+          {TILES.map((pageTiles, i) => (
+            <div key={i} className="lms-strip__page">
+              {pageTiles.map(tile => (
+                tile.book && state?.current_state === 'triage_completed' ? (
+                  <button key={tile.label} className="lms-tile" onClick={() => setShowBooking(true)}>
+                    <span className="lms-tile__sq" style={{ background: tile.color }}><tile.icon /></span>
+                    <span className="lms-tile__label">{tile.label}</span>
                   </button>
                 ) : (
-                  <Link to="/triage" className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }}>
-                    <Activity size={14} /> {t('dash.btn_start_triage')}
+                  <Link key={tile.label} to={tile.to} className="lms-tile">
+                    <span className="lms-tile__sq" style={{ background: tile.color }}><tile.icon /></span>
+                    <span className="lms-tile__label">{tile.label}</span>
                   </Link>
-                )}
-              </div>
-            ) : (
-              <div className="table-container" style={{ border: 'none' }}>
-                <table>
-                  <thead><tr><th>{t('table.specialty')}</th><th>{t('table.status')}</th><th>{t('table.scheduled')}</th><th>{t('table.payment')}</th><th>{t('table.created')}</th></tr></thead>
-                  <tbody>
-                    {consultations.map(c => (
-                      <tr key={c.id}>
-                        <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{specialtyLabel(c.specialty, t)}</td>
-                        <td><span className={`badge ${c.status === 'completed' ? 'badge-success' : c.status === 'in_progress' ? 'badge-info' : c.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{c.status}</span></td>
-                        <td>{c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString(locale) : '—'}</td>
-                        <td><span className={`badge ${c.payment_status === 'paid' ? 'badge-success' : 'badge-neutral'}`}>{c.payment_status}</span></td>
-                        <td>{new Date(c.created_at).toLocaleDateString(locale)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB: Profile */}
-      {activeTab === 'profile' && (
-        <div className="card" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: '50%', background: 'rgba(20,184,166,0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-teal)',
-            }}>
-              <User size={24} />
+                )
+              ))}
             </div>
+          ))}
+        </div>
+        <div className="lms-dots" role="tablist" aria-label="Páginas de acesso rápido">
+          {TILES.map((_, i) => <button key={i} role="tab" aria-selected={page === i} className={page === i ? 'is-on' : ''} onClick={() => goPage(i)} aria-label={`Página ${i + 1}`} />)}
+        </div>
+      </div>
+
+      <h2 className="lms-h2">Destacados</h2>
+      <ul className="lms-feat">
+        {upcoming && (
+          <li className="lms-card">
+            <div className="lms-card__ico"><CalendarDays /></div>
             <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{displayName}</div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{user?.email}</div>
+              <h3>Próxima consulta</h3>
+              <p>{specialtyLabel(upcoming.specialty, t)} · {formatAppointmentTime(upcoming.scheduled_at as string, upcoming.timezone || 'Africa/Luanda', locale)}</p>
+              <Link to="/consultations">Ver consulta <ArrowRight size={20} /></Link>
             </div>
+          </li>
+        )}
+        <li className="lms-card">
+          <div className="lms-card__ico"><Activity /></div>
+          <div>
+            <h3>{state?.state_label || 'Triagem digital'}</h3>
+            <p>{lastTriage
+              ? `Última triagem: ${lastTriage.chief_complaint} · risco ${RISK_PT[String(lastTriage.risk_level || '').toUpperCase()] || String(lastTriage.risk_level || '').toLowerCase()} · ${new Date(lastTriage.created_at).toLocaleDateString(locale)}.`
+              : 'Avalie sintomas em minutos e receba uma recomendação. Um médico real decide o passo seguinte.'}</p>
+            {state?.next_action === 'book_consultation'
+              ? <button className="lms-link" onClick={() => setShowBooking(true)}>Marcar consulta <ArrowRight size={20} /></button>
+              : <Link to="/triage">{lastTriage ? 'Nova triagem' : 'Iniciar triagem'} <ArrowRight size={20} /></Link>}
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
-            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-darker)', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.tab_triages')}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.triage_count ?? 0}</div>
-            </div>
-            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-darker)', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.tab_consultations')}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.consultation_count ?? 0}</div>
-            </div>
-            <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-darker)', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t('dash.resolved')}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{state?.resolution_rate != null ? `${state.resolution_rate}%` : '—'}</div>
-            </div>
+        </li>
+        <li className="lms-card">
+          <div className="lms-card__ico"><HeartPulse /></div>
+          <div>
+            <h3>Medições</h3>
+            <p>{bp
+              ? `Última tensão arterial ${bp.systolic}/${bp.diastolic} mmHg · ${readings?.total_readings ?? 0} registos em 30 dias.`
+              : 'Registe tensão arterial, glicose, peso e temperatura, ou ligue um dispositivo.'}</p>
+            <Link to="/patient/readings">Ver medições <ArrowRight size={20} /></Link>
           </div>
-
-          <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', borderLeft: '4px solid var(--accent-teal)', background: 'rgba(20,184,166,0.06)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <HeartPulse size={14} style={{ color: 'var(--accent-teal)' }} />
-              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{t('dash.keep_profile')}</span>
-            </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-              {t('dash.profile_tip')}{' '}
-              <Link to="/patient/profile" style={{ color: 'var(--accent-teal)', fontWeight: 600, textDecoration: 'none' }}>
-                {t('dash.update_profile')} <ChevronRight size={12} style={{ verticalAlign: 'middle' }} />
-              </Link>
-            </p>
+        </li>
+        <li className="lms-card">
+          <div className="lms-card__ico"><Ambulance /></div>
+          <div>
+            <h3>Transporte e ambulância</h3>
+            <p>{transport
+              ? `${transport.kind_label} ${transport.status === 'confirmed' ? 'confirmado' : transport.status === 'en_route' ? 'a caminho' : 'pedido'} para ${transport.destination}${transport.scheduled_for ? ` · ${new Date(transport.scheduled_for).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}` : ''}.`
+              : 'Transporte agendado, mobilidade acessível, transferência assistida ou pré-alerta de emergência.'}</p>
+            <Link to="/transporte">{transport ? 'Ver pedido' : 'Pedir transporte'} <ArrowRight size={20} /></Link>
           </div>
-        </div>
-      )}
+        </li>
+        <li className="lms-card">
+          <div className="lms-card__ico"><ClipboardCheck /></div>
+          <div>
+            <h3>Receitas e renovações</h3>
+            <p>{pendingRx > 0
+              ? `${pendingRx} pedido${pendingRx > 1 ? 's' : ''} de renovação a aguardar decisão médica.`
+              : 'Peça ou renove uma receita a partir de casa. A dispensa é feita em farmácias parceiras.'}</p>
+            <Link to="/prescricoes/pedido">Pedir renovação <ArrowRight size={20} /></Link>
+          </div>
+        </li>
+        {unread > 0 && (
+          <li className="lms-card">
+            <div className="lms-card__ico"><Bell /></div>
+            <div>
+              <h3>Notificações</h3>
+              <p>{unread} notificaç{unread > 1 ? 'ões' : 'ão'} por ler.</p>
+              <Link to="/notifications">Ver notificações <ArrowRight size={20} /></Link>
+            </div>
+          </li>
+        )}
+        <li className="lms-card">
+          <div className="lms-card__ico"><UserRound /></div>
+          <div>
+            <h3>Os seus dados</h3>
+            <p>Mantenha alergias, condições crónicas e contacto de emergência actualizados para consultas mais seguras.</p>
+            <Link to="/patient/profile">Actualizar perfil <ExternalLink size={20} /></Link>
+          </div>
+        </li>
+      </ul>
 
-      {/* Book Consultation Modal */}
       <BookConsultationModal
         open={showBooking}
         onClose={() => setShowBooking(false)}

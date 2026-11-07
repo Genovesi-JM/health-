@@ -1,76 +1,45 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { saveTokens, clearToken } from '../services/api';
-import { disconnectHealth } from '../health/healthSync';
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  full_name: string;
-  role: 'patient' | 'doctor' | 'nurse' | 'admin' | 'enterprise' | string;
-  access_token: string;
-  refresh_token?: string;
-}
+import api, { sessions } from '../services/api';
+import { clearHealthConnection } from '../health/healthSync';
+import { normalizeAuth, mergeSessionIdentity, type AuthUser } from './authSession';
+import { createAuthController } from '../services/sessionCoordinator';
+import type { AxiosRequestConfig } from 'axios';
+export type { AuthUser } from './authSession';
 
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (data: AuthUser) => Promise<void>;
+  refreshUser: () => Promise<AuthUser>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function normalizeAuth(data: any): AuthUser {
-  const source = data?.user ?? data;
-  return {
-    id: String(source.id),
-    email: source.email,
-    full_name: source.full_name ?? source.name ?? '',
-    role: source.role,
-    access_token: data.access_token ?? source.access_token,
-    refresh_token: data.refresh_token ?? source.refresh_token,
-  };
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [controller] = useState(() => createAuthController({
+    sessions, normalize: normalizeAuth, merge: mergeSessionIdentity,
+    notify: fresh => { setUser(fresh); setLoading(false); },
+    readIdentity: async version => {
+      const config: AxiosRequestConfig & { _sessionVersion: number } = { _sessionVersion: version };
+      return (await api.get('/auth/me', config)).data;
+    },
+  }));
+
   useEffect(() => {
-    // Rehydrate session from SecureStore
-    (async () => {
-      try {
-        const stored = await SecureStore.getItemAsync('auth_user');
-        if (stored) {
-          const parsed = normalizeAuth(JSON.parse(stored));
-          setUser(parsed);
-          await saveTokens(parsed.access_token, parsed.refresh_token);
-        }
-      } catch {
-        // corrupted storage — ignore
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const login = async (data: AuthUser) => {
-    const normalized = normalizeAuth(data);
-    await saveTokens(normalized.access_token, normalized.refresh_token);
-    await SecureStore.setItemAsync('auth_user', JSON.stringify(normalized));
-    setUser(normalized);
-  };
-
-  const logout = async () => {
-    await disconnectHealth();
-    await clearToken();
-    await SecureStore.deleteItemAsync('auth_user');
-    setUser(null);
-  };
+    let mounted = true;
+    const disconnect = controller.connect();
+    void controller.restore().catch(() => {
+      // A cached identity never opens protected screens without a fresh response.
+    }).finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; disconnect(); };
+  }, [controller]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login: controller.login, logout: () => controller.logout(clearHealthConnection), refreshUser: controller.refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

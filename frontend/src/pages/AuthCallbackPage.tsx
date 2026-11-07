@@ -1,45 +1,45 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { Heart } from 'lucide-react';
-import type { Role } from '../types';
 import kayaLogo from '/kaya-logo.svg';
+import { useT } from '../i18n/LanguageContext';
+import { accountPathAfterLogin } from '../authRouting';
+import { persistSession } from '../api';
 
 export default function AuthCallbackPage() {
+  const { t } = useT();
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
+  const { login, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const token = searchParams.get('token') || searchParams.get('access_token');
+  const shownError = token ? error : searchParams.get('error') || t('authcb.failed');
 
   useEffect(() => {
+    let cancelled = false;
     // Backend sends: ?token=...&email=...&role=...&name=...&redirect=...
-    const token = searchParams.get('token') || searchParams.get('access_token');
-    const email = searchParams.get('email') || '';
-    const role = (searchParams.get('role') || 'patient') as Role;
-    const name = searchParams.get('name') || '';
-    const redirect = searchParams.get('redirect') ||
-      (role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/dashboard');
+    const redirect = searchParams.get('redirect') || undefined;
 
     if (token) {
-      try {
-        login({
-          access_token: token,
-          user: {
-            id: searchParams.get('account_id') || '',
-            email,
-            role,
-            name,
-            is_active: true,
-          },
-        });
-        navigate(redirect, { replace: true });
-      } catch {
-        setError('Erro ao processar autenticação.');
-      }
-    } else {
-      setError(searchParams.get('error') || 'Autenticação falhou.');
+      (async () => {
+        try {
+          // URL parameters are not an authority for a clinical role or identity.
+          persistSession({ access_token: token, user: { id: '', email: '', role: 'patient' } });
+          const fresh = await refreshUser();
+          if (!cancelled) {
+            login({ access_token: token, user: fresh });
+            navigate(accountPathAfterLogin(fresh, redirect), { replace: true });
+          }
+        } catch {
+          if (!cancelled) {
+            logout();
+            setError(t('authcb.process_error'));
+          }
+        }
+      })();
     }
-  }, [searchParams, login, navigate]);
+    return () => { cancelled = true; };
+  }, [searchParams, token, login, logout, refreshUser, navigate, t]);
 
   return (
     <div className="auth-shell">
@@ -48,16 +48,16 @@ export default function AuthCallbackPage() {
           <img src={kayaLogo} alt="KAYA" style={{ width: 48, height: 48 }} />
           <span className="auth-brand-text">KAYA</span>
         </div>
-        {error ? (
+        {shownError ? (
           <>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Erro de Autenticação</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>{error}</p>
-            <button className="btn btn-primary" onClick={() => navigate('/login')}>Voltar ao Login</button>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('authcb.error_title')}</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>{shownError}</p>
+            <button className="btn btn-primary" onClick={() => navigate('/login')}>{t('authcb.back_login')}</button>
           </>
         ) : (
           <>
             <div className="spinner" style={{ margin: '1.5rem auto' }} />
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>A processar autenticação…</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>{t('authcb.processing')}</p>
           </>
         )}
       </div>

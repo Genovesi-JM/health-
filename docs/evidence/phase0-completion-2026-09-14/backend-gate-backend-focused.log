@@ -1,0 +1,63 @@
+........................................................................ [ 60%]
+................................................                         [100%]
+=============================== warnings summary ===============================
+security_tests/test_azure_health_storage.py::test_authorized_document_download_reports_actual_azure_ttl[60-prescription]
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+security_tests/test_azure_health_storage.py::test_authorized_document_download_reports_actual_azure_ttl[60-prescription]
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:284: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.7/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+security_tests/test_pilot_security.py::test_reserved_email_registration_is_patient
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/starlette/testclient.py:41: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    [], typing.ContextManager[anyio.abc.BlockingPortal]
+
+security_tests/test_pilot_security.py: 101 warnings
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3585: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+security_tests/test_pilot_security.py: 10 warnings
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-gate/source/backend/app/oauth2.py:20: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=minutes))
+
+security_tests/test_pilot_security.py::test_reserved_email_registration_is_patient
+security_tests/test_pilot_security.py::test_mfa_login_challenge_and_assured_token
+security_tests/test_pilot_security.py::test_privileged_legacy_refresh_requires_new_mfa_login
+security_tests/test_pilot_security.py::test_patient_refresh_without_mfa_remains_available
+security_tests/test_pilot_security.py::test_patient_refresh_without_mfa_remains_available
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-gate/source/backend/app/routers/auth.py:204: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expires_at=datetime.utcnow() + timedelta(days=settings.refresh_token_expires_days),
+
+security_tests/test_pilot_security.py: 15 warnings
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = timegm(datetime.utcnow().utctimetuple())
+
+security_tests/test_pilot_security.py::test_optional_patient_enrollment_and_challenge_still_work
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-gate/source/backend/app/routers/mfa.py:152: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cred.confirmed_at = datetime.utcnow()
+
+security_tests/test_pilot_security.py::test_privileged_legacy_refresh_requires_new_mfa_login
+security_tests/test_pilot_security.py::test_patient_refresh_without_mfa_remains_available
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-gate/source/backend/app/routers/auth.py:494: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    if rt.expires_at < datetime.utcnow():
+
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[False-403-google]
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[False-403-microsoft]
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[True-401-google]
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[True-401-microsoft]
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-gate/source/backend/security_tests/test_pilot_security.py:157: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    db.add(OAuthState(state="synthetic-state", expires_at=datetime.utcnow() + timedelta(minutes=5)))
+
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[False-403-google]
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[True-401-google]
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-gate/source/backend/app/routers/auth.py:950: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    if st.expires_at < datetime.utcnow():
+
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[False-403-microsoft]
+security_tests/test_pilot_security.py::test_oauth_callbacks_cannot_bypass_privileged_mfa[True-401-microsoft]
+  /Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-gate/source/backend/app/routers/auth.py:1175: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    if st.expires_at < datetime.utcnow():
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+120 passed, 145 warnings in 17.59s

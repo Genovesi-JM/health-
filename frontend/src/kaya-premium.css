@@ -1,283 +1,242 @@
 /* ============================================================
-   KAYA — Premium editorial + cinematic design system (global)
-   Synthesis of the Kasa visual language (warm, premium, calm,
-   editorial, spacious; forest green + cream + selective gold)
-   with KAYA's teal health identity and cinematic dark heroes.
-   Loaded AFTER index.css so it refines the shared landing classes
-   that every public page uses — restyling the whole marketing
-   surface at once.
+   KAYA — Public pages: ink editorial, no cards.
+   Loaded after index.css. Every marketing page (inside
+   .landing-wrapper) shares the landing's flat ink canvas. Boxes,
+   pills and gradients from the older design system are flattened
+   into hairline-separated text blocks. Nothing here touches the
+   logged-in app.
    ============================================================ */
 
-:root {
-  --k-forest:   #0b2a24;
-  --k-petrol:   #0e3a32;
-  --k-petrol2:  #124a40;
-  --k-teal:     #14b8a6;
-  --k-teal-d:   #0f766e;
-  --k-mint:     #5eead4;
-  --k-cream:    #f6f2e9;   /* warm ivory canvas */
-  --k-sand:     #efe8d8;
-  --k-card:     #fffdf8;   /* soft white card */
-  --k-ink:      #16302b;
-  --k-ink-soft: #3f5750;
-  --k-muted:    #6b8176;
-  --k-gold:     #c9a86a;
-  --k-border:   #e6dfce;   /* warm fine border */
-  --k-border-s: #d8cfba;
-  --k-fog:      #b9e7de;   /* light text on dark */
-}
+:root { --k-display: 'Fraunces', Georgia, 'Times New Roman', serif; }
 
-/* ---------- warm editorial canvas for marketing pages ---------- */
 .landing-wrapper {
-  background: var(--k-cream);
-  color: var(--k-ink);
+  /* palette for the public surface */
+  --k-ink: var(--t-canvas-flat); --k-ink-2: var(--t-surface); --k-paper: var(--t-ink); --k-paper-2: var(--t-ink-2);
+  --k-mute: var(--t-mute); --k-teal: var(--t-teal); --k-teal-d: var(--t-teal-2); --k-red: var(--t-red);
+  --k-rule: var(--t-rule); --k-rule-2: var(--t-rule-2);
+  /* remap the app's shared tokens so inline styles on these pages follow the canvas */
+  --text-primary: var(--t-ink); --text-secondary: var(--k-paper-2); --text-muted: var(--k-mute);
+  --border: var(--k-rule); --border-hover: var(--k-rule-2);
+  --bg-card: transparent; --bg-dark: var(--k-ink); --bg-darker: var(--k-ink-2); --bg-sidebar: var(--k-ink-2);
+  --brand-primary: var(--k-teal); --brand-hover: var(--t-ink); --brand-light: rgba(94, 234, 212, 0.1); --brand-border: rgba(94, 234, 212, 0.35);
+  --accent-teal: var(--k-teal); --accent-cyan: var(--k-teal); --accent-green: #86efac; --accent-urgent: var(--k-red);
+  --gradient-primary: var(--k-paper); --gradient-glow: transparent; --gradient-surface: transparent;
+  --shadow-soft: none; --shadow-medium: none; --shadow-premium: none; --shadow-card: none; --shadow-elevated: none;
+  --radius-sm: 2px; --radius-md: 2px; --radius-lg: 2px; --radius-xl: 2px;
+
+  background: var(--t-canvas-flat); color: var(--k-paper);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
 }
-.landing-wrapper p { color: var(--k-ink-soft); }
+.landing-wrapper p { color: var(--k-paper-2); }
+.landing-wrapper h1, .landing-wrapper h2, .landing-wrapper h3, .landing-wrapper h4 { color: var(--t-ink); }
+.landing-wrapper ::selection { background: var(--k-teal); color: var(--t-canvas-solid); }
 
 /* =========================================================
-   SUB-PAGE HEROES — cinematic dark petrol header
-   (.lp-page-hero on most pages, .landing-hero on Services/About)
+   HEROES (.lp-page-hero on most pages, .landing-hero on Services/About)
    ========================================================= */
-.landing-wrapper .lp-page-hero {
-  max-width: none; margin: 0; text-align: center;
-  padding: clamp(6rem, 11vw, 8.5rem) 1.5rem clamp(3.2rem, 6vw, 4.8rem);
-  color: #eafbf7; position: relative; overflow: hidden;
-  background:
-    radial-gradient(900px 440px at 80% -15%, rgba(45,212,191,.22), transparent 60%),
-    radial-gradient(700px 400px at 5% 115%, rgba(34,211,238,.12), transparent 55%),
-    linear-gradient(165deg, var(--k-forest) 0%, var(--k-petrol) 60%, var(--k-petrol2) 100%);
+.landing-wrapper .lp-page-hero,
+.landing-wrapper .landing-hero {
+  max-width: none; margin: 0; min-height: auto; text-align: left;
+  padding: clamp(7rem, 12vw, 10rem) clamp(1.1rem, 4vw, 3.5rem) clamp(3rem, 6vw, 4.5rem);
+  background: var(--t-canvas-flat); color: var(--k-paper); position: relative; overflow: visible;
+  border-bottom: 1px solid var(--k-rule);
 }
-.landing-wrapper .lp-page-hero > * { max-width: 780px; margin-left: auto; margin-right: auto; }
-.landing-wrapper .lp-page-hero h1 {
-  color: #fff; font-size: clamp(2.1rem, 5.4vw, 3.4rem); font-weight: 800;
-  letter-spacing: -.025em; line-height: 1.06; margin-bottom: .9rem;
+.landing-wrapper .lp-page-hero > *,
+.landing-wrapper .landing-hero-content { max-width: 1280px; margin-left: auto; margin-right: auto; }
+.landing-wrapper .lp-page-hero > *:not(.hero-art):not(.lp-tag):not(h1) { max-width: 1280px; }
+.landing-wrapper .lp-page-hero h1,
+.landing-wrapper .landing-hero-title {
+  font-family: var(--k-display); font-weight: 300; color: var(--t-ink);
+  font-size: clamp(3rem, 7vw, 6.4rem); line-height: .96; letter-spacing: -.035em; margin: .8rem auto 1.2rem; max-width: 1280px;
 }
-.landing-wrapper .lp-page-hero p { color: var(--k-fog); font-size: clamp(1rem, 1.5vw, 1.18rem); line-height: 1.6; }
-
-.landing-hero {
-  min-height: auto;
-  padding: clamp(6rem, 11vw, 8.5rem) 1.5rem clamp(3.4rem, 6vw, 5rem);
-  background:
-    radial-gradient(900px 440px at 80% -15%, rgba(45,212,191,.22), transparent 60%),
-    linear-gradient(165deg, var(--k-forest) 0%, var(--k-petrol) 60%, var(--k-petrol2) 100%);
-  color: #eafbf7;
-}
+.landing-wrapper .lp-page-hero h1 br { display: none; }
+.landing-wrapper .lp-page-hero h1 .lp-hero__accent,
+.landing-wrapper .landing-hero-title .lp-hero__accent { font-style: italic; color: var(--k-teal); display: block; }
+.landing-wrapper .lp-page-hero p,
+.landing-wrapper .landing-hero-subtitle { color: var(--k-paper-2); font-size: clamp(1.05rem, 1.4vw, 1.25rem); line-height: 1.6; max-width: 46ch !important; margin-left: 0; }
 .landing-hero-bg { display: none; }
-.landing-hero-title { color: #fff; font-size: clamp(2.2rem, 5.6vw, 3.4rem); letter-spacing: -.025em; }
-.landing-hero-subtitle { color: var(--k-fog); }
+.landing-wrapper .landing-hero-content { text-align: left; }
+
+/* illustration beside the hero title, free on the canvas */
+.hero-art { display: block; margin: 0 auto 1.2rem; max-width: 1280px; }
+.hero-art .kaya-spot { width: 150px; height: 132px; filter: none; }
+@media (min-width: 1000px) {
+  .landing-wrapper .lp-page-hero { display: grid; grid-template-columns: minmax(0, 1fr) 320px; column-gap: 3rem; align-items: center; }
+  .landing-wrapper .lp-page-hero > * { grid-column: 1; margin-left: 0; }
+  .landing-wrapper .lp-page-hero > .hero-art { grid-column: 2; grid-row: 1 / span 5; justify-self: end; margin: 0; }
+  .hero-art .kaya-spot { width: 300px; height: 264px; }
+}
+
+/* eyebrow: kicker text, not a pill */
+.landing-wrapper .lp-tag,
+.landing-wrapper .cf-section-tag,
+.landing-wrapper .landing-hero-badge {
+  display: inline-flex; align-items: center; gap: .6rem; padding: 0; border: 0; border-radius: 0; background: none !important;
+  font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 500; color: var(--k-mute) !important;
+}
+.landing-wrapper .lp-tag::before { content: ""; width: 28px; height: 1px; background: var(--k-mute); }
 
 /* =========================================================
-   EDITORIAL BODY SECTIONS — generous, calm, cream/white
+   SECTIONS
    ========================================================= */
 .landing-wrapper .lp-section,
-.landing-wrapper .landing-section { padding: clamp(3.5rem, 7vw, 6rem) 1.5rem; }
-.landing-wrapper .lp-section--alt { background: var(--k-sand); border-top: 1px solid var(--k-border); border-bottom: 1px solid var(--k-border); }
-.landing-wrapper .landing-section-alt { background: var(--k-sand); border-color: var(--k-border); }
-
-/* section headers — editorial */
-.landing-wrapper .section-header h2,
-.landing-wrapper .lp-section__header h2 { color: var(--k-ink); font-size: clamp(1.7rem, 3.4vw, 2.5rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.12; }
-.landing-wrapper .section-header p,
-.landing-wrapper .lp-section__header p { color: var(--k-ink-soft); font-size: clamp(.98rem, 1.3vw, 1.08rem); line-height: 1.6; }
-
-/* eyebrow tags — warm */
-.landing-wrapper .lp-tag {
-  background: rgba(15,118,110,.08); border: 1px solid rgba(15,118,110,.2);
-  color: var(--k-teal-d); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: .72rem;
-}
-
-/* =========================================================
-   PREMIUM CARDS — soft white, fine warm border, calm shadow
-   ========================================================= */
-.landing-wrapper .landing-service-card,
-.landing-wrapper .landing-feature-card,
-.landing-wrapper .lp-specialty-card,
-.landing-wrapper .ecosystem-card,
-.landing-wrapper .lp-b2b-card,
-.landing-wrapper .lp-device-card,
-.landing-wrapper .lp-trust-card,
-.landing-wrapper .feat-card,
-.landing-wrapper .lp-step {
-  background: var(--k-card);
-  border: 1px solid var(--k-border);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(22,48,43,.04), 0 10px 26px rgba(22,48,43,.05);
-  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
-}
-.landing-wrapper .landing-service-card:hover,
-.landing-wrapper .landing-feature-card:hover,
-.landing-wrapper .lp-specialty-card:hover,
-.landing-wrapper .ecosystem-card:hover,
-.landing-wrapper .feat-card:hover,
-.landing-wrapper .lp-step:hover {
-  transform: translateY(-4px);
-  border-color: rgba(15,118,110,.35);
-  box-shadow: 0 16px 40px rgba(22,48,43,.1);
-}
-.landing-wrapper .landing-service-icon,
-.landing-wrapper .landing-feature-icon {
-  background: rgba(15,118,110,.09); color: var(--k-teal-d); border-radius: 13px;
-}
-.landing-wrapper .landing-service-card h3,
-.landing-wrapper .feat-title { color: var(--k-ink); }
-.landing-wrapper .landing-service-card p,
-.landing-wrapper .feat-desc { color: var(--k-ink-soft); }
-
-/* =========================================================
-   BUTTONS — premium pills (forest primary, soft secondary)
-   ========================================================= */
-.landing-wrapper .lp-cta { border-radius: 999px; font-weight: 650; padding: .85rem 1.5rem; }
-.landing-wrapper .lp-cta--primary { background: linear-gradient(100deg, var(--k-teal), var(--k-teal-d)); color: #fff; box-shadow: 0 10px 26px rgba(15,118,110,.28); }
-.landing-wrapper .lp-cta--primary:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(15,118,110,.36); }
-.landing-wrapper .lp-cta--secondary,
-.landing-wrapper .lp-cta--outline { background: var(--k-card); color: var(--k-teal-d); border: 1px solid var(--k-border-s); }
-.landing-wrapper .lp-cta--secondary:hover,
-.landing-wrapper .lp-cta--outline:hover { border-color: var(--k-teal); background: #fff; transform: translateY(-2px); }
-.landing-wrapper .lp-link-more { color: var(--k-teal-d); font-weight: 650; }
-
-/* hero actions on the dark sub-page heroes keep legible buttons */
-.landing-hero .lp-cta--secondary,
-.landing-hero .lp-cta--outline,
-.lp-page-hero .lp-cta--secondary,
-.lp-page-hero .lp-cta--outline { background: rgba(255,255,255,.08); color: #eafbf7; border-color: rgba(255,255,255,.22); }
-
-/* =========================================================
-   PRICING — premium editorial cards
-   ========================================================= */
-.landing-wrapper .lp-price-card,
-.landing-wrapper .lp-plan-card {
-  background: var(--k-card); border: 1px solid var(--k-border); border-radius: 18px;
-  box-shadow: 0 1px 2px rgba(22,48,43,.04), 0 10px 26px rgba(22,48,43,.05);
-}
-.landing-wrapper .lp-price-card--featured,
-.landing-wrapper .lp-plan-card--featured { background: linear-gradient(170deg, var(--k-petrol), var(--k-forest)); color: #eafbf7; border-color: rgba(45,212,191,.3); }
-.landing-wrapper .lp-price-label,
-.landing-wrapper .lp-price-amount { color: var(--k-ink); }
-.landing-wrapper .lp-price-card--featured .lp-price-label,
-.landing-wrapper .lp-price-card--featured .lp-price-amount { color: #fff; }
-
-/* =========================================================
-   FINAL CTA band — deep editorial green
-   ========================================================= */
-.landing-wrapper .lp-final-cta {
-  background:
-    radial-gradient(800px 420px at 80% -20%, rgba(45,212,191,.2), transparent 60%),
-    linear-gradient(160deg, var(--k-petrol2) 0%, var(--k-forest) 100%);
-}
-
-/* smoother type rendering */
-.landing-wrapper, .cine { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-
-/* ============================================================
-   EDITORIAL DISPLAY TYPE — Fraunces serif for headlines
-   (moves the brand away from the standard sans-serif SaaS look)
-   ============================================================ */
-:root { --k-display: 'Fraunces', 'Georgia', 'Times New Roman', serif; }
-
-.cine-title,
-.cine-h2,
-.landing-wrapper .lp-page-hero h1,
-.landing-hero-title,
-.landing-wrapper .section-header h2,
+.landing-wrapper .landing-section { padding: clamp(4.5rem, 9vw, 8rem) clamp(1.1rem, 4vw, 3.5rem); border-bottom: 1px solid var(--k-rule); background: transparent; }
+.landing-wrapper .lp-section--alt,
+.landing-wrapper .landing-section-alt { background: transparent; border-top: 0; border-color: var(--k-rule); }
+.landing-wrapper .lp-section > *,
+.landing-wrapper .landing-section > * { max-width: 1280px; margin-left: auto; margin-right: auto; }
+.landing-wrapper .lp-section__header,
+.landing-wrapper .section-header { text-align: left; margin-bottom: clamp(2rem, 4vw, 3.5rem); max-width: 1280px; }
 .landing-wrapper .lp-section__header h2,
-.landing-wrapper .lp-final-cta h2,
-.cine-journey__head {
-  font-family: var(--k-display);
-  font-optical-sizing: auto;
-  letter-spacing: -0.015em;
+.landing-wrapper .section-header h2 {
+  font-family: var(--k-display); font-weight: 300; color: var(--t-ink);
+  font-size: clamp(2.3rem, 4.8vw, 4.2rem); letter-spacing: -.03em; line-height: .98; margin: .7rem 0 1rem;
 }
-.cine-title { font-weight: 600; letter-spacing: -0.02em; }
-.cine-h2,
-.landing-wrapper .section-header h2,
-.landing-wrapper .lp-section__header h2,
-.landing-wrapper .lp-final-cta h2 { font-weight: 600; }
-.landing-wrapper .lp-page-hero h1,
-.landing-hero-title { font-weight: 600; }
-/* let the accent word in the hero carry a soft editorial italic */
-.cine-title .accent { font-style: italic; }
-.cine-journey__head { font-weight: 600; letter-spacing: 0; font-size: .9rem; }
+.landing-wrapper .lp-section__header p,
+.landing-wrapper .section-header p { color: var(--k-paper-2); font-size: clamp(1rem, 1.3vw, 1.15rem); line-height: 1.6; max-width: 46ch; margin: 0; }
 
-/* ============================================================
-   NAVBAR + DROPDOWNS — cinematic premium
-   ============================================================ */
-.nav-wordmark {
-  font-family: var(--k-display); font-optical-sizing: auto;
-  font-size: 1.18rem; font-weight: 600; letter-spacing: 0.005em; color: var(--k-ink);
+/* =========================================================
+   CARDS → hairline text blocks
+   ========================================================= */
+.landing-wrapper .landing-service-card, .landing-wrapper .landing-feature-card, .landing-wrapper .landing-step-card,
+.landing-wrapper .lp-specialty-card, .landing-wrapper .ecosystem-card, .landing-wrapper .lp-b2b-card,
+.landing-wrapper .lp-device-card, .landing-wrapper .lp-trust-card, .landing-wrapper .feat-card, .landing-wrapper .lp-step,
+.landing-wrapper .journey-step, .landing-wrapper .family-card, .landing-wrapper .family-row, .landing-wrapper .condition-card,
+.landing-wrapper .disclaimer-box, .landing-wrapper .page-callout, .landing-wrapper .card, .landing-wrapper .cf-card,
+.landing-wrapper .lp-price-card, .landing-wrapper .lp-plan-card, .landing-wrapper .pricing-card, .landing-wrapper .pricing-faq-item,
+.landing-wrapper .lp-outcome, .landing-wrapper .lp-urgency-step, .landing-wrapper .mapa-card {
+  background: transparent !important; border: 0 !important; border-top: 1px solid var(--k-rule) !important;
+  border-radius: 0 !important; box-shadow: none !important; padding: 1.4rem 0 .4rem !important;
+  transform: none !important; color: var(--k-paper);
 }
-.navbar {
-  background: rgba(247, 244, 236, 0.82);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  border-bottom: 1px solid rgba(22, 48, 43, 0.08);
+.landing-wrapper .landing-service-card:hover, .landing-wrapper .landing-feature-card:hover, .landing-wrapper .lp-specialty-card:hover,
+.landing-wrapper .ecosystem-card:hover, .landing-wrapper .feat-card:hover, .landing-wrapper .lp-step:hover, .landing-wrapper .condition-card:hover,
+.landing-wrapper .card:hover, .landing-wrapper .journey-step:hover, .landing-wrapper .lp-price-card:hover, .landing-wrapper .pricing-card:hover {
+  transform: none !important; box-shadow: none !important; border-top-color: var(--k-rule-2) !important;
 }
-.nav-group__trigger { color: var(--k-ink-soft); font-weight: 600; border-radius: 999px; }
-.nav-group__trigger:hover,
-.nav-group__trigger--active { color: var(--k-teal-d); background: rgba(15, 118, 110, 0.07); }
+.landing-wrapper .hover-lift:hover { transform: none !important; box-shadow: none !important; }
+.landing-wrapper .lp-price-card--featured, .landing-wrapper .lp-plan-card--featured, .landing-wrapper .pricing-card--featured {
+  background: transparent !important; border-top: 1px solid var(--k-teal) !important; color: var(--k-paper);
+}
+.landing-wrapper .lp-plan-badge, .landing-wrapper .pricing-badge { background: none; border: 0; color: var(--k-teal); padding: 0; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; }
 
-/* dark cinematic dropdown panel */
+/* icon squares → bare glyphs */
+.landing-wrapper .feat-icon, .landing-wrapper .landing-service-icon, .landing-wrapper .landing-feature-icon, .landing-wrapper .landing-step-icon,
+.landing-wrapper .lp-step__icon, .landing-wrapper .journey-icon, .landing-wrapper .lp-specialty-icon, .landing-wrapper .lp-plan-icon,
+.landing-wrapper .cf-icon, .landing-wrapper .ecosystem-card > div:first-child {
+  background: transparent !important; border: 0 !important; width: auto !important; height: auto !important;
+  border-radius: 0 !important; padding: 0 !important; margin: 0 0 .9rem !important; display: inline-flex; color: var(--k-teal) !important;
+}
+.landing-wrapper .journey-num, .landing-wrapper .lp-step__num {
+  font-family: var(--k-display); font-weight: 400; font-size: .95rem; letter-spacing: .12em; color: var(--k-mute) !important;
+  background: none !important; border: 0 !important; width: auto !important; height: auto !important; border-radius: 0 !important;
+}
+.landing-wrapper .journey-connector { display: none; }
+
+/* titles and copy inside blocks */
+.landing-wrapper .feat-title, .landing-wrapper .landing-service-card h3, .landing-wrapper .landing-step-card h3,
+.landing-wrapper .lp-step h3, .landing-wrapper .lp-trust-card h4, .landing-wrapper .journey-step h3, .landing-wrapper .journey-step h4,
+.landing-wrapper .condition-card h3, .landing-wrapper .lp-plan-card h3, .landing-wrapper .ecosystem-card > div:nth-child(2) {
+  font-family: var(--k-display); font-weight: 400; color: var(--t-ink); font-size: 1.45rem; letter-spacing: -.015em; line-height: 1.15;
+}
+.landing-wrapper .feat-desc, .landing-wrapper .landing-service-card p, .landing-wrapper .lp-step p, .landing-wrapper .lp-trust-card p,
+.landing-wrapper .journey-step p, .landing-wrapper .condition-card p { color: var(--k-paper-2); font-size: .98rem; line-height: 1.6; }
+
+/* grids keep their columns, gain breathing room */
+.landing-wrapper .feat-grid, .landing-wrapper .landing-services-grid, .landing-wrapper .landing-features-grid, .landing-wrapper .landing-steps-grid,
+.landing-wrapper .lp-steps, .landing-wrapper .lp-trust-grid, .landing-wrapper .lp-b2b-grid, .landing-wrapper .lp-specialties,
+.landing-wrapper .journey-steps, .landing-wrapper .conditions-grid, .landing-wrapper .ecosystem-grid, .landing-wrapper .lp-pricing,
+.landing-wrapper .lp-plans, .landing-wrapper .pricing-grid { gap: 0 clamp(1.5rem, 4vw, 3.5rem) !important; }
+
+/* =========================================================
+   PRICING — hairline columns
+   ========================================================= */
+.landing-wrapper .lp-price-label, .landing-wrapper .pricing-name { font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--k-mute); }
+.landing-wrapper .lp-price-amount, .landing-wrapper .pricing-amount { font-family: var(--k-display); font-weight: 300; font-size: clamp(2.2rem, 3.6vw, 3.2rem); letter-spacing: -.03em; color: var(--t-ink); margin: .4rem 0 .2rem; }
+.landing-wrapper .lp-price-sub, .landing-wrapper .pricing-period { color: var(--k-mute); }
+.landing-wrapper .lp-price-card ul, .landing-wrapper .pricing-features { border-top: 1px solid var(--k-rule); margin-top: 1.2rem; padding-top: .6rem; }
+.landing-wrapper .lp-price-card li, .landing-wrapper .pricing-feature { color: var(--k-paper-2); padding: .45rem 0; border-bottom: 1px solid var(--k-rule); }
+.landing-wrapper .pricing-feature--no { color: var(--k-mute); }
+.landing-wrapper .pricing-faq-q { color: var(--t-ink); font-family: var(--k-display); font-weight: 400; font-size: 1.25rem; }
+.landing-wrapper .pricing-faq-a { color: var(--k-paper-2); }
+
+/* =========================================================
+   BUTTONS → text links
+   ========================================================= */
+.landing-wrapper .lp-cta, .landing-wrapper .lp-price-cta, .landing-wrapper .lp-plan-cta, .landing-wrapper .pricing-cta,
+.landing-wrapper .landing-btn-primary, .landing-wrapper .landing-btn-secondary, .landing-wrapper .lp-link-more,
+.landing-wrapper .btn, .landing-wrapper button[type="submit"] {
+  display: inline-flex; align-items: center; gap: .55rem;
+  background: none !important; border: 0 !important; border-bottom: 1px solid currentColor !important; border-radius: 0 !important;
+  box-shadow: none !important; padding: 0 0 .25rem !important; margin-top: .4rem;
+  color: var(--t-ink) !important; font-weight: 500; font-size: 1rem; text-decoration: none; min-height: 0; cursor: pointer;
+  transition: color .2s ease, gap .2s ease; transform: none !important;
+}
+.landing-wrapper .lp-cta:hover, .landing-wrapper .lp-price-cta:hover, .landing-wrapper .lp-plan-cta:hover, .landing-wrapper .pricing-cta:hover,
+.landing-wrapper .landing-btn-primary:hover, .landing-wrapper .landing-btn-secondary:hover, .landing-wrapper .lp-link-more:hover,
+.landing-wrapper .btn:hover, .landing-wrapper button[type="submit"]:hover { color: var(--k-teal) !important; gap: .9rem; transform: none !important; }
+.landing-wrapper .lp-cta--danger { color: var(--k-red) !important; }
+.landing-wrapper .lp-cta--secondary, .landing-wrapper .lp-cta--outline, .landing-wrapper .lp-cta--white-outline, .landing-wrapper .landing-btn-secondary, .landing-wrapper .btn-secondary { color: var(--k-paper-2) !important; }
+.landing-wrapper .landing-cta-actions, .landing-wrapper .lp-hero__ctas { display: flex; flex-wrap: wrap; gap: 1.2rem 2.4rem; }
+.landing-wrapper .lp-page-hero > div:has(> .lp-cta) { display: flex; flex-wrap: wrap; gap: 1.2rem 2.4rem; justify-content: flex-start; }
+
+/* forms (contact page) */
+.landing-wrapper .form-input, .landing-wrapper input, .landing-wrapper textarea, .landing-wrapper select {
+  background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--k-rule-2) !important; border-radius: 0 !important;
+  color: var(--t-ink) !important; padding: .7rem 0 !important; box-shadow: none !important;
+}
+.landing-wrapper input::placeholder, .landing-wrapper textarea::placeholder { color: var(--k-mute); }
+.landing-wrapper label, .landing-wrapper .form-label { color: var(--k-mute); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; }
+
+/* =========================================================
+   FINAL CTA band → closing statement
+   ========================================================= */
+.landing-wrapper .lp-final-cta, .landing-wrapper .landing-cta {
+  background: transparent !important; color: var(--k-paper); text-align: left;
+  padding: clamp(5rem, 10vw, 9rem) clamp(1.1rem, 4vw, 3.5rem); border-bottom: 1px solid var(--k-rule);
+}
+.landing-wrapper .lp-final-cta > *, .landing-wrapper .landing-cta > * { max-width: 1280px; margin-left: auto; margin-right: auto; }
+.landing-wrapper .lp-final-cta h2, .landing-wrapper .landing-cta h2 {
+  font-family: var(--k-display); font-weight: 300; color: var(--t-ink);
+  font-size: clamp(2.8rem, 6.5vw, 5.8rem); line-height: .96; letter-spacing: -.035em; margin: .6rem 0 1rem;
+}
+.landing-wrapper .lp-final-cta p, .landing-wrapper .landing-cta p { color: var(--k-paper-2); max-width: 46ch; margin: 0 0 1.2rem; }
+.landing-wrapper .lp-final-cta > div { justify-content: flex-start !important; }
+.landing-wrapper .lp-final-cta span { color: var(--k-mute) !important; }
+
+/* =========================================================
+   NAVBAR + FOOTER on every public page — ink, text only
+   ========================================================= */
+.landing-wrapper .navbar, .navbar {
+  background: var(--t-glass-nav); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--t-rule);
+}
+.nav-wordmark { font-family: var(--k-display); font-optical-sizing: auto; font-size: 1.18rem; font-weight: 500; letter-spacing: .005em; color: var(--t-ink); }
+.nav-group__trigger { color: var(--t-ink-2); font-weight: 500; border-radius: 0; background: none; }
+.nav-group__trigger:hover, .nav-group__trigger--active { color: var(--t-ink); background: none; text-decoration: underline; text-underline-offset: 6px; }
+.nav-link-text { color: var(--t-ink-2); text-decoration: none; font-size: .9rem; font-weight: 500; }
+.nav-link-text:hover { color: var(--t-ink); text-decoration: underline; text-underline-offset: 6px; }
+.nav-cta { display: inline-flex; align-items: center; padding: .55rem 1.1rem; border-radius: 2px; background: var(--t-ink); color: var(--t-canvas-solid); text-decoration: none; font-size: .88rem; font-weight: 500; }
+.nav-cta:hover { background: var(--t-teal); }
 .nav-dropdown {
   position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%);
-  min-width: 324px; padding: 0.55rem; border-radius: 18px;
-  background: linear-gradient(170deg, #0e3a32, #0a2620);
-  border: 1px solid rgba(94, 234, 212, 0.14);
-  box-shadow: 0 30px 70px rgba(2, 17, 15, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-  animation: navDrop 0.22s cubic-bezier(.22, .61, .36, 1);
+  min-width: 320px; padding: .5rem; border-radius: 4px; background: var(--t-surface); border: 1px solid var(--t-rule-2); box-shadow: 0 24px 60px var(--t-shadow);
 }
-@keyframes navDrop {
-  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-.nav-dropdown__glow {
-  position: absolute; top: -45%; right: -22%; width: 72%; height: 95%;
-  background: radial-gradient(circle, rgba(45, 212, 191, 0.22), transparent 70%); pointer-events: none;
-}
-.nav-dropdown__item {
-  position: relative; display: flex; flex-direction: row; align-items: center; gap: 0.75rem;
-  padding: 0.65rem 0.75rem; border-radius: 12px; text-decoration: none;
-  transition: background 0.18s ease, transform 0.18s ease;
-}
-.nav-dropdown__item:hover,
-.nav-dropdown__item--active { background: rgba(94, 234, 212, 0.1); transform: translateX(2px); }
-.nav-dropdown__chip {
-  flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
-  background: rgba(45, 212, 191, 0.14); border: 1px solid rgba(45, 212, 191, 0.22); color: #5eead4;
-  transition: background 0.18s ease;
-}
-.nav-dropdown__item:hover .nav-dropdown__chip { background: rgba(45, 212, 191, 0.24); }
+.nav-dropdown__glow { display: none; }
+.nav-dropdown__item { display: flex; align-items: center; gap: .75rem; padding: .6rem .7rem; border-radius: 2px; text-decoration: none; }
+.nav-dropdown__item:hover, .nav-dropdown__item--active { background: var(--t-glass-strong); }
+.nav-dropdown__chip { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 2px; display: grid; place-items: center; background: transparent; border: 1px solid var(--t-rule); color: var(--t-teal); }
 .nav-dropdown__text { display: flex; flex-direction: column; }
-.nav-dropdown__label { font-size: 0.92rem; font-weight: 650; color: #f2fffb; }
-.nav-dropdown__sub { font-size: 0.78rem; color: #9fd3c8; margin-top: 0.1rem; }
+.nav-dropdown__label { font-size: .92rem; font-weight: 500; color: var(--t-ink); }
+.nav-dropdown__sub { font-size: .78rem; color: var(--t-mute); margin-top: .1rem; }
+.navbar-mobile-menu { background: var(--t-surface); border-top: 1px solid var(--t-rule); }
+.navbar-mobile-menu .mobile-nav-link { color: var(--t-ink-2); }
+.navbar-mobile-menu .mobile-group__label { color: var(--t-mute); }
+.navbar .navbar-mobile-toggle { color: var(--t-ink) !important; }
+.navbar .nav-chevron { color: var(--t-ink-2); }
 
-/* ============================================================
-   SITE-WIDE CINEMATIC DEPTH — filmic grain + ambient glow
-   Applies to every dark section so the whole site feels cinematic,
-   not just the hero.
-   ============================================================ */
-.cine-hero, .cine-transport, .cine-care, .landing-wrapper .lp-final-cta,
-.landing-wrapper .lp-page-hero, .landing-hero { position: relative; isolation: isolate; }
-
-.cine-hero::after, .cine-transport::after, .cine-care::after,
-.landing-wrapper .lp-final-cta::after,
-.landing-wrapper .lp-page-hero::after, .landing-hero::after {
-  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 150px 150px; opacity: 0.05; mix-blend-mode: soft-light;
-}
-/* keep content above the grain */
-.cine-hero__grid, .cine-transport > .cine-wrap, .cine-care > .cine-wrap,
-.landing-wrapper .lp-final-cta > *, .landing-wrapper .lp-page-hero > *,
-.landing-hero > * { position: relative; z-index: 1; }
-
-/* a soft ambient glow orb for the shared sub-page heroes */
-.landing-wrapper .lp-page-hero::before,
-.landing-hero::before {
-  content: ""; position: absolute; z-index: 0; pointer-events: none;
-  top: -30%; right: -8%; width: 46%; height: 150%;
-  background: radial-gradient(circle at 60% 40%, rgba(94,234,212,0.16), transparent 62%);
-  filter: blur(6px);
-}
-
-/* ---------- sub-page hero illustration ---------- */
-.hero-art { display: flex; justify-content: center; margin-bottom: 1.1rem; }
-.hero-art .kaya-spot { width: 116px; height: 102px; filter: drop-shadow(0 14px 26px rgba(2,17,15,0.45)); }
+.landing-wrapper .footer { background: var(--k-ink-2); border-top: 1px solid var(--k-rule); color: var(--k-paper-2); }
+.landing-wrapper .footer a { color: var(--k-paper-2); }
+.landing-wrapper .footer a:hover { color: var(--k-teal); }
+.landing-wrapper .footer h4 { color: var(--t-ink); font-family: var(--k-display); font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 1.1rem; }
+.landing-wrapper .footer-bottom { border-top: 1px solid var(--k-rule); color: var(--k-mute); }

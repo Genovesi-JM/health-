@@ -12,20 +12,25 @@ Endpoints:
 """
 import json
 import logging
-from datetime import datetime, date, timedelta
-from typing import Any, List, Optional
+from datetime import datetime, date, timedelta, timezone as utc_timezone
+from typing import Any, List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User, UserProfile
 from app.health_models import (
-    Doctor, ClinicianCredential, Patient, Consultation, ConsultationNotes,
-    PrescriptionRequest, DeviceReading, PatientMedication, HealthPayment,
+    Doctor, Patient, PatientDocument, Consultation, ConsultationNotes,
+    PrescriptionRequest, DeviceReading, PatientMedication, HealthPayment, HealthAuditLog,
 )
 from app.rbac import log_health_audit, assert_doctor_can_access_patient
+from app.services.clinician_access import require_current_clinician
+from app.services.patient_documents import doctor_has_document_relationship
+from app.services.appointments import valid_zone
+from app.services.consultation_amendments import effective_clinician_notes
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["doctor-portal"])
@@ -40,19 +45,7 @@ def _require_doctor(user: User, db: Session) -> Doctor:
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")
-    credential = db.query(ClinicianCredential).filter(
-        ClinicianCredential.user_id == user.id,
-        ClinicianCredential.profession == "doctor",
-    ).first()
-    if doctor.verification_status != "verified" or not credential or credential.status != "verified":
-        raise HTTPException(
-            status_code=403,
-            detail={
-                "code": "credential_verification_required",
-                "message": "Conclua a verificação profissional antes de aceder a funções clínicas.",
-                "status": credential.status if credential else "not_started",
-            },
-        )
+    require_current_clinician(user, db)
     return doctor
 
 
@@ -105,6 +98,10 @@ def _status_label(status: str) -> str:
         "no_show": "no_show",
     }
     return mapping.get(status, status)
+
+
+def _readable_notes(consultation: Consultation, db: Session):
+    return effective_clinician_notes(db, consultation)
 
 
 # ── GET /api/v1/doctor/dashboard ─────────────────────────────────────────────
@@ -179,19 +176,28 @@ def doctor_dashboard(
 
 @router.get("/api/v1/doctor/agenda/today")
 def doctor_agenda_today(
+    response: Response,
+    day: Optional[date] = Query(None, alias="date"),
+    country: Literal["AO", "PT"] = "AO",
+    timezone: Optional[str] = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return today's consultations for the doctor sorted by scheduled time."""
+    """Return one clinic-local day; the historical path also accepts a date."""
     doctor = _require_doctor(user, db)
 
-    today_start = datetime.combine(date.today(), datetime.min.time())
-    today_end = today_start + timedelta(days=1)
+    zone_name = timezone or ("Africa/Luanda" if country == "AO" else None)
+    zone = valid_zone(country, zone_name or "")
+    selected_day = day or datetime.now(utc_timezone.utc).astimezone(zone).date()
+    local_start = datetime.combine(selected_day, datetime.min.time(), tzinfo=zone)
+    today_start = local_start.astimezone(utc_timezone.utc).replace(tzinfo=None)
+    today_end = (local_start + timedelta(days=1)).astimezone(utc_timezone.utc).replace(tzinfo=None)
 
     consultations = (
         db.query(Consultation)
         .filter(
             Consultation.doctor_id == doctor.id,
+            or_(Consultation.country == country, Consultation.country.is_(None)),
             Consultation.scheduled_at >= today_start,
             Consultation.scheduled_at < today_end,
         )
@@ -201,23 +207,45 @@ def doctor_agenda_today(
 
     result = []
     for c in consultations:
+        notes = _readable_notes(c, db)
         patient_name = "Paciente"
         if c.patient:
             patient_name = _get_patient_name(c.patient, db)
         initials = "".join(p[0].upper() for p in patient_name.split()[:2]) or "P"
-        time_str = c.scheduled_at.strftime("%H:%M") if c.scheduled_at else "--:--"
+        instant = c.scheduled_at.replace(tzinfo=utc_timezone.utc)
+        end_instant = c.scheduled_end_at.replace(tzinfo=utc_timezone.utc) if c.scheduled_end_at else None
+        duration = int((end_instant - instant).total_seconds() / 60) if end_instant and end_instant > instant else None
         result.append({
             "id": c.id,
-            "time": time_str,
+            "time": instant.astimezone(zone).strftime("%H:%M"),
+            "scheduled_at": instant.isoformat(),
+            "reschedule_revision": c.reschedule_revision,
+            "scheduled_end_at": end_instant.isoformat() if end_instant else None,
+            "duration": duration,
+            "country": c.country,
+            "timezone": zone_name,
+            "slot_timezone": c.timezone,
             "patient": patient_name,
             "patient_id": c.patient_id,
             "type": _consultation_type_label(c),
             "specialty": c.specialty,
-            "reason": c.notes.subjective if c.notes else None,
+            "reason": notes.subjective if notes else None,
             "status": _status_label(c.status),
             "avatar": initials,
         })
 
+    db.add(HealthAuditLog(
+        actor_user_id=user.id, action="doctor_agenda_read", resource_type="doctor",
+        resource_id=doctor.id,
+        metadata_json=json.dumps({"date": selected_day.isoformat(), "country": country, "timezone": zone_name}),
+    ))
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(503, "Não foi possível carregar a agenda. Tente novamente.") from None
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
     return result
 
 
@@ -236,7 +264,10 @@ def doctor_patients_list(
 
     consultations = (
         db.query(Consultation)
-        .filter(Consultation.doctor_id == doctor.id)
+        .filter(
+            Consultation.doctor_id == doctor.id,
+            Consultation.status.in_(("scheduled", "in_progress", "completed")),
+        )
         .all()
     )
 
@@ -315,6 +346,7 @@ def doctor_patient_summary(
         .filter(
             Consultation.doctor_id == doctor.id,
             Consultation.patient_id == patient_id,
+            Consultation.status.in_(("scheduled", "in_progress", "completed")),
         )
         .first()
     )
@@ -477,6 +509,8 @@ def doctor_patient_clinical_summary(
     if age and age >= 65:
         risk_flags.append("Paciente idoso (≥ 65 anos) — atenção a polifarmácia e quedas")
 
+    consultation_notes = {c.id: _readable_notes(c, db) for c in last_consultations}
+
     return {
         "identity": {
             "id": patient.id,
@@ -510,12 +544,9 @@ def doctor_patient_clinical_summary(
                 "status": c.status,
                 "specialty": c.specialty,
                 "notes": {
-                    "subjective": c.notes.subjective if c.notes else None,
-                    "objective": c.notes.objective if c.notes else None,
-                    "assessment": c.notes.assessment if c.notes else None,
-                    "plan": c.notes.plan if c.notes else None,
-                    "outcome": c.notes.outcome if c.notes else None,
-                } if c.notes else None,
+                    field: getattr(consultation_notes[c.id], field)
+                    for field in ("subjective", "objective", "assessment", "plan", "outcome")
+                } if consultation_notes[c.id] else None,
             }
             for c in last_consultations
         ],
@@ -548,7 +579,18 @@ def doctor_patient_clinical_summary(
             for r in prev_rx
         ],
         "risk_flags": risk_flags,
-        "uploaded_files": [],  # Reserved for future file integration
+        "uploaded_files": [
+            {
+                "id": document.id, "original_filename": document.original_filename,
+                "content_type": document.content_type, "size_bytes": document.size_bytes,
+                "status": document.status, "scan_status": document.scan_status,
+                "created_at": document.created_at.isoformat(),
+            }
+            for document in db.query(PatientDocument).filter(
+                PatientDocument.patient_id == patient_id,
+                PatientDocument.scan_status == "clean",
+            ).order_by(PatientDocument.created_at.desc()).limit(100).all()
+        ] if doctor_has_document_relationship(doctor.id, patient_id, db) else [],
     }
 
 

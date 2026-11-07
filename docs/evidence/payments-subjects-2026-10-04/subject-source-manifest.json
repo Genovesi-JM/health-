@@ -1,0 +1,41 @@
+{
+  "repository": "/Users/genovesimaria/Documents/kaya-web",
+  "files": [
+    {
+      "path": "backend/app/routers/triage.py",
+      "sha256": "4f860792b410e91fb259324733a38f6f68062bf71051ebd7879be0a528bb0818"
+    },
+    {
+      "path": "backend/security_tests/test_triage_subject_boundary.py",
+      "sha256": "d14b00ea4a68a8185b2e96e53e56e0688f5c43697ef09a1fa9496c48e48a5e7d"
+    },
+    {
+      "path": "backend/tests/test_health.py",
+      "sha256": "ee4546ea9eb500fb0b01308d2a20d6c2d45eb2420f5b23eb07b6e627e32ce074"
+    },
+    {
+      "path": "frontend/src/pages/FamilyPage.tsx",
+      "sha256": "bfe70b49b84f8f2b3d0924552cf2979c2d906f3f6472c4bfa3ca3956896e88f1"
+    },
+    {
+      "path": "frontend/src/pages/TriagePage.tsx",
+      "sha256": "ab479f3c82690bde82dbb89e5e4a783a83d89d9f66f800c7ca5b08183b9b88fc"
+    },
+    {
+      "path": "frontend/src/pages/TriagePage.subject.test.tsx",
+      "sha256": "487eb6881ed3a32efe5545e7e17465824ce1e64d838f56dd921a99f2789989f9"
+    },
+    {
+      "path": "mobile/src/screens/TriageScreen.tsx",
+      "sha256": "f6752914a8795c590bcda05adab9e230de5ff355a640c0d59d27e18e846bdc87"
+    },
+    {
+      "path": "mobile/src/screens/selfTriage.ts",
+      "sha256": "b35ba1979b8c0316d2f1cd335787e921212472e1421d30e50fb68dba0db19f2d"
+    },
+    {
+      "path": "mobile/scripts/self-triage.test.mjs",
+      "sha256": "2ebf6dfaa30fbc7946db322b23b92f93628506cdd813580e13c1ca3f8a7b6e27"
+    }
+  ]
+}

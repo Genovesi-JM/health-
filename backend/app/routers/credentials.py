@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, Response, UploadFile
+from sqlalchemy import update
 from sqlalchemy.orm import Session, joinedload
 
 from app.credential_schemas import CredentialDecision, CredentialUpsert, ProviderStartRequest
@@ -15,13 +16,14 @@ from app.health_models import (
     ClinicianCredential, CredentialEvidence, CredentialProviderCheck, Doctor,
 )
 from app.models import User
-from app.rbac import require_admin_or_support
+from app.rbac import require_compliance_reviewer
+from app.services.credential_mutations import CredentialRevision, mutate_credential
+from app.services.credential_review import application_checks as _application_checks
 from app.services.credential_verification import (
     COUNTRIES,
     normalise_country,
     registry_for,
     required_evidence,
-    run_automated_checks,
 )
 from app.services.health_storage import get_health_storage
 from app.services.credential_providers import (
@@ -45,6 +47,7 @@ ALLOWED_EVIDENCE = {
     "professional_card", "diploma", "recognition", "local_registration", "good_standing",
     "eu_professional_card", "language_certificate", "professional_liability", "other",
 }
+EDITABLE_APPLICATION_STATES = {"draft", "needs_info", "rejected", "action_required", "failed", "pending_review"}
 ALLOWED_PROVIDERS = {"azure", "persona", "dataflow"}
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MIME_SIGNATURES = {
@@ -71,14 +74,13 @@ def _normalise_payload(body: CredentialUpsert) -> dict:
         raise HTTPException(422, "A ligação do registo deve usar HTTPS.")
     if data["licence_country"] == "US" and not (data.get("licence_jurisdiction") or "").strip():
         raise HTTPException(422, "Indique o estado ou jurisdição da licença dos EUA.")
+    if data.get("licence_expiry_date"):
+        try:
+            date.fromisoformat(data["licence_expiry_date"])
+        except (TypeError, ValueError):
+            raise HTTPException(422, "Indique uma data de validade no formato AAAA-MM-DD.")
     return data
 
-
-def _refresh_checks(credential: ClinicianCredential) -> None:
-    kinds = {item.kind for item in credential.evidence}
-    checks, score = run_automated_checks(credential, kinds)
-    credential.automated_checks_json = json.dumps(checks, ensure_ascii=False)
-    credential.automated_score = score
 
 
 def _serialize(credential: ClinicianCredential) -> dict:
@@ -142,6 +144,33 @@ def _get_credential(db: Session, user_id: str) -> ClinicianCredential:
     return credential
 
 
+def _owned_application(db: Session, user: User) -> ClinicianCredential:
+    if user.role not in ("patient", "cliente", "doctor", "nurse"):
+        raise HTTPException(403, "Este perfil destina-se a candidatos a médicos e enfermeiros.")
+    try:
+        credential = _get_credential(db, user.id)
+    except HTTPException as exc:
+        if exc.status_code == 404 and user.role in ("patient", "cliente"):
+            raise HTTPException(403, "Não existe uma candidatura profissional nesta conta.")
+        raise
+    if credential.profession not in ALLOWED_PROFESSIONS or (
+        user.role in ALLOWED_PROFESSIONS and user.role != credential.profession
+    ):
+        raise HTTPException(403, "A profissão não corresponde à candidatura.")
+    return credential
+
+
+def _require_editable(credential: ClinicianCredential) -> None:
+    if credential.status not in EDITABLE_APPLICATION_STATES:
+        raise HTTPException(409, "O processo já está fechado para alterações.")
+
+
+def _require_credential_reader(user: User = Depends(get_current_user)) -> User:
+    if user.role not in ("admin", "support", "compliance_reviewer"):
+        raise HTTPException(403, "Sem acesso à revisão profissional.")
+    return user
+
+
 @router.get("/requirements")
 def requirements(
     profession: str = Query(...),
@@ -181,9 +210,7 @@ def requirements(
 
 @router.get("/me")
 def get_my_credential(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if user.role not in ALLOWED_PROFESSIONS:
-        raise HTTPException(403, "Este perfil destina-se a médicos e enfermeiros.")
-    return _serialize(_get_credential(db, user.id))
+    return _serialize(_owned_application(db, user))
 
 
 def _existing_provider_check(
@@ -213,7 +240,7 @@ def start_provider_checks(
     invalid = set(providers) - ALLOWED_PROVIDERS
     if invalid:
         raise HTTPException(422, f"Fornecedor inválido: {', '.join(sorted(invalid))}.")
-    credential = _get_credential(db, user.id)
+    credential = _owned_application(db, user)
     if not credential.evidence:
         raise HTTPException(422, "Envie os documentos antes de iniciar a verificação.")
     credential.verification_consent_at = datetime.utcnow()
@@ -248,7 +275,7 @@ def start_provider_checks(
                 check.error_message = str(exc)[:2000]
                 check.completed_at = datetime.utcnow()
     db.commit()
-    return _serialize(_get_credential(db, user.id))
+    return _serialize(_owned_application(db, user))
 
 
 @router.post("/me/providers/refresh")
@@ -256,7 +283,7 @@ def refresh_provider_checks(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    credential = _get_credential(db, user.id)
+    credential = _owned_application(db, user)
     for check in credential.provider_checks:
         if check.provider == "azure" and check.status == "processing":
             try:
@@ -266,7 +293,7 @@ def refresh_provider_checks(
                 check.error_message = str(exc)[:2000]
                 check.completed_at = datetime.utcnow()
     db.commit()
-    return _serialize(_get_credential(db, user.id))
+    return _serialize(_owned_application(db, user))
 
 
 @router.post("/webhooks/persona")
@@ -330,26 +357,26 @@ def upsert_my_credential(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if user.role not in ALLOWED_PROFESSIONS:
-        raise HTTPException(403, "Este perfil destina-se a médicos e enfermeiros.")
+    existing = db.query(ClinicianCredential).filter(ClinicianCredential.user_id == user.id).first()
+    if not existing and user.role in ALLOWED_PROFESSIONS:
+        # Preserve onboarding for controlled legacy accounts without a dossier.
+        # Creating an application never changes their role or grants verification.
+        data = _normalise_payload(body)
+        if data["profession"] != user.role:
+            raise HTTPException(403, "A profissão não corresponde ao tipo da conta.")
+        db.add(ClinicianCredential(user_id=user.id, **data))
+        db.commit()
+        return _serialize(_owned_application(db, user))
+    credential = _owned_application(db, user)
+    _require_editable(credential)
     data = _normalise_payload(body)
-    if data["profession"] != user.role:
-        raise HTTPException(403, "A profissão não corresponde ao tipo da conta.")
-
-    credential = db.query(ClinicianCredential).filter(ClinicianCredential.user_id == user.id).first()
-    if credential and credential.status in ("verified", "suspended"):
-        raise HTTPException(409, "Credenciais verificadas ou suspensas só podem ser alteradas pela equipa KAYA.")
-    if not credential:
-        credential = ClinicianCredential(user_id=user.id, **data)
-        db.add(credential)
-        db.flush()
-    else:
-        for key, value in data.items():
-            setattr(credential, key, value)
-        credential.status = "draft"
-        credential.rejection_reason = None
+    if data["profession"] != credential.profession:
+        raise HTTPException(403, "A profissão não corresponde à candidatura.")
+    revision = CredentialRevision.capture(credential)
+    mutate_credential(db, credential, revision=revision, **data,
+                      status="draft", rejection_reason=None)
     db.commit()
-    return _serialize(_get_credential(db, user.id))
+    return _serialize(_owned_application(db, user))
 
 
 @router.post("/me/evidence/{kind}")
@@ -361,9 +388,9 @@ async def upload_evidence(
 ):
     if kind not in ALLOWED_EVIDENCE:
         raise HTTPException(422, "Tipo de documento inválido.")
-    credential = _get_credential(db, user.id)
-    if credential.status in ("verified", "suspended"):
-        raise HTTPException(409, "O processo já está fechado para alterações.")
+    credential = _owned_application(db, user)
+    _require_editable(credential)
+    revision = CredentialRevision.capture(credential)
     data = await file.read(MAX_UPLOAD_BYTES + 1)
     if not data or len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(413, "Documento vazio ou superior a 10 MB.")
@@ -376,60 +403,74 @@ async def upload_evidence(
     key, _ = storage.upload_bytes(
         data, f"credentials/{credential.id}", file.filename or f"{kind}.bin", content_type,
     )
-    previous = (
-        db.query(CredentialEvidence)
-        .filter(CredentialEvidence.credential_id == credential.id, CredentialEvidence.kind == kind)
-        .all()
-    )
-    evidence = CredentialEvidence(
-        credential_id=credential.id, kind=kind,
-        original_filename=(file.filename or f"{kind}.bin")[:255],
-        storage_key=key, content_type=content_type, size_bytes=len(data),
-        sha256=hashlib.sha256(data).hexdigest(),
-    )
-    for item in previous:
-        db.delete(item)
-    db.add(evidence)
-    credential.status = "draft"
-    db.commit()
-    for item in previous:
+    try:
+        # Acquire the revision before replacing evidence. Keep its row lock until
+        # all evidence and checks are committed; stale uploads clean up the blob.
+        mutate_credential(db, credential, revision=revision, status="draft")
+        previous = db.query(CredentialEvidence).filter(
+            CredentialEvidence.credential_id == credential.id,
+            CredentialEvidence.kind == kind,
+        ).all()
+        previous_keys = [item.storage_key for item in previous]
+        evidence = CredentialEvidence(
+            credential_id=credential.id, kind=kind,
+            original_filename=(file.filename or f"{kind}.bin")[:255],
+            storage_key=key, content_type=content_type, size_bytes=len(data),
+            sha256=hashlib.sha256(data).hexdigest(),
+        )
+        for item in previous:
+            db.delete(item)
+        db.add(evidence)
+        db.flush()
+        db.expire(credential, ["evidence"])
+        checks, score = _application_checks(credential)
+        db.execute(update(ClinicianCredential.__table__).where(
+            ClinicianCredential.id == credential.id,
+        ).values(automated_checks_json=json.dumps(checks, ensure_ascii=False),
+                 automated_score=score, updated_at=credential.updated_at))
+        db.commit()
+    except Exception:
+        db.rollback()
         try:
-            storage.delete(item.storage_key)
+            storage.delete(key)
+        except Exception:
+            # Preserve the original failure if storage is also unavailable.
+            pass
+        raise
+    for previous_key in previous_keys:
+        try:
+            storage.delete(previous_key)
         except Exception:
             pass
-    credential = _get_credential(db, user.id)
-    _refresh_checks(credential)
-    db.commit()
-    return _serialize(_get_credential(db, user.id))
+    return _serialize(_owned_application(db, user))
 
 
 @router.post("/me/submit")
 def submit_my_credential(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    credential = _get_credential(db, user.id)
-    _refresh_checks(credential)
+    credential = _owned_application(db, user)
+    _require_editable(credential)
+    revision = CredentialRevision.capture(credential)
+    checks, score = _application_checks(credential)
     missing = [item for item in required_evidence(credential) if item not in {e.kind for e in credential.evidence}]
-    failed = [
-        item for item in json.loads(credential.automated_checks_json or "[]")
-        if item["severity"] == "required" and not item["passed"]
-    ]
+    failed = [item for item in checks if item["severity"] == "required" and not item["passed"]]
+    values = {"automated_checks_json": json.dumps(checks, ensure_ascii=False), "automated_score": score}
     if missing or failed:
-        credential.status = "needs_info"
+        mutate_credential(db, credential, revision=revision, status="needs_info", **values)
         db.commit()
         raise HTTPException(422, {
             "message": "O processo precisa de informação adicional.",
-            "missing_evidence": missing,
-            "failed_checks": failed,
+            "missing_evidence": missing, "failed_checks": failed,
         })
-    credential.status = "pending_review"
-    credential.submitted_at = datetime.utcnow()
+    mutate_credential(db, credential, revision=revision, status="pending_review",
+                      submitted_at=datetime.utcnow(), **values)
     db.commit()
-    return _serialize(_get_credential(db, user.id))
+    return _serialize(_owned_application(db, user))
 
 
 @router.get("/admin")
 def list_credentials(
     status_filter: str | None = Query(default=None, alias="status"),
-    user: User = Depends(require_admin_or_support),
+    user: User = Depends(_require_credential_reader),
     db: Session = Depends(get_db),
 ):
     query = db.query(ClinicianCredential).options(
@@ -444,7 +485,7 @@ def list_credentials(
 @router.get("/admin/{credential_id}")
 def get_admin_credential(
     credential_id: str,
-    user: User = Depends(require_admin_or_support),
+    user: User = Depends(_require_credential_reader),
     db: Session = Depends(get_db),
 ):
     credential = (
@@ -463,92 +504,11 @@ def get_admin_credential(
 def decide_credential(
     credential_id: str,
     body: CredentialDecision,
-    reviewer: User = Depends(require_admin_or_support),
+    reviewer: User = Depends(require_compliance_reviewer),
     db: Session = Depends(get_db),
 ):
-    credential = (
-        db.query(ClinicianCredential).options(
-            joinedload(ClinicianCredential.evidence),
-            joinedload(ClinicianCredential.provider_checks),
-        )
-        .filter(ClinicianCredential.id == credential_id).first()
-    )
-    if not credential:
-        raise HTTPException(404, "Processo não encontrado.")
-    action = body.action.lower()
-    statuses = {
-        "approve": "verified", "verify": "verified", "needs_info": "needs_info",
-        "reject": "rejected", "suspend": "suspended",
-    }
-    if action not in statuses:
-        raise HTTPException(422, "Decisão inválida.")
-    if action == "reject" and not (body.notes or "").strip():
-        raise HTTPException(422, "Indique o motivo da rejeição.")
-    if action in ("approve", "verify"):
-        _refresh_checks(credential)
-        failed = [
-            item for item in json.loads(credential.automated_checks_json or "[]")
-            if item["severity"] == "required" and not item["passed"]
-        ]
-        if failed:
-            raise HTTPException(409, "Não é possível aprovar enquanto faltam verificações obrigatórias.")
-
-    previous_status = credential.status
-    credential.status = statuses[action]
-    credential.review_notes = body.notes
-    credential.rejection_reason = body.notes if action == "reject" else None
-    if credential.status == "verified":
-        credential.verified_at = datetime.utcnow()
-        credential.verified_by = reviewer.id
-
-    doctor = db.query(Doctor).filter(Doctor.user_id == credential.user_id).first()
-    if doctor:
-        doctor.verification_status = credential.status
-        doctor.verified_at = credential.verified_at
-        doctor.verified_by = credential.verified_by
-
-    # Write a state-machine audit row — best-effort so a broken transition
-    # graph never blocks a reviewer decision the code already accepted.
-    try:
-        from app.services.verification.state_machine import record_transition
-        record_transition(
-            db,
-            entity_type="clinician_credential",
-            entity_id=credential.id,
-            previous_status=previous_status,
-            new_status=credential.status,
-            actor_user_id=reviewer.id,
-            actor_kind="user",
-            reason_code=f"reviewer_{action}",
-            reason_text=body.notes,
-        )
-    except Exception:
-        pass  # audit failure must not deny an accepted decision.
-
-    # Notify the professional of the decision (§18) — applicant-visible copy only.
-    try:
-        from app.health_models import Notification
-        _decision_templates = {
-            "verified": ("Candidatura aprovada",
-                         "A sua verificação profissional foi aprovada. Já pode exercer no KAYA.", "success"),
-            "rejected": ("Candidatura rejeitada", "A sua candidatura não foi aprovada.", "error"),
-            "needs_info": ("Informação adicional necessária",
-                           "A equipa de conformidade precisa de mais informação.", "warning"),
-            "suspended": ("Conta suspensa", "A sua conta profissional foi suspensa.", "error"),
-        }
-        _tpl = _decision_templates.get(credential.status)
-        if _tpl:
-            _title, _msg, _type = _tpl
-            if body.notes:
-                _msg = f"{_msg} {body.notes}"
-            db.add(Notification(
-                user_id=credential.user_id, title=_title, message=_msg, type=_type,
-                related_entity_type="clinician_credential", related_entity_id=credential.id,
-            ))
-    except Exception:
-        pass
-
-    db.commit()
+    from app.services.credential_review import review_credential
+    credential = review_credential(credential_id, body, reviewer=reviewer, db=db)
     return _serialize(_get_credential(db, credential.user_id))
 
 
@@ -562,7 +522,7 @@ def download_evidence(
     if not evidence:
         raise HTTPException(404, "Documento não encontrado.")
     credential = db.get(ClinicianCredential, evidence.credential_id)
-    if not credential or (credential.user_id != user.id and user.role not in ("admin", "support")):
+    if not credential or (credential.user_id != user.id and user.role not in ("admin", "support", "compliance_reviewer")):
         raise HTTPException(403, "Sem acesso a este documento.")
     data = get_health_storage().download_bytes(evidence.storage_key)
     safe_name = "".join(

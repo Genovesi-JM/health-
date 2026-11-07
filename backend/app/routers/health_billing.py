@@ -2,17 +2,11 @@ from __future__ import annotations
 """
 Health Billing Router — Consultation payments and invoices.
 
-Payments go through the real payment orchestrator adapters (Multicaixa Express
-for Angola by default). A checkout creates a *pending* payment and returns the
-provider reference / QR code — it NEVER marks a consultation as paid on its own.
-A consultation only becomes `paid` when:
-  - a signed provider webhook confirms it, or
-  - a status poll against the provider returns "completed", or
-  - an admin explicitly confirms it (pilot / bank-transfer / cash reconciliation).
-
-Per the launch plan, production checkout must not silently fall back to a
-simulated payment: if the gateway is not configured in production, checkout
-fails loudly (503) instead of pretending the payment succeeded.
+Checkout durably records one owned request before dispatch. Exact retries
+recover that request without redispatching it. Provider observations and manual
+confirmation retain financial receipts; current care eligibility determines
+whether they can mark a consultation paid or require financial review.
+Unconfigured adapters and unapproved Portugal quotes cannot start checkout.
 
 Endpoints:
 - POST /api/v1/billing/consultation/checkout            — start a payment (pending)
@@ -26,10 +20,9 @@ import logging
 import os
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Header, Query, Response
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user, require_admin
 from app.models import User
@@ -39,6 +32,7 @@ from app.health_schemas import (
     PaymentMethodsResponse, PaymentMethodOption, InvoiceOut,
 )
 from app.rbac import get_patient_for_user
+from app.services import consultation_payments as lifecycle
 from app.services.payments import (
     PaymentIntent, PaymentProvider, PaymentStatus, Currency,
     MulticaixaExpressAdapter, VisaMastercardAdapter,
@@ -47,7 +41,12 @@ from app.services.payments import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
+def _private(response: Response):
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+
+router = APIRouter(prefix="/api/v1/billing", tags=["billing"], dependencies=[Depends(_private)])
 
 # MVP consultation price in AOA centavos (50,000.00 AOA)
 CONSULT_PRICE_AOA = 5000000
@@ -60,8 +59,6 @@ _ADAPTERS = {
     PaymentProvider.IBAN_TRANSFER: IBANTransferAdapter(),
     PaymentProvider.PAYPAL: PayPalAdapter(),
 }
-
-_IS_PRODUCTION = settings.env in ("production", "prod")
 
 # Regional discovery catalog. Only entries with a checkout_id are executable
 # today; the remaining entries make the integration contract and credential
@@ -149,20 +146,7 @@ def _env_configured(name: str) -> bool:
     return bool(value) and "REPLACE_WITH" not in upper and "EXAMPLE" not in upper
 
 
-def _resolve_provider(method: str | None) -> PaymentProvider:
-    """Map an incoming payment_method string to a PaymentProvider (default MCX)."""
-    if not method:
-        return PaymentProvider.MULTICAIXA_EXPRESS
-    try:
-        return PaymentProvider(method)
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Método de pagamento não suportado: {method}",
-        )
-
-
-def _provider_configured(provider: PaymentProvider) -> bool:
+def _provider_configured(provider: PaymentProvider, currency: str = "AOA") -> bool:
     """Whether the provider has real credentials (vs. dev mock)."""
     adapter = _ADAPTERS[provider]
     if isinstance(adapter, MulticaixaExpressAdapter):
@@ -170,7 +154,7 @@ def _provider_configured(provider: PaymentProvider) -> bool:
     if isinstance(adapter, VisaMastercardAdapter):
         return _env_configured("STRIPE_SECRET_KEY")
     if isinstance(adapter, IBANTransferAdapter):
-        return True  # manual transfer needs no external credentials
+        return adapter.recipient_configured(currency)
     if isinstance(adapter, PayPalAdapter):
         return _env_configured("PAYPAL_CLIENT_ID") and _env_configured("PAYPAL_SECRET")
     return False
@@ -187,16 +171,46 @@ def _to_health_status(status: PaymentStatus) -> str:
     return "pending"  # pending, processing, awaiting_confirmation
 
 
-def _mark_consultation_paid(db: Session, payment: HealthPayment) -> None:
-    """Reconcile a paid HealthPayment onto its consultation."""
-    payment.status = "paid"
-    db.add(payment)
-    if payment.consultation_id:
-        consultation = db.get(Consultation, payment.consultation_id)
-        if consultation and consultation.payment_status != "paid":
-            consultation.payment_status = "paid"
-            consultation.payment_id = payment.id
-            db.add(consultation)
+def _attempt_out(db, payment):
+    meta, _ = lifecycle._metadata(payment)
+    consultation = db.get(Consultation, payment.consultation_id) if payment.consultation_id else None
+    return ConsultCheckoutResponse(
+        payment_id=payment.id, status=payment.status, amount=payment.amount, currency=payment.currency,
+        provider=payment.provider, provider_reference=payment.provider_reference,
+        qr_code=meta.get("qr_code"), redirect_url=meta.get("redirect_url"), client_secret=meta.get("client_secret"),
+        transfer_details=meta.get("transfer_details"), instructions=meta.get("instructions"),
+        consultation_paid=lifecycle.consultation_payment_applied(payment, consultation),
+        dispatch_state=payment.dispatch_state, request_key=payment.checkout_request_key,
+        **lifecycle.review_fields(payment),
+    )
+
+
+def _payment_status_out(db, payment):
+    consultation = db.get(Consultation, payment.consultation_id) if payment.consultation_id else None
+    return PaymentStatusResponse(payment_id=payment.id, status=payment.status,
+        provider=payment.provider, amount=payment.amount, currency=payment.currency,
+        consultation_paid=lifecycle.consultation_payment_applied(payment, consultation),
+        dispatch_state=payment.dispatch_state, request_key=payment.checkout_request_key,
+        **lifecycle.review_fields(payment))
+
+
+def _checkout_provider_gate(provider):
+    if not any(item.get('checkout_id') == provider and 'AOA' in item['currencies']
+               and ('AO' in item['countries'] or '*' in item['countries']) for item in _REGIONAL_METHODS):
+        raise HTTPException(409, {"reason": "provider_currency_unavailable", "message": "Método indisponível para esta moeda."})
+    if not _provider_configured(provider):
+        raise HTTPException(503, {"code": "provider_unavailable", "message": "O método de pagamento ainda não está configurado."})
+
+
+def _payment_for_reference(db, provider, reference):
+    matches = db.query(HealthPayment).filter(
+        HealthPayment.provider_reference == reference, HealthPayment.provider == provider,
+    ).limit(2).all()
+    if len(matches) > 1:
+        # A signed callback cannot choose between legacy duplicated references.
+        raise HTTPException(409, {"code": "payment_reference_ambiguous",
+            "message": "A referência do prestador necessita de reconciliação pela equipa."})
+    return matches[0] if matches else None
 
 
 @router.get("/payment-methods", response_model=PaymentMethodsResponse)
@@ -215,19 +229,22 @@ def payment_methods(
         if currency and currency not in item["currencies"]:
             continue
         checkout_id = item.get("checkout_id")
-        configured = _env_configured(_PROVIDER_ENV.get(item["provider"], "")) if item["provider"] != "bank_transfer" else True
+        configured = _provider_configured(checkout_id, currency or "AOA") if checkout_id else False
         executable = checkout_id is not None
-        enabled = executable and ((not _IS_PRODUCTION) or _provider_configured(checkout_id))
+        quote_ready = country == "AO" and currency == "AOA"
+        enabled = executable and configured and quote_ready
         if not include_planned and not enabled:
             continue
-        if item.get("preview"):
+        if executable and not quote_ready:
+            integration_status = "quote_required"
+        elif item.get("preview"):
             integration_status = "preview"
         elif not executable:
             integration_status = "adapter_required"
         elif configured:
             integration_status = "ready"
         else:
-            integration_status = "sandbox"
+            integration_status = "configuration_required"
         methods.append(PaymentMethodOption(
             id=item["id"],
             label=item["label"],
@@ -245,125 +262,29 @@ def payment_methods(
 
 @router.post("/consultation/checkout", response_model=ConsultCheckoutResponse)
 async def checkout_consultation(
-    body: ConsultCheckoutRequest,
-    patient: Patient = Depends(get_patient_for_user),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    body: ConsultCheckoutRequest, idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
+    patient: Patient = Depends(get_patient_for_user), user: User = Depends(get_current_user), db: Session = Depends(get_db),
 ):
-    """Start a payment for a consultation. Returns a *pending* payment."""
-    consultation = db.query(Consultation).filter(
-        Consultation.id == body.consultation_id,
-        Consultation.patient_id == patient.id,
-    ).first()
-    if not consultation:
-        raise HTTPException(status_code=404, detail="Consulta não encontrada.")
-    if consultation.payment_status == "paid":
-        raise HTTPException(status_code=400, detail="Consulta já paga.")
-
-    provider = _resolve_provider(body.payment_method)
-
-    # Launch-gate: never silently simulate a payment in production.
-    if _IS_PRODUCTION and not _provider_configured(provider):
-        logger.error("Checkout blocked: provider %s not configured in production", provider.value)
-        raise HTTPException(
-            status_code=503,
-            detail="Pagamentos indisponíveis de momento. Tente novamente mais tarde.",
-        )
-
-    # Idempotency: reuse an existing open payment for this consultation.
-    existing = (
-        db.query(HealthPayment)
-        .filter(
-            HealthPayment.consultation_id == consultation.id,
-            HealthPayment.status == "pending",
-        )
-        .order_by(HealthPayment.created_at.desc())
-        .first()
-    )
-    if existing and existing.provider == provider.value:
-        meta = json.loads(existing.metadata_json or "{}")
-        return ConsultCheckoutResponse(
-            payment_id=existing.id, status=existing.status,
-            amount=existing.amount, currency=existing.currency,
-            provider=existing.provider, provider_reference=existing.provider_reference,
-            qr_code=meta.get("qr_code"), redirect_url=meta.get("redirect_url"),
-            client_secret=meta.get("client_secret"),
-            transfer_details=meta.get("transfer_details"), instructions=meta.get("instructions"),
-        )
-
-    payment = HealthPayment(
-        patient_id=patient.id,
-        consultation_id=consultation.id,
-        payment_type="consultation",
-        amount=CONSULT_PRICE_AOA,
-        currency=CONSULT_CURRENCY,
-        status="pending",
-        provider=provider.value,
-        description=f"Consulta {consultation.specialty} — {consultation.id[:8]}",
-    )
-    db.add(payment)
-    db.flush()  # assign payment.id
-
-    intent = PaymentIntent(
-        id=payment.id,
-        company_id="kaya",
-        order_id=payment.id,
-        amount=CONSULT_PRICE_AOA,
-        currency=Currency.AOA,
-        provider=provider,
-        description=payment.description or "Consulta KAYA",
-        metadata={"consultation_id": consultation.id, "patient_id": patient.id},
-        idempotency_key=payment.id,
-    )
-
-    adapter = _ADAPTERS[provider]
-    result = await adapter.create_payment(intent)
-
-    if not result.success:
-        payment.status = "failed"
-        db.commit()
-        raise HTTPException(
-            status_code=502,
-            detail=result.error_message or "Falha ao iniciar o pagamento.",
-        )
-
-    raw = result.raw_response or {}
-    transfer_details = raw.get("transfer_details")
-    instructions = raw.get("instructions")
-
-    payment.status = _to_health_status(result.status)
-    payment.provider_reference = result.provider_reference
-    payment.metadata_json = json.dumps({
-        "qr_code": result.qr_code,
-        "redirect_url": result.redirect_url,
-        "client_secret": result.client_secret,
-        "transfer_details": transfer_details,
-        "instructions": instructions,
-        "mock": bool(raw.get("mock")),
-    })
-    db.add(payment)
-
-    # A provider that confirms synchronously may already be completed — reconcile,
-    # but only when it genuinely reports completed.
-    if payment.status == "paid":
-        _mark_consultation_paid(db, payment)
-
-    db.commit()
-    db.refresh(payment)
-
-    return ConsultCheckoutResponse(
-        payment_id=payment.id,
-        status=payment.status,
-        amount=payment.amount,
-        currency=payment.currency,
-        provider=payment.provider,
-        provider_reference=payment.provider_reference,
-        qr_code=result.qr_code,
-        redirect_url=result.redirect_url,
-        client_secret=result.client_secret,
-        transfer_details=transfer_details,
-        instructions=instructions,
-    )
+    payment, dispatch = lifecycle.prepare_checkout(db, patient_id=patient.id, actor_id=user.id,
+        consultation_id=body.consultation_id, method=body.payment_method, key=idempotency_key,
+        provider_gate=_checkout_provider_gate, amount=CONSULT_PRICE_AOA, currency=CONSULT_CURRENCY)
+    if not dispatch:
+        return _attempt_out(db, lifecycle.refresh_known_receipt(db, payment))
+    identifier = payment.id
+    intent = PaymentIntent(id=identifier, company_id="kaya", order_id=identifier, amount=payment.amount,
+        currency=Currency(payment.currency), provider=PaymentProvider(payment.provider), description="Consulta KAYA",
+        metadata={"consultation_id": payment.consultation_id, "patient_id": patient.id}, idempotency_key=identifier)
+    try:
+        result = await _ADAPTERS[PaymentProvider(payment.provider)].create_payment(intent)
+        payment = lifecycle.record_dispatch_result(db, identifier, result)
+    except Exception:
+        db.rollback()
+        try:
+            payment = lifecycle.mark_unknown(db, identifier)
+        except Exception:
+            db.rollback()
+            raise HTTPException(503, "Não foi possível confirmar o resultado. Recupere o pedido com a mesma chave; não inicie outro pagamento.") from None
+    return _attempt_out(db, lifecycle.refresh_known_receipt(db, payment))
 
 
 @router.get(
@@ -371,7 +292,7 @@ async def checkout_consultation(
     response_model=PaymentStatusResponse,
 )
 async def consultation_payment_status(
-    consultation_id: str,
+    consultation_id: str, request_key: str | None = Query(None, max_length=64),
     patient: Patient = Depends(get_patient_for_user),
     db: Session = Depends(get_db),
 ):
@@ -385,28 +306,29 @@ async def consultation_payment_status(
         .order_by(HealthPayment.created_at.desc())
         .first()
     )
+    if request_key is not None:
+        key = lifecycle.request_key(request_key)
+        payment = db.query(HealthPayment).filter_by(patient_id=patient.id, consultation_id=consultation_id, checkout_request_key=key).first()
     if not payment:
-        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+        raise HTTPException(status_code=404, detail="Pagamento não encontrado. Um pedido em curso ainda pode ser confirmado.")
 
-    if payment.status == "pending" and payment.provider_reference:
+    # Unknown dispatch outcomes require verified reconciliation. Adapter
+    # fallback "pending" is not proof that an ambiguous dispatch succeeded.
+    if payment.status == "pending" and payment.provider_reference and payment.dispatch_state == "response_recorded":
+        _payment_for_reference(db, payment.provider, payment.provider_reference)
         provider = PaymentProvider(payment.provider)
         adapter = _ADAPTERS[provider]
         provider_status = await adapter.check_status(payment.provider_reference)
+        _payment_for_reference(db, payment.provider, payment.provider_reference)
         new_status = _to_health_status(provider_status)
-        if new_status != payment.status:
-            payment.status = new_status
-            if new_status == "paid":
-                _mark_consultation_paid(db, payment)
-            db.add(payment)
-            db.commit()
-            db.refresh(payment)
+        # The provider await can overlap a callback. Reconcile even an
+        # unchanged observation under the shared locks and refresh the row;
+        # never return the cached pre-await payment or erase a newer receipt.
+        lifecycle.apply_observation(db, payment, new_status, source="provider_status")
+        db.commit()
+        db.refresh(payment)
 
-    consultation = db.get(Consultation, consultation_id)
-    return PaymentStatusResponse(
-        payment_id=payment.id,
-        status=payment.status,
-        consultation_paid=bool(consultation and consultation.payment_status == "paid"),
-    )
+    return _payment_status_out(db, lifecycle.refresh_known_receipt(db, payment))
 
 
 @router.post(
@@ -427,22 +349,9 @@ def admin_confirm_consultation_payment(
     )
     if not payment:
         raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
-    if payment.status != "paid":
-        meta = json.loads(payment.metadata_json or "{}")
-        meta["confirmed_by"] = admin.id
-        payment.metadata_json = json.dumps(meta)
-        _mark_consultation_paid(db, payment)
-        db.commit()
-        db.refresh(payment)
-        logger.info("Consultation %s payment manually confirmed by admin %s",
-                    consultation_id, admin.id)
-
-    consultation = db.get(Consultation, consultation_id)
-    return PaymentStatusResponse(
-        payment_id=payment.id,
-        status=payment.status,
-        consultation_paid=bool(consultation and consultation.payment_status == "paid"),
-    )
+    lifecycle.apply_observation(db, payment, "paid", source="admin", actor_id=admin.id)
+    db.commit(); db.refresh(payment)
+    return _payment_status_out(db, payment)
 
 
 @router.post("/webhook/{provider}")
@@ -490,21 +399,14 @@ async def billing_webhook(
     if not provider_ref or not new_status:
         return {"status": "ignored"}
 
-    payment = (
-        db.query(HealthPayment)
-        .filter(HealthPayment.provider_reference == provider_ref)
-        .first()
-    )
+    payment = _payment_for_reference(db, provider_enum.value, provider_ref)
     if not payment:
         return {"status": "no_match"}
 
-    payment.status = new_status
-    if new_status == "paid":
-        _mark_consultation_paid(db, payment)
-    db.add(payment)
+    lifecycle.apply_observation(db, payment, new_status, source="provider_webhook")
     db.commit()
     logger.info("Webhook %s updated payment %s -> %s", provider, payment.id, new_status)
-    return {"status": "ok", "payment_id": payment.id, "new_status": new_status}
+    return {"status": "ok", "payment_id": payment.id, "new_status": payment.status, **lifecycle.review_fields(payment)}
 
 
 @router.get("/me/invoices", response_model=List[InvoiceOut])
@@ -529,6 +431,7 @@ def my_invoices(
             status=p.status,
             description=p.description,
             created_at=p.created_at,
+            **lifecycle.review_fields(p),
         )
         for p in payments
     ]

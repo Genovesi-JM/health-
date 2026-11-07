@@ -20,7 +20,8 @@ def _register(client, role="doctor", diploma_country="AO", country="AO"):
         "graduation_year": 2020,
     })
     assert r.status_code == 201, r.text
-    return r.json()
+    from _authutil import complete_enrollment
+    return complete_enrollment(client, r.json())
 
 
 def _headers(auth):
@@ -28,8 +29,8 @@ def _headers(auth):
 
 
 def _admin(client):
-    r = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
-    return r.json()
+    from _authutil import login_with_mfa
+    return login_with_mfa(client, "teste@admin.com", "123456")
 
 
 def _submit(client, auth):

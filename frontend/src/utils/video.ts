@@ -1,18 +1,75 @@
-/**
- * Video teleconsult room.
- *
- * Pilot-grade: opens a Jitsi Meet room named after the consultation so the
- * patient and doctor land in the same call, with no account or credentials
- * required. For production, swap this for a HIPAA/GDPR-compliant provider
- * (Twilio Video, Vonage, Daily, or a self-hosted Jitsi) — configurable via
- * VITE_VIDEO_BASE.
- */
-const VIDEO_BASE = (import.meta as any).env?.VITE_VIDEO_BASE || 'https://meet.jit.si';
+import { assertOperationalAccess } from '../phase1/policy';
 
-export function videoRoomUrl(consultationId: string): string {
-  return `${VIDEO_BASE.replace(/\/$/, '')}/KAYA-${consultationId}`;
+/**
+ * Video teleconsult room (Phase 25 — secure provider boundary).
+ *
+ * There is NO public fallback: no meet.jit.si default, no client-derived room.
+ * The room a participant enters is decided by the SERVER — the backend
+ * `/api/v1/teleconsultations/{id}/join` endpoint fails closed (503) unless an
+ * approved, DPA-covered provider is enabled server-side, and only then returns a
+ * full `room_url` built from an unguessable, server-issued room key. The client
+ * never constructs a room from a Kaya id.
+ *
+ * A production provider stays BLOCKED_EXTERNAL until the video release gate
+ * (DPA, data region/transfer, security, accessibility, retention, clinical
+ * fallback) is approved.
+ */
+const VIDEO_BASE = (import.meta.env.VITE_VIDEO_BASE || '').replace(/\/$/, '');
+
+export function videoEnabled(): boolean {
+  return VIDEO_BASE.length > 0;
 }
 
-export function openVideoRoom(consultationId: string): void {
-  window.open(videoRoomUrl(consultationId), '_blank', 'noopener,noreferrer');
+/** A server room key must carry real entropy and must not be a bare Kaya id. */
+export function isServerRoomKey(key: string): boolean {
+  const body = key.startsWith('KAYA-') ? key.slice(5) : key;
+  return body.length >= 24 && !/\s/.test(body);
+}
+
+/**
+ * Open a room URL that the SERVER produced (from its join response). We only
+ * open it when it sits under the configured, approved provider base — never an
+ * arbitrary or client-chosen destination.
+ */
+export function openServerVideoRoom(roomUrl: string): void {
+  window.open(approvedServerVideoRoom(roomUrl), '_blank', 'noopener,noreferrer');
+}
+
+/** Apply the same boundary to embedded rooms and external windows. */
+export function approvedServerVideoRoom(roomUrl: string): string {
+  assertOperationalAccess();
+  if (!videoEnabled()) {
+    throw new Error('Video is disabled: no approved provider configured.');
+  }
+  const base = new URL(VIDEO_BASE);
+  const room = new URL(roomUrl);
+  const basePath = base.pathname.replace(/\/$/, '');
+  if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash
+    || room.protocol !== 'https:' || room.username || room.password
+    || room.origin !== base.origin || !room.pathname.startsWith(basePath + '/') || !roomUrl.startsWith(VIDEO_BASE + '/')) {
+    throw new Error('Refusing to open a room outside the approved provider base.');
+  }
+  return room.href;
+}
+
+/** Build a room URL from a server-issued key (guarded; no public fallback). */
+export function videoRoomUrl(serverRoomKey: string): string {
+  if (!videoEnabled()) {
+    throw new Error('Video is disabled: no approved provider configured.');
+  }
+  if (!isServerRoomKey(serverRoomKey)) {
+    throw new Error('Refusing to build a room from a non-server-issued key.');
+  }
+  return `${VIDEO_BASE}/${serverRoomKey}`;
+}
+
+/**
+ * Legacy entry point retained for the operational-hold contract test. It fails
+ * closed on every axis: the operational hold throws first while the app is held,
+ * video is disabled without an approved base, and a guessable (Kaya-id) key is
+ * rejected before any window opens.
+ */
+export function openVideoRoom(serverRoomKey: string): void {
+  assertOperationalAccess();
+  window.open(videoRoomUrl(serverRoomKey), '_blank', 'noopener,noreferrer');
 }

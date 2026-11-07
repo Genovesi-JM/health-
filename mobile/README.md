@@ -1,121 +1,61 @@
-# KAYA — App para iOS e Android
+# Kaya mobile application
 
-React Native + Expo + TypeScript mobile client for the KAYA.
+Kaya uses React Native, Expo and TypeScript to produce standalone iOS and Android applications. Patients install Kaya itself. Expo Go is not part of the customer journey. Angola is the first target market; Portugal is prepared alongside it through the shared market policy.
 
-## Quick Start
+## Current implementation
 
-```bash
-cd mobile
-npm install
-cp .env.example .env
-```
+The default `App.tsx` renders planning information. Existing account, patient and clinician screens are preserved, including the recovered consultation list, but are not mounted by that entry point. API requests remain restricted by the current application policy. A successful build or API URL configuration does not enable clinical services.
 
-Edit `.env` and set your DigitalOcean backend URL:
-```
-EXPO_PUBLIC_API_URL=https://<your-droplet-or-app>.ondigitalocean.app
-```
-> ⚠️ Do **not** use `localhost` — iOS Simulator cannot reach your Mac's localhost via that hostname.
+The dependency lock currently uses Expo SDK 52 and React Native 0.76.9. Review the upgrade path and native integration compatibility before release. App icons under `assets/` are still placeholder images, and native device/store validation remains outstanding.
 
-Start the app:
-```bash
-npx expo start
-# Press  i  to open iOS Simulator
-```
+## Local development
 
-## Test Credentials
-
-| Field    | Value                 |
-|----------|-----------------------|
-| Email    | `paciente@health.com` |
-| Password | `SeedDefault@1234`    |
-
-> If `ADMIN_PASSWORD` is set in the backend `.env`, the seed password may differ — use that value instead.
-
-## Backend Health Check
-
-The HomeScreen shows a live status badge:
-- 🟢 **Backend online** — `GET /api/v1/health` returned 200
-- 🔴 **Backend unavailable** — request failed or timed out
-- 🟡 **Checking…** — request in flight
-
-## Setup
+Use Node 22.18 or newer and install from the lockfile:
 
 ```bash
 cd mobile
-npm install
+npm ci
+npm run typecheck
+npm test
 ```
 
-Set environment variable (create `.env` in `mobile/`):
-```
-EXPO_PUBLIC_API_BASE_URL=https://your-backend.com
-```
-For local dev: `EXPO_PUBLIC_API_BASE_URL=http://localhost:8000`
-
-## Run
+Create a development build on the target platform:
 
 ```bash
-# Start Expo dev server
-npm start
-
-# iOS simulator
 npm run ios
-
-# Android emulator
+# or
 npm run android
 ```
 
-## Architecture
+These commands compile the native project with Expo. iOS requires a configured Xcode installation on macOS; Android requires the Android SDK and an emulator or connected device. Once the development build is installed, `npm start` connects it to the JavaScript development server. No physical-device build is claimed by TypeScript or unit-test success.
 
-```
-mobile/
-├── App.tsx                        Entry point
-├── app.json                       Expo config
-├── src/
-│   ├── contexts/
-│   │   └── AuthContext.tsx        JWT auth state (SecureStore)
-│   ├── services/
-│   │   └── api.ts                 Axios instance with Bearer auth
-│   ├── navigation/
-│   │   ├── index.tsx              Root navigator (Auth vs App)
-│   │   ├── AuthStack.tsx          Login / Register / ConsentGate
-│   │   └── AppStack.tsx           Bottom tabs + stack screens
-│   └── screens/
-│       ├── LoginScreen.tsx        Email/password login
-│       ├── RegisterScreen.tsx     Registration + 5 consent checkboxes
-│       ├── ConsentGateScreen.tsx  Consent review/acceptance
-│       ├── HomeScreen.tsx         Patient dashboard + quick actions
-│       ├── TriageScreen.tsx       Rule-based triage + guided private photos
-│       ├── PatientProfileScreen.tsx  Demographics, allergies, emergency
-│       ├── ReadingsScreen.tsx     Device readings log + add new
-│       ├── BookConsultationScreen.tsx  Doctor list + schedule
-│       ├── PrescriptionRequestScreen.tsx  Rx requests + status
-│       ├── FamilyScreen.tsx       Family members CRUD
-│       ├── NotificationsScreen.tsx   Notifications + mark read
-│       └── SettingsScreen.tsx     Account info + change password
-```
+## API configuration
 
-## Auth Flow
+Use `EXPO_PUBLIC_API_URL` for the intended backend. `EXPO_PUBLIC_API_BASE_URL` remains a legacy alias. Expo public variables are included in the app bundle; never place credentials in them.
 
-1. App starts → checks `SecureStore` for saved session
-2. If no session → `AuthStack` (Login / Register / ConsentGate)
-3. After login/register → token saved in SecureStore  
-4. `AppStack` mounts with bottom tab navigation
-5. All API calls automatically attach `Authorization: Bearer <token>`
+For local development, choose an address reachable by the test device: iOS Simulator can use the Mac's localhost, the standard Android emulator uses `10.0.2.2`, and physical devices need a reachable development-server address. Local HTTP is allowed only in development mode. Release API initialization requires an explicit HTTPS endpoint and rejects localhost, emulator addresses, embedded credentials and query parameters. Configure the value in the build environment, not just the developer's shell.
 
-## API alignment
+The informational entry does not import the operational API client. This means building the informational app does not prove an endpoint is configured, reachable or ready for patient use.
 
-All screens call the same endpoints as the web frontend:
-- Triage: `POST /api/v1/triage/start`, answers, completion, and private photo upload
-- `PATCH /api/v1/patients/me` (not PUT)
-- `POST /api/v1/patients/profile` (not `/api/v1/patients/`)
-- `PATCH /api/v1/doctors/me` (not PUT)
-- `POST /auth/change-password` (unified endpoint)
-- Consents: all 5 types (`terms_of_service`, `privacy_policy`, `medical_disclaimer`, `health_data_processing`, `telemedicine_consent`)
+## Standalone build profiles
 
-## Photo-assisted triage
+| Profile | Output and purpose |
+| --- | --- |
+| `development` | Development client with developer tooling; requires a development server |
+| `preview` | Internal standalone build; Android APK, with no development client |
+| `production` | Store distribution build with version incrementing |
 
-For skin and injury complaints, the mobile flow can capture three optional
-views: orientation, surrounding context, and close-up. Every selected image is
-re-encoded as JPEG before upload so the original metadata is not sent. Images
-are never interpreted as a diagnosis by KAYA; they remain private and are
-available only to the patient and the clinician linked to the consultation.
+EAS profiles are defined in `eas.json`. The project account, platform signing and distribution credentials must be configured before producing distributable builds. EAS cloud services are optional; native builds can also be produced locally. The `com.kayahealth.app` identifiers are configured values, not evidence of store registration or ownership verification.
+
+Before the first standalone preview, replace the placeholder icons, confirm native module/plugin compatibility and test the intended screens on devices. Before clinical release, complete account access, consent, verification, consultation and country-specific service readiness. Test video, uploads, notifications and interrupted connections using synthetic records first. Payments remain in the final implementation phase.
+
+## Code and checks
+
+- `src/phase1/policy.ts` reads the generated shared market/capability policy.
+- `src/config/apiUrl.ts` validates development and distribution API addresses.
+- `src/services/api.ts` handles authentication tokens and API access.
+- `src/navigation/` and `src/screens/` contain the preserved application flows.
+- `scripts/api-url.test.mjs` checks endpoint handling with Node and the URL implementation used by the installed Expo SDK.
+- The repository's technical-checks workflow runs mobile type checking and configuration tests.
+
+See the [Expo development-build guide](https://docs.expo.dev/develop/development-builds/introduction/) and [EAS build profiles](https://docs.expo.dev/build/eas-json/) for the build mechanisms. The [product plan](../PRODUCT_AND_LAUNCH_PLAN.md) defines Kaya's rollout and implementation priorities.

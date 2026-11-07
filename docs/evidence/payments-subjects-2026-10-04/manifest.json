@@ -1,0 +1,15 @@
+{
+  "backend-source-manifest.json": "cf57d101dee559e8a55dec6ff0b05674c858df52183ce773bdf3e6f98803a867",
+  "backend.log": "e0f8fe382890182220448745dfae058cd01152f68e5858ce7393f19ee6e3ceca",
+  "backend.xml.gz": "df31a175458a78ceff18f132feb31fdf7137a09a5028b185714b94c9012943f8",
+  "build.log": "78bd1eb0f0d479726a993d55636a552e1faec2ca1ca963c328499c1db2a52c2c",
+  "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "postgresql.json": "e964a3a71adf54d0461b1f44f4a6da3200694310fe538f9c2e6106ba26c971c1",
+  "repository-checks.log": "d3a0e19a4f493f90fdb2233a337cf0cdc7cd22a291c371e2f07dbf7be0383b05",
+  "subject-source-manifest.json": "2954fc6875e6a687c39b793da54e8faa48ca245427a322df8d03231c80bafb0e",
+  "typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "validation.json": "46c11c5397c4bde80feee4424b18e05aa50bcd527fbe6b566c866acfe78373b5",
+  "web-report.json": "aeb1c45568ecb11477da0d0e86c42b324bfd51a301483508fb232b138c35a58a",
+  "web-source-manifest.json": "946fa28b0874e9167d29403707aaff24e7a547390b6c6517e0200212a3f69f30",
+  "web-tests.log": "276610cf0c93a276fce9c39d4f8689d21234ae294497f1cccea7055224fef58e"
+}

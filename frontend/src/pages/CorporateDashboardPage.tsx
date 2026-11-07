@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import api from '../api';
+import { apiErrorMessage } from '../utils/apiError';
 import { useT } from '../i18n/LanguageContext';
 import { useAuth } from '../AuthContext';
 import { specialtyLabel } from '../constants/specialties';
@@ -30,8 +31,7 @@ export default function CorporateDashboardPage() {
   const [enrolMsg, setEnrolMsg] = useState('');
   const [enrolErr, setEnrolErr] = useState('');
 
-  const load = () => {
-    setLoading(true);
+  const load = useCallback(() => {
     api.get('/api/v1/corporate/accounts/me')
       .then(r => {
         setAccount(r.data);
@@ -39,8 +39,8 @@ export default function CorporateDashboardPage() {
       })
       .catch(() => setAccount(null))
       .finally(() => setLoading(false));
-  };
-  useEffect(load, []);
+  }, []);
+  useEffect(() => { load(); }, [load]);
 
   const createAccount = async (e: FormEvent) => {
     e.preventDefault();
@@ -48,9 +48,10 @@ export default function CorporateDashboardPage() {
     try {
       await api.post('/api/v1/corporate/accounts', { ...form, max_employees: Number(form.max_employees) });
       try { await refreshUser(); } catch { /* ignore */ }
+      setLoading(true);
       load();
-    } catch (err: any) {
-      setCreateErr(err.response?.data?.detail || t('booking.error'));
+    } catch (err) {
+      setCreateErr(apiErrorMessage(err, t('booking.error')));
     }
     setCreating(false);
   };
@@ -62,9 +63,10 @@ export default function CorporateDashboardPage() {
       const r = await api.post('/api/v1/corporate/enroll', { patient_id: patientId.trim(), employee_code: empCode.trim() || undefined });
       setEnrolMsg(r.data?.detail || 'OK');
       setPatientId(''); setEmpCode('');
+      setLoading(true);
       load();
-    } catch (err: any) {
-      setEnrolErr(err.response?.data?.detail || t('booking.error'));
+    } catch (err) {
+      setEnrolErr(apiErrorMessage(err, t('booking.error')));
     }
   };
 

@@ -43,6 +43,9 @@ from app.rbac import (
     log_health_audit,
     require_verified_clinician,
 )
+from app.services.consultation_amendments import effective_clinician_notes
+from app.services.clinician_access import require_current_clinician
+from app.services.appointments import MARKET_ZONES
 
 
 router = APIRouter(prefix="/api/v1/clinician", tags=["clinician-workspace"])
@@ -194,7 +197,21 @@ def clinician_patient_360(
     consultation_rows = []
     prescriptions = []
     referrals = []
+    credential = require_current_clinician(user, db)
+    own_doctor = db.query(Doctor).filter_by(user_id=user.id).first() if user.role == "doctor" else None
     for consultation in consultations:
+        notes = effective_clinician_notes(db, consultation)
+        can_read_closeout = bool(own_doctor and consultation.doctor_id == own_doctor.id
+                                and consultation.status == "completed" and consultation.notes
+                                and consultation.notes.finalized_at)
+        has_episode_consent = False
+        if can_read_closeout:
+            from app.services.consent_runtime import require_episode
+            try:
+                require_episode(db, consultation)
+                has_episode_consent = True
+            except HTTPException:
+                pass  # Reading retained records never requires a new grant.
         messages_count = (
             db.query(ConsultationMessage.id)
             .filter(ConsultationMessage.consultation_id == consultation.id)
@@ -212,13 +229,10 @@ def clinician_patient_360(
             "doctor_id": consultation.doctor_id,
             "payment_status": consultation.payment_status,
             "messages_count": messages_count,
-            "notes": {
-                "subjective": consultation.notes.subjective,
-                "objective": consultation.notes.objective,
-                "assessment": consultation.notes.assessment,
-                "plan": consultation.notes.plan,
-                "outcome": consultation.notes.outcome,
-            } if consultation.notes else None,
+            "can_read_closeout": can_read_closeout,
+            "can_amend": bool(can_read_closeout and has_episode_consent and consultation.country in MARKET_ZONES
+                              and credential.practice_country == consultation.country),
+            "notes": {field: getattr(notes, field) for field in ("subjective", "objective", "assessment", "plan", "outcome")} if notes else None,
         })
         for prescription in (
             db.query(Prescription)
@@ -427,7 +441,8 @@ def clinician_patient_360(
             for item in escalations
         ],
         "consents": [
-            {"type": consent.consent_type, "accepted_at": _iso(consent.accepted_at)}
+            {"type": consent.consent_type, "accepted_at": _iso(consent.accepted_at),
+             "effective": False, "evidence_status": "legacy_unversioned"}
             for consent in consents
         ],
         "emergency_family": [

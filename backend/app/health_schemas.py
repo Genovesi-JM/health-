@@ -4,10 +4,10 @@ from __future__ import annotations
 Covers: Patient, Doctor, Triage, Consultation, Prescription, Referral,
 Corporate, Billing, Compliance, and Dashboard KPIs.
 """
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timezone
+from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, StrictBool, StrictInt, field_serializer, field_validator
 
 
 # ── Roles ──
@@ -151,6 +151,7 @@ class DoctorPublic(BaseModel):
     price_min: Optional[int] = None
     price_max: Optional[int] = None
     verification_status: str
+    practice_country: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -241,6 +242,8 @@ class TriageVitalSigns(BaseModel):
 
 
 class TriageStartRequest(BaseModel):
+    country: Literal["AO", "PT"]
+    consent_language: str = Field(default="pt", pattern=r"^[a-z]{2}(-[A-Z]{2})?$", max_length=10)
     chief_complaint: Optional[str] = None
 
     # Optional context for better question selection / downstream analytics.
@@ -326,21 +329,33 @@ class TriagePhotoRequestOut(BaseModel):
 # ── Consultation ──
 
 class ConsultationBookRequest(BaseModel):
+    consent_language: str = Field(default="pt", pattern=r"^[a-z]{2}(-[A-Z]{2})?$", max_length=10)
     triage_session_id: Optional[str] = None
     specialty: str = Field(default="clinica_geral")
     scheduled_at: Optional[datetime] = None
     next_available: bool = False
-    doctor_id: Optional[str] = None   # if set with scheduled_at, assign directly (scheduled)
+    doctor_id: Optional[str] = None   # preferred doctor; remains requested until accepted
+    slot_id: Optional[str] = None
+    country: Literal["AO", "PT"]
 
 
 class ConsultationOut(BaseModel):
     id: str
     patient_id: str
+    patient_name: Optional[str] = None
     doctor_id: Optional[str] = None
     triage_session_id: Optional[str] = None
     specialty: str
     status: str
+    requested_expires_at: Optional[datetime] = None
+    expired_at: Optional[datetime] = None
+    request_expiry_state: Optional[Literal["open", "expiry_pending", "review_required", "expired"]] = None
     scheduled_at: Optional[datetime] = None
+    scheduled_end_at: Optional[datetime] = None
+    slot_id: Optional[str] = None
+    reschedule_revision: int = 0
+    country: Optional[str] = None
+    timezone: Optional[str] = None
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None
     payment_status: str
@@ -348,21 +363,64 @@ class ConsultationOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_serializer("scheduled_at", "scheduled_end_at", "started_at", "ended_at", "requested_expires_at", "expired_at")
+    def serialize_utc(self, value: Optional[datetime]):
+        # The existing SQL columns store naive UTC. Keep the offset on the wire
+        # so browsers/mobile clients do not interpret it as their local time.
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
+
+
+class ConsultationRescheduleRequest(BaseModel):
+    slot_id: str = Field(min_length=1, max_length=36)
+    expected_revision: StrictInt = Field(ge=0)
+    model_config = {"extra": "forbid"}
+
 
 class ConsultationCompleteRequest(BaseModel):
-    subjective: Optional[str] = None
-    objective: Optional[str] = None
-    assessment: Optional[str] = None
-    plan: Optional[str] = None
-    outcome: str = Field(default="resolved", pattern="^(resolved|follow_up|referral|er)$")
+    # Required clinical fields are checked after ownership/status, so callers
+    # cannot discover another patient's state via closeout validation errors.
+    subjective: Optional[str] = Field(default=None, max_length=10000)
+    objective: Optional[str] = Field(default=None, max_length=10000)
+    assessment: Optional[str] = Field(default=None, max_length=10000)
+    plan: Optional[str] = Field(default=None, max_length=10000)
+    patient_summary: Optional[str] = Field(default=None, max_length=10000)
+    follow_up_instructions: Optional[str] = Field(default=None, max_length=10000)
+    follow_up_required: Optional[StrictBool] = None
+    follow_up_due_at: Optional[datetime] = None
+    outcome: Optional[str] = Field(default=None, pattern="^(resolved|follow_up|referral|er)$")
+
+    model_config = {"extra": "forbid"}
 
 
 class ConsultationCancelRequest(BaseModel):
     reason: Optional[str] = None
 
 
+class ConsultationAmendmentRequest(BaseModel):
+    expected_digest: str = Field(pattern="^[a-f0-9]{64}$")
+    reason: str = Field(min_length=1, max_length=2000)
+    publish_to_patient: StrictBool
+    subjective: Optional[str] = Field(default=None, max_length=10000)
+    objective: Optional[str] = Field(default=None, max_length=10000)
+    assessment: str = Field(min_length=1, max_length=10000)
+    plan: str = Field(min_length=1, max_length=10000)
+    patient_summary: str = Field(min_length=1, max_length=10000)
+
+    model_config = {"extra": "forbid"}
+
+
 class ConsultationQueueItem(BaseModel):
-    """Unassigned request or active consultation in the doctor's work queue."""
+    requested_expires_at: Optional[datetime] = None
+    expired_at: Optional[datetime] = None
+    request_expiry_state: Optional[Literal["open", "expiry_pending", "review_required", "expired"]] = None
+    reschedule_revision: int = 0
+    timezone: Optional[str] = None
+    scheduled_end_at: Optional[datetime] = None
+    """Eligible shared request, directed request, or doctor's active consultation."""
     id: str
     patient_id: Optional[str] = None
     patient_name: Optional[str] = None
@@ -375,6 +433,14 @@ class ConsultationQueueItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("scheduled_at", "scheduled_end_at", "requested_expires_at", "expired_at")
+    def serialize_utc(self, value: Optional[datetime]):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
 
 
 # ── Prescription ──
@@ -471,6 +537,11 @@ class ConsultCheckoutRequest(BaseModel):
 
 
 class ConsultCheckoutResponse(BaseModel):
+    consultation_paid: bool = False
+    financial_review_status: Literal["unassessed", "not_required", "required"] = "unassessed"
+    financial_review_reason: Optional[str] = None
+    dispatch_state: Optional[str] = None
+    request_key: Optional[str] = None
     payment_id: str
     status: str                              # pending, paid, failed
     amount: int
@@ -502,12 +573,21 @@ class PaymentMethodsResponse(BaseModel):
 
 
 class PaymentStatusResponse(BaseModel):
+    provider: Optional[str] = None
+    amount: Optional[int] = None
+    currency: Optional[str] = None
+    financial_review_status: Literal["unassessed", "not_required", "required"] = "unassessed"
+    financial_review_reason: Optional[str] = None
+    dispatch_state: Optional[str] = None
+    request_key: Optional[str] = None
     payment_id: str
     status: str          # pending, paid, failed
     consultation_paid: bool
 
 
 class InvoiceOut(BaseModel):
+    financial_review_status: Literal["unassessed", "not_required", "required"] = "unassessed"
+    financial_review_reason: Optional[str] = None
     id: str
     payment_type: str
     amount: int
@@ -522,16 +602,19 @@ class InvoiceOut(BaseModel):
 # ── Compliance / Consent ──
 
 class ConsentRequest(BaseModel):
-    consent_type: str = Field(
-        ...,
-        pattern=(
-            "^(privacy_policy|telemedicine_consent|terms_of_service"
-            "|medical_disclaimer|health_data_processing)$"
-        ),
-    )
+    document_id: str = Field(min_length=1, max_length=36)
+    version: StrictInt = Field(ge=1)
+    content_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    country: Literal["AO", "PT"]
+    language: str = Field(pattern=r"^[a-z]{2}(-[A-Z]{2})?$", max_length=10)
+    action: Literal["grant", "refuse", "withdraw"]
+    expected_revision: StrictInt = Field(ge=0)
+    model_config = {"extra": "forbid"}
 
 
 class ConsentOut(BaseModel):
+    effective: bool = False
+    evidence_status: str = "legacy_unversioned"
     id: str
     consent_type: str
     accepted_at: datetime
@@ -610,52 +693,60 @@ class FileDownloadResponse(BaseModel):
     file_id: str
     download_url: str
     filename: str
-    expires_in_seconds: int = 3600
+    # Required: the selected storage provider determines the actual URL lifetime.
+    expires_in_seconds: int
 
 
 # ── Prescription Requests (renewal / pre-consult) ──
 
 class PrescriptionRequestCreate(BaseModel):
-    doctor_id: str
-    medication_name: str
-    dose: Optional[str] = None
-    frequency: Optional[str] = None
-    reason: Optional[str] = None
+    doctor_id: str = Field(min_length=1, max_length=36)
+    country: Literal['AO', 'PT']
+    consent_language: str = Field(default='pt', pattern=r'^[a-z]{2}(-[A-Z]{2})?$', max_length=10)
+    medication_name: str = Field(min_length=1, max_length=300)
+    dose: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    frequency: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    reason: Optional[str] = Field(default=None, max_length=4000)
+    model_config = {'extra': 'forbid', 'str_strip_whitespace': True}
+
 
 class PrescriptionRequestDecide(BaseModel):
-    # Valid actions and the status they produce:
-    #   approve           → approved
-    #   adjust / adjusted → adjusted
-    #   consult_requested → consult_requested
-    #   exams_requested   → exams_requested
-    #   reject / rejected → rejected
-    action: str
-    doctor_note: Optional[str] = None
-    adjusted_dose: Optional[str] = None
-    adjusted_frequency: Optional[str] = None
+    action: Literal['approve', 'adjust', 'adjusted', 'consult_requested', 'exams_requested', 'reject', 'rejected']
+    expected_revision: int = Field(ge=0, strict=True)
+    doctor_note: Optional[str] = Field(default=None, max_length=4000)
+    adjusted_dose: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    adjusted_frequency: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    model_config = {'extra': 'forbid', 'str_strip_whitespace': True}
+
 
 class PrescriptionRequestOut(BaseModel):
     id: str
     patient_id: str
     doctor_id: str
+    country: Optional[str] = None
+    consent_language: Optional[str] = None
+    request_key: Optional[str] = None
+    revision: int
+    decision_id: Optional[str] = None
+    standalone_prescription_id: Optional[str] = None
+    decision_state: Literal['pending', 'decided', 'legacy_review_required']
     medication_name: str
-    dose: Optional[str]
-    frequency: Optional[str]
-    reason: Optional[str]
+    dose: Optional[str] = None
+    frequency: Optional[str] = None
+    reason: Optional[str] = None
     status: str
-    risk_level: Optional[str]
-    risk_alert: Optional[str]
-    doctor_note: Optional[str]
-    adjusted_dose: Optional[str]
-    adjusted_frequency: Optional[str]
+    doctor_note: Optional[str] = None
+    adjusted_dose: Optional[str] = None
+    adjusted_frequency: Optional[str] = None
     created_at: datetime
-    decided_at: Optional[datetime]
-    # enriched patient info (populated by router)
+    decided_at: Optional[datetime] = None
     patient_name: Optional[str] = None
-    patient_age: Optional[int] = None
-    patient_gender: Optional[str] = None
-    chronic_conditions: Optional[list] = None
-    allergies: Optional[list] = None
+    doctor_name: Optional[str] = None
+
+    @field_serializer('created_at', 'decided_at')
+    def serialize_utc(self, value: Optional[datetime]):
+        if value is None: return None
+        return value.replace(tzinfo=timezone.utc).isoformat() if value.tzinfo is None else value.astimezone(timezone.utc).isoformat()
 
 
 # ── Device Readings ──
@@ -681,6 +772,8 @@ _reading_type_pattern = "^(" + "|".join(READING_TYPES) + ")$"
 
 
 class DeviceReadingCreate(BaseModel):
+    country: Literal['AO', 'PT']
+    consent_language: str = Field(default='pt', pattern=r'^[a-z]{2}(-[A-Z]{2})?$', max_length=10)
     reading_type: str = Field(..., pattern=_reading_type_pattern)
     # Generic scalar (glucose, temperature, oxygen_saturation, weight, heart_rate)
     value: Optional[float] = None
@@ -710,6 +803,8 @@ class HealthSyncReading(BaseModel):
 
 
 class HealthSyncRequest(BaseModel):
+    country: Literal['AO', 'PT']
+    consent_language: str = Field(default='pt', pattern=r'^[a-z]{2}(-[A-Z]{2})?$', max_length=10)
     records: List[HealthSyncReading] = Field(..., min_length=1, max_length=500)
 
 
@@ -720,6 +815,8 @@ class HealthSyncResponse(BaseModel):
 
 
 class ReadingSummaryItem(BaseModel):
+    country: Optional[str] = None
+    consent_language: Optional[str] = None
     reading_type: str
     value: Optional[float] = None
     unit: Optional[str] = None
@@ -755,6 +852,8 @@ class DeviceReadingUpdate(BaseModel):
 
 
 class DeviceReadingOut(BaseModel):
+    country: Optional[str] = None
+    consent_language: Optional[str] = None
     id: str
     patient_id: str
     reading_type: str
@@ -855,12 +954,19 @@ class FamilyMemberUpdate(BaseModel):
     emergency_contact: Optional[bool] = None
     notes: Optional[str] = None
 
+    @field_validator("full_name", "relationship", "is_minor", "emergency_contact")
+    @classmethod
+    def required_values_cannot_be_cleared(cls, value):
+        if value is None:
+            raise ValueError("Este campo não pode ser removido.")
+        return value
+
 
 class FamilyMemberOut(BaseModel):
     id: str
     owner_patient_id: str
     full_name: str
-    relationship: str
+    relationship: str = Field(validation_alias=AliasChoices("relationship", "relationship_type"))
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
     phone: Optional[str] = None
@@ -883,11 +989,21 @@ class NotificationOut(BaseModel):
     message: str
     type: str
     is_read: bool
+    read_at: Optional[datetime] = None
+    channel: str = "in_app"
     related_entity_type: Optional[str] = None
     related_entity_id: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("created_at", "read_at")
+    def serialize_utc(self, value: Optional[datetime]):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
 
 
 class NotificationCreate(BaseModel):

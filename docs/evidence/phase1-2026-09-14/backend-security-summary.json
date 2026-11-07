@@ -1,0 +1,94 @@
+{
+  "dependency-consistency": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "-m",
+      "pip",
+      "check"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/source",
+    "timeout_seconds": 30,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 1.56,
+    "log_sha256": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09"
+  },
+  "launch-hold": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/source/backend/phase0_pytest.py",
+      "phase0_tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/results/launch-hold.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/source/backend",
+    "timeout_seconds": 240,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 2.99,
+    "log_sha256": "134ebc26f49c7fd4faf409cd733cbff11fddd030d761acd79336b5d535a87515",
+    "junit": {
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": []
+  },
+  "phase1-policy": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/source/backend/phase0_pytest.py",
+      "phase1_tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/results/phase1-policy.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/source/backend",
+    "timeout_seconds": 240,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 3.81,
+    "log_sha256": "6f3a791565d347f814bcb1644e8bdd59828e1627c68cf75e08167c3b30ba65fd",
+    "junit": {
+      "tests": 73,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": []
+  },
+  "backend-focused": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/source/backend/phase0_pytest.py",
+      "security_tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/results/backend-focused.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase1-backend-final/source/backend",
+    "timeout_seconds": 240,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 19.12,
+    "log_sha256": "5a6f41e1f5cd9aab24d00cc2e878c269c89dde8f2c37f73cb154e46f4e7fcb2f",
+    "junit": {
+      "tests": 120,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": []
+  }
+}

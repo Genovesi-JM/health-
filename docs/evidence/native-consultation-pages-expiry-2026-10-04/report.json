@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Native patient and clinician consultation pagination, request-expiry controls and read-only clinician history",
+  "runtime": {
+    "node": "24.21.0",
+    "npm": "11.18.0"
+  },
+  "source_manifest": "source-manifest.json",
+  "source_manifest_files": 95,
+  "source_manifest_sha256": "a59a8eeb1e5322685a53ec347fc46a184d9c2baf9bb531ebb86188a3ecc07468",
+  "source_manifest_matches_shared_at_validation": true,
+  "policy_routes": 284,
+  "policy_sha256": "1ae9bc818dc3ecdd74407342add1592b57d5915296dba266fb246cf54673ef26",
+  "checks": {
+    "mobile_tests": {
+      "passed": 174,
+      "failed": 0,
+      "log": "mobile-tests.log"
+    },
+    "typecheck": "passed",
+    "git_diff_check": "passed",
+    "hermes_exports": {
+      "informational-ios": {
+        "modules": 592,
+        "hermes_bytes": 1461945,
+        "hermes_sha256": "781b476d1a45bf2b09666df1b9dae17754c96118fa78c7ad67941628f00bc3cb",
+        "log": "bundle-informational-ios.log"
+      },
+      "informational-android": {
+        "modules": 590,
+        "hermes_bytes": 1467012,
+        "hermes_sha256": "43944cf5db3119e184159e091bdbbfba7ed7cba2da6c317966e4ce6a279a4b76",
+        "log": "bundle-informational-android.log"
+      },
+      "legacy-ios": {
+        "modules": 1066,
+        "hermes_bytes": 3134931,
+        "hermes_sha256": "af45cbdcb33e85c084e4167ce6b6e8496a4c9d447e03a441103434a3b987788f",
+        "log": "bundle-legacy-ios.log"
+      },
+      "legacy-android": {
+        "modules": 1019,
+        "hermes_bytes": 3057584,
+        "hermes_sha256": "589e8e393a5090559503558e163134b2cc1e3a7470ec9a0ba01056cbc83f3d9f",
+        "log": "bundle-legacy-android.log"
+      }
+    },
+    "independent_review": "Completed after fixes: no additional confirmed P1/P2 in paging, expiry copy, cross-source clinical access, or doctor closeout paths. Read-only code/test review; no device/UI runtime claim."
+  },
+  "changes": {
+    "patient_pages": "GET /consultations/me/page in20-item pages with all/upcoming/past views. Loaded counts are labeled as loaded. Refresh and next-page failures preserve existing rows.422 requires explicit restart. Owner/role/filter/request generations reject stale replies.401/403 clear server-loaded rows. A page received after an acknowledged cancellation cannot restore the cancelled row.",
+    "clinician_pages": "Doctor queue loads all pages in server order instead of slicing10rows. Assigned history has separate doctor-only screen using /doctor/consultations/page, patient names and the same filter/pagination controls.",
+    "clinical_access": "Queue, dashboard, escalation and mutation401/403 failures share an immediate denial guard. All clinical panels clear and actions are gated. Parallel feed responses and delayed action acknowledgments cannot resurrect old patient data or navigate after denial. Temporary transport/server errors preserve current records with visible failure.",
+    "old_records": "Doctor history opens a specific completed consultation via /consultations/{id}/closeout only, including records outside Patient360 recent20. Read-only clinician parser separates current SOAP/summary/revision/author/publication state from the last published patient summary, reusing the patient publication allowlist without weakening it. No patient-only metadata endpoint and no clinical edit action.",
+    "expiry": "Adds requested_expires_at,expired_at,request_expiry_state and expired status. Reached deadlines show expiry pending until server persistence; no claim that capacity is released. Unknown/review_required requests block fresh accept/reschedule and hide patient cancellation. Open/expiry_pending requested cancellation remains available; scheduled behavior remains. Exact saved reschedule replay is still available after expiry or changed eligibility. Requested cards awaiting expiry/review no longer claim to await acceptance."
+  },
+  "native_artifact": {
+    "rebuilt": false,
+    "reason": "Only TypeScript/JavaScript source changed; lock, native app config, assets, HOLD plugin and policy284 unchanged from prior JS checkpoint. Both platform exports verify current code.",
+    "existing_apk": "artifacts/native/kaya-sdk57-pdf-informational-test-arm64.apk",
+    "existing_apk_sha256": "5767c8986bcb7e83bb215b24fe0819774afe3bf57f9d5666c7d4786e1826e96f",
+    "snapshot": "Earlier09df949 PDF/auth/HOLD checkpoint, policy277; excludes this newer JS wave."
+  },
+  "dependencies": {
+    "changed": false,
+    "lock_sha256": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+    "new_dependencies": 0,
+    "security_evidence": "Existing audit and SBOM remain tied to this unchanged lock; no fresh advisory-database audit was run. Two previously documented unpatched tooling advisories remain, with no risk acceptance."
+  },
+  "limits": [
+    "Clinical app remains disabled under HOLD. No live clinical/provider requests or production activation.",
+    "Current screens verified by helper, race and parser regressions plus iOS/Android Hermes exports; no operational UI emulator or real-device workflow claim.",
+    "No native recompilation for this JS-only change; the existing standalone informational APK remains an older source snapshot.",
+    "iOS native compilation remains blocked by unaccepted Xcode license. No license accepted."
+  ],
+  "repository_actions": "No staging or commits by mobile agent; parent owns checkpoint and documentation."
+}

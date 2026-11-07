@@ -10,11 +10,11 @@ if ROOT not in sys.path:
 # Use conftest.py's temporary test database — do NOT set DATABASE_URL to
 # the production DB.  conftest.py already sets up a clean temp DB.
 
-from app.main import app
+from app.factory import create_app
 from fastapi.testclient import TestClient
 
 
-client = TestClient(app)
+client = TestClient(create_app())
 
 
 def test_health():
@@ -25,11 +25,9 @@ def test_health():
 
 def test_demo_login():
     # demo seeded credentials used by the project
-    payload = {"email": "teste@admin.com", "password": "123456"}
-    r = client.post("/auth/login", json=payload)
-    assert r.status_code == 200, r.text
-    data = r.json()
-    # API returns an access_token and user info for the demo seed
+    from _authutil import login_with_mfa
+    data = login_with_mfa(client, "teste@admin.com", "123456")
+    # a completed session returns an access_token and user info for the demo seed
     assert "access_token" in data
     user = data.get("user") or data
     assert user.get("email") == "teste@admin.com"

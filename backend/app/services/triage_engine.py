@@ -340,6 +340,12 @@ def evaluate_triage(answers: Dict[str, Any]) -> TriageEvaluation:
     Returns:
         TriageEvaluation with risk_level, recommended_action, score, reasoning
     """
+    # Phase 19 fail-closed guard (R01): empty/absent input can never produce a
+    # low or self-care outcome. Clinical uncertainty fails closed.
+    if not answers:
+        from ..triage_safety import TriageIncompleteError
+        raise TriageIncompleteError("Triage input is empty; cannot assess (no self-care outcome).")
+
     triggered_red_flags: List[str] = []
     triggered_rules: List[str] = []
     score = 0.0

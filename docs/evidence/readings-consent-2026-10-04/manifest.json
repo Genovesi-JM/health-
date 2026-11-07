@@ -1,0 +1,10 @@
+{
+  "backend-source-manifest.json": "86169db70685193379f883a069ece1f855912dd92217ca21098be8af909ec851",
+  "backend.xml.gz": "b94fcc8ba24d1cead8596b77e9b25a4c43da7a98e957069781020da41cc94f93",
+  "browser-script-source.json": "753bbb8cd1f5079bfc71fa38ef332d136169c608ae5162f2080f1d339e78c4cf",
+  "browser-ui-smoke.json": "1229e298074fe2213edac0573e0c216ac5f5d412fdfc7a2c21f48ba950a4a105",
+  "postgresql.json": "7d7f93f02c0c8e9098048eef6bad4fb39535e696b1f080b2370a899ccb2b2d87",
+  "readings-mobile-viewport.png": "44fc019aa890fab35200a1439441dd2f7aa9387919efab77716604bbaa1fb494",
+  "validation.json": "b76f16563d7812f791c737a58792b942d81f4186fef78e35073c74efc951726d",
+  "web-source-manifest.json": "07d99a30d5100b165949d2ea33f1cc88465948315580c07873e79a423423387a"
+}

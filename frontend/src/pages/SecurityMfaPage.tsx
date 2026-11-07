@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useEffect, useState } from 'react';
 import { Check, Copy, KeyRound, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
 import api from '../api';
@@ -40,8 +41,8 @@ export default function SecurityMfaPage() {
       const res = await api.post('/auth/mfa/setup');
       setSecret(res.data.secret);
       setStage('setup');
-    } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao iniciar configuração.');
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, 'Erro ao iniciar configuração.'));
     } finally { setBusy(false); }
   };
 
@@ -53,8 +54,8 @@ export default function SecurityMfaPage() {
       setEnabled(true);
       setStage('recovery');
       setCode('');
-    } catch (e: any) {
-      setError(e.response?.data?.detail || t('mfa.invalid_code'));
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, t('mfa.invalid_code')));
     } finally { setBusy(false); }
   };
 
@@ -65,8 +66,8 @@ export default function SecurityMfaPage() {
       setEnabled(false);
       setStage('idle');
       setDisableCode('');
-    } catch (e: any) {
-      setError(e.response?.data?.detail || t('mfa.invalid_code'));
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, t('mfa.invalid_code')));
     } finally { setBusy(false); }
   };
 
@@ -77,8 +78,8 @@ export default function SecurityMfaPage() {
       setRecoveryCodes(res.data.recovery_codes || []);
       setStage('recovery');
       setDisableCode('');
-    } catch (e: any) {
-      setError(e.response?.data?.detail || t('mfa.invalid_code'));
+    } catch (e: unknown) {
+      setError(apiErrorMessage(e, t('mfa.invalid_code')));
     } finally { setBusy(false); }
   };
 

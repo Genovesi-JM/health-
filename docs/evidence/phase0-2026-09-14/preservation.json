@@ -1,0 +1,7 @@
+{
+  "backend/email_log.txt": true,
+  "frontend/src/components/DocumentUpload.test.tsx": true,
+  "frontend/src/components/OnboardingShell.test.tsx": true,
+  "frontend/src/pages/AdminExpiryPage.test.tsx": true,
+  "original_runtime_byte_identical": true
+}

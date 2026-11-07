@@ -1,366 +1,285 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, ArrowUpRight, Stethoscope, Pill, HeartPulse, Ambulance, Siren, Building2, Sparkles, Bell } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import CareJourneyScene from '../components/CareJourneyScene';
 import JourneyScroll from '../components/JourneyScroll';
+import CareComposer from '../components/CareComposer';
+import LuandaMap from '../components/LuandaMap';
 import Spot, { type SpotName } from '../components/Spots';
-import {
-  HeartPulse, Calendar, Video, RefreshCw, Search,
-  Activity, ArrowRight, CheckCircle2, Shield, Zap,
-  Stethoscope, Users, Building2, Phone,
-  Clock, ChevronRight, Heart, Pill, AlertTriangle,
-  TrendingUp, Lock, Smartphone, MonitorSmartphone,
-  Baby, Brain, Eye, Bone, Apple, Wind,
-  Ambulance, Plane, Navigation, Accessibility, Siren,
-  FileText, UserCheck, Home,
-} from 'lucide-react';
-import '../landing-cinematic.css';
+import BodyExplorer from '../components/BodyExplorer';
+import '../landing-editorial.css';
 
-const TRANSPORT_TIERS = [
-  { spot: 'accessible', color: '#2dd4bf', title: 'Mobilidade acessível',     desc: 'Apoio não-clínico ao passageiro — chegar à consulta com dignidade.' },
-  { spot: 'scheduled', color: '#22d3ee', title: 'Transporte agendado',       desc: 'Transporte de paciente planeado, com operador qualificado e destino certo.' },
-  { spot: 'assisted', color: '#5eead4', title: 'Transferência assistida',   desc: 'Apoio clínico definido, equipa e equipamento para o percurso.' },
-  { spot: 'emergency', color: '#ef4444', title: 'Emergência pré-hospitalar', desc: 'Despacho, governação clínica e resposta quando o tempo conta.' },
-];
-
-const CARE_PILLARS = [
-  { spot: 'family', title: 'Saúde pessoal & familiar', desc: 'Historial, documentos, medicação e lembretes organizados. Cuidadores acedem com permissões explícitas.' },
-  { spot: 'professional', title: 'Cuidado profissional',     desc: 'Médicos e enfermeiros: consulta, revisão e acompanhamento dentro do âmbito verificado.' },
-  { spot: 'prescription', title: 'Receita digital · e-prescription', desc: 'Receba e renove receitas digitalmente — com decisão médica autorizada e dispensa em farmácias parceiras.' },
-  { spot: 'ambulance', title: 'Transporte & ambulância',  desc: 'O caminho físico até ao cuidado — agendado ou de emergência — ligado à sua consulta.' },
-];
-
-const SPECIALTIES = [
-  { icon: Stethoscope, label: 'Clínica Geral',   color: '#0d9488' },
-  { icon: Baby,        label: 'Pediatria',        color: '#0891b2' },
-  { icon: Heart,       label: 'Ginecologia',      color: '#db2777' },
-  { icon: HeartPulse,  label: 'Cardiologia',      color: '#dc2626' },
-  { icon: Activity,    label: 'Dermatologia',     color: '#ea580c' },
-  { icon: Brain,       label: 'Psicologia',       color: '#7c3aed' },
-  { icon: Brain,       label: 'Psiquiatria',      color: '#6d28d9' },
-  { icon: Eye,         label: 'Oftalmologia',     color: '#0369a1' },
-  { icon: Stethoscope, label: 'Dentária',         color: '#0891b2' },
-  { icon: Wind,        label: 'Fisioterapia',     color: '#059669' },
-  { icon: Activity,    label: 'Neurologia',       color: '#4f46e5' },
-  { icon: Bone,        label: 'Ortopedia',        color: '#b45309' },
-  { icon: Apple,       label: 'Nutrição',         color: '#16a34a' },
-];
-
-const HOW_STEPS = [
-  { num: '01', icon: Search,     title: 'Escolhe o serviço',       desc: 'Marcação, teleconsulta, renovação de receita ou triagem — tudo num só lugar.', color: '#0d9488' },
-  { num: '02', icon: Video,      title: 'Recebe orientação médica', desc: 'Um médico real analisa a sua situação. Nenhuma decisão clínica é tomada por software.', color: '#0891b2' },
-  { num: '03', icon: HeartPulse, title: 'Continua o cuidado',      desc: 'O seu historial, medicação e próximas consultas ficam acessíveis a qualquer momento.', color: '#7c3aed' },
-];
-
-const PREMIUM_PLANS = [
-  { icon: Users,     label: 'Plano Família',     color: '#0d9488', desc: 'Cobertura total para toda a família num único portal.', features: ['Perfis ilimitados', 'Consultas partilhadas', 'Alertas familiares', 'Historial integrado'], cta: 'Plano Família', featured: false },
-  { icon: Heart,     label: 'Cuidado Crónico',    color: '#dc2626', desc: 'Acompanhamento contínuo para condições crónicas.', features: ['Monitorização de vitais', 'Renovação automática', 'Coach de aderência', 'Alertas de risco'], cta: 'Cuidado Crónico', featured: true },
-  { icon: Building2, label: 'Empresas',       color: '#7c3aed', desc: 'Saúde ocupacional para equipas sem burocracia.', features: ['Painel RH anónimo', 'Teleconsulta staff', 'Check-ups anuais', 'Gestão absentismo'], cta: 'Empresas', featured: false },
-  { icon: Zap,       label: 'Acesso Prioritário', color: '#b45309', desc: 'Acesso prioritário e chegada pre-alerta em hospitais.', features: ['Fila prioritária', 'Pre-alerta hospitalar', 'Médico dedicado', 'Teleconsulta imediata'], cta: 'Prioritário', featured: false },
-];
-
-const PARTNERSHIP_TYPES = [
+const CHAPTERS: {
+  id: string; num: string; title: string; em: string; lead: string; spot: SpotName;
+  facts: [string, string][]; links: { to: string; label: string; alert?: boolean }[];
+}[] = [
   {
-    icon: Stethoscope,
-    color: '#0d9488',
-    title: 'Médico individual / independente',
-    desc: 'Consulta presencial ou teleconsulta. Integração simples, sem mensalidades de entrada. O portal trata das marcações e do historial do paciente.',
-    cta: 'Candidatar-me como médico',
+    id: 'consulta', num: '01', title: 'Consulta', em: 'sem fila.',
+    lead: 'Marque, fale com um médico por vídeo ou presencialmente, e guarde tudo no mesmo historial. Nenhuma decisão clínica é tomada por software.',
+    spot: 'telehealth',
+    facts: [['A', 'Médicos e enfermeiros verificados, dentro do âmbito autorizado.'], ['B', 'Teleconsulta integrada, sem instalar nada.'], ['C', 'Historial, exames e notas acessíveis a qualquer momento.']],
+    links: [{ to: '/telemedicina', label: 'Como funciona a teleconsulta' }, { to: '/medicos', label: 'Ver médicos' }],
   },
   {
-    icon: Building2,
-    color: '#2563eb',
-    title: 'Clínica ou centro de saúde',
-    desc: 'Gestão de agenda, triagem digital pré-consulta e acesso ao histórico do paciente. Painel próprio para a equipa clínica.',
-    cta: 'Candidatar a minha clínica',
+    id: 'receita', num: '02', title: 'Receita digital', em: 'que o acompanha.',
+    lead: 'Peça ou renove a receita a partir de casa. Um médico decide, a farmácia parceira dispensa, e a medicação fica registada no seu perfil.',
+    spot: 'prescription',
+    facts: [['A', 'Renovações com revisão médica obrigatória.'], ['B', 'Dispensa em farmácias parceiras ligadas à receita.'], ['C', 'Medicação, dose e frequência sempre visíveis para si.']],
+    links: [{ to: '/patients', label: 'Para pacientes' }, { to: '/clinics', label: 'Farmácias parceiras' }],
   },
   {
-    icon: HeartPulse,
-    color: '#7c3aed',
-    title: 'Hospital ou instituição',
-    desc: 'Integração de fluxos de urgência, pré-alertas e continuidade de cuidados pós-alta. Fale connosco para uma proposta à medida.',
-    cta: 'Falar com a equipa',
+    id: 'transporte', num: '03', title: 'Transporte', em: 'até ao cuidado.',
+    lead: 'O caminho físico até à consulta ou ao hospital faz parte do cuidado. Transporte agendado, mobilidade acessível ou transferência assistida, ligados ao seu pedido.',
+    spot: 'scheduled',
+    facts: [['A', 'Mobilidade acessível, apoio não clínico ao passageiro.'], ['B', 'Transporte agendado com operador qualificado.'], ['C', 'Transferência assistida com equipa e equipamento definidos.']],
+    links: [{ to: '/urgencia', label: 'Transporte e ambulância' }, { to: '/clinics', label: 'Para hospitais' }],
+  },
+  {
+    id: 'urgencia', num: '04', title: 'Urgência', em: 'com o hospital avisado.',
+    lead: 'Em emergência, o KAYA ajuda a chegar ao sítio certo e avisa o hospital antes de si. Não substitui o número de emergência local.',
+    spot: 'emergency',
+    facts: [['A', 'Despacho e governação clínica da resposta.'], ['B', 'Pré-alerta ao hospital de destino.'], ['C', 'Luanda em fase piloto; outras zonas por confirmar.']],
+    links: [{ to: '/urgencia', label: 'Emergência e pré-alerta', alert: true }],
   },
 ];
 
-const TRUST_POINTS = [
-  { icon: Shield,       label: 'Médico real valida tudo',  desc: 'Nenhuma decisão clínica é tomada por IA ou software.' },
-  { icon: Lock,         label: 'Dados protegidos',         desc: 'Historial clínico encriptado. Só você e o seu médico acedem.' },
-  { icon: CheckCircle2, label: 'Transparente',             desc: 'Mostramos o que fazemos e o que não fazemos. Sempre.' },
-  { icon: TrendingUp,   label: 'Continuidade real',        desc: 'O cuidado não termina com a consulta. Acompanhamos.' },
+const INDEX = [
+  ...CHAPTERS.map(c => ({ id: c.id, num: c.num, title: c.title })),
+  { id: 'compor', num: '05', title: 'Compor' },
+  { id: 'onde', num: '06', title: 'Onde' },
+  { id: 'para-quem', num: '07', title: 'Para quem' },
 ];
 
 const AUDIENCES = [
-  {
-    key: 'pacientes',
-    label: 'Pacientes',
-    icon: '🧑‍⚕️',
-    color: '#0d9488',
-    imgColor: '#f0fdf9',
-  },
-  {
-    key: 'medicos',
-    label: 'Médicos',
-    icon: '👨‍⚕️',
-    color: '#2563eb',
-    imgColor: '#eff6ff',
-  },
-  {
-    key: 'especialistas',
-    label: 'Especialistas',
-    icon: '🔬',
-    color: '#7c3aed',
-    imgColor: '#f5f3ff',
-  },
-  {
-    key: 'clinicas',
-    label: 'Clínicas',
-    icon: '🏥',
-    color: '#0891b2',
-    imgColor: '#ecfeff',
-  },
-  {
-    key: 'dispositivos',
-    label: 'Dispositivos',
-    icon: '📱',
-    color: '#ea580c',
-    imgColor: '#fff7ed',
-  },
+  { to: '/patients', num: '01', label: 'Pacientes e famílias', sub: 'Consultas, receitas, historial, cuidadores' },
+  { to: '/medicos',  num: '02', label: 'Médicos e enfermeiros', sub: 'Agenda, teleconsulta, historial clínico' },
+  { to: '/clinics',  num: '03', label: 'Hospitais e clínicas',  sub: 'Fluxos de urgência, transferências, continuidade' },
+  { to: '/clinics',  num: '04', label: 'Farmácias',             sub: 'Dispensa ligada à receita digital' },
+  { to: '/empresas', num: '05', label: 'Empresas',              sub: 'Saúde ocupacional para equipas' },
+  { to: '/urgencia', num: '06', label: 'Transporte e urgência', sub: 'Agendado, assistido, emergência' },
 ];
-
-const TRIAGE_OUTCOMES = [
-  { icon: AlertTriangle,    color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',   label: '🔴 Urgência',          sub: 'Dirige-se imediatamente. Hospital pré-alertado.' },
-  { icon: MonitorSmartphone,color: '#0891b2', bg: 'rgba(8,145,178,0.08)',   border: 'rgba(8,145,178,0.2)',   label: '🟠 Teleconsulta',       sub: 'Médico disponível em minutos.' },
-  { icon: Calendar,         color: '#16a34a', bg: 'rgba(22,163,74,0.08)',   border: 'rgba(22,163,74,0.2)',   label: '🟢 Consulta Agendada',  sub: 'Marcação na clínica mais próxima.' },
-];
-
-const AUDIENCE_HIGHLIGHTS: Record<string, string[]> = {
-  pacientes:     ['Triagem e teleconsulta', 'Receitas e renovações', 'Historial sempre acessível', 'Perfis para a família'],
-  medicos:       ['Agenda e marcações', 'Teleconsulta integrada', 'Historial clínico do paciente', 'Sem mensalidades de entrada'],
-  especialistas: ['Segunda opinião médica', 'Encaminhamentos simples', 'Rede de especialidades', 'Presencial ou online'],
-  clinicas:      ['Painel para a equipa', 'Triagem digital pré-consulta', 'Gestão de agenda', 'Continuidade de cuidados'],
-  dispositivos:  ['Tensiómetro e glicómetro', 'Oxímetro e balança', 'Dados enviados ao médico', 'Alertas de risco'],
-};
 
 export default function LandingPage() {
-  const [activeAudience, setActiveAudience] = useState(0);
-  const [animating, setAnimating] = useState(false);
-
-  // Auto-rotate every 4 seconds
+  // Skeleton → content: CSS animates the morph; this fallback flips a class on the
+  // section as well, so the reveal completes even where animations are paused.
+  const heroRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    const t = setInterval(() => {
-      setAnimating(true);
-      setTimeout(() => {
-        setActiveAudience(a => (a + 1) % AUDIENCES.length);
-        setAnimating(false);
-      }, 200);
-    }, 4000);
-    return () => clearInterval(t);
+    const el = heroRef.current;
+    const t = window.setTimeout(() => el?.classList.add('is-ready'), 1200);
+    return () => window.clearTimeout(t);
   }, []);
+  const [current, setCurrent] = useState<string>('');
 
-  // Cinematic scroll reveal
+  // Scroll reveal
   useEffect(() => {
     const els = Array.from(document.querySelectorAll('.reveal:not(.reveal--in)'));
-    if (!('IntersectionObserver' in window) || els.length === 0) {
-      els.forEach(el => el.classList.add('reveal--in'));
-      return;
-    }
+    if (!('IntersectionObserver' in window) || els.length === 0) { els.forEach(el => el.classList.add('reveal--in')); return; }
     const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('reveal--in'); io.unobserve(e.target); }
-      });
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('reveal--in'); io.unobserve(e.target); } });
     }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
     els.forEach(el => io.observe(el));
     return () => io.disconnect();
   }, []);
 
-  const switchAudience = (idx: number) => {
-    if (idx === activeAudience) return;
-    setAnimating(true);
-    setTimeout(() => { setActiveAudience(idx); setAnimating(false); }, 200);
-  };
-
-  const aud = AUDIENCES[activeAudience];
+  // Which chapter is on screen (drives the sticky index)
+  useEffect(() => {
+    const sections = INDEX.map(i => document.getElementById(i.id)).filter((el): el is HTMLElement => Boolean(el));
+    if (!('IntersectionObserver' in window) || sections.length === 0) return;
+    const io = new IntersectionObserver((entries) => {
+      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) setCurrent(visible.target.id);
+    }, { rootMargin: '-40% 0px -50% 0px', threshold: [0, 0.2, 0.5] });
+    sections.forEach(s => io.observe(s));
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <div className="landing-wrapper cine">
+    <div className="landing-wrapper ed">
       <Navbar />
 
-      {/* ══ CINEMATIC HERO ════════════════════════════════ */}
-      <section className="cine-hero">
-        <div className="cine-aurora" />
-        <div className="cine-hero__grid">
-          <div className="reveal reveal--in">
-            <span className="cine-eyebrow"><Navigation size={13} /> Luanda · Angola — Cuidado digital + transporte</span>
-            <h1 className="cine-title">Cuidado que <span className="accent">chega até si.</span></h1>
-            <p className="cine-sub">
-              Consultas, receitas e acompanhamento contínuo — e o <strong style={{ color: '#eafbf7' }}>transporte seguro
-              ou a ambulância</strong> que o leva ao cuidado certo. A sua saúde começa em casa.
-            </p>
-            <div className="cine-ctas">
-              <Link to="/register" className="cine-btn cine-btn--primary"><Calendar size={17} /> Criar conta grátis</Link>
-              <Link to="/login" className="cine-btn cine-btn--ghost"><ArrowRight size={17} /> Entrar no Portal</Link>
-              <a href="#transporte" className="cine-btn cine-btn--alert"><Ambulance size={17} /> Transporte &amp; ambulância</a>
+      {/* ══ HERO ══════════════════════════════════════════ */}
+      <section className="ed-hero" ref={heroRef}>
+        {/* skeleton layer: grey placeholders in the shape of the hero */}
+        <div className="ed-skel" aria-hidden="true">
+          <div className="ed-wrap ed-skel__grid">
+            <div>
+              <span className="ed-skel__b" style={{ width: '38%', height: 12 }} />
+              <span className="ed-skel__b" style={{ width: '92%', height: 64, marginTop: 26 }} />
+              <span className="ed-skel__b" style={{ width: '70%', height: 64 }} />
+              <span className="ed-skel__b" style={{ width: '80%', height: 14, marginTop: 28 }} />
+              <span className="ed-skel__b" style={{ width: '64%', height: 14 }} />
+              <span className="ed-skel__b ed-skel__b--pill" style={{ width: 210, height: 52, marginTop: 30 }} />
+              <div className="ed-skel__row"><span className="ed-skel__b" style={{ width: '46%', height: 84 }} /><span className="ed-skel__b" style={{ width: '46%', height: 84 }} /></div>
             </div>
-            <div className="cine-stats">
-              {[
-                { v: '4 + 1', l: 'Serviços de cuidado + transporte' },
-                { v: '24/7',  l: 'Coordenação digital' },
-                { v: '100%',  l: 'Médico real decide' },
-                { v: 'Luanda', l: 'Primeiro piloto' },
-              ].map(s => (
-                <div key={s.l}><span className="cine-stat__v">{s.v}</span><span className="cine-stat__l">{s.l}</span></div>
-              ))}
+            <div className="ed-skel__right">
+              <span className="ed-skel__b ed-skel__b--figure" />
+              <div className="ed-skel__list">{[0,1,2,3,4,5].map(i => <span key={i} className="ed-skel__b ed-skel__b--pill" style={{ height: 40 }} />)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="ed-wrap ed-hero__grid ed-hero__content">
+          <div>
+            <div className="ed-kicker">Luanda · Angola — saúde e transporte</div>
+            <h1 className="ed-title">
+              <span className="ed-spark ed-spark--a"><Sparkles size={22} strokeWidth={1.4} /></span>
+              Cuidado que
+              <span className="ed-title__accent">chega até si.<span className="ed-spark ed-spark--b"><Sparkles size={16} strokeWidth={1.4} /></span></span>
+            </h1>
+            <p className="ed-sub">Toque numa parte do corpo e veja o que o KAYA faz por ela: consulta, receita digital, medições, transporte e urgência. Um médico real decide; o KAYA organiza o caminho.</p>
+            <div className="ed-hero__links">
+              <Link to="/register" className="ed-pill">Explorar os serviços <span className="ed-pill__arrow"><ArrowRight size={16} /></span></Link>
+              <Link to="/login" className="ed-link ed-link--quiet">Entrar no portal <ArrowUpRight size={16} /></Link>
+            </div>
+            <div className="ed-floats">
+              <Link to="/urgencia" className="ed-float">
+                <span className="ed-float__ico"><Siren size={22} strokeWidth={1.4} /></span>
+                <span className="ed-float__text"><strong>Estamos sempre disponíveis</strong><small>Urgência e transporte, 24 horas por dia</small></span>
+                <span className="ed-float__go"><ArrowRight size={14} /></span>
+              </Link>
+              <Link to="/contacto" className="ed-float">
+                <span className="ed-float__ico"><Bell size={22} strokeWidth={1.4} /></span>
+                <span className="ed-float__text"><strong>Receber novidades</strong><small>Novas zonas e serviços em Luanda</small></span>
+                <span className="ed-float__go"><ArrowRight size={14} /></span>
+              </Link>
             </div>
           </div>
 
-          {/* Journey card — the route to care */}
-          <div className="cine-stage reveal" data-d="2">
-            <CareJourneyScene />
-            <div className="kaya-scene__cap"><span className="cine-live" /> Da casa ao cuidado — e de volta.</div>
+          <div>
+            <BodyExplorer />
           </div>
         </div>
       </section>
 
-      {/* ══ SCROLL-DRIVEN JOURNEY ══════════════════════════ */}
+      {/* ══ SERVICES BENTO ═══════════════════════════════ */}
+      <section className="ed-bento">
+        <div className="ed-wrap">
+          <div className="ed-bento__head reveal">
+            <h2 className="ed-h2" style={{ textAlign: 'center', margin: '0 auto .5rem' }}>Explore os principais <em>serviços.</em></h2>
+            <p className="ed-lead" style={{ margin: '0 auto', textAlign: 'center' }}>Tudo o que o KAYA liga, do pedido à chegada.</p>
+          </div>
+          <div className="ed-bento__grid reveal" data-d="2">
+            {[
+              { to: '/medicos',        label: 'Consultas',               icon: Stethoscope, big: false },
+              { to: '/patients',       label: 'Receita digital',         icon: Pill,        big: false },
+              { to: '/patient/readings', label: 'Medições em casa',      icon: HeartPulse,  big: true },
+              { to: '/clinics',        label: 'Hospitais e farmácias',   icon: Building2,   big: false },
+              { to: '/urgencia',       label: 'Transporte e ambulância', icon: Ambulance,   big: false },
+              { to: '/urgencia',       label: 'Urgência e pré-alerta',   icon: Siren,       big: false },
+            ].map(t => (
+              <Link key={t.label} to={t.to} className={`ed-bento__tile${t.big ? ' is-big' : ''}`}>
+                <t.icon size={t.big ? 56 : 40} strokeWidth={1.1} />
+                <span>{t.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ STICKY INDEX ══════════════════════════════════ */}
+      <nav className="ed-index" aria-label="Capítulos">
+        <div className="ed-wrap">
+          {INDEX.map(i => <a key={i.id} href={`#${i.id}`} className={current === i.id ? 'is-on' : ''}><b>{i.num}</b>{i.title}</a>)}
+        </div>
+      </nav>
+
+      {/* ══ JOURNEY (scroll-driven) ═══════════════════════ */}
       <JourneyScroll />
 
-      {/* ══ TRANSPORTE & AMBULÂNCIA — PRIORIDADE ═══════════ */}
-      <section id="transporte" className="cine-transport">
-        <div className="cine-wrap">
-          <div className="cine-head reveal">
-            <span className="cine-tag"><Ambulance size={13} /> Transporte &amp; Ambulância · Para pacientes e hospitais</span>
-            <h2 className="cine-h2">O caminho até ao cuidado — resolvido.</h2>
-            <p className="cine-lead">
-              Transporte de pacientes e ambulância para quem precisa de chegar ao cuidado e para hospitais que
-              recebem e transferem doentes. Do agendamento à chegada, com operador qualificado e handover clínico.
-            </p>
-          </div>
-          <div className="cine-tgrid">
-            {TRANSPORT_TIERS.map((t, i) => (
-              <div key={t.title} className="cine-tcard reveal" data-d={String((i % 4) + 1)} style={{ '--tc': t.color } as React.CSSProperties}>
-                <span className="cine-tcard__step">0{i + 1}</span>
-                <div className="cine-tcard__art"><Spot name={t.spot as SpotName} /></div>
-                <div className="cine-tcard__t">{t.title}</div>
-                <div className="cine-tcard__d">{t.desc}</div>
+      {/* ══ CHAPTERS ══════════════════════════════════════ */}
+      {CHAPTERS.map((c, i) => (
+        <section key={c.id} id={c.id} className={`ed-chapter${i % 2 === 1 ? ' ed-chapter--flip' : ''}`}>
+          <div className="ed-wrap ed-chapter__grid">
+            <div className="ed-chapter__text reveal">
+              <span className="ed-num">{c.num}</span>
+              <h2 className="ed-h2">{c.title} <em>{c.em}</em></h2>
+              <p className="ed-lead">{c.lead}</p>
+              <ul className="ed-chapter__facts">
+                {c.facts.map(([k, v]) => <li key={k}><b>{k}</b><span>{v}</span></li>)}
+              </ul>
+              <div className="ed-chapter__links">
+                {c.links.map(l => (
+                  <Link key={l.label} to={l.to} className={`ed-link${l.alert ? ' ed-link--alert' : ''}`}>{l.label} <ArrowRight size={16} /></Link>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="cine-transport__cta reveal">
-            <Link to="/urgencia" className="cine-btn cine-btn--alert"><Siren size={17} /> Emergência &amp; pré-alerta</Link>
-            <Link to="/register" className="cine-btn cine-btn--ghost"><ArrowRight size={17} /> Pedir transporte</Link>
-          </div>
-          <p className="cine-note">
-            Transporte agendado e ambulância médica são serviços distintos, com operador qualificado e requisitos próprios. Luanda — fase piloto.
-          </p>
-        </div>
-      </section>
-
-      {/* ══ PILARES DE CUIDADO ═════════════════════════════ */}
-      <section className="cine-care">
-        <div className="cine-wrap">
-          <div className="cine-head center reveal">
-            <span className="cine-eyebrow"><HeartPulse size={13} /> Cuidado conectado</span>
-            <h2 className="cine-h2">Saúde pessoal. Cuidado profissional. Continuidade.</h2>
-            <p className="cine-lead" style={{ margin: '0 auto' }}>
-              Quatro serviços de cuidado ligados ao transporte — para que nada se perca entre a necessidade e a chegada.
-            </p>
-          </div>
-          <div className="cine-pillars">
-            {CARE_PILLARS.map((p, i) => (
-              <div key={p.title} className="cine-pillar reveal" data-d={String((i % 4) + 1)}>
-                <div className="cine-pillar__art"><Spot name={p.spot as SpotName} /></div>
-                <div className="cine-pillar__t">{p.title}</div>
-                <div className="cine-pillar__d">{p.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ COMO FUNCIONA ════════════════════════════════ */}
-      <section className="lp-section lp-section--alt">
-        <div className="lp-section__header">
-          <div className="lp-tag">Como funciona</div>
-          <h2>Três passos para cuidado completo.</h2>
-          <p>De qualquer sintoma a um plano de saúde claro — simples, seguro e sempre acompanhado por um médico.</p>
-        </div>
-        <div className="lp-steps">
-          {HOW_STEPS.map(s => (
-            <div key={s.num} className="lp-step">
-              <div className="lp-step__num" style={{ color: s.color }}>{s.num}</div>
-              <div className="lp-step__icon" style={{ background: `${s.color}18`, color: s.color }}><s.icon size={22} /></div>
-              <h3>{s.title}</h3>
-              <p>{s.desc}</p>
             </div>
-          ))}
+            <div className="ed-chapter__art reveal" data-d="2">
+              <div className="ed-object"><Spot name={c.spot} /></div>
+            </div>
+          </div>
+        </section>
+      ))}
+
+      {/* ══ COMPOSER ══════════════════════════════════════ */}
+      <section id="compor" className="ed-chapter">
+        <div className="ed-wrap">
+          <div className="reveal">
+            <span className="ed-num">05</span>
+            <h2 className="ed-h2">Componha <em>o seu pedido.</em></h2>
+            <p className="ed-lead">Escolha para quem, o quê e como. O KAYA mostra o caminho em palavras simples.</p>
+          </div>
+          <div className="reveal" data-d="2"><CareComposer /></div>
         </div>
       </section>
 
-      {/* ══ ECOSYSTEM ══════════════════════════════════ */}
-      <section className="lp-section">
-        <div className="lp-section__header">
-          <div className="lp-tag">Ecossistema KAYA</div>
-          <h2>Um sistema de saúde completo.</h2>
-          <p>Do paciente ao hospital, do pedido à chegada — cuidado, receita digital e transporte numa só plataforma.</p>
+      {/* ══ MAP ═══════════════════════════════════════════ */}
+      <section id="onde" className="ed-chapter">
+        <div className="ed-wrap">
+          <div className="reveal">
+            <span className="ed-num">06</span>
+            <h2 className="ed-h2">Onde <em>chegamos.</em></h2>
+            <p className="ed-lead">Luanda primeiro, em fase piloto. Passe o cursor pelas zonas para ver o que já existe em cada uma.</p>
+          </div>
+          <div className="reveal" data-d="2"><LuandaMap /></div>
         </div>
-        <div className="ecosystem-grid">
+      </section>
+
+      {/* ══ FOR WHOM ══════════════════════════════════════ */}
+      <section id="para-quem" className="ed-list">
+        <div className="ed-wrap ed-list__grid">
+          <div className="reveal">
+            <span className="ed-num">07</span>
+            <h2 className="ed-h2">Para quem <em>é.</em></h2>
+            <p className="ed-lead">Um sistema, vários pontos de entrada. Cada um vê apenas o que lhe diz respeito.</p>
+          </div>
+          <ul className="reveal" data-d="2">
+            {AUDIENCES.map(a => (
+              <li key={a.num}><Link to={a.to}><b>{a.num}</b><strong>{a.label}</strong><small>{a.sub}</small></Link></li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ══ PRINCIPLES ════════════════════════════════════ */}
+      <section className="ed-principles">
+        <div className="ed-wrap ed-principles__grid">
           {[
-            { icon: Users,     color: '#0d9488', to: '/patients',    label: 'Para Pacientes',    desc: 'Consultas, receita digital, família e transporte.' },
-            { icon: Building2, color: '#0891b2', to: '/clinics',     label: 'Para Hospitais & Clínicas', desc: 'Médicos, clínicas e hospitais — e transporte de doentes.' },
-            { icon: Pill,      color: '#0f766e', to: '/clinics',     label: 'Farmácias parceiras', desc: 'Dispensa de receitas em farmácias parceiras.' },
-            { icon: Heart,     color: '#dc2626', to: '/chronic-care',label: 'Cuidado Crónico',   desc: 'Hipertensão, diabetes, asma — contínuos.' },
-            { icon: Ambulance, color: '#0e7490', to: '/urgencia',    label: 'Transporte & Urgência', desc: 'Transporte agendado, ambulância e pré-alerta.' },
-            { icon: Phone,     color: '#059669', to: '/contacto',    label: 'Contacto',          desc: 'Fale com a equipa KAYA.' },
-          ].map(item => (
-            <Link key={item.to} to={item.to} className="ecosystem-card">
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}15`, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
-                <item.icon size={22} />
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.3rem' }}>{item.label}</div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</div>
-              <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', color: item.color, fontWeight: 600 }}>
-                Saber mais <ArrowRight size={13} />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ══ PORQUÊ CAREFAST+ ════════════════════════════ */}
-      <section className="lp-section lp-section--alt">
-        <div className="lp-section__header">
-          <div className="lp-tag">Porque nos escolher</div>
-          <h2>Cuidados de saúde simplificados. Sem atalhos.</h2>
-        </div>
-        <div className="lp-trust-grid">
-          {TRUST_POINTS.map(tp => (
-            <div key={tp.label} className="lp-trust-card">
-              <tp.icon size={22} style={{ color: 'var(--accent-teal)' }} />
-              <h4>{tp.label}</h4>
-              <p>{tp.desc}</p>
+            ['Médico real decide', 'Software organiza, não diagnostica. Cada decisão clínica tem um nome e uma licença.'],
+            ['Dados sob o seu controlo', 'Historial encriptado. Cuidadores e profissionais acedem com permissões explícitas.'],
+            ['Transparente por defeito', 'Dizemos o que fazemos e o que não fazemos. Luanda primeiro, em fase piloto.'],
+          ].map(([h, p], i) => (
+            <div key={h} className="ed-principle reveal" data-d={String(i + 1)}>
+              <span className="ed-num">0{i + 1}</span>
+              <h3>{h}</h3>
+              <p>{p}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ══ FINAL CTA ════════════════════════════════════ */}
-      <section className="lp-final-cta">
-        <div className="lp-tag" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>KAYA — O seu sistema de saúde</div>
-        <h2>Acesso rápido à saúde começa aqui.</h2>
-        <p>Junte-se a um ecossistema de saúde digital construído para Angola — e para o mundo.</p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
-          <Link to="/register" className="lp-cta lp-cta--white">Criar conta gratuita</Link>
-          <Link to="/login" className="lp-cta lp-cta--white-outline"><ArrowRight size={15} /> Entrar no Portal</Link>
-          <Link to="/contacto" className="lp-cta lp-cta--white-outline"><Phone size={15} /> Falar connosco</Link>
-        </div>
-        <div style={{ marginTop: '2rem', display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {['Sem diagnóstico por IA', 'Médico real valida tudo', 'Dados encriptados', 'Transparente'].map(t => (
-            <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.83rem', color: 'rgba(255,255,255,0.7)' }}>
-              <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)' }} /> {t}
-            </span>
-          ))}
+      {/* ══ CLOSE ═════════════════════════════════════════ */}
+      <section className="ed-close">
+        <div className="ed-wrap ed-close__grid reveal">
+          <div>
+            <h2>A sua saúde <em>começa em casa.</em></h2>
+            <p>Crie a conta, organize o historial e peça o primeiro cuidado. O resto do caminho é connosco.</p>
+          </div>
+          <div className="ed-close__links">
+            <Link to="/register" className="ed-link">Criar conta <ArrowRight size={16} /></Link>
+            <Link to="/contacto" className="ed-link">Falar connosco <ArrowUpRight size={16} /></Link>
+            <span className="ed-close__note">Não é um serviço de emergência. Em perigo de vida ligue para o número de emergência local.</span>
+          </div>
         </div>
       </section>
 

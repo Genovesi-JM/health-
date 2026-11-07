@@ -14,6 +14,7 @@ Features:
 - Refund handling
 """
 import os
+import re
 import hmac
 import hashlib
 import json
@@ -279,25 +280,32 @@ class VisaMastercardAdapter(PaymentAdapter):
 class IBANTransferAdapter(PaymentAdapter):
     """Handles both Angolan (AOA) and international (USD/EUR) bank transfers."""
 
-    # Angolan account (AOA)
-    BANK_AOA = {
-        "iban": os.getenv("COMPANY_IBAN", "AO06004400005506300102101"),
-        "bic": os.getenv("COMPANY_BIC", "BFAOAOAO"),
-        "bank_name": os.getenv("COMPANY_BANK_NAME", "Banco de Fomento Angola"),
-        "beneficiary": os.getenv("COMPANY_BENEFICIARY", "KAYA"),
-    }
-    # International account (USD / EUR)
-    BANK_INTL = {
-        "iban": os.getenv("COMPANY_IBAN_INTL", "PT50003600559910003085730"),
-        "bic": os.getenv("COMPANY_BIC_INTL", "MPIOPTPL"),
-        "bank_name": os.getenv("COMPANY_BANK_INTL", "Banco Millennium BCP"),
-        "beneficiary": os.getenv("COMPANY_BENEFICIARY_INTL", "KAYA"),
-    }
+    @staticmethod
+    def bank_details(currency="AOA"):
+        names = ('COMPANY_IBAN', 'COMPANY_BIC', 'COMPANY_BANK_NAME', 'COMPANY_BENEFICIARY') if currency == 'AOA' else (
+            'COMPANY_IBAN_INTL', 'COMPANY_BIC_INTL', 'COMPANY_BANK_INTL', 'COMPANY_BENEFICIARY_INTL')
+        return {field: os.getenv(name, '').strip() for field, name in zip(('iban', 'bic', 'bank_name', 'beneficiary'), names)}
+
+    @classmethod
+    def recipient_configured(cls, currency="AOA"):
+        bank = cls.bank_details(currency)
+        if not all(_credential_ready(value) and 'CHANGE_ME' not in value.upper() for value in bank.values()):
+            return False
+        iban = re.sub(r'\s+', '', bank['iban']).upper()
+        if not re.fullmatch(r'[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}', iban) or not re.fullmatch(r'[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?', bank['bic']):
+            return False
+        rearranged = iban[4:] + iban[:4]
+        numeric = ''.join(str(ord(char) - 55) if char.isalpha() else char for char in rearranged)
+        return int(numeric) % 97 == 1
 
     async def create_payment(self, intent: PaymentIntent) -> PaymentResult:
-        reference = f"KAYA-{intent.order_id[-8:].upper()}"
-        is_international = intent.currency.value in ("USD", "EUR")
-        bank = self.BANK_INTL if is_international else self.BANK_AOA
+        # Identify the whole payment attempt, even when an order is retried.
+        # Eight UUID hex digits alone have an avoidable collision risk.
+        reference = f"KAYA-{intent.id.replace('-', '').upper()}"
+        if not self.recipient_configured(intent.currency.value):
+            return PaymentResult(success=False, payment_id=intent.id, status=PaymentStatus.FAILED,
+                error_code='bank_recipient_not_configured', error_message='Transferência bancária indisponível: destinatário por configurar.')
+        bank = self.bank_details(intent.currency.value)
         return PaymentResult(success=True, payment_id=intent.id,
             status=PaymentStatus.AWAITING_CONFIRMATION, provider_reference=reference,
             raw_response={"transfer_details": {

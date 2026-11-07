@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
-import api from '../api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api, { getSession } from '../api';
+import { checkReadingConsent, isReadingConsentDenial, readingScope } from '../utils/readingConsent';
+import { apiErrorMessage, apiErrorStatus } from '../utils/apiError';
 import {
   Activity, Plus, Trash2, X, Loader2, ThermometerSun,
   Droplets, Wind, Weight, Heart, HeartPulse, Upload, Scale,
@@ -38,6 +41,8 @@ interface DeviceReading {
   device_model: string | null;
   notes: string | null;
   created_at: string;
+  country?: 'AO' | 'PT' | null;
+  consent_language?: string | null;
 }
 
 interface ReadingListOut {
@@ -94,142 +99,183 @@ function typeIcon(type: ReadingType) {
 
 // ── Empty form state ─────────────────────────────────────────────────────────
 
-const emptyForm = {
+const emptyForm = () => ({
   reading_type: 'blood_pressure' as ReadingType,
   value: '',
   unit: 'mmHg',
   systolic: '',
   diastolic: '',
   pulse: '',
-  measured_at: new Date().toISOString().slice(0, 16), // datetime-local format
+  measured_at: localDateTime(),
   source: 'manual',
   device_brand: '',
   device_model: '',
   notes: '',
-};
+});
+
+function localDateTime() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function PatientReadingsPage() {
+  const session = getSession();
+  return <ReadingWorkspace key={`${session?.userId}:${session?.token}`} />;
+}
+
+function ReadingWorkspace() {
   const { t } = useT();
-
-  const [readings, setReadings]     = useState<DeviceReading[]>([]);
-  const [total, setTotal]           = useState(0);
-  const [loading, setLoading]       = useState(true);
-  const [showForm, setShowForm]     = useState(false);
-  const [form, setForm]             = useState(emptyForm);
-  const [saving, setSaving]         = useState(false);
+  const [session] = useState(getSession);
+  const [readings, setReadings] = useState<DeviceReading[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [country, setCountry] = useState<'AO' | 'PT'>('AO');
+  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError]           = useState('');
-  const [success, setSuccess]       = useState('');
+  const [error, setError] = useState('');
+  const [readError, setReadError] = useState('');
+  const [success, setSuccess] = useState('');
   const [filterType, setFilterType] = useState<ReadingType | ''>('');
-  const [importing, setImporting]   = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [accessLost, setAccessLost] = useState(false);
+  const denied = useRef(false);
+  const authority = useRef(0);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const mounted = useRef(false);
+  const busy = useRef(false);
+  const readSequence = useRef(0);
+  const advanceRead = useCallback(() => ++readSequence.current, []);
+  const current = useCallback(() => mounted.current && !!session?.userId && !!session.token
+    && getSession()?.userId === session.userId && getSession()?.token === session.token, [session]);
+  const config = useCallback(() => ({ headers: { Authorization: `Bearer ${session?.token ?? ''}` } }), [session]);
+  const clearDeniedAccess = useCallback((failure: unknown) => {
+    if (![401, 403].includes(apiErrorStatus(failure) ?? 0) || isReadingConsentDenial(failure)) return;
+    denied.current = true; ++authority.current; setAccessLost(true);
+    ++readSequence.current; setReadings([]); setTotal(0); setLoaded(false); setLoading(false);
+  }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; advanceRead(); };
+  }, [advanceRead]);
 
-  // Load readings
-  const load = (type?: ReadingType | '') => {
-    setLoading(true);
-    const params = type ? `?reading_type=${type}` : '';
-    api.get<ReadingListOut>(`/api/v1/readings/me${params}`)
-      .then(r => { setReadings(r.data.readings); setTotal(r.data.total); })
-      .catch(() => setError(t('read.err_load')))
-      .finally(() => setLoading(false));
-  };
+  const load = useCallback(async (type: ReadingType | '') => {
+    if (!current()) return;
+    const sequence = ++readSequence.current;
+    setLoading(true); setReadError('');
+    try {
+      const response = await api.get<ReadingListOut>('/api/v1/readings/me', {
+        ...config(), params: type ? { reading_type: type } : {},
+      });
+      if (!current() || sequence !== readSequence.current) return;
+      denied.current = false; setAccessLost(false);
+      setReadings(response.data.readings); setTotal(response.data.total); setLoaded(true);
+    } catch (failure) {
+      if (!current() || sequence !== readSequence.current) return;
+      clearDeniedAccess(failure); setReadError(t('read.err_load'));
+    } finally { if (current() && sequence === readSequence.current) setLoading(false); }
+  }, [config, current, clearDeniedAccess, t]);
+  useEffect(() => { void Promise.resolve().then(() => load(filterType)); }, [load, filterType]);
 
-  useEffect(() => { load(); }, []);
-
-  // Sync unit default when reading_type changes
   const handleTypeChange = (type: ReadingType) => {
     setForm(f => ({ ...f, reading_type: type, unit: TYPE_META[type].defaultUnit }));
   };
-
   const handleFilterChange = (type: ReadingType | '') => {
-    setFilterType(type);
-    load(type);
+    if (!busy.current && type !== filterType) { ++readSequence.current; setLoading(true); setFilterType(type); }
   };
-
-  // Submit new reading
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setSaving(true);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!current() || busy.current || denied.current) return;
+    const epoch = authority.current;
+    const active = () => current() && epoch === authority.current && !denied.current;
+    busy.current = true; setError(''); setSuccess(''); setSaving(true);
+    let sent = false;
     try {
+      const scope = readingScope(country);
       const payload: Record<string, unknown> = {
-        reading_type: form.reading_type,
-        source: form.source || 'manual',
+        ...scope, reading_type: form.reading_type, source: 'manual',
         measured_at: form.measured_at ? new Date(form.measured_at).toISOString() : undefined,
-        device_brand: form.device_brand || undefined,
-        device_model: form.device_model || undefined,
+        device_brand: form.device_brand || undefined, device_model: form.device_model || undefined,
         notes: form.notes || undefined,
       };
-
       if (form.reading_type === 'blood_pressure') {
-        if (!form.systolic || !form.diastolic) {
-          setError(t('read.bp_required'));
-          setSaving(false);
-          return;
-        }
-        payload.systolic  = Number(form.systolic);
-        payload.diastolic = Number(form.diastolic);
-        if (form.pulse)  payload.pulse = Number(form.pulse);
+        if (!form.systolic || !form.diastolic) throw new Error(t('read.bp_required'));
+        payload.systolic = Number(form.systolic); payload.diastolic = Number(form.diastolic);
+        if (form.pulse) payload.pulse = Number(form.pulse);
       } else {
-        if (!form.value) {
-          setError(t('read.value_required'));
-          setSaving(false);
-          return;
-        }
-        payload.value = Number(form.value);
-        payload.unit  = form.unit || TYPE_META[form.reading_type].defaultUnit;
+        if (!form.value) throw new Error(t('read.value_required'));
+        payload.value = Number(form.value); payload.unit = form.unit || TYPE_META[form.reading_type].defaultUnit;
       }
-
-      await api.post('/api/v1/readings', payload);
-      setSuccess(t('read.saved'));
-      setShowForm(false);
-      setForm(emptyForm);
-      load(filterType);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || t('read.err_save'));
-    } finally {
-      setSaving(false);
-    }
+      await checkReadingConsent(scope, { device: false, current: active, ...config() });
+      if (!active()) return;
+      sent = true;
+      await api.post('/api/v1/readings', payload, config());
+      if (!active()) return;
+      setSuccess(t('read.saved')); setShowForm(false); setForm(emptyForm());
+      void load(filterType);
+    } catch (failure) {
+      if (!active()) return;
+      clearDeniedAccess(failure);
+      const fallback = sent ? 'Não foi possível confirmar o registo. Atualize o histórico antes de repetir; a medição pode já estar guardada.'
+        : failure instanceof Error ? failure.message : t('read.err_save');
+      setError(apiErrorMessage(failure, fallback));
+    } finally { if (current()) { busy.current = false; setSaving(false); } }
   };
 
-  // Delete a reading
   const handleDelete = async (id: string) => {
-    if (!confirm(t('read.confirm_delete'))) return;
-    setDeletingId(id);
+    if (!current() || busy.current || denied.current || !confirm(t('read.confirm_delete'))) return;
+    const epoch = authority.current;
+    const active = () => current() && epoch === authority.current && !denied.current;
+    busy.current = true; setDeletingId(id); setError(''); setSuccess('');
     try {
-      await api.delete(`/api/v1/readings/${id}`);
-      setReadings(prev => prev.filter(r => r.id !== id));
-      setTotal(t => t - 1);
-      setSuccess(t('read.deleted'));
-    } catch {
-      setError(t('read.err_delete'));
-    } finally {
-      setDeletingId(null);
-    }
+      await api.delete(`/api/v1/readings/${encodeURIComponent(id)}`, config());
+      if (!active()) return;
+      ++readSequence.current; setLoading(false);
+      setReadings(previous => previous.filter(item => item.id !== id));
+      setTotal(previous => Math.max(0, previous - 1)); setSuccess(t('read.deleted'));
+    } catch (failure) {
+      if (!active()) return;
+      clearDeniedAccess(failure); setError(apiErrorMessage(failure, t('read.err_delete')));
+    } finally { if (current()) { busy.current = false; setDeletingId(null); } }
   };
-
   const isBP = form.reading_type === 'blood_pressure';
-
-  const importRenphoCsv = async (file?: File) => {
-    if (!file) return;
-    setError('');
-    setSuccess('');
-    setImporting(true);
+  const operationBusy = saving || importing || deletingId !== null;
+  const importRenphoCsv = async () => {
+    if (!importFile || !current() || busy.current || denied.current) return;
+    const epoch = authority.current;
+    const active = () => current() && epoch === authority.current && !denied.current;
+    busy.current = true; setError(''); setSuccess(''); setImporting(true);
+    let sent = false;
     try {
-      const body = new FormData();
-      body.append('file', file);
-      const response = await api.post('/api/v1/readings/import', body);
-      setSuccess(t('read.import_success')
-        .replace('{imported}', String(response.data.imported ?? 0))
-        .replace('{skipped}', String(response.data.skipped ?? 0)));
-      load(filterType);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || t('read.import_error'));
-    } finally {
-      setImporting(false);
-    }
+      if (!importFile.name.toLowerCase().endsWith('.csv') || !importFile.size || importFile.size > 2 * 1024 * 1024) {
+        throw new Error('Escolha um ficheiro CSV com conteúdo e até 2 MB.');
+      }
+      const scope = readingScope(country);
+      await checkReadingConsent(scope, { device: true, current: active, ...config() });
+      if (!active()) return;
+      const body = new FormData(); body.append('file', importFile);
+      body.append('country', scope.country); body.append('consent_language', scope.consent_language);
+      sent = true;
+      const response = await api.post('/api/v1/readings/import', body, { headers: { ...config().headers, 'Content-Type': 'multipart/form-data' } });
+      if (!active()) return;
+      const result = response.data as { imported?: unknown; skipped?: unknown; errors?: unknown };
+      if (!Number.isSafeInteger(result.imported) || (result.imported as number) < 0 || !Number.isSafeInteger(result.skipped) || (result.skipped as number) < 0
+        || !Array.isArray(result.errors) || result.errors.some(item => typeof item !== 'string')) throw new Error('Resposta de importação incompleta.');
+      const summary = `${result.imported} medições importadas; ${result.skipped} linhas ignoradas.`;
+      if (result.errors.length) {
+        setError(`${summary} Existem linhas por corrigir. O ficheiro selecionado foi mantido. ${result.errors.join(' ')}`);
+      } else { setSuccess(summary); setImportFile(null); }
+      void load(filterType);
+    } catch (failure) {
+      if (!active()) return;
+      clearDeniedAccess(failure);
+      setError(apiErrorMessage(failure, sent ? 'Não foi possível confirmar a importação. O ficheiro foi mantido; atualize o histórico antes de repetir.'
+        : failure instanceof Error ? failure.message : t('read.import_error')));
+    } finally { if (current()) { busy.current = false; setImporting(false); } }
   };
 
   return (
@@ -240,14 +286,24 @@ export default function PatientReadingsPage() {
           <h1>{t('read.title')}</h1>
           <p>{t('read.subtitle')}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setShowForm(s => !s); setError(''); setSuccess(''); }}>
+        <button className="btn btn-primary" disabled={operationBusy || accessLost} onClick={() => { setShowForm(s => !s); setError(''); setSuccess(''); }}>
           {showForm ? <><X size={16} /> {t('common.cancel')}</> : <><Plus size={16} /> {t('read.new')}</>}
         </button>
       </div>
 
       {/* Alerts */}
-      {error   && <div className="alert alert-error"   style={{ marginBottom: '1rem' }}>{error}   <button onClick={() => setError('')}   style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button></div>}
-      {success && <div className="alert alert-success" style={{ marginBottom: '1rem' }}>{success} <button onClick={() => setSuccess('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button></div>}
+      {error   && <div role="alert" className="alert alert-error"   style={{ marginBottom: '1rem' }}>{error}   <button onClick={() => setError('')}   style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button></div>}
+      {accessLost && <p role="alert">O acesso precisa de nova confirmação. Atualize o histórico antes de continuar; os rascunhos foram mantidos.</p>}
+      {success && <div role="status" className="alert alert-success" style={{ marginBottom: '1rem' }}>{success} <button onClick={() => setSuccess('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button></div>}
+
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <label htmlFor="readings-country">País das novas medições</label>{' '}
+        <select id="readings-country" value={country} disabled={operationBusy} onChange={event => setCountry(event.target.value === 'PT' ? 'PT' : 'AO')}>
+          <option value="AO">Angola</option><option value="PT">Portugal</option>
+        </select>
+        <p>As novas medições usam os consentimentos atuais deste país. A importação exige também a decisão separada para dispositivos. <Link to={`/consents?country=${country}`}>Rever consentimentos</Link>.</p>
+        <p>O histórico e a eliminação das suas medições continuam disponíveis após retirar consentimentos.</p>
+      </div>
 
       <div className="reading-import-card">
         <div className="reading-import-card__icon"><Scale size={22} /></div>
@@ -255,32 +311,41 @@ export default function PatientReadingsPage() {
           <strong>{t('read.import_title')}</strong>
           <span>{t('read.import_desc')}</span>
         </div>
-        <label className={`btn btn-outline reading-import-card__button${importing ? ' disabled' : ''}`}>
+        <label className={`btn btn-outline reading-import-card__button${operationBusy ? ' disabled' : ''}`}>
           {importing ? <Loader2 size={15} className="spin" /> : <Upload size={15} />}
           {importing ? t('read.importing') : t('read.import_button')}
           <input
             type="file"
             accept=".csv,text/csv"
-            disabled={importing}
+            aria-label="Ficheiro CSV"
+            disabled={operationBusy || accessLost}
             onChange={event => {
-              void importRenphoCsv(event.target.files?.[0]);
+              const file = event.target.files?.[0];
+              if (file) { setImportFile(file); setError(''); setSuccess(''); }
               event.currentTarget.value = '';
             }}
           />
         </label>
       </div>
 
+      {importFile && <div style={{ marginBottom: '1rem' }}>
+        <p>Ficheiro selecionado: {importFile.name}</p>
+        <button type="button" className="btn btn-primary" disabled={operationBusy || accessLost} onClick={() => void importRenphoCsv()}>{importing ? 'A importar…' : 'Importar ficheiro selecionado'}</button>
+        <button type="button" className="btn btn-ghost" disabled={operationBusy} onClick={() => setImportFile(null)}>Remover seleção</button>
+      </div>}
+
       {/* ── Add form ── */}
       {showForm && (
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: 600 }}>{t('read.new')}</h3>
           <form onSubmit={handleSubmit}>
+            <fieldset disabled={operationBusy || accessLost} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
             <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
 
               {/* Type */}
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">Tipo de Medição *</label>
-                <select
+                <label className="form-label" htmlFor="reading-type">Tipo de Medição *</label>
+                <select id="reading-type"
                   className="form-input"
                   value={form.reading_type}
                   onChange={e => handleTypeChange(e.target.value as ReadingType)}
@@ -296,26 +361,26 @@ export default function PatientReadingsPage() {
               {isBP ? (
                 <>
                   <div className="form-group">
-                    <label className="form-label">Sistólica (mmHg) *</label>
-                    <input className="form-input" type="number" min={40} max={300} placeholder="120"
+                    <label className="form-label" htmlFor="reading-systolic">Sistólica (mmHg) *</label>
+                    <input id="reading-systolic" className="form-input" type="number" min={40} max={300} placeholder="120"
                       value={form.systolic} onChange={e => setForm(f => ({ ...f, systolic: e.target.value }))} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Diastólica (mmHg) *</label>
-                    <input className="form-input" type="number" min={20} max={200} placeholder="80"
+                    <label className="form-label" htmlFor="reading-diastolic">Diastólica (mmHg) *</label>
+                    <input id="reading-diastolic" className="form-input" type="number" min={20} max={200} placeholder="80"
                       value={form.diastolic} onChange={e => setForm(f => ({ ...f, diastolic: e.target.value }))} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Pulso (bpm)</label>
-                    <input className="form-input" type="number" min={20} max={300} placeholder="72"
+                    <label className="form-label" htmlFor="reading-pulse">Pulso (bpm)</label>
+                    <input id="reading-pulse" className="form-input" type="number" min={20} max={300} placeholder="72"
                       value={form.pulse} onChange={e => setForm(f => ({ ...f, pulse: e.target.value }))} />
                   </div>
                 </>
               ) : (
                 <>
                   <div className="form-group">
-                    <label className="form-label">Valor *</label>
-                    <input className="form-input" type="number" step="any" placeholder="0"
+                    <label className="form-label" htmlFor="reading-value">Valor *</label>
+                    <input id="reading-value" className="form-input" type="number" step="any" placeholder="0"
                       value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} required />
                   </div>
                   <div className="form-group">
@@ -359,10 +424,11 @@ export default function PatientReadingsPage() {
               <button type="submit" className="btn btn-primary" disabled={saving}>
                 {saving ? <><Loader2 size={14} className="spin" /> A guardar…</> : 'Guardar Medição'}
               </button>
-              <button type="button" className="btn btn-ghost" onClick={() => { setShowForm(false); setForm(emptyForm); }}>
+              <button type="button" className="btn btn-ghost" onClick={() => { setShowForm(false); setForm(emptyForm()); }}>
                 Cancelar
               </button>
             </div>
+            </fieldset>
           </form>
         </div>
       )}
@@ -377,10 +443,12 @@ export default function PatientReadingsPage() {
         ))}
       </div>
 
+      <button className="btn btn-outline" disabled={operationBusy || loading} onClick={() => void load(filterType)}>Atualizar histórico</button>
+      {readError && <p role="alert">{readError}</p>}
       {/* ── Readings list ── */}
       {loading ? (
         <div className="page-loading"><div className="spinner" /></div>
-      ) : readings.length === 0 ? (
+      ) : !loaded ? <p>O histórico ainda não foi carregado. Tente atualizar.</p> : readings.length === 0 ? (
         <div className="card">
           <div className="empty-state" style={{ padding: '4rem 2rem' }}>
             <div className="empty-state-icon">
@@ -396,14 +464,14 @@ export default function PatientReadingsPage() {
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              {total} medição{total !== 1 ? 'ões' : ''} encontrada{total !== 1 ? 's' : ''}
+              A mostrar {readings.length} de {total} medições
             </span>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ background: 'var(--surface-2, #f9fafb)' }}>
-                  {['Tipo', 'Valor', 'Data / Hora', 'Dispositivo', 'Notas', ''].map(h => (
+                  {['Tipo', 'Valor', 'Data / Hora', 'País', 'Dispositivo', 'Notas', ''].map(h => (
                     <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -423,6 +491,7 @@ export default function PatientReadingsPage() {
                     <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       {formatDate(r.measured_at)}
                     </td>
+                    <td style={{ padding: '0.875rem 1rem' }}>{r.country === 'AO' ? 'Angola' : r.country === 'PT' ? 'Portugal' : 'Não registado'}</td>
                     <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>
                       {[r.device_brand, r.device_model].filter(Boolean).join(' ') || (r.source === 'manual' ? 'Manual' : r.source) || '—'}
                     </td>
@@ -435,9 +504,9 @@ export default function PatientReadingsPage() {
                       <button
                         className="btn btn-ghost"
                         style={{ padding: '0.25rem 0.5rem', color: 'var(--danger, #ef4444)' }}
-                        disabled={deletingId === r.id}
+                        disabled={operationBusy}
                         onClick={() => handleDelete(r.id)}
-                        title="Eliminar"
+                        title="Eliminar" aria-label="Eliminar medição"
                       >
                         {deletingId === r.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
                       </button>

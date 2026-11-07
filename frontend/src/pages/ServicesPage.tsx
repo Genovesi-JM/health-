@@ -1,7 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import HeroArt from '../components/HeroArt';
-import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
 import {
   Activity, Stethoscope, FileText, HeartPulse, Building2, Layers,
@@ -49,7 +48,7 @@ export default function ServicesPage() {
   ];
 
   return (
-    <>
+    <div className="landing-wrapper">
       <Navbar />
 
       {/* Hero */}
@@ -99,6 +98,6 @@ export default function ServicesPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

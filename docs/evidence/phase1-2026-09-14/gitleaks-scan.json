@@ -1,0 +1,196 @@
+{
+  "generated_at_utc": "2026-09-14T00:17:37.353126+00:00",
+  "root": "/Users/genovesimaria/Documents/kaya-web",
+  "head": "d6d99953846602ab411822cfa616e4c753f41ed7",
+  "scanner": {
+    "name": "Gitleaks",
+    "version": "8.30.1",
+    "binary_sha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f",
+    "config_sha256": "e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf",
+    "default_rule_count": 222,
+    "decode_depth": 5,
+    "redaction_percent": 100,
+    "inline_allow_comments_ignored": true,
+    "repository_ignore_file_used": false
+  },
+  "scope": {
+    "current_candidate_paths": 569,
+    "current_source_files": 557,
+    "current_source_bytes": 7514071,
+    "current_source_manifest_sha256": "5f2e99a1167403c0c10379ccee072c7e66a10d5208d2ea3ccb0874d621f46671",
+    "generated_evidence_logs_included": [
+      "docs/evidence/phase0-completion-2026-09-14/backend-clean-install.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-current-backend-focused.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-current-backend-full.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-current-dependency-consistency.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-current-infrastructure.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-current-launch-hold.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-current-migration-heads.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-gate-backend-focused.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-gate-dependency-consistency.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-gate-infrastructure.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-gate-launch-hold.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-gate-migration-heads.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-original-backend-focused.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-original-backend-full.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-original-dependency-consistency.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-backend-focused.log",
+      "docs/evidence/phase0-completion-2026-09-14/backend-original-gate-dependency-consistency.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-frontend-audit.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-frontend-build.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-frontend-lint.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-frontend-npm-ci.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-frontend-tests-tracked.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-frontend-tests-user-tests.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-mobile-audit.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-mobile-npm-ci.log",
+      "docs/evidence/phase0-completion-2026-09-14/client-mobile-typecheck.log",
+      "docs/evidence/phase1-2026-09-14/backend-final-dependency-consistency.log",
+      "docs/evidence/phase1-2026-09-14/backend-final-launch-hold.log",
+      "docs/evidence/phase1-2026-09-14/backend-final-phase1-policy.log",
+      "docs/evidence/phase1-2026-09-14/backend-security-backend-focused.log",
+      "docs/evidence/phase1-2026-09-14/client-build.log",
+      "docs/evidence/phase1-2026-09-14/client-mobile-typecheck.log",
+      "docs/evidence/phase1-2026-09-14/client-new-code-lint.log",
+      "docs/evidence/phase1-2026-09-14/client-tests-initial.log",
+      "docs/evidence/phase1-2026-09-14/client-tests.log",
+      "docs/evidence/phase1-2026-09-14/client-visual.log",
+      "docs/evidence/phase1-2026-09-14/policy-mirrors.log",
+      "docs/evidence/phase1-2026-09-14/scope-inventory-tests.log"
+    ],
+    "tracked_dotenv_included": [
+      ".env.production",
+      "backend/.env.example",
+      "frontend/.env.example",
+      "frontend/.env.production",
+      "mobile/.env.example"
+    ],
+    "historical_candidate_paths": 507,
+    "historical_source_paths": 497,
+    "locally_reachable_commits": 205,
+    "shallow_repository": false,
+    "history_options": "--all --full-history -m --no-ext-diff --no-textconv --no-renames -- <literal source paths>",
+    "excluded_current": [
+      {
+        "path": ".gitattributes",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "backend/email_log.txt",
+        "reason": "database or log (not read)"
+      },
+      {
+        "path": "docs/evidence/phase1-2026-09-14/client-desktop.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "docs/evidence/phase1-2026-09-14/client-mobile.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "frontend/public/apple-touch-icon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "frontend/public/favicon-32.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "frontend/public/icon-192.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "frontend/public/icon-512.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/adaptive-icon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/favicon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/icon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/splash.png",
+        "reason": "non-source/binary asset (not read)"
+      }
+    ],
+    "excluded_history": [
+      {
+        "path": ".gitattributes",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "backend/email_log.txt",
+        "reason": "database or log (not read)"
+      },
+      {
+        "path": "frontend/public/apple-touch-icon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "frontend/public/favicon-32.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "frontend/public/icon-192.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "frontend/public/icon-512.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/adaptive-icon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/favicon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/icon.png",
+        "reason": "non-source/binary asset (not read)"
+      },
+      {
+        "path": "mobile/assets/splash.png",
+        "reason": "non-source/binary asset (not read)"
+      }
+    ]
+  },
+  "current_source": {
+    "mode": "dir",
+    "completed": true,
+    "exit_code": 0,
+    "timed_out": false,
+    "duration_seconds": 1.72,
+    "stderr_bytes_withheld": 0,
+    "finding_count": 0,
+    "by_rule": {},
+    "findings": []
+  },
+  "local_git_history": {
+    "mode": "git",
+    "completed": true,
+    "exit_code": 0,
+    "timed_out": false,
+    "duration_seconds": 2.776,
+    "stderr_bytes_withheld": 0,
+    "finding_count": 0,
+    "by_rule": {},
+    "findings": []
+  },
+  "limitations": [
+    "Regex/entropy heuristics and built-in default allowlists cannot prove absence of secrets.",
+    "Source-controlled dotenv files were scanned locally with redaction; local/untracked or ignored dotenv stores were not read.",
+    "Operational/health log contents, database contents, data directories, ignored files outside the explicit generated evidence directory, and non-source/binary assets were not read or scanned.",
+    "No archives, external submodules, Git LFS object content, unreachable/dangling commits, reflog-only history, or remote-only refs were scanned.",
+    "No fetch, provider credential validation, application imports, database reads, or deployment occurred.",
+    "Potential credentials are reported for review; scanner findings alone do not establish active credentials."
+  ]
+}

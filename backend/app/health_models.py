@@ -31,6 +31,11 @@ def _uuid():
     return str(uuid.uuid4())
 
 
+def _request_deadline(context):
+    from app.services.request_expiry import default_deadline
+    return default_deadline(context)
+
+
 # ── Patient Profile (extends User) ──
 
 class Patient(Base):
@@ -55,6 +60,37 @@ class Patient(Base):
     triage_sessions = relationship("TriageSession", back_populates="patient", cascade="all, delete-orphan")
     consultations = relationship("Consultation", back_populates="patient", foreign_keys="Consultation.patient_id")
     consents = relationship("PatientConsent", back_populates="patient", cascade="all, delete-orphan")
+
+
+# ── Patient documents (private original + explicitly reviewed transcription) ──
+
+class PatientDocument(Base):
+    __tablename__ = "patient_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    storage_key: Mapped[str] = mapped_column(Text, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="pending_processing")
+    scan_status: Mapped[str] = mapped_column(String(15), nullable=False, default="pending")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    extraction_method: Mapped[str] = mapped_column(String(30), nullable=False, default="none")
+    extracted_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reviewed_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("uq_patient_document_request", "patient_id", "idempotency_key", unique=True),
+    )
 
 
 # ── Doctor Invite (token-based onboarding) ──
@@ -260,10 +296,31 @@ class DoctorAvailability(Base):
     doctor = relationship("Doctor", back_populates="availability_slots")
 
 
+class AppointmentSlot(Base):
+    """One published, dated interval; weekly profile hours are not bookable."""
+    __tablename__ = "appointment_slots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    timezone: Mapped[str] = mapped_column(String(50), nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    withdrawn: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Logical reference avoids a circular FK with Consultation.slot_id. Only the
+    # matching consultation can release its claim, in the same transaction.
+    reserved_consultation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (Index("ix_appointment_slots_doctor_start", "doctor_id", "starts_at"),)
+
+
 # ── Triage ──
 
 class TriageSession(Base):
     __tablename__ = "triage_sessions"
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(
@@ -396,8 +453,18 @@ class Consultation(Base):
     specialty: Mapped[str] = mapped_column(String(100), nullable=False, default="clinica_geral")
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="requested",
-    )  # requested, scheduled, in_progress, completed, cancelled, no_show
+    )  # requested, scheduled, in_progress, completed, cancelled, no_show, expired
+    requested_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=_request_deadline)
+    expired_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    scheduled_end_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    slot_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("appointment_slots.id"), nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True, default="pt")
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    booking_request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    booking_request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    reschedule_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     cancellation_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -408,13 +475,35 @@ class Consultation(Base):
 
     patient = relationship("Patient", back_populates="consultations", foreign_keys=[patient_id])
     doctor = relationship("Doctor", back_populates="consultations", foreign_keys=[doctor_id])
-    notes = relationship("ConsultationNotes", back_populates="consultation", uselist=False, cascade="all, delete-orphan")
+    notes = relationship("ConsultationNotes", back_populates="consultation", uselist=False,
+                         cascade="save-update, merge", passive_deletes=True)
     prescriptions = relationship("Prescription", back_populates="consultation", cascade="all, delete-orphan")
     referrals = relationship("Referral", back_populates="consultation", cascade="all, delete-orphan")
 
     __table_args__ = (
+        Index("ix_consultations_request_expiry", "status", "requested_expires_at", "id"),
         Index("ix_consultations_patient_scheduled", "patient_id", "scheduled_at"),
         Index("ix_consultations_doctor_scheduled", "doctor_id", "scheduled_at"),
+        Index("ix_consultations_patient_booking_key", "patient_id", "booking_request_key", unique=True),
+    )
+
+
+class ConsultationReschedule(Base):
+    """Retained request identities for atomic, retry-safe appointment moves."""
+    __tablename__ = "consultation_reschedules"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    consultation_id: Mapped[str] = mapped_column(String(36), ForeignKey("consultations.id", ondelete="RESTRICT"), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    previous_slot_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    slot_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    previous_status: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (
+        Index("uq_consultation_reschedule_request", "consultation_id", "request_key", unique=True),
+        Index("uq_consultation_reschedule_revision", "consultation_id", "revision", unique=True),
     )
 
 
@@ -432,9 +521,41 @@ class ConsultationNotes(Base):
     assessment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     plan: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     outcome: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # resolved, follow_up, referral, er
+    # Only this explicitly authored text is disclosed through the patient closeout API.
+    patient_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    follow_up_instructions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    follow_up_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+    follow_up_due_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    follow_up_task_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    finalized_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    finalized_by_user_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    finalization_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     consultation = relationship("Consultation", back_populates="notes")
+
+
+class ConsultationAmendment(Base):
+    """An attributed full correction snapshot; the original note is immutable."""
+    __tablename__ = "consultation_amendments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    note_id: Mapped[str] = mapped_column(String(36), ForeignKey("consultation_notes.id", ondelete="RESTRICT"), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    author_user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    publish_to_patient: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    snapshot_json: Mapped[str] = mapped_column(Text, nullable=False)
+    previous_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("uq_consultation_amendment_revision", "note_id", "revision", unique=True),
+        Index("uq_consultation_amendment_request", "note_id", "request_key", unique=True),
+    )
 
 
 # ── Prescription & Referral ──
@@ -790,6 +911,57 @@ class PatientConsent(Base):
     patient = relationship("Patient", back_populates="consents")
 
 
+class ConsentCatalogDocument(Base):
+    """Immutable approved text or a newer inactive version that blocks fallback."""
+    __tablename__ = "consent_catalog_documents"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    document_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    language: Mapped[str] = mapped_column(String(10), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(80), nullable=False)
+    kind: Mapped[str] = mapped_column(String(50), nullable=False)
+    required: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    approved_source: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    effective_from: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    effective_to: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    __table_args__ = (Index("uq_consent_catalog_version", "country", "language", "purpose", "version", unique=True),)
+
+
+class PatientConsentEvent(Base):
+    __tablename__ = "patient_consent_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
+    actor_user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    document_id: Mapped[str] = mapped_column(String(36), ForeignKey("consent_catalog_documents.id", ondelete="RESTRICT"), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    action: Mapped[str] = mapped_column(String(12), nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (
+        Index("uq_consent_event_request", "patient_id", "request_key", unique=True),
+        Index("uq_consent_event_sequence", "patient_id", "sequence", unique=True),
+    )
+
+
+class ConsultationConsentSnapshot(Base):
+    __tablename__ = "consultation_consent_snapshots"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    consultation_id: Mapped[str] = mapped_column(String(36), ForeignKey("consultations.id", ondelete="RESTRICT"), unique=True, nullable=False)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    language: Mapped[str] = mapped_column(String(10), nullable=False)
+    grant_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    content_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 # ── Health Payment (extends existing Payment concept) ──
 
 class HealthPayment(Base):
@@ -798,7 +970,7 @@ class HealthPayment(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     patient_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
     corporate_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
-    consultation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    consultation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
     payment_type: Mapped[str] = mapped_column(String(30), nullable=False, default="consultation")  # consultation, subscription
     amount: Mapped[int] = mapped_column(Integer, nullable=False)  # in smallest currency unit
     currency: Mapped[str] = mapped_column(String(5), nullable=False, default="AOA")
@@ -807,8 +979,13 @@ class HealthPayment(Base):
     provider_reference: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="{}")
+    checkout_request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    checkout_request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    dispatch_state: Mapped[Optional[str]] = mapped_column(String(24), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (Index("uq_health_payment_checkout_request", "patient_id", "checkout_request_key", unique=True),)
 
 
 # ── Health Audit Log (specific to health actions) ──
@@ -840,6 +1017,13 @@ class PrescriptionRequest(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    request_key: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    request_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    creation_evidence_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    creation_digest: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default='0')
     medication_name: Mapped[str] = mapped_column(String(300), nullable=False)
     dose: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -856,6 +1040,33 @@ class PrescriptionRequest(Base):
 
     patient = relationship("Patient", backref="prescription_requests")
     doctor = relationship("Doctor", backref="prescription_requests")
+
+
+    __table_args__ = (Index('uq_renewal_patient_request', 'patient_id', 'request_key', unique=True),)
+
+
+class PrescriptionRequestDecision(Base):
+    """One immutable clinical decision and exact authorization proof per renewal."""
+    __tablename__ = 'prescription_request_decisions'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    request_id: Mapped[str] = mapped_column(String(36), ForeignKey('prescription_requests.id', ondelete='RESTRICT'), nullable=False)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey('patients.id', ondelete='RESTRICT'), nullable=False)
+    doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey('doctors.id', ondelete='RESTRICT'), nullable=False)
+    actor_user_id: Mapped[str] = mapped_column(String(36), ForeignKey('users.id', ondelete='RESTRICT'), nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    consent_language: Mapped[str] = mapped_column(String(10), nullable=False)
+    request_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    action: Mapped[str] = mapped_column(String(30), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+    consent_evidence_json: Mapped[str] = mapped_column(Text, nullable=False)
+    content_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    __table_args__ = (
+        Index('uq_renewal_decision_request', 'request_id', unique=True),
+        Index('uq_renewal_decision_actor_key', 'actor_user_id', 'request_key', unique=True),
+    )
 
 
 # ── Standalone Prescription (issued from a prescription request, no consultation) ──
@@ -876,6 +1087,9 @@ class StandalonePrescription(Base):
     )
     patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     doctor_id: Mapped[str] = mapped_column(String(36), ForeignKey("doctors.id", ondelete="CASCADE"), nullable=False, index=True)
+    renewal_decision_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey('prescription_request_decisions.id', ondelete='RESTRICT'), nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     medication_name: Mapped[str] = mapped_column(String(300), nullable=False)
     dosage: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     frequency: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -891,6 +1105,7 @@ class StandalonePrescription(Base):
     prescription_request = relationship("PrescriptionRequest", backref="standalone_prescription", uselist=False)
     patient = relationship("Patient", backref="standalone_prescriptions")
     doctor = relationship("Doctor", backref="standalone_prescriptions")
+    __table_args__ = (Index('uq_standalone_renewal_decision', 'renewal_decision_id', unique=True),)
 
 
 # ── Device Reading (patient home monitoring) ──────────────────────────────────
@@ -922,6 +1137,9 @@ class DeviceReading(Base):
         String(36), ForeignKey("patients.id", ondelete="CASCADE"),
         nullable=False, index=True,
     )
+    # Historical readings remain unclassified; only fresh authorized writes set scope.
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    consent_language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     # one of READING_TYPES
     reading_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
 
@@ -1040,6 +1258,8 @@ class Notification(Base):
     # info | success | warning | error
     type: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    event_key: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
     # Optional: link back to the entity that triggered this (e.g. consultation, prescription_request)
     related_entity_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     related_entity_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
@@ -1049,6 +1269,8 @@ class Notification(Base):
 
     __table_args__ = (
         Index("ix_notifications_user_created", "user_id", "created_at"),
+        Index("uq_notifications_user_event", "user_id", "event_key", unique=True),
+        Index("ix_notifications_user_unread", "user_id", "is_read", "created_at", "id"),
     )
 
 
@@ -1446,3 +1668,60 @@ class DependantAccessEvent(Base):
     __table_args__ = (
         Index("ix_dependant_access_events_link_at", "dependant_link_id", "at"),
     )
+
+
+# ── Public contact message (§ website contact form) ──────────────────────────
+# Stores messages submitted from the public "Fale connosco" form so nothing is
+# lost to a mailto: client. A best-effort email is also sent to support.
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(250), nullable=False)
+    subject: Mapped[str] = mapped_column(String(200), nullable=False, default="Suporte geral")
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="new", index=True)  # new | read | closed
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
+# Fresh synthetic databases have the same record protections as migrated ones.
+from .services.clinical_retention import register_retention_guards
+register_retention_guards(Base.metadata)
+from .services.consent_retention import register_consent_guards
+register_consent_guards(Base.metadata)
+
+from .services.renewal_retention import register_renewal_guards
+register_renewal_guards(Base.metadata)
+
+from . import clinical_document_models  # Register retained document artifacts after core tables.
+
+
+# ── Patient transport & ambulance requests ────────────────────────────────
+TRANSPORT_KINDS = ("scheduled", "accessible", "assisted", "emergency")
+TRANSPORT_STATUSES = ("requested", "confirmed", "en_route", "completed", "cancelled")
+
+
+class TransportRequest(Base):
+    """A patient's request for transport to care: scheduled, accessible
+    (non-clinical passenger support), assisted (clinical team on board) or
+    emergency pre-alert. Operators confirm and update the status; the patient
+    can cancel while it is still requested or confirmed."""
+    __tablename__ = "transport_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    consultation_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("consultations.id", ondelete="SET NULL"), nullable=True)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="requested", index=True)
+    pickup_address: Mapped[str] = mapped_column(String(300), nullable=False)
+    destination: Mapped[str] = mapped_column(String(300), nullable=False)
+    scheduled_for: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    mobility_needs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    companion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

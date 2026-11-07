@@ -54,6 +54,8 @@ def _register_admin_or_login(client) -> str:
     The test DB is torn down per session but users can be created via
     the register endpoint for non-admin roles. Admin is seeded, so log in.
     """
+    from _authutil import login_with_mfa
+    return login_with_mfa(client, "teste@admin.com", "123456")["access_token"]
     r = client.post("/auth/login", json={"email": "teste@admin.com", "password": "123456"})
     assert r.status_code == 200, r.text
     return r.json()["access_token"]

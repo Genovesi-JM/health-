@@ -75,16 +75,17 @@ def db_session():
         session.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def client():
-    """FastAPI TestClient that creates the application using the in-memory DB.
+    """FastAPI TestClient against the operational app on the shared test DB.
 
-    Tests that call `create_application()` directly will also get the
-    in-memory DB because we reloaded the DB module above.
+    Session-scoped so the app (and its one-time seed) is built once for the whole
+    suite instead of per test — the tests share the same on-disk test DB anyway.
+    app.main is now the Phase-0 hold stub, so build the operational factory.
     """
-    from app.main import create_application
+    from app.factory import create_app
     from fastapi.testclient import TestClient
 
-    app = create_application()
+    app = create_app()
     with TestClient(app) as c:
         yield c

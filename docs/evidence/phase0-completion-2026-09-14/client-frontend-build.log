@@ -1,0 +1,29 @@
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 1894 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mregisterSW.js              [39m[1m[2m    0.15 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                 [39m[1m[2m    2.44 kB[22m[1m[22m[2m │ gzip:   1.02 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-BSXCFPGs.css  [39m[1m[2m  139.94 kB[22m[1m[22m[2m │ gzip:  24.42 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-6WjmNT9t.js   [39m[1m[33m1,401.22 kB[39m[22m[2m │ gzip: 371.03 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 10.36s[39m
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+PWA v1.2.0
+mode      generateSW
+precache  18 entries (1554.73 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-abeb32eb.js

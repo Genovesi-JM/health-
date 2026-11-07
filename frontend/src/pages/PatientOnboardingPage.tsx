@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import OnboardingShell, { type OnboardingStepDef, type StepRenderContext } from '../components/OnboardingShell';
 import { useT } from '../i18n/LanguageContext';
+import { useAuth } from '../AuthContext';
+import OnboardingConsentStep from '../components/OnboardingConsentStep';
+import { REQUIRED_CONSENT_PURPOSES, isConsentCountry } from '../utils/consent';
 
 /* ── Small building blocks ────────────────────────────────────────────── */
 
@@ -62,8 +65,10 @@ function Toggle({ ctx, k, label }: { ctx: StepRenderContext; k: string; label: s
 
 export default function PatientOnboardingPage() {
   const { t } = useT();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [done, setDone] = useState(false);
+  const consentReady = useRef(false);
 
   const steps: OnboardingStepDef[] = useMemo(() => [
     // Step 1 — Language + communication
@@ -99,12 +104,13 @@ export default function PatientOnboardingPage() {
       },
     },
 
-    // Step 2 — Verify contacts (placeholder — real code sent via /auth/verify-*)
+    // Contact collection does not claim email or phone ownership verification.
     {
       key: 'verify',
       title: t('pob.s2_title'),
       subtitle: t('pob.s2_sub'),
-      helper: 'Códigos de verificação por email e SMS serão enviados na fase de piloto — por enquanto, confirme o contacto.',
+      defaults: { email: user?.email ?? '' },
+      helper: 'Use o email da sua conta. Indicar um contacto não confirma a sua verificação.',
       render: (ctx) => (
         <>
           <Field label="Email" required>
@@ -116,7 +122,8 @@ export default function PatientOnboardingPage() {
         </>
       ),
       validate: (d) => {
-        const email = String(d.email || '');
+        const email = String(d.email || '').trim();
+        if (email.toLowerCase() !== user?.email.toLowerCase()) return 'Use o email da sua conta. Pode alterá-lo nas definições de segurança.';
         return /.+@.+\..+/.test(email) ? null : 'Introduza um email válido.';
       },
     },
@@ -126,6 +133,7 @@ export default function PatientOnboardingPage() {
       key: 'personal',
       title: t('pob.s3_title'),
       subtitle: t('pob.s3_sub'),
+      defaults: { full_name: user?.name ?? '' },
       render: (ctx) => (
         <>
           <Field label="Nome legal completo" required>
@@ -170,9 +178,6 @@ export default function PatientOnboardingPage() {
             <select value={(ctx.data.country as string) ?? 'AO'} onChange={e => ctx.setField('country', e.target.value)} style={inputStyle}>
               <option value="AO">Angola</option>
               <option value="PT">Portugal</option>
-              <option value="ES">España</option>
-              <option value="BR">Brasil</option>
-              <option value="OTHER">Outro</option>
             </select>
           </Field>
           <Field label="Província">
@@ -251,35 +256,14 @@ export default function PatientOnboardingPage() {
       },
     },
 
-    // Step 7 — Consent (separate toggles, not bundled)
+    // Exact server references are persisted with the draft; final submission rechecks them atomically.
     {
-      key: 'consent',
-      title: t('pob.s7_title'),
-      subtitle: t('pob.s7_sub'),
-      render: (ctx) => (
-        <>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
-            Obrigatórios para usar o serviço
-          </div>
-          <Toggle ctx={ctx} k="c_terms" label="Aceito os Termos de Serviço." />
-          <Toggle ctx={ctx} k="c_privacy" label="Aceito a Política de Privacidade." />
-          <Toggle ctx={ctx} k="c_health" label="Autorizo o processamento dos meus dados de saúde para fins clínicos." />
-          <Toggle ctx={ctx} k="c_telemedicine" label="Aceito receber cuidados por teleconsulta." />
-
-          <div style={{ height: '1rem' }} />
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
-            Opcionais — pode mudar mais tarde
-          </div>
-          <Toggle ctx={ctx} k="c_family_share" label="Permito partilhar informação com familiares que eu autorize." />
-          <Toggle ctx={ctx} k="c_analytics" label="Autorizo estatísticas anónimas para melhorar o serviço." />
-          <Toggle ctx={ctx} k="c_marketing" label="Aceito receber comunicações de marketing." />
-          <Toggle ctx={ctx} k="c_research" label="Autorizo o uso anonimizado dos meus dados em investigação." />
-        </>
-      ),
-      validate: (d) => {
-        for (const k of ['c_terms', 'c_privacy', 'c_health', 'c_telemedicine']) {
-          if (!d[k]) return 'Todos os consentimentos obrigatórios devem ser aceites.';
-        }
+      key: 'consent', title: t('pob.s7_title'), subtitle: t('pob.s7_sub'),
+      render: ctx => <OnboardingConsentStep ctx={ctx} readyRef={consentReady} />,
+      validate: data => {
+        if (!consentReady.current) return 'Confirme a disponibilidade dos documentos aprovados antes de continuar.';
+        if (!isConsentCountry(data.catalog_country) || data.catalog_language !== 'pt' || !Number.isSafeInteger(data.consent_expected_revision)
+          || !Array.isArray(data.consent_acceptances) || data.consent_acceptances.length !== REQUIRED_CONSENT_PURPOSES.length) return 'Leia e decida sobre cada documento obrigatório.';
         return null;
       },
     },
@@ -292,7 +276,7 @@ export default function PatientOnboardingPage() {
       render: () => (
         <div style={{ fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
           <p style={{ margin: '0 0 0.75rem' }}>
-            Ao carregar em <strong>Concluir</strong>, a sua conta será criada com todas as respostas acima.
+            Ao carregar em <strong>Concluir</strong>, o seu perfil e os consentimentos serão guardados na sua conta.
           </p>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem' }}>
             Pode alterar qualquer secção nas Definições depois.
@@ -300,7 +284,7 @@ export default function PatientOnboardingPage() {
         </div>
       ),
     },
-  ], [t]);
+  ], [t, user?.email, user?.name]);
 
   if (done) {
     return (
@@ -322,7 +306,7 @@ export default function PatientOnboardingPage() {
       <OnboardingShell
         role="patient"
         steps={steps}
-        onSubmitted={() => setDone(true)}
+        onSubmitted={async () => { await refreshUser(); setDone(true); }}
       />
     </div>
   );

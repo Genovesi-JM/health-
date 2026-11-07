@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  Activity, AlertTriangle, ArrowLeft, Calendar, CheckCircle2, ChevronRight,
+  Activity, ArrowLeft, Calendar, CheckCircle2, ChevronRight,
   ClipboardList, Clock3, FileText, HeartPulse, MessageSquare, Pill, RefreshCw,
   ShieldAlert, Stethoscope, UserRound, Users, Video, X,
 } from 'lucide-react';
 import api from '../api';
+import { apiErrorMessage } from '../utils/apiError';
 import { useT } from '../i18n/LanguageContext';
 import TeleconsultationControl from '../components/TeleconsultationControl';
+import ConsultationCloseout, { type CloseoutRecord } from '../components/ConsultationCloseout';
+import ClinicianPatientDocuments from '../components/ClinicianPatientDocuments';
 
 type Patient360 = {
   access: {
@@ -44,6 +47,7 @@ type Patient360 = {
 type Consultation = {
   id: string; specialty: string; status: string; scheduled_at?: string | null;
   created_at?: string | null; messages_count: number; payment_status?: string;
+  can_read_closeout?: boolean; can_amend?: boolean;
   notes?: { subjective?: string | null; objective?: string | null; assessment?: string | null; plan?: string | null; outcome?: string | null } | null;
 };
 type Triage = {
@@ -246,16 +250,40 @@ const copy = {
   },
 };
 
-type Tab = 'overview' | 'triage' | 'readings' | 'medications' | 'consultations' | 'coordination';
+type Tab = 'overview' | 'triage' | 'readings' | 'medications' | 'consultations' | 'coordination' | 'documents';
 
 export default function ClinicianPatientWorkspacePage({ preview = false }: { preview?: boolean }) {
   const { patientId } = useParams();
+  return <PatientWorkspace key={`${patientId}:${preview}`} patientId={patientId} preview={preview} />;
+}
+
+function PatientWorkspace({ patientId, preview }: { patientId?: string; preview: boolean }) {
   const navigate = useNavigate();
   const { lang } = useT();
   const c = copy[lang as keyof typeof copy] || copy.en;
   const [data, setData] = useState<Patient360 | null>(preview ? PREVIEW_DATA : null);
   const [loading, setLoading] = useState(!preview);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [closeoutDirty, setCloseoutDirty] = useState(false);
+  const [closeoutBusy, setCloseoutBusy] = useState(false);
+  const [selectedCloseoutId, setSelectedCloseoutId] = useState<string | null>(null);
+  const selectCloseout = (id: string | null) => {
+    if (id === selectedCloseoutId || closeoutBusy) return;
+    if (closeoutDirty && !window.confirm('Mudar de registo e perder o rascunho clínico desta sessão?')) return;
+    setCloseoutDirty(false); setSelectedCloseoutId(id);
+  };
+  const updateCloseoutSummary = (updated: CloseoutRecord) => {
+    const notes = updated.closeout?.notes;
+    if (!notes) return;
+    setData(current => current ? { ...current, consultations: current.consultations.map(item =>
+      item.id === updated.consultation_id ? { ...item, notes: { ...item.notes, ...notes } } : item,
+    ) } : current);
+  };
+  const selectTab = (tab: Tab) => {
+    if (tab === activeTab) return;
+    if (activeTab === 'consultations' && (closeoutBusy || (closeoutDirty && !window.confirm('Mudar de separador e perder o rascunho de conclusão desta sessão?')))) return;
+    setCloseoutDirty(false); setActiveTab(tab);
+  };
   const [showHandoff, setShowHandoff] = useState(false);
   const [escalationUrgency, setEscalationUrgency] = useState('priority');
   const [escalationReason, setEscalationReason] = useState('');
@@ -273,15 +301,14 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
   const [taskPriority, setTaskPriority] = useState('routine');
   const [operationSaving, setOperationSaving] = useState(false);
 
-  const load = () => {
-    if (preview) { setData(PREVIEW_DATA); return; }
+  const load = useCallback(() => {
+    if (preview) return;
     if (!patientId) return;
-    setLoading(true);
     api.get(`/api/v1/clinician/patients/${patientId}/360`)
       .then(response => setData(response.data))
       .finally(() => setLoading(false));
-  };
-  useEffect(() => { load(); }, [patientId, preview]);
+  }, [patientId, preview]);
+  useEffect(() => { load(); }, [load]);
 
   const latestByType = useMemo(() => {
     const map = new Map<string, Reading>();
@@ -317,8 +344,8 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
         });
       }
       setEscalationResult(c.escalationSent);
-    } catch (error: any) {
-      setEscalationResult(error?.response?.data?.detail || 'Não foi possível enviar o encaminhamento.');
+    } catch (error) {
+      setEscalationResult(apiErrorMessage(error, 'Não foi possível enviar o encaminhamento.'));
     } finally {
       setEscalationSending(false);
     }
@@ -343,6 +370,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
         setData(current => current ? { ...current, nursing_observations: [item, ...current.nursing_observations] } : current);
       } else {
         await api.post('/api/v1/clinical-operations/nursing/observations', payload);
+        setLoading(true);
         load();
       }
       setObservationAssessment('');
@@ -374,6 +402,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
         setData(current => current ? { ...current, care_tasks: [item, ...current.care_tasks] } : current);
       } else {
         await api.post('/api/v1/clinical-operations/care-tasks', payload);
+        setLoading(true);
         load();
       }
       setTaskTitle('');
@@ -396,6 +425,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
         } : current);
       } else {
         await api.post(`/api/v1/clinical-operations/care-tasks/${task.id}/complete`, {});
+        setLoading(true);
         load();
       }
     } finally {
@@ -408,6 +438,8 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
 
   const roleLabel = data.access.role === 'doctor' ? c.roleDoctor : c.roleNurse;
   const currentMedications = data.medications.filter(item => item.is_current);
+  const selectedCloseout = data.consultations.find(item => item.id === selectedCloseoutId && item.status === 'completed' && item.can_read_closeout === true);
+  const visibleCloseoutId = selectedCloseout?.id || data.active_episode?.id;
 
   return (
     <div className="clinician-360">
@@ -433,7 +465,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
             </Link>
           )}
           {data.access.capabilities.join_teleconsultation && data.access.role === 'nurse' && (
-            <button className="clinician-action clinician-action--primary" type="button" onClick={() => setActiveTab('consultations')}>
+            <button className="clinician-action clinician-action--primary" type="button" onClick={() => selectTab('consultations')}>
               <Video size={16} /> {c.teleconsult}
             </button>
           )}
@@ -469,14 +501,16 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
           ['consultations', c.consultations, Video],
           ['coordination', c.coordination, Users],
         ] as const).map(([key, label, Icon]) => (
-          <button key={key} type="button" className={activeTab === key ? 'active' : ''} onClick={() => setActiveTab(key)}>
+          <button key={key} type="button" className={activeTab === key ? 'active' : ''} onClick={() => selectTab(key)}>
             <Icon size={16} /> {label}
             {key === 'triage' && data.latest_triage?.risk_level && <span className="tab-alert" />}
           </button>
         ))}
+        {!preview && data.access.role === 'doctor' && <button type="button" className={activeTab === 'documents' ? 'active' : ''} onClick={() => selectTab('documents')}><FileText size={16} /> Documentos</button>}
       </nav>
 
       <main className="clinician-360-content">
+        {activeTab === 'documents' && !preview && data.access.role === 'doctor' && <ClinicianPatientDocuments patientId={data.identity.id} />}
         {activeTab === 'overview' && (
           <div className="clinician-overview-grid">
             <section className="clinician-panel clinician-panel--span2">
@@ -601,6 +635,11 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
             {data.active_episode && (
               <TeleconsultationControl consultationId={data.active_episode.id} role={data.access.role} preview={preview} />
             )}
+            {selectedCloseout && data.access.role === 'doctor' && !preview && <div className="clinician-section-actions">
+              <strong>Registo concluído · {selectedCloseout.specialty} · {formatDate(selectedCloseout.scheduled_at || selectedCloseout.created_at)}</strong>
+              <button type="button" disabled={closeoutBusy} onClick={() => selectCloseout(null)}>Fechar registo concluído</button>
+            </div>}
+            {visibleCloseoutId && data.access.role === 'doctor' && !preview && <ConsultationCloseout key={visibleCloseoutId} consultationId={visibleCloseoutId} role="doctor" allowAmendment={selectedCloseout ? selectedCloseout.can_amend === true : true} onRecordUpdated={updateCloseoutSummary} onDirtyChange={setCloseoutDirty} onBusyChange={setCloseoutBusy} />}
             <section className="clinician-panel">
               <PanelTitle icon={<Video size={17} />} title={c.consultations} meta={`${data.consultations.length}`} />
               <div className="clinician-consultation-list">
@@ -609,6 +648,7 @@ export default function ClinicianPatientWorkspacePage({ preview = false }: { pre
                     <span className={`consult-icon ${item.status}`}><Video size={18} /></span>
                     <div><h3>{item.specialty}</h3><p>{formatDate(item.scheduled_at || item.created_at)} · {item.status}</p></div>
                     <span><MessageSquare size={14} /> {item.messages_count}</span>
+                    {!preview && data.access.role === 'doctor' && item.status === 'completed' && item.can_read_closeout === true && <button type="button" className="btn btn-sm" aria-label={`Abrir registo concluído · ${item.specialty}`} disabled={closeoutBusy || selectedCloseoutId === item.id} onClick={() => selectCloseout(item.id)}>Abrir registo concluído</button>}
                     {item.notes && <div className="consult-plan"><strong>Plano</strong><span>{item.notes.plan || item.notes.assessment || '—'}</span></div>}
                   </article>
                 ))}

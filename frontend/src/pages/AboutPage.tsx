@@ -1,7 +1,7 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import HeroArt from '../components/HeroArt';
-import { Heart, Target, Eye, Stethoscope, Headphones, FileCheck } from 'lucide-react';
+import { Target, Eye, Stethoscope, Headphones } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useT } from '../i18n/LanguageContext';
 
@@ -21,7 +21,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <>
+    <div className="landing-wrapper">
       <Navbar />
 
       {/* Hero */}
@@ -109,6 +109,6 @@ export default function AboutPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

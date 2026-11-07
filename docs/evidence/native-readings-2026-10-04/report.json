@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "Native explicit-market reading writes and current consent for device synchronization",
+  "runtime": {
+    "node": "24.21.0",
+    "npm": "11.18.0"
+  },
+  "source_manifest": "source-manifest.json",
+  "source_manifest_files": 102,
+  "source_manifest_sha256": "008b99d9adbca2028bfcb4e3feadceb432f0d31786d274fea9238caf4095b15e",
+  "source_manifest_matches_shared_and_candidate_at_validation": true,
+  "policy_routes": 288,
+  "policy_sha256": "f9cdca7900446fdb0bb0615111e2abe7fa710a2ba0a85ec93d3829278afd843e",
+  "checks": {
+    "mobile_tests": {
+      "passed": 214,
+      "failed": 0,
+      "added_since_199_consent_checkpoint": 15,
+      "log": "mobile-tests.log"
+    },
+    "typecheck": "passed",
+    "git_diff_check": "passed",
+    "hermes_exports": {
+      "informational-ios": {
+        "modules": 592,
+        "hermes_bytes": 1462170,
+        "hermes_sha256": "e6f12dfcad2f9c65e976a5ac0fe654c4fa7337fa12392617f900574fdf857d66",
+        "log": "bundle-informational-ios.log"
+      },
+      "informational-android": {
+        "modules": 590,
+        "hermes_bytes": 1467243,
+        "hermes_sha256": "e370f07798b8d77b902259620884ffe00be0fa9eae2ae935d37c64683c23b2e2",
+        "log": "bundle-informational-android.log"
+      },
+      "legacy-ios": {
+        "modules": 1069,
+        "hermes_bytes": 3209615,
+        "hermes_sha256": "5cc0cb341f243d45af0675f88dd32222cc2fbd0f14c9b29eb0140cff912f17e5",
+        "log": "bundle-legacy-ios.log"
+      },
+      "legacy-android": {
+        "modules": 1022,
+        "hermes_bytes": 3132421,
+        "hermes_sha256": "4fc2da8b1544811f6d91c80f0411a072e323f4212386d6b03c3bf3d7019f63a8",
+        "log": "bundle-legacy-android.log"
+      }
+    },
+    "independent_review": "Web agent independently reviewed ReadingsScreen, readings helper and healthSync; no additional confirmed P1/P2. No live HealthKit/Health Connect device run."
+  },
+  "changes": {
+    "manual_readings": "Visible Angola/Portugal selector and Portuguese consent context; explicit country and consent_language pt, source manual. Current five mandatory grants are checked before the write, and the server rechecks them. Missing device authorization does not block a manual reading. Unknown response preserves form input and advises checking history before repeating, without an automatic retry or UUID/no-duplicate guarantee.",
+    "device_connections": "Only bounded owner+country+language metadata is stored under the existing connection key. Old owner-only connections fail closed and require explicit reconnection. A live connection cannot silently change its market; same-scope reconfirmation retains its existing cursor. No new native dependency, OS permission or device provider was added.",
+    "sync": "Current required grants plus optional devices consent are checked before permission requests and sample reads, including retries. Every unchanged sample chunk carries the same captured scope and original external identity. Same-owner concurrent syncs share one operation. Connection epochs and session generations invalidate disconnected/replaced in-flight reads and prevent stale writes or cursor commits. Cursors advance only after all batches return successfully; denied/uncertain batches retain previous cursors.",
+    "personal_history": "Retained history remains accessible after consent withdrawal. Consent-required failures do not erase loaded readings; generic auth access loss clears them. Network/read errors preserve loaded rows and never fabricate an empty success. Legacy null market is displayed as unknown. Reads and operations are owner/session/lifecycle scoped; focus/foreground refreshes state. Existing native screen has no CSV import or delete controls; no consent restriction was added to those server APIs."
+  },
+  "native_artifact": {
+    "rebuilt": false,
+    "reason": "Only JS/TS changed; native dependencies, lock, configuration, assets, HOLD plugin, generated policy288 and informational entry remain unchanged. Four Hermes exports cover current source.",
+    "existing_apk": "artifacts/native/kaya-sdk57-pdf-informational-test-arm64.apk",
+    "existing_apk_sha256": "5767c8986bcb7e83bb215b24fe0819774afe3bf57f9d5666c7d4786e1826e96f",
+    "snapshot": "Earlier09df949 PDF/auth/HOLD checkpoint, policy277; this older APK does not include subsequent JS waves."
+  },
+  "dependencies": {
+    "changed": false,
+    "lock_sha256": "ea7e825ea7d1a909b58be1173c90c50962a31837d427d52cee241fe14c19f1bd",
+    "new_dependencies": 0,
+    "audit": "Existing audit/SBOM remain tied to unchanged lock; no fresh advisory database run. Previously documented unpatched tooling advisories remain; no risk acceptance."
+  },
+  "limits": [
+    "Informational entry and HOLD remain unchanged; no provider activation or live clinical/device requests.",
+    "Current native screens verified by protocol/session tests, TypeScript and iOS/Android Hermes exports. No mounted readings UI or actual HealthKit/Health Connect permission/device runtime claim.",
+    "There is no durable manual-reading or sync-batch UUID receipt in this API. Manual unknown outcomes require history review; same-scope sync uses existing source/external_id identity and current consent on every retry.",
+    "A withdrawn or unavailable devices purpose prevents further device reads/uploads; server history remains readable. Local connection metadata is configuration, not proof of current consent.",
+    "Existing standalone informational APK is the earlier 09df949 policy277 snapshot and does not contain this later JS wave. No native rebuild or new device installation.",
+    "iOS native compilation remains blocked by unaccepted Xcode license; no agreement accepted."
+  ],
+  "repository_actions": "Six native files left unstaged; no commit by this agent. Parent owns documentation/checkpoint."
+}

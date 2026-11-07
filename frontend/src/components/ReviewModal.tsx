@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '../utils/apiError';
 import { useState } from 'react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
@@ -30,8 +31,8 @@ export default function ReviewModal({ open, consultationId, title, onClose, onDo
       await api.post(`/api/v1/consultations/${consultationId}/review`, { rating, comment: comment.trim() || undefined });
       setDone(true);
       onDone?.();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t('review.error'));
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, t('review.error')));
     } finally {
       setSubmitting(false);
     }

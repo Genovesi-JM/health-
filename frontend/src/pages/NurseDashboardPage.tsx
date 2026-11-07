@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -56,24 +56,25 @@ export default function NurseDashboardPage({ preview = false }: { preview?: bool
   const [riskFilter, setRiskFilter] = useState<'all' | 'priority' | 'unclassified'>('all');
   const [selected, setSelected] = useState<QueueItem | null>(null);
 
-  const loadDashboard = () => {
-    if (preview) {
-      setDash(PREVIEW_DASH);
-      setRefreshing(false);
-      return;
-    }
-    setRefreshing(true);
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const loadDashboard = useCallback(() => {
+    if (preview) return;
     api.get('/api/v1/nurse/dashboard')
       .then(r => setDash(r.data))
       .catch(() => {})
       .finally(() => { setLoading(false); setRefreshing(false); });
-  };
+  }, [preview]);
 
-  useEffect(() => { loadDashboard(); }, [preview]);
+  useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
   if (loading) return <div className="page-loading"><div className="spinner" /></div>;
 
-  const waitMinutes = (item: QueueItem) => item.wait_minutes ?? Math.max(0, Math.floor((Date.now() - new Date(item.created_at).getTime()) / 60000));
+  const waitMinutes = (item: QueueItem) => item.wait_minutes ?? Math.max(0, Math.floor((now - new Date(item.created_at).getTime()) / 60000));
   const sla = dash?.queue_count ? Math.max(0, Math.round(((dash.queue_count - dash.waiting_over_30_count) / dash.queue_count) * 100)) : 100;
   const kpis = dash ? [
     { id: 'queue', label: t('nurse.kpi_queue'), value: dash.queue_count, helper: t('nurse.kpi_queue_help'), icon: <ClipboardList size={18} />, color: '#0d9488' },
@@ -106,7 +107,7 @@ export default function NurseDashboardPage({ preview = false }: { preview?: bool
         </div>
         <div className="nurse-hero__actions">
           <span>{t('nurse.updated_now')}</span>
-          <button type="button" onClick={loadDashboard} disabled={refreshing}>
+          <button type="button" onClick={() => { if (!preview) setRefreshing(true); loadDashboard(); }} disabled={refreshing}>
             <RefreshCw size={16} className={refreshing ? 'spin' : ''} /> {t('nurse.refresh')}
           </button>
         </div>

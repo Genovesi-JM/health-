@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  ActivityIndicator, RefreshControl, SafeAreaView,
+  ActivityIndicator, AppState, RefreshControl, SafeAreaView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppStack';
 import { useLanguage } from '../i18n/LanguageContext';
+import { canRetainNotificationsAfterError, loadUnreadNotificationCount } from './notifications';
+import { loadRenewalPresence, renewalAccessLost } from './prescriptionRequests';
 
 interface DashboardData {
-  pending_requests?: number;
+  has_requests?: boolean;
   unread_notifications?: number;
 }
 
@@ -26,38 +28,72 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const { user, logout } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  const [data, setData] = useState<DashboardData>({});
+  const [cachedData, setData] = useState<DashboardData>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [notificationError, setNotificationError] = useState(false);
+  const [renewalError, setRenewalError] = useState(false);
+  const active = useRef(false);
+  const requestVersion = useRef(0);
+  const owner = useRef(user?.id);
+  // Hide the previous account's badge in the render before focus effects run.
+  const sameOwner = owner.current === user?.id;
+  const data = sameOwner ? cachedData : {};
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
+    const requestedOwner = user?.id;
+    if (!requestedOwner) return;
+    const version = ++requestVersion.current;
     try {
       const [notifRes, rxRes] = await Promise.allSettled([
-        api.get('/api/v1/notifications/me?limit=1'),
-        api.get('/api/v1/prescription-requests?limit=1'),
+        loadUnreadNotificationCount(api),
+        loadRenewalPresence(api),
       ]);
-      const unread = notifRes.status === 'fulfilled'
-        ? (notifRes.value.data?.unread_count ?? 0) : 0;
-      const pending = rxRes.status === 'fulfilled'
-        ? (rxRes.value.data?.length ?? 0) : 0;
-      setData({ unread_notifications: unread, pending_requests: pending });
+      if (!active.current || version !== requestVersion.current || owner.current !== requestedOwner) return;
+      setNotificationError(notifRes.status === 'rejected');
+      setRenewalError(rxRes.status === 'rejected');
+      if (notifRes.status === 'rejected' && !canRetainNotificationsAfterError(notifRes.reason) || rxRes.status === 'rejected' && renewalAccessLost(rxRes.reason)) {
+        setData({});
+      } else {
+        setData(current => ({
+          unread_notifications: notifRes.status === 'fulfilled' ? notifRes.value : current.unread_notifications,
+          has_requests: rxRes.status === 'fulfilled' ? rxRes.value : current.has_requests,
+        }));
+      }
     } catch { /* silent */ }
-  };
+    finally {
+      if (active.current && version === requestVersion.current && owner.current === requestedOwner) { setLoading(false); setRefreshing(false); }
+    }
+  }, [user?.id]);
 
-  useEffect(() => {
-    fetchDashboard().finally(() => setLoading(false));
-  }, []);
+  useFocusEffect(useCallback(() => {
+    active.current = true;
+    if (owner.current !== user?.id) {
+      owner.current = user?.id;
+      setData({});
+      setNotificationError(false);
+      setRenewalError(false);
+      setLoading(!!user?.id);
+      setRefreshing(false);
+    }
+    void fetchDashboard();
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void fetchDashboard();
+    });
+    return () => { active.current = false; requestVersion.current++; subscription.remove(); };
+  }, [fetchDashboard, user?.id]));
 
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDashboard();
-    setRefreshing(false);
   };
 
   const firstName = user?.full_name?.split(' ')[0] ?? 'Olá';
   const actions = [
     { icon: '✦', label: t('home.triage'), screen: 'Triage' as const },
     { icon: '📅', label: t('home.book'), screen: 'BookConsultation' as const },
+    { icon: '📋', label: 'As minhas consultas', screen: 'Consultations' as const },
+    { icon: '📄', label: 'Os meus documentos', screen: 'PatientDocuments' as const },
     { icon: '💊', label: t('home.prescription'), screen: 'PrescriptionRequest' as const },
     { icon: '❤️', label: t('home.measurements'), screen: 'Readings' as const },
     { icon: '👨‍👩‍👧', label: t('home.family'), screen: 'Family' as const },
@@ -91,7 +127,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Notification / pending badge ── */}
-        {((data.unread_notifications ?? 0) > 0 || (data.pending_requests ?? 0) > 0) && (
+        {((data.unread_notifications ?? 0) > 0 || data.has_requests) && (
           <View style={styles.alertRow}>
             {(data.unread_notifications ?? 0) > 0 && (
               <TouchableOpacity
@@ -100,19 +136,23 @@ export default function HomeScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={styles.alertBadgeText}>
-                  🔔 {data.unread_notifications} notificação{(data.unread_notifications ?? 0) > 1 ? 'ões' : ''}
+                  🔔 {data.unread_notifications} por ler{notificationError ? ' · por atualizar' : ''}
                 </Text>
               </TouchableOpacity>
             )}
-            {(data.pending_requests ?? 0) > 0 && (
+            {data.has_requests && (
               <View style={[styles.alertBadge, { backgroundColor: '#ede9fe' }]}>
                 <Text style={[styles.alertBadgeText, { color: '#6d28d9' }]}>
-                  💊 {data.pending_requests} receita{(data.pending_requests ?? 0) > 1 ? 's' : ''} pendente{(data.pending_requests ?? 0) > 1 ? 's' : ''}
+                  💊 Ver pedidos de renovação{renewalError ? ' · por atualizar' : ''}
                 </Text>
               </View>
             )}
           </View>
         )}
+        {sameOwner && notificationError && <TouchableOpacity accessibilityRole="button" accessibilityLabel="Atualização de notificações indisponível. Abrir notificações."
+          style={styles.notificationWarning} onPress={() => navigation.navigate('Notifications')}>
+          <Text style={styles.notificationWarningText}>Não foi possível atualizar a contagem. Abrir notificações.</Text>
+        </TouchableOpacity>}
 
         {/* ── Quick actions ── */}
         <Text style={styles.sectionTitle}>{t('home.quick')}</Text>
@@ -181,6 +221,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6, paddingHorizontal: 12,
   },
   alertBadgeText: { color: TEAL_DARK, fontSize: 13, fontWeight: '600' },
+  notificationWarning: { marginBottom: 18 },
+  notificationWarningText: { color: '#b45309', fontSize: 13, lineHeight: 19 },
 
   // Sections
   sectionTitle: {

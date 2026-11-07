@@ -1,401 +1,152 @@
-from __future__ import annotations
-"""
-Prescription Requests Router
-Patient → requests medication renewal from doctor (no consultation needed)
-Doctor → reviews patient profile + decides (approve / adjust / consult / exams / reject)
+"""Owner recovery and clinician decisions for retained prescription renewal requests."""
+from typing import Literal
 
-Endpoints:
-  POST   /api/v1/prescription-requests              — patient creates request
-  GET    /api/v1/doctor/prescription-requests        — doctor lists pending requests
-  POST   /api/v1/doctor/prescription-requests/{id}/decide — doctor decides
-  GET    /api/v1/prescription-requests               — patient lists own requests
-"""
-import json
-import logging
-from datetime import datetime
-from typing import List, Optional
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import User, UserProfile
-from app.health_models import Patient, Doctor, PrescriptionRequest, StandalonePrescription
-from app.health_schemas import (
-    PrescriptionRequestCreate,
-    PrescriptionRequestDecide,
-    PrescriptionRequestOut,
-)
-from app.routers.notifications import create_notification
-from app.rbac import log_health_audit
-
-logger = logging.getLogger(__name__)
-router = APIRouter(tags=["prescription-requests"])
-
-# Maps the action submitted by the doctor → the normalized status stored in DB.
-# Status vocabulary: pending | approved | adjusted | consult_requested | exams_requested | rejected
-ACTION_TO_STATUS: dict[str, str] = {
-    "approve":           "approved",
-    "adjusted":          "adjusted",   # alias: doctor can POST action=adjusted
-    "adjust":            "adjusted",
-    "consult_requested": "consult_requested",
-    "exams_requested":   "exams_requested",
-    "reject":            "rejected",
-    "rejected":          "rejected",   # alias
-}
-VALID_ACTIONS = set(ACTION_TO_STATUS.keys())
+from app.models import User
+from app.health_models import Patient, Doctor, PrescriptionRequest, PrescriptionRequestDecision, HealthAuditLog
+from app.health_schemas import PrescriptionRequestCreate, PrescriptionRequestDecide, PrescriptionRequestOut
+from app.services.clinician_access import require_current_clinician
+from app.services import prescription_renewals as renewal
+from app.services.cursors import decode_position, encode_position
 
 
-def _enrich(req: PrescriptionRequest, db: Session) -> dict:
-    """Attach patient demographics to a request dict."""
-    d = {
-        "id": req.id,
-        "patient_id": req.patient_id,
-        "doctor_id": req.doctor_id,
-        "medication_name": req.medication_name,
-        "dose": req.dose,
-        "frequency": req.frequency,
-        "reason": req.reason,
-        "status": req.status,
-        "risk_level": req.risk_level,
-        "risk_alert": req.risk_alert,
-        "doctor_note": req.doctor_note,
-        "adjusted_dose": req.adjusted_dose,
-        "adjusted_frequency": req.adjusted_frequency,
-        "created_at": req.created_at,
-        "decided_at": req.decided_at,
-        "patient_name": None,
-        "patient_age": None,
-        "patient_gender": None,
-        "chronic_conditions": [],
-        "allergies": [],
-    }
-    patient = req.patient
-    if patient:
-        d["patient_gender"] = patient.gender
-        try:
-            d["chronic_conditions"] = json.loads(patient.chronic_conditions_json or "[]")
-            d["allergies"] = json.loads(patient.allergies_json or "[]")
-        except Exception:
-            pass
-        if patient.date_of_birth:
-            try:
-                dob = datetime.strptime(patient.date_of_birth, "%Y-%m-%d")
-                d["patient_age"] = (datetime.utcnow() - dob).days // 365
-            except Exception:
-                pass
-        # get name from user profile
-        profile = db.query(UserProfile).filter(UserProfile.user_id == patient.user_id).first()
-        if profile:
-            d["patient_name"] = getattr(profile, "full_name", None) or getattr(profile, "display_name", None)
-        if not d["patient_name"]:
-            u = db.query(User).filter(User.id == patient.user_id).first()
-            if u:
-                d["patient_name"] = u.email.split("@")[0]
-    return d
+def _private(response:Response):
+    response.headers['Cache-Control']='private, no-store'
+    response.headers['X-Content-Type-Options']='nosniff'
 
 
-# ── Risk scoring ─────────────────────────────────────────────────────────────
-
-# Medications that require extra caution
-_HIGH_RISK_MEDS = {
-    "warfarina", "warfarin", "digoxina", "digoxin", "lítio", "lithium",
-    "metotrexato", "methotrexate", "amiodarona", "amiodarone",
-    "insulina", "insulin", "morfina", "morphine", "fentanil", "fentanyl",
-    "clozapina", "clozapine", "talidomida", "thalidomide",
-}
+router=APIRouter(tags=['prescription-requests'],dependencies=[Depends(_private)])
 
 
-def _calculate_risk(
-    patient,
-    medication_name: str,
-    dose: str | None,
-    db,
-) -> tuple[str, str | None]:
-    """Return (risk_level, risk_alert) for a new prescription request.
+def _patient(user,db):
+    if user.role not in ('patient','cliente'): raise HTTPException(403,'Acesso reservado ao titular paciente.')
+    patient=db.query(Patient).filter_by(user_id=user.id).first()
+    if not patient: raise HTTPException(404,'Perfil de paciente não encontrado.')
+    return patient
 
-    Levels: low | medium | high
-    """
-    alerts: list[str] = []
-    level = "low"
 
-    med_lower = medication_name.lower()
+def _doctor(user,db):
+    if user.role!='doctor': raise HTTPException(403,'Acesso reservado ao médico atribuído.')
+    credential=require_current_clinician(user,db)
+    doctor=db.query(Doctor).filter_by(user_id=user.id).first()
+    if not doctor: raise HTTPException(404,'Perfil médico não encontrado.')
+    return doctor,credential
 
-    # 1. High-risk medication list
-    for hm in _HIGH_RISK_MEDS:
-        if hm in med_lower:
-            alerts.append(f"Medicamento de alto risco: {medication_name}.")
-            level = "high"
-            break
 
-    # 2. Allergy match
-    try:
-        allergies: list[str] = json.loads(patient.allergies_json or "[]")
-        for allergy in allergies:
-            if allergy.lower() in med_lower or med_lower in allergy.lower():
-                alerts.append(f"ATENÇÃO: Possível alergia a '{allergy}' — revisar antes de aprovar.")
-                level = "high"
+def _commit(db):
+    try: db.commit()
     except Exception:
-        pass
+        db.rollback()
+        raise HTTPException(503,'Não foi possível confirmar o pedido. Recupere com a mesma chave e conteúdo.') from None
 
-    # 3. Duplicate active medication check
+
+def _write(db,operation):
     try:
-        from app.health_models import PatientMedication
-        active_meds = (
-            db.query(PatientMedication.medication_name)
-            .filter_by(patient_id=patient.id, is_current=True)
-            .all()
-        )
-        for (active_name,) in active_meds:
-            if active_name and active_name.lower() in med_lower:
-                alerts.append(f"Duplicado potencial: paciente já toma '{active_name}'.")
-                if level == "low":
-                    level = "medium"
+        row=operation(); _commit(db); return row
+    except HTTPException: db.rollback(); raise
     except Exception:
-        pass
-
-    # 4. Chronic conditions risk flags
-    try:
-        conditions: list[str] = json.loads(patient.chronic_conditions_json or "[]")
-        cond_str = " ".join(conditions).lower()
-        if "insuficiência renal" in cond_str or "renal" in cond_str:
-            alerts.append("Atenção: insuficiência renal — ajustar dose conforme função renal.")
-            if level == "low":
-                level = "medium"
-        if "insuficiência cardíaca" in cond_str or "cardíaca" in cond_str:
-            alerts.append("Atenção: insuficiência cardíaca — monitorizar interações cardíacas.")
-            if level == "low":
-                level = "medium"
-        if "gravidez" in cond_str or "grávida" in cond_str or "pregnancy" in cond_str:
-            alerts.append("ATENÇÃO: Paciente grávida — verificar segurança na gravidez.")
-            level = "high"
-        if "diabetes" in cond_str and "insulina" in med_lower:
-            alerts.append("Paciente diabético recebendo insulina — monitorizar glicemia.")
-            if level == "low":
-                level = "medium"
-    except Exception:
-        pass
-
-    # 5. Age-related risk (>75 years)
-    try:
-        if patient.date_of_birth:
-            dob = datetime.strptime(patient.date_of_birth, "%Y-%m-%d")
-            age = (datetime.utcnow() - dob).days // 365
-            if age >= 75:
-                alerts.append(f"Paciente idoso ({age} anos) — revisar dose e interações.")
-                if level == "low":
-                    level = "medium"
-    except Exception:
-        pass
-
-    alert_text = " | ".join(alerts) if alerts else None
-    return level, alert_text
+        db.rollback()
+        raise HTTPException(503,'Não foi possível confirmar o pedido. Repita a mesma chave e conteúdo.') from None
 
 
-# ── Patient creates a request ──────────────────────────────────────────────
-
-@router.post("/api/v1/prescription-requests", response_model=PrescriptionRequestOut, status_code=201)
-def create_prescription_request(
-    body: PrescriptionRequestCreate,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Patient requests a prescription renewal from a specific doctor."""
-    patient = db.query(Patient).filter(Patient.user_id == user.id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Perfil de paciente não encontrado.")
-
-    doctor = db.query(Doctor).filter(Doctor.id == body.doctor_id).first()
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Médico não encontrado.")
-
-    # ── Risk scoring ──────────────────────────────────────────────────────────
-    risk_level, risk_alert = _calculate_risk(patient, body.medication_name, body.dose, db)
-
-    req = PrescriptionRequest(
-        patient_id=patient.id,
-        doctor_id=doctor.id,
-        medication_name=body.medication_name,
-        dose=body.dose,
-        frequency=body.frequency,
-        reason=body.reason,
-        status="pending",
-        risk_level=risk_level,
-        risk_alert=risk_alert,
-    )
-    db.add(req)
-    db.commit()
-    db.refresh(req)
-    return _enrich(req, db)
+def _read_audit(db,user,action,identifier):
+    db.add(HealthAuditLog(actor_user_id=user.id,action=action,resource_type='prescription_request',resource_id=identifier))
+    _commit(db)
 
 
-# ── Patient lists own requests ─────────────────────────────────────────────
-
-@router.get("/api/v1/prescription-requests", response_model=List[PrescriptionRequestOut])
-def list_my_prescription_requests(
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    patient = db.query(Patient).filter(Patient.user_id == user.id).first()
-    if not patient:
-        return []
-    reqs = (
-        db.query(PrescriptionRequest)
-        .filter(PrescriptionRequest.patient_id == patient.id)
-        .order_by(PrescriptionRequest.created_at.desc())
-        .all()
-    )
-    return [_enrich(r, db) for r in reqs]
+def _missing(code):
+    return HTTPException(404,{'code':code,'request_in_flight_may_commit':True,
+        'message':'O resultado ainda não foi encontrado. Um pedido em curso pode ser confirmado mais tarde.'},
+        headers={'Cache-Control':'private, no-store'})
 
 
-# ── Doctor lists pending requests ─────────────────────────────────────────
-
-@router.get("/api/v1/doctor/prescription-requests", response_model=List[PrescriptionRequestOut])
-def list_doctor_prescription_requests(
-    status: Optional[str] = None,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    if user.role != "doctor":
-        raise HTTPException(status_code=403, detail="Acesso reservado a médicos.")
-
-    doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")
-
-    q = db.query(PrescriptionRequest).filter(PrescriptionRequest.doctor_id == doctor.id)
-    if status and status != "all":
-        q = q.filter(PrescriptionRequest.status == status)
-    elif not status:
-        # Default: show pending requests only when no filter is explicitly provided
-        q = q.filter(PrescriptionRequest.status == "pending")
-
-    reqs = q.order_by(PrescriptionRequest.created_at.asc()).all()
-    return [_enrich(r, db) for r in reqs]
+def _page(db,query,user,owner,scope,limit,cursor):
+    position=decode_position(cursor,scope=scope,viewer_id=user.id,owner_id=owner) if cursor else None
+    if position:
+        stamp,identifier=position
+        query=query.filter(or_(PrescriptionRequest.created_at<stamp,and_(PrescriptionRequest.created_at==stamp,PrescriptionRequest.id<identifier)))
+    rows=query.order_by(PrescriptionRequest.created_at.desc(),PrescriptionRequest.id.desc()).limit(limit+1).all()
+    more=len(rows)>limit; rows=rows[:limit]
+    next_cursor=encode_position(scope=scope,viewer_id=user.id,owner_id=owner,created_at=rows[-1].created_at,identifier=rows[-1].id) if more else None
+    return {'items':[renewal.request_out(db,row) for row in rows],'next_cursor':next_cursor}
 
 
-# ── Doctor decides ─────────────────────────────────────────────────────────
+@router.post('/api/v1/prescription-requests',response_model=PrescriptionRequestOut,status_code=201)
+def create_prescription_request(body:PrescriptionRequestCreate,idempotency_key:str|None=Header(None,alias='Idempotency-Key'),
+        user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    patient=_patient(user,db)
+    row=_write(db,lambda:renewal.create_request(db,patient,body.model_dump(),idempotency_key))
+    return renewal.request_out(db,row)
 
-@router.post("/api/v1/doctor/prescription-requests/{request_id}/decide", response_model=PrescriptionRequestOut)
-def decide_prescription_request(
-    request_id: str,
-    body: PrescriptionRequestDecide,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    # Only doctors may decide prescription requests.
-    # Admins must not process clinical requests unless they are explicitly
-    # impersonating a doctor (indicated by the X-Impersonate-Doctor header,
-    # which is validated separately). Plain admin access is denied here.
-    if user.role == "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Administradores não podem processar pedidos de prescrição directamente. "
-                   "Utilize o modo de suporte/impersonalização se for necessário.",
-        )
-    if user.role != "doctor":
-        raise HTTPException(status_code=403, detail="Acesso negado.")
 
-    if body.action not in VALID_ACTIONS:
-        valid_display = sorted({"approve", "adjust", "consult_requested", "exams_requested", "reject"})
-        raise HTTPException(status_code=422, detail=f"Acção inválida. Válidas: {', '.join(valid_display)}")
+@router.get('/api/v1/prescription-requests/requests/{request_key}',response_model=PrescriptionRequestOut)
+def recover_prescription_request(request_key:str,user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    patient=_patient(user,db); key=renewal._key(request_key)
+    row=db.query(PrescriptionRequest).filter_by(patient_id=patient.id,request_key=key).first()
+    if not row: raise _missing('renewal_request_not_found')
+    _read_audit(db,user,'renewal_request_recovered',row.id)
+    return renewal.request_out(db,row)
 
-    doctor = db.query(Doctor).filter(Doctor.user_id == user.id).first()
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Perfil de médico não encontrado.")
 
-    req = db.query(PrescriptionRequest).filter(
-        PrescriptionRequest.id == request_id,
-        PrescriptionRequest.doctor_id == doctor.id,
-    ).first()
-    if not req:
-        raise HTTPException(status_code=404, detail="Pedido não encontrado.")
-    if req.status != "pending":
-        raise HTTPException(status_code=409, detail="Este pedido já foi processado.")
+@router.get('/api/v1/prescription-requests/page')
+def patient_request_page(limit:int=Query(20,ge=1,le=100),cursor:str|None=Query(None,max_length=1024),
+        user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    patient=_patient(user,db)
+    result=_page(db,db.query(PrescriptionRequest).filter_by(patient_id=patient.id),user,patient.id,'renewals:patient',limit,cursor)
+    _read_audit(db,user,'renewal_history_read',patient.id)
+    return result
 
-    req.status = ACTION_TO_STATUS[body.action]
-    req.doctor_note = body.doctor_note
-    req.adjusted_dose = body.adjusted_dose
-    req.adjusted_frequency = body.adjusted_frequency
-    req.decided_at = datetime.utcnow()
 
-    db.commit()
-    db.refresh(req)
+@router.get('/api/v1/prescription-requests',response_model=list[PrescriptionRequestOut])
+def list_my_prescription_requests(user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    patient=_patient(user,db)
+    rows=db.query(PrescriptionRequest).filter_by(patient_id=patient.id).order_by(PrescriptionRequest.created_at.desc()).all()
+    return [renewal.request_out(db,row) for row in rows]
 
-    # ── Create a formal prescription record when approved or adjusted ─────────
-    final_status = req.status
-    if final_status in ("approved", "adjusted"):
-        try:
-            from datetime import timedelta
-            sp = StandalonePrescription(
-                prescription_request_id=req.id,
-                patient_id=req.patient_id,
-                doctor_id=req.doctor_id,
-                medication_name=req.medication_name,
-                dosage=body.adjusted_dose if final_status == "adjusted" else req.dose,
-                frequency=body.adjusted_frequency if final_status == "adjusted" else req.frequency,
-                instructions=body.doctor_note,
-                issue_date=datetime.utcnow(),
-                valid_until=datetime.utcnow() + timedelta(days=30),
-                pharmacy_status="pending_pharmacy",
-            )
-            db.add(sp)
-            db.commit()
-        except Exception as exc:
-            logger.error("Failed to create standalone prescription for request %s: %s", req.id, exc)
-            db.rollback()
 
-    # ── Audit log ─────────────────────────────────────────────────────────────
-    action_label = {
-        "approved":          "prescription_request_approved",
-        "adjusted":          "prescription_request_adjusted",
-        "consult_requested": "prescription_request_consult_requested",
-        "exams_requested":   "prescription_request_exams_requested",
-        "rejected":          "prescription_request_rejected",
-    }.get(final_status, "prescription_request_decided")
-    try:
-        log_health_audit(
-            db,
-            action=action_label,
-            actor_user_id=user.id,
-            resource_type="prescription_request",
-            resource_id=req.id,
-            metadata={
-                "doctor_id": doctor.id,
-                "patient_id": req.patient_id,
-                "medication": req.medication_name,
-                "status": final_status,
-            },
-        )
-    except Exception:
-        pass
+def _doctor_query(db,doctor,credential,status):
+    query=db.query(PrescriptionRequest).filter(PrescriptionRequest.doctor_id==doctor.id,
+        or_(PrescriptionRequest.country==credential.practice_country,PrescriptionRequest.country.is_(None)))
+    if status!='all': query=query.filter(PrescriptionRequest.status==status)
+    return query
 
-    # ── Notify patient ────────────────────────────────────────────────────────
-    _status_labels = {
-        "approved":          ("Prescrição aprovada",           "success"),
-        "adjusted":          ("Prescrição com ajuste de dose", "info"),
-        "consult_requested": ("Consulta solicitada",           "warning"),
-        "exams_requested":   ("Exames solicitados",            "warning"),
-        "rejected":          ("Prescrição recusada",           "error"),
-    }
-    label, notif_type = _status_labels.get(req.status, ("Pedido processado", "info"))
-    patient_obj = db.query(Patient).filter(Patient.id == req.patient_id).first()
-    if patient_obj:
-        msg = f"O seu pedido de {req.medication_name} foi processado."
-        if body.doctor_note:
-            msg += f" Nota: {body.doctor_note}"
-        try:
-            create_notification(
-                db,
-                user_id=patient_obj.user_id,
-                title=label,
-                message=msg,
-                type=notif_type,
-                entity_type="prescription_request",
-                entity_id=req.id,
-            )
-        except Exception:
-            pass  # never block the response
 
-    return _enrich(req, db)
+Status=Literal['pending','all','approved','adjusted','consult_requested','exams_requested','rejected']
+
+
+@router.get('/api/v1/doctor/prescription-requests/page')
+def doctor_request_page(status:Status='pending',limit:int=Query(20,ge=1,le=100),cursor:str|None=Query(None,max_length=1024),
+        user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    doctor,credential=_doctor(user,db)
+    result=_page(db,_doctor_query(db,doctor,credential,status),user,doctor.id,
+        f'renewals:doctor:{credential.practice_country}:{status}',limit,cursor)
+    _read_audit(db,user,'renewal_assigned_history_read',doctor.id)
+    return result
+
+
+@router.get('/api/v1/doctor/prescription-requests/decisions/{request_key}')
+def recover_prescription_decision(request_key:str,user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    doctor,credential=_doctor(user,db); key=renewal._key(request_key)
+    decision=db.query(PrescriptionRequestDecision).filter_by(actor_user_id=user.id,doctor_id=doctor.id,request_key=key).first()
+    if not decision: raise _missing('renewal_decision_not_found')
+    _read_audit(db,user,'renewal_decision_recovered',decision.request_id)
+    return renewal.receipt_out(db,decision)
+
+
+@router.get('/api/v1/doctor/prescription-requests',response_model=list[PrescriptionRequestOut])
+def list_doctor_prescription_requests(status:Status='pending',user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    doctor,credential=_doctor(user,db)
+    return [renewal.request_out(db,row) for row in _doctor_query(db,doctor,credential,status).order_by(PrescriptionRequest.created_at.asc()).all()]
+
+
+@router.post('/api/v1/doctor/prescription-requests/{request_id}/decide')
+def decide_prescription_request(request_id:str,body:PrescriptionRequestDecide,
+        idempotency_key:str|None=Header(None,alias='Idempotency-Key'),user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+    _doctor(user,db)
+    decision=_write(db,lambda:renewal.decide_request(db,user,request_id,body.model_dump(),idempotency_key))
+    return renewal.receipt_out(db,decision)

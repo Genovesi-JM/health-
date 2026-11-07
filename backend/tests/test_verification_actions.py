@@ -32,7 +32,8 @@ def _register_doctor(client, diploma_country="AO"):
         "graduation_year": 2020,
     })
     assert r.status_code == 201, r.text
-    return r.json()
+    from _authutil import complete_enrollment
+    return complete_enrollment(client, r.json())
 
 
 def _headers(auth):

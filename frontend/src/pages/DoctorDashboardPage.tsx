@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ClipboardList, CheckCircle2, Clock, AlertTriangle, ArrowRight,
-  Video, FileText, Calendar, DollarSign, Star, Users, TrendingUp,
-  Zap, ShieldCheck, ChevronRight, RefreshCw, User,
-  MessageSquare, Activity, AlertCircle,
-} from 'lucide-react';
+  ClipboardList, CheckCircle2, Clock, ArrowRight,
+  Video, FileText, Calendar, DollarSign, Star, Users, ChevronRight, RefreshCw, MessageSquare, Activity, } from 'lucide-react';
 import api from '../api';
 import { getSession } from '../api';
 import { useT } from '../i18n/LanguageContext';
+import { apiErrorStatus } from '../utils/apiError';
+import { parseRenewalPage } from '../utils/prescriptionRenewals';
 import KpiGrid from '../components/KpiGrid';
 
 interface DoctorProfile {
@@ -42,7 +41,7 @@ const SPECIALTY_LABELS: Record<string, string> = {
 
 interface PendingRx {
   id: string;
-  patient_name?: string;
+  patient_name?: string | null;
   patient_age?: number;
   medication_name: string;
   risk_level?: string;
@@ -73,20 +72,31 @@ export default function DoctorDashboardPage() {
   const session = getSession();
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [pendingRxLoaded, setPendingRxLoaded] = useState(false);
+  const [pendingRxError, setPendingRxError] = useState(false);
   const [pendingRx, setPendingRx] = useState<PendingRx[]>([]);
   const [agenda, setAgenda] = useState<AgendaItem[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DoctorDashboardStats | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
-    api.get('/api/v1/doctors/me').then(r => setProfile(r.data)).catch(() => {});
-    api.get('/api/v1/doctor/queue').then(r => setQueue(r.data)).catch(() => {});
-    api.get<PendingRx[]>('/api/v1/doctor/prescription-requests', { params: { status: 'pending' } })
-      .then(r => setPendingRx(r.data)).catch(() => {});
-    api.get<AgendaItem[]>('/api/v1/doctor/agenda/today')
-      .then(r => setAgenda(r.data)).catch(() => {});
-    api.get<DoctorDashboardStats>('/api/v1/doctor/dashboard')
-      .then(r => setDashboardStats(r.data)).catch(() => {});
+    const captured = getSession();
+    if (!captured?.userId || !captured.token) return;
+    let active = true;
+    const current = () => active && getSession()?.userId === captured.userId && getSession()?.token === captured.token;
+    const config = { headers: { Authorization: `Bearer ${captured.token}` } };
+    const failed = (failure: unknown) => {
+      if (!current() || ![401, 403].includes(apiErrorStatus(failure) ?? 0)) return;
+      active = false; setProfile(null); setQueue([]); setPendingRx([]); setPendingRxLoaded(false); setAgenda([]); setDashboardStats(null); setPendingRxError(true);
+    };
+    api.get('/api/v1/doctors/me', config).then(r => { if (current()) setProfile(r.data); }).catch(failed);
+    api.get('/api/v1/doctor/queue', config).then(r => { if (current()) setQueue(r.data); }).catch(failed);
+    api.get('/api/v1/doctor/prescription-requests/page', { ...config, params: { status: 'pending', limit: 3 } })
+      .then(r => { if (current()) { setPendingRx(parseRenewalPage(r.data).items); setPendingRxLoaded(true); setPendingRxError(false); } })
+      .catch(failure => { if (current()) setPendingRxError(true); failed(failure); });
+    api.get<AgendaItem[]>('/api/v1/doctor/agenda/today', config).then(r => { if (current()) setAgenda(r.data); }).catch(failed);
+    api.get<DoctorDashboardStats>('/api/v1/doctor/dashboard', config).then(r => { if (current()) setDashboardStats(r.data); }).catch(failed);
+    return () => { active = false; };
   }, [lastRefresh]);
 
   const refresh = () => setLastRefresh(new Date());
@@ -116,35 +126,33 @@ export default function DoctorDashboardPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
 
       {/* ── HERO ── */}
-      <div style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)', borderRadius: '20px', padding: '1.75rem 2rem', marginBottom: '1.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', right: '-20px', top: '-20px', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-        <div style={{ position: 'absolute', right: '60px', bottom: '-40px', width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+      <div className="lms-greet" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.75, marginBottom: '0.25rem', fontWeight: 500 }}>{greeting} 👋</div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.2rem', color: '#fff' }}>
+            <div style={{ fontSize: '1.05rem', color: 'var(--lms-ink-2, #3d3d3d)', marginBottom: '0.25rem' }}>{greeting}</div>
+            <h1 style={{ margin: '0 0 0.2rem' }}>
               {title} {name}
             </h1>
-            <p style={{ margin: '0 0 1.25rem', opacity: 0.85, fontSize: '0.88rem' }}>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '1.05rem' }}>
               {specialty && <span>{specialty} · </span>}
               <span style={{ fontWeight: 600 }}>Hoje: {confirmedToday} consultas confirmadas</span>
-              {waitingQ > 0 && <span style={{ marginLeft: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 }}>🔴 {waitingQ} em espera</span>}
+              {waitingQ > 0 && <span style={{ marginLeft: '0.75rem', padding: '0.15rem 0.6rem', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, background: '#fde8e8', color: '#b42318' }}>{waitingQ} em espera</span>}
             </p>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
               <HeroBtn to="/doctor/consultas" icon={<Video size={14} />} label="Entrar Online" primary />
               <HeroBtn to="/doctor/agenda" icon={<Calendar size={14} />} label="Abrir Agenda" />
               <HeroBtn to="/doctor/queue" icon={<ClipboardList size={14} />} label="Ver Fila" badge={waitingQ > 0 ? waitingQ : undefined} />
-              <HeroBtn to="/doctor/prescricoes" icon={<FileText size={14} />} label="Prescrições" badge={pendingRx.length > 0 ? pendingRx.length : undefined} />
+              <HeroBtn to="/doctor/prescricoes" icon={<FileText size={14} />} label="Prescrições" badge={dashboardStats?.pending_prescription_requests} />
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '0.3rem 0.75rem', borderRadius: 999, background: statusBadge.bg, color: statusBadge.color, border: `1px solid ${statusBadge.color}30`, backdropFilter: 'blur(8px)' }}>
               {statusBadge.label}
             </span>
-            <button onClick={refresh} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '8px', padding: '0.4rem 0.75rem', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 600 }}>
+            <button onClick={refresh} style={{ background: 'none', border: '1px solid var(--lms-rule, #cfd4d3)', borderRadius: '8px', padding: '0.4rem 0.75rem', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', fontWeight: 600 }}>
               <RefreshCw size={12} /> Actualizar
             </button>
-            <div style={{ fontSize: '0.72rem', opacity: 0.6 }}>
+            <div style={{ fontSize: '0.78rem', color: 'var(--lms-mute, #6b6b6b)' }}>
               {lastRefresh.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
@@ -159,7 +167,7 @@ export default function DoctorDashboardPage() {
           { id: 'active', label: t('doctor.kpi_active'), value: dashboardStats?.today.in_progress ?? activeQ, icon: <Video size={18} />, color: '#3b82f6' },
           { id: 'today', label: t('doctor.kpi_today'), value: dashboardStats?.today.total ?? todayConsultations, icon: <Calendar size={18} />, color: '#10b981' },
           { id: 'week', label: t('doctor.kpi_week'), value: dashboardStats?.week.completed ?? 0, icon: <CheckCircle2 size={18} />, color: '#6366f1', tone: 'positive' },
-          { id: 'prescriptions', label: t('doctor.kpi_prescriptions'), value: dashboardStats?.pending_prescription_requests ?? pendingRx.length, icon: <FileText size={18} />, color: '#ef4444', tone: pendingRx.length > 0 ? 'attention' : 'default' },
+          { id: 'prescriptions', label: t('doctor.kpi_prescriptions'), value: dashboardStats?.pending_prescription_requests ?? '—', icon: <FileText size={18} />, color: '#ef4444', tone: pendingRx.length > 0 ? 'attention' : 'default' },
           { id: 'patients', label: t('doctor.kpi_patients'), value: dashboardStats?.unique_patients ?? 0, icon: <Users size={18} />, color: '#0d9488' },
         ]}
       />
@@ -191,7 +199,7 @@ export default function DoctorDashboardPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', borderRadius: 999, background: appt.type === 'teleconsulta' ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)', color: appt.type === 'teleconsulta' ? '#3b82f6' : '#059669', fontWeight: 600 }}>
-                      {appt.type === 'teleconsulta' ? '📹 Telec.' : '🏥 Presencial'}
+                      {appt.type === 'teleconsulta' ? 'Teleconsulta' : 'Presencial'}
                     </span>
                     <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', borderRadius: 999, fontWeight: 600, background: appt.status === 'confirmed' ? 'rgba(16,185,129,0.1)' : appt.status === 'waiting' ? 'rgba(239,68,68,0.1)' : 'rgba(234,179,8,0.1)', color: appt.status === 'confirmed' ? '#059669' : appt.status === 'waiting' ? '#dc2626' : '#d97706' }}>
                       {appt.status === 'confirmed' ? 'Confirmada' : appt.status === 'waiting' ? 'A aguardar' : appt.status === 'in_progress' ? 'Em curso' : 'Pendente'}
@@ -205,21 +213,22 @@ export default function DoctorDashboardPage() {
 
           {/* PRESCRIÇÕES PENDENTES */}
           <div className="card" style={{ padding: 0, overflow: 'hidden', border: pendingRx.length > 0 ? '1.5px solid rgba(239,68,68,0.25)' : undefined }}>
-            <SectionHeader title="Prescrições Pendentes" icon={<FileText size={16} />} count={pendingRx.length} to="/doctor/prescricoes" urgent={pendingRx.length > 0} />
-            {pendingRx.length === 0 && (
+            <SectionHeader title="Pedidos de renovação pendentes" icon={<FileText size={16} />} count={dashboardStats?.pending_prescription_requests} to="/doctor/prescricoes" urgent={pendingRx.length > 0} />
+            {pendingRxError && <p role="alert" style={{ padding: '1rem' }}>Não foi possível atualizar os pedidos de renovação.</p>}
+            {pendingRxLoaded && !pendingRxError && pendingRx.length === 0 && (
               <div style={{ padding: '1.25rem', color: 'var(--text-muted)', fontSize: '0.83rem', textAlign: 'center' }}>Sem pedidos pendentes.</div>
             )}
             {pendingRx.map((rx, i) => (
               <div key={rx.id} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.9rem 1.25rem', borderBottom: i < pendingRx.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: rx.risk_level === 'high' ? 'rgba(239,68,68,0.12)' : rx.risk_level === 'medium' ? 'rgba(234,179,8,0.12)' : 'var(--brand-light)', color: rx.risk_level === 'high' ? '#dc2626' : rx.risk_level === 'medium' ? '#d97706' : 'var(--brand-primary)', fontWeight: 700, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--brand-light)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {(rx.patient_name ?? 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{rx.patient_name ?? 'Paciente'}{rx.patient_age ? `, ${rx.patient_age} anos` : ''}</div>
-                  <div style={{ fontSize: '0.77rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.15rem' }}>💊 {rx.medication_name}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{rx.patient_name ?? 'Paciente'}</div>
+                  <div style={{ fontSize: '0.77rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.15rem' }}>{rx.medication_name}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end' }}>
-                  {rx.risk_level === 'high' && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#dc2626', background: 'rgba(239,68,68,0.1)', padding: '0.15rem 0.5rem', borderRadius: 999 }}>⚠ Alto risco</span>}
+
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(rx.created_at).toLocaleDateString('pt-PT')}</div>
                   <Link to="/doctor/prescricoes" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--brand-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                     Avaliar <ChevronRight size={12} />
@@ -308,7 +317,7 @@ export default function DoctorDashboardPage() {
 
 function HeroBtn({ to, icon, label, primary, badge }: { to: string; icon: React.ReactNode; label: string; primary?: boolean; badge?: number }) {
   return (
-    <Link to={to} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.1rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.83rem', textDecoration: 'none', background: primary ? '#fff' : 'rgba(255,255,255,0.15)', color: primary ? '#0f766e' : '#fff', border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)', position: 'relative' }}>
+    <Link to={to} className="lms-link" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none', border: '1px solid var(--lms-rule, #cfd4d3)', color: primary ? '#fff' : 'inherit', background: primary ? '#0f766e' : 'transparent' }}>
       {icon} {label}
       {badge !== undefined && badge > 0 && (
         <span style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: '#fff', borderRadius: 999, width: 18, height: 18, fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badge}</span>

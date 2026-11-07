@@ -1,0 +1,82 @@
+{
+  "404.html": {
+    "sha256": "85b6f9b3db73572d526d7b30dd38e26b2112a50746dc9a0ffa7dd44e39e0a18f",
+    "bytes": 740
+  },
+  "apple-touch-icon.png": {
+    "sha256": "5abf3009da5d8944bb089b89f2480cec4b3183969ae1e1a6f4738533e50fa233",
+    "bytes": 6775
+  },
+  "assets/index-CHSp6coE.css": {
+    "sha256": "722392d168682010479ea628f8056f42bbeb303b46a6d7bd29a05c3c4bb8baae",
+    "bytes": 3658
+  },
+  "assets/index-CWinu-t8.js": {
+    "sha256": "7ffb82ccb8a7b750bc851eb50385d20a12475067ef6ac5e1962e863d6710ea2b",
+    "bytes": 218107
+  },
+  "favicon-32.png": {
+    "sha256": "c1f1ec205c4ba7941fdc3ceed7464e27f74c7d51d5084aabf848bfde5ade4aa9",
+    "bytes": 1075
+  },
+  "icon-192.png": {
+    "sha256": "384c951cf2b2e769ac22b49cfa63a0a1d8258e00e4abc4bdd69de071acd271c9",
+    "bytes": 7320
+  },
+  "icon-512.png": {
+    "sha256": "b3970fd0edfe6fdbcbc9517004b7763dcb3ef710752fb636298be32bd7409e22",
+    "bytes": 23923
+  },
+  "icon-512.svg": {
+    "sha256": "5e50a035e115cc7caf71e4cf3134b403d2e4ec2e713f18554a1d2bf7d1518d49",
+    "bytes": 675
+  },
+  "index.html": {
+    "sha256": "ba98c2ce7a272d7c89835bff62d6b5123b32f8fa79c7f78dbbd702c118829018",
+    "bytes": 2451
+  },
+  "kaya-logo.svg": {
+    "sha256": "94ab8a2ddda115b59cca2b29d6c77ab08b77af577c4b0504004a822dac6e5114",
+    "bytes": 1412
+  },
+  "kaya-panel-clinicas.svg": {
+    "sha256": "82e908c1e9d28bfb1a6df30b5c8afdd934f3213d9932b5394186677708dd68ee",
+    "bytes": 742
+  },
+  "kaya-panel-dispositivos.svg": {
+    "sha256": "a86d22c69ba5345c9565fd734dd12d4a3e95a06d2571b858ae494709d59ae953",
+    "bytes": 748
+  },
+  "kaya-panel-especialistas.svg": {
+    "sha256": "c21269d4e67a667cafc5430d5e743d84fdfb6dc106c13434290b0ec0fafbb535",
+    "bytes": 747
+  },
+  "kaya-panel-medicos.svg": {
+    "sha256": "58ebe4b0af6ff676ad30db476f3bd68f6aea4acabc4690ad19d65a0124ccc1a0",
+    "bytes": 752
+  },
+  "kaya-panel-pacientes.svg": {
+    "sha256": "66abb058046618cbba67c08dc1565918794171d77d0b12d0638e6a3e68a78819",
+    "bytes": 514
+  },
+  "manifest.webmanifest": {
+    "sha256": "0bfd141ad15ffbd5f5b4758fe0ee6443dc180b5179774575215083666536c6d2",
+    "bytes": 914
+  },
+  "registerSW.js": {
+    "sha256": "da05e4e53129f1d68bda5ea0f0158b1497c4d2e9a8622419a4c3629f58841f40",
+    "bytes": 150
+  },
+  "sw.js": {
+    "sha256": "94a547f01759afc0beecdcb0d2b74811d188724f554896a2ea807a7474c386ea",
+    "bytes": 2189
+  },
+  "vite.svg": {
+    "sha256": "4a748afd443918bb16591c834c401dae33e87861ab5dbad0811c3a3b4a9214fb",
+    "bytes": 1497
+  },
+  "workbox-abeb32eb.js": {
+    "sha256": "0e233ad26e783cbcff92534dd4768acec2ad6827a53a0246bcc682c391c2644b",
+    "bytes": 15507
+  }
+}

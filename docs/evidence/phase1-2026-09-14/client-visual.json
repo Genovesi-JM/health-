@@ -1,0 +1,73 @@
+{
+  "node": "v24.19.0",
+  "browser": "151.0.7922.34",
+  "network_policy": "Fresh context; service workers disabled. All non-loopback or xhr/fetch traffic aborted; Chromium outbound proxy points at closed loopback port.",
+  "pages": [
+    {
+      "label": "desktop",
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "dimensions": {
+        "scrollWidth": 1280,
+        "viewport": 1280,
+        "height": 2191
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:61180/health-/triage?profile=synthetic",
+          "type": "document"
+        },
+        {
+          "url": "http://127.0.0.1:61180/health-/assets/index-CWinu-t8.js",
+          "type": "script"
+        },
+        {
+          "url": "http://127.0.0.1:61180/health-/assets/index-CHSp6coE.css",
+          "type": "stylesheet"
+        },
+        {
+          "url": "http://127.0.0.1:61180/health-/registerSW.js",
+          "type": "script"
+        }
+      ],
+      "blocked": [],
+      "pageErrors": [],
+      "screenshot": "/Users/genovesimaria/Documents/kaya-web/docs/evidence/phase1-2026-09-14/client-desktop.png"
+    },
+    {
+      "label": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dimensions": {
+        "scrollWidth": 390,
+        "viewport": 390,
+        "height": 2782
+      },
+      "requests": [
+        {
+          "url": "http://127.0.0.1:61180/health-/triage?profile=synthetic",
+          "type": "document"
+        },
+        {
+          "url": "http://127.0.0.1:61180/health-/assets/index-CWinu-t8.js",
+          "type": "script"
+        },
+        {
+          "url": "http://127.0.0.1:61180/health-/assets/index-CHSp6coE.css",
+          "type": "stylesheet"
+        },
+        {
+          "url": "http://127.0.0.1:61180/health-/registerSW.js",
+          "type": "script"
+        }
+      ],
+      "blocked": [],
+      "pageErrors": [],
+      "screenshot": "/Users/genovesimaria/Documents/kaya-web/docs/evidence/phase1-2026-09-14/client-mobile.png"
+    }
+  ]
+}

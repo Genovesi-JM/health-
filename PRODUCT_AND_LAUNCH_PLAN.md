@@ -1,12 +1,48 @@
 # KAYA — Product, Business and Launch Plan
 
+## Launch market and delivery decision
+
+**4 October 2026. Angola is the first launch market; Portugal is the second target market and must be prepared in parallel.** The user selected both markets and delegated the delivery-platform decision. Luanda remains the initial Angola planning location from the earlier decision. Portugal's initial city and partner network remain to be selected.
+
+The chosen architecture is React/TypeScript web and PWA, React Native with Expo for standalone iOS and Android applications, and the shared FastAPI backend. The user agreed to proceed after clarifying that patients install Kaya itself and do not need Expo Go. Prioritise the responsive web/PWA pilot while completing mobile against the same API. Keep FlutterFlow as a design/prototype reference, with production source maintained in `health-`.
+
+This choice preserves the existing web and mobile implementation, API contracts, backend controls and tests. Use development builds during implementation and standalone release builds for distribution. Expo supports custom native modules and optional hosted build services; see the [Expo documentation](https://docs.expo.dev/faq/). The mobile client still needs dependency compatibility review, completed account and consultation workflows, and physical-device validation. Existing source and passing type checks alone do not establish readiness.
+
+### Preparation for both markets
+
+Use one maintained product and backend codebase with explicit country configuration. Country-specific deployments and data boundaries must remain possible; sharing code does not require combining every country's records in one database.
+
+| Area | Angola first | Portugal preparation |
+| --- | --- | --- |
+| Delivery order | First complete care journey, provider onboarding, pilot validation and launch preparation; initial focus Luanda | Build configuration and test coverage alongside Angola; activate services after Portugal-specific readiness is established |
+| Language and formatting | Angolan Portuguese copy, local addresses and phone formats; AOA currency configuration | European Portuguese copy, local addresses and phone formats; EUR currency configuration |
+| Availability | Explicit clinic location and timezone for slots and notifications | Explicit clinic timezone with daylight-saving handling where applicable; avoid a fixed countrywide UTC offset |
+| Professionals and services | Angola-specific provider directory, credential workflow, service areas and operational contacts | Separate Portuguese directory, credential workflow, service areas and operational contacts |
+| Consent and records | Versioned market-specific documents and access rules | Separate document versions and market-specific privacy, retention and data-rights review |
+| Commercial setup | Prepare amount/currency/provider configuration; implement and activate payments in the final phase | Prepare EUR and provider configuration; implement and activate payments in the final phase |
+
+The patient's chosen service country and the clinician's verified scope determine care eligibility. Language, currency, device location and interface country selectors do not by themselves grant care access. Cross-border consultations require an explicit supported workflow; preparing both markets does not automatically enable them.
+
+Design the Angola pilot for usable mobile screens, modest data use and clear interrupted-connection recovery. Country configuration, consent versions, availability and permissions must be tested for both AO and PT from the start. Portugal preparation should not delay completion of the first Angola journey.
+
+### Development order
+
+1. Reconcile the local repository, remote branch and 4 October consultation changes into a verified development baseline. The development chat reports those changes as locally committed; integration and device testing must be checked before counting them as delivered.
+2. Complete the Expo standalone application setup and explicit AO/PT market configuration, country-specific formatting, clinic timezones, service eligibility and automated coverage. Preserve release controls while adding preparation for Portugal.
+3. Complete accounts, roles, recovery, consent, private document handling and professional verification for the Angola journey, using extensible country rules.
+4. Complete availability, booking, acceptance, cancellation/rescheduling, consultation access, documented closeout and follow-up. Validate the web flow and native devices against the same backend contracts.
+5. Finish provider/pharmacy discovery, GPS/directions, records and controlled family access. Live stock, dispatch and other partner services depend on confirmed integrations.
+6. Complete payments, refunds and reconciliation in the final implementation phase, following the user's existing priority. Country/currency modelling belongs in the foundations so this phase does not require a redesign.
+
+Launch readiness is assessed separately for each market. This decision settles product priorities and the delivery platform; it does not record a deployment, provider contract or completed clinical/privacy review. The Phase 1 machine-readable policy now records both target markets. Its current release restrictions remain in force; implementing configuration does not complete the operational journeys.
+
 ## 1. Product definition
 
 KAYA is a digital-health coordination business for patients, clinicians, clinics and employers. The product surface is intentionally limited to:
 
 - a responsive web platform and installable PWA;
-- one Expo mobile application distributed to iOS and Android;
-- one shared API and database;
+- one React Native/Expo mobile application targeting iOS and Android;
+- a shared API and data model, with explicit country boundaries and deployment/storage separation where required;
 - an optional native Swift prototype, retained for reference but not required for the cross-platform launch.
 
 KAYA is not an emergency service and does not replace a licensed clinician. Automated triage and AI features provide orientation only. Clinical decisions, diagnoses, prescriptions and referrals remain with verified healthcare professionals.
@@ -66,7 +102,9 @@ Verify clinicians → manage users and public contact channels → monitor safet
 - admin dashboard, clinician verification and patient administration;
 - installable PWA with API responses excluded from offline caching.
 
-### Mobile app
+### Mobile application
+
+The following capabilities exist in the preserved Expo source. The current default entry is informational; operational activation, native integration and real-device testing remain outstanding. These entries describe source coverage, not live service availability.
 
 - one TypeScript/Expo codebase for iPhone and Android;
 - secure token storage;
@@ -101,11 +139,11 @@ These items cannot be completed by source code alone and are launch gates:
 
 ### Private pilot
 
-Use a small verified clinician group and invited patients. Disable unconfigured payment providers and AI fallbacks that could be mistaken for clinical advice. Measure completion, safety escalations and support load.
+Prioritise Angola, initially Luanda, with a small verified clinician group and invited patients after the relevant pilot gates are met. Prepare Portugal configuration and workflows in parallel. Disable unconfigured payment providers and AI fallbacks that could be mistaken for clinical advice. Measure completion, safety escalations and support load.
 
 ### Paid beta
 
-Enable one jurisdiction, one settlement method and a narrow set of specialties. Introduce documented support hours, refunds and clinician service-level expectations.
+Start the paid beta in Angola after the final payments phase, using one verified settlement method and a narrow set of specialties. Introduce documented support hours, refunds and clinician service-level expectations. Portugal follows its own provider, operational and release-readiness assessment.
 
 ### General availability
 
@@ -130,4 +168,4 @@ Expand only after legal/clinical sign-off, stable payment reconciliation, tested
 
 ## 10. Definition of launch-ready
 
-KAYA is launch-ready only when the web build and mobile type checks pass, backend tests pass against the production schema, a staging end-to-end journey succeeds for every role, all external launch gates in section 6 have named owners, and production monitoring plus rollback procedures are active.
+KAYA is launch-ready only when the web build, mobile type checks/tests and platform release builds pass, backend tests pass against the production schema, the core journeys pass on physical iOS and Android devices, a staging end-to-end journey succeeds for every role, all external launch gates in section 6 have named owners, and production monitoring plus rollback procedures are active. Web/PWA pilot readiness can be assessed separately from the full mobile release.

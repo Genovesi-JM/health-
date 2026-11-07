@@ -1,0 +1,190 @@
+{
+  "dependency-consistency": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "-m",
+      "pip",
+      "check"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source",
+    "timeout_seconds": 30,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 0.84,
+    "log_sha256": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09"
+  },
+  "backend-full": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source/backend/phase0_pytest.py",
+      "tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/results/backend-full.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source/backend",
+    "timeout_seconds": 900,
+    "exit_code": 1,
+    "timed_out": false,
+    "elapsed_seconds": 285.89,
+    "log_sha256": "1c712da42114bc73a7ea4480ba283fab13c120db3f8b4668dda99ef191e8826e",
+    "junit": {
+      "tests": 242,
+      "failures": 62,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": [
+      "tests.test_basic::test_demo_login",
+      "tests.test_clinician_credentials::test_foreign_diploma_requires_recognition_and_human_approval",
+      "tests.test_clinician_credentials::test_nurse_queue_is_gated_until_review",
+      "tests.test_clinician_credentials::test_verified_nurse_dashboard_exposes_operational_kpis",
+      "tests.test_clinician_credentials::test_nurse_patient_360_requires_active_episode_and_exposes_role_capabilities",
+      "tests.test_clinician_credentials::test_nurse_escalation_assigns_doctor_and_opens_patient_360",
+      "tests.test_clinician_credentials::test_pem_gateway_is_explicitly_preparation_only_without_credentials",
+      "tests.test_clinician_credentials::test_nursing_documentation_and_care_tasks_are_shared_in_patient_360",
+      "tests.test_clinician_credentials::test_teleconsultation_requires_preflight_and_records_role_checkin",
+      "tests.test_clinician_credentials::test_registration_rejects_incomplete_clinician_profile",
+      "tests.test_clinician_credentials::test_nurse_invite_creates_nurse_dossier",
+      "tests.test_clinician_credentials::test_us_licence_requires_state_jurisdiction",
+      "tests.test_clinician_credentials::test_provider_start_requires_consent_and_is_idempotent_without_keys",
+      "tests.test_compliance_dashboard::test_list_cases_returns_paginated_shape",
+      "tests.test_compliance_dashboard::test_list_cases_filter_by_status",
+      "tests.test_compliance_dashboard::test_list_cases_filter_by_profession",
+      "tests.test_compliance_dashboard::test_list_cases_filter_by_country_is_case_insensitive",
+      "tests.test_compliance_dashboard::test_list_cases_search_matches_name",
+      "tests.test_compliance_dashboard::test_list_cases_pagination_respects_limit_offset",
+      "tests.test_compliance_dashboard::test_detail_endpoint_returns_full_shape",
+      "tests.test_compliance_dashboard::test_detail_endpoint_includes_uploaded_evidence",
+      "tests.test_compliance_dashboard::test_detail_endpoint_includes_transitions_after_action",
+      "tests.test_compliance_dashboard::test_detail_endpoint_404_on_unknown",
+      "tests.test_document_expiry::test_scan_endpoint_returns_summary",
+      "tests.test_document_expiry::test_upcoming_endpoint_lists_soonest_first",
+      "tests.test_document_expiry::test_upcoming_endpoint_computes_days_remaining",
+      "tests.test_health.TestTriageFlow::test_only_linked_doctor_can_list_triage_photos",
+      "tests.test_health.TestDoctorFlow::test_doctor_create_profile",
+      "tests.test_health.TestDoctorFlow::test_verified_doctor_can_view_queue",
+      "tests.test_health.TestDoctorFlow::test_doctor_accept_consultation",
+      "tests.test_health.TestDoctorFlow::test_doctor_complete_consultation",
+      "tests.test_health.TestAdminVerification::test_admin_can_verify_doctor",
+      "tests.test_health.TestAdminVerification::test_admin_can_list_pending_doctors",
+      "tests.test_health.TestDashboard::test_admin_dashboard",
+      "tests.test_health.TestDashboard::test_health_kpis",
+      "tests.test_mfa::test_auth_response_flags_mandatory_for_doctor",
+      "tests.test_mfa::test_setup_verify_enables_mfa",
+      "tests.test_mfa::test_verify_rejects_bad_code",
+      "tests.test_mfa::test_login_returns_challenge_when_mfa_enabled",
+      "tests.test_mfa::test_challenge_completes_login_with_totp",
+      "tests.test_mfa::test_challenge_completes_with_recovery_code_single_use",
+      "tests.test_mfa::test_challenge_rejects_bad_code",
+      "tests.test_mfa::test_disable_requires_valid_code",
+      "tests.test_mfa::test_regenerate_recovery_codes_invalidates_old",
+      "tests.test_mfa::test_setup_conflicts_when_already_enabled",
+      "tests.test_mfa::test_mfa_challenge_token_cannot_access_protected_endpoints",
+      "tests.test_nurse_dashboard::test_stale_requests_excluded_from_queue_metrics",
+      "tests.test_public_contact::test_admin_can_list_contact_messages",
+      "tests.test_state_machine::test_reviewer_request_information_writes_transition",
+      "tests.test_state_machine::test_reviewer_endpoints_reject_support_role",
+      "tests.test_state_machine::test_invalid_transition_returns_409",
+      "tests.test_state_machine::test_reviewer_can_suspend_then_reactivate",
+      "tests.test_state_machine::test_history_endpoint_404_on_unknown_case",
+      "tests.test_state_machine::test_manual_review_complete_maps_outcomes",
+      "tests.test_state_machine::test_manual_review_rejects_bad_outcome",
+      "tests.test_state_machine::test_request_information_notifies_applicant",
+      "tests.test_state_machine::test_approval_notifies_applicant",
+      "tests.test_verification_actions::test_identity_start_returns_sandbox_result_without_creds",
+      "tests.test_verification_actions::test_identity_status_deterministic",
+      "tests.test_verification_actions::test_qualifications_start_returns_sandbox_submitted",
+      "tests.test_verification_actions::test_registry_check_returns_manual_review_with_authority_context",
+      "tests.test_verification_actions::test_documents_extract_returns_not_configured_without_azure"
+    ]
+  },
+  "backend-focused": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source/backend/phase0_pytest.py",
+      "security_tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/results/backend-focused.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source/backend",
+    "timeout_seconds": 240,
+    "exit_code": 1,
+    "timed_out": false,
+    "elapsed_seconds": 24.75,
+    "log_sha256": "19a106b5130d9d748ad4133bd0a54091174a43161dea0998688c63b0a096a23e",
+    "junit": {
+      "tests": 120,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": [
+      "security_tests.test_docker_allowlist::test_docker_context_has_only_exact_file_exceptions"
+    ]
+  },
+  "launch-hold": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source/backend/phase0_pytest.py",
+      "phase0_tests",
+      "-q",
+      "--tb=short",
+      "-p",
+      "pytest_timeout",
+      "--timeout=45",
+      "--junitxml=/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/results/launch-hold.xml"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source/backend",
+    "timeout_seconds": 240,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 2.18,
+    "log_sha256": "cb1a0aaa79c8fc5c00ec0a4307360af40a79482265befbdafb4880b0ada996ba",
+    "junit": {
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failed_cases": []
+  },
+  "migration-heads": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "-m",
+      "alembic",
+      "heads"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source/backend",
+    "timeout_seconds": 30,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 1.55,
+    "log_sha256": "136391d851fb9f3baacc6d01485e992d3d22ebd43638dbd313a94e6b67930e96"
+  },
+  "infrastructure": {
+    "command": [
+      "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-clean/venv/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "infra/azure/tests",
+      "-v"
+    ],
+    "cwd": "/Users/genovesimaria/Documents/Codex/2026-09-14/l/work/phase0-backend-final/source",
+    "timeout_seconds": 90,
+    "exit_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 5.42,
+    "log_sha256": "6db996141a790a1efdc80009cf6cea31b10ee3784a0af12126eaca1fe5fd3d87"
+  }
+}

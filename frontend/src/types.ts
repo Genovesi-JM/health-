@@ -8,6 +8,8 @@ export interface User {
   role: Role;
   is_active: boolean;
   name?: string;
+  professional_application?: { profession: 'doctor' | 'nurse'; status: string } | null;
+  patient_onboarding_complete?: boolean;
 }
 
 export interface AuthResponse {
@@ -72,14 +74,25 @@ export interface TriageHistoryItem {
   completed_at?: string;
 }
 
-export interface Consultation {
+export interface RequestExpiry {
+  requested_expires_at?: string | null;
+  expired_at?: string | null;
+  request_expiry_state?: 'open' | 'expiry_pending' | 'review_required' | 'expired' | null;
+}
+
+export interface Consultation extends RequestExpiry {
   id: string;
   patient_id: string;
   doctor_id?: string;
   triage_session_id?: string;
   specialty: string;
-  status: 'requested' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+  status: 'requested' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'expired';
   scheduled_at?: string;
+  scheduled_end_at?: string;
+  slot_id?: string;
+  reschedule_revision?: number;
+  timezone?: string;
+  country?: string;
   started_at?: string;
   ended_at?: string;
   cancellation_reason?: string;
@@ -87,7 +100,7 @@ export interface Consultation {
   created_at: string;
 }
 
-export interface ConsultationQueueItem {
+export interface ConsultationQueueItem extends RequestExpiry {
   id: string;
   patient_id?: string;
   patient_name?: string;
@@ -95,6 +108,9 @@ export interface ConsultationQueueItem {
   specialty: string;
   risk_level?: string;
   status: string;
+  reschedule_revision?: number;
+  timezone?: string;
+  scheduled_end_at?: string;
   chief_complaint?: string;
   scheduled_at?: string;
   created_at: string;

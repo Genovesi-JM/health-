@@ -26,6 +26,7 @@ from app.health_schemas import (
     RoleEnum,
 )
 from app.rbac import get_patient_for_user, require_roles, assert_doctor_can_access_patient
+from app.services.clinician_access import require_current_clinician
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +148,7 @@ def list_patient_medications(
     # Doctors must have a clinical connection to this patient.
     # Admins / support have unrestricted access (audited separately).
     if current_user.role == RoleEnum.DOCTOR:
+        require_current_clinician(current_user, db)
         doctor = db.query(Doctor).filter_by(user_id=current_user.id).first()
         if not doctor:
             raise HTTPException(status_code=403, detail="Perfil de médico não encontrado.")

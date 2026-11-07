@@ -1,0 +1,15 @@
+{
+  "shell": {
+    "chunks": 1,
+    "bytes": 752919,
+    "gzip": 236276
+  },
+  "firstPublicRoute": {
+    "chunks": 21,
+    "bytes": 783607,
+    "gzip": 246547
+  },
+  "deferredJavaScriptChunks": 135,
+  "precacheEntries": 17
+}
+Built route graph, shell precache and API/auth cache isolation passed.

@@ -1,0 +1,10 @@
+{
+  "method": "BFS of original virtual lock follows every resolved non-dev edge, including installed optional and peer dependencies. Root dev edges excluded. Projection removes root devDependencies only; all nonroot lock records unchanged.",
+  "installed_nodes": 571,
+  "unique_expected": 529,
+  "sbom_components": 529,
+  "missing": [],
+  "extra": [],
+  "changed_nonroot_lock_records": [],
+  "scope": "npm package graph, not APK contents"
+}
