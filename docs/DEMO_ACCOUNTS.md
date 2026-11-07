@@ -11,7 +11,7 @@
 
 ## Demo accounts
 
-Password for every account: `SeedDefault@1234`
+Password for every account: `Teste1234@`
 
 | Role | Email |
 |---|---|

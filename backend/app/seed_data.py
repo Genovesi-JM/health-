@@ -16,7 +16,7 @@ from app.utils import hash_password
 
 # ── Seed accounts ──
 
-SEED_PASSWORD = "SeedDefault@1234"   # fallback if ADMIN_PASSWORD not set
+SEED_PASSWORD = "Teste1234@"   # fallback if ADMIN_PASSWORD not set
 
 ADMIN_USERS: List[dict] = [
     {

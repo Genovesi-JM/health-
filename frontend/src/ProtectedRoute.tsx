@@ -4,6 +4,7 @@ import { Menu, UserRound, X, IdCard, CalendarDays, ClipboardList, LogOut } from 
 import { useAuth } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
 import LanguageSelector from './components/LanguageSelector';
+import ThemeToggle from './components/ThemeToggle';
 import { useT } from './i18n/LanguageContext';
 import { isPatientAccount, requiredPathRedirect } from './authRouting';
 import kayaLogo from '/kaya-logo.svg';
@@ -67,7 +68,7 @@ export function ProtectedRoute() {
                 <li><Link to="/settings" onClick={() => setPop(false)}>Gestão de notificações</Link></li>
                 <li><Link to="/notifications" onClick={() => setPop(false)}>Notificações recebidas</Link></li>
                 <li><Link to="/security" onClick={() => setPop(false)}>Segurança da conta</Link></li>
-                <li><LanguageSelector /></li>
+                <li style={{ display: 'flex', gap: '.6rem', alignItems: 'center', padding: '.6rem 0' }}><ThemeToggle /><LanguageSelector /></li>
               </ul>
               <button className="lms-pop__out" onClick={handleLogout}>{t('sidebar.logout')} <LogOut size={20} /></button>
             </div>

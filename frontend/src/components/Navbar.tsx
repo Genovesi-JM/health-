@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { getSession, getInitials } from '../api';
 import { useT } from '../i18n/LanguageContext';
 import LanguageSelector from './LanguageSelector';
+import ThemeToggle from './ThemeToggle';
 import kayaLogo from '/kaya-logo.svg';
 
 interface NavGroup {
@@ -124,6 +125,7 @@ export function Navbar() {
               <Link to="/choose-account-type" className="nav-cta">{t('nav.start_free')}</Link>
             </div>
           )}
+          <ThemeToggle compact />
           <LanguageSelector />
 
           {/* ── Mobile toggle ── */}
