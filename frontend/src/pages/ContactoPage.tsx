@@ -4,6 +4,7 @@ import { Mail, MapPin, MessageSquare, Building2, Loader2, CheckCircle2 } from 'l
 import { useState, type FormEvent } from 'react';
 import api from '../api';
 import { useT } from '../i18n/LanguageContext';
+import HeroArt from '../components/HeroArt';
 
 export default function ContactoPage() {
   const { t } = useT();
@@ -37,6 +38,7 @@ export default function ContactoPage() {
 
       <section className="lp-page-hero" style={{ paddingBottom: '2rem' }}>
         <div className="lp-tag">{t('contact.tag')}</div>
+        <HeroArt name="telehealth" />
         <h1>{t('contact.title')}</h1>
         <p>{t('contact.subtitle')}</p>
       </section>

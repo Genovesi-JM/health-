@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import {
   Calendar, Video, Activity, Heart, Pill, Bell, Users,
   ArrowRight, CheckCircle2, Shield, Clock, FileText,
@@ -52,6 +53,7 @@ export default function PatientsPage() {
       {/* ── Page Hero ── */}
       <section className="lp-page-hero">
         <div className="lp-tag"><Heart size={12} /> {t('pat.tag')}</div>
+        <HeroArt name="family" />
         <h1>{t('pat.title1')}<br /><span className="lp-hero__accent">{t('pat.title2')}</span></h1>
         <p>
           {t('pat.subtitle')}

@@ -22,7 +22,7 @@ from sqlalchemy import (
     Integer,
     Index,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
 
 from .database import Base
 
@@ -1230,7 +1230,16 @@ class FamilyMember(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
     )
 
-    owner = relationship("Patient", backref="family_members")
+    owner = relationship(
+        "Patient",
+        backref=backref(
+            "family_members",
+            # The owner_patient_id FK is ON DELETE CASCADE at the DB level;
+            # defer to that on parent delete instead of nulling the NOT NULL FK.
+            passive_deletes=True,
+            cascade="all, delete-orphan",
+        ),
+    )
 
 
 # ── In-App Notification ───────────────────────────────────────────────────────

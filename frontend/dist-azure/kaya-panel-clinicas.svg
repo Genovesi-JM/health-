@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 340">
+  <rect width="540" height="340" fill="#ecfeff"/>
+  <rect x="20" y="20" width="500" height="300" rx="16" fill="#0891b2" opacity="0.08"/>
+  <text x="270" y="120" font-family="system-ui,sans-serif" font-size="64" text-anchor="middle">🏥</text>
+  <text x="270" y="185" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#0e7490" text-anchor="middle">Clínicas</text>
+  <text x="270" y="218" font-family="system-ui,sans-serif" font-size="14" fill="#0891b2" text-anchor="middle">Agenda · Gestão · Relatórios</text>
+  <text x="270" y="248" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">Imagem em breve</text>
+</svg>

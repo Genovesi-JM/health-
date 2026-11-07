@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import {
   Stethoscope, Heart, HeartPulse, Activity, Brain, Eye,
   Bone, Apple, Wind, Baby, ChevronRight, Video, Calendar,
@@ -44,6 +45,7 @@ export default function EspecialistasPage() {
 
       <section className="lp-page-hero" style={{ paddingBottom: '3rem' }}>
         <div className="lp-tag">{t('esp.tag')}</div>
+        <HeroArt name="professional" />
         <h1>{t('esp.title')}</h1>
         <p>{t('esp.subtitle')}</p>
 

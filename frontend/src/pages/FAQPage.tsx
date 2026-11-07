@@ -1,5 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useT } from '../i18n/LanguageContext';
@@ -32,6 +33,7 @@ export default function FAQPage() {
 
       <section className="lp-page-hero" style={{ paddingBottom: '2rem' }}>
         <div className="lp-tag">{t('faq.tag')}</div>
+        <HeroArt name="professional" />
         <h1>{t('faq.title')}</h1>
         <p>{t('faq.subtitle')}</p>
       </section>

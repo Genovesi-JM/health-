@@ -28,7 +28,6 @@ const MapaPage = lazy(() => import('./pages/MapaPage'));
 const PatientsPage = lazy(() => import('./pages/PatientsPage'));
 const ClinicsPage = lazy(() => import('./pages/ClinicsPage'));
 const ChronicCarePage = lazy(() => import('./pages/ChronicCarePage'));
-const DevicesPage = lazy(() => import('./pages/DevicesPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
@@ -148,7 +147,6 @@ export default function App() {
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/clinics" element={<ClinicsPage />} />
           <Route path="/chronic-care" element={<ChronicCarePage />} />
-          <Route path="/devices" element={<DevicesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

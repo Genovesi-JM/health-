@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import {
   Building2, TrendingUp, Calendar, Video, Activity,
   Shield, Clock, Users, ArrowRight,
   BarChart2, Zap, FileText, Mail, Stethoscope,
-  Banknote, Smartphone, HeartPulse, UserCheck, Globe,
+  Banknote, Smartphone, HeartPulse, UserCheck, Globe, Pill,
 } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
@@ -48,6 +49,7 @@ export default function ClinicsPage() {
       {/* ── Hero ── */}
       <section className="lp-page-hero">
         <div className="lp-tag"><Stethoscope size={12} /> {t('clin.tag')}</div>
+        <HeroArt name="hospital" />
         <h1>{t('clin.title1')}<br /><span className="lp-hero__accent">{t('clin.title2')}</span></h1>
         <p>
           {t('clin.subtitle')}
@@ -59,6 +61,9 @@ export default function ClinicsPage() {
           <Link to="/contacto" className="lp-cta lp-cta--secondary">
             <Building2 size={15} /> {t('clin.cta_register_clinic')}
           </Link>
+          <a href="mailto:parcerias@kaya.ao?subject=Farm%C3%A1cia%20parceira" className="lp-cta lp-cta--secondary">
+            <Pill size={15} /> Farmácia parceira
+          </a>
         </div>
         <p style={{ marginTop: '1.25rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
           {t('clin.hero_note')}

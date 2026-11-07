@@ -1,0 +1,1 @@
+import{j as t}from"./index-doKNWIW0.js";import{C as o}from"./ConsentManager-DcpLO8tj.js";import"./apiError-DNXWvHqO.js";import"./consent-BU7ZYeJU.js";function a(){return t.jsx(o,{})}export{a as default};

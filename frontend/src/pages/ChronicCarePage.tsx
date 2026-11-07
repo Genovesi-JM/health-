@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import {
   Heart, Activity, Wind, TrendingUp, RefreshCw,
   Bell, Calendar, Video, Shield, CheckCircle2,
@@ -42,6 +43,7 @@ export default function ChronicCarePage() {
         <div className="lp-tag" style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>
           <Heart size={12} /> {t('cc.tag')}
         </div>
+        <HeroArt name="chronic" />
         <h1>{t('cc.title1')}<br /><span className="lp-hero__accent">{t('cc.title2')}</span></h1>
         <p>
           {t('cc.subtitle')}

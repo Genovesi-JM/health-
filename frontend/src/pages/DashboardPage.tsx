@@ -13,7 +13,7 @@ import {
   Activity, Calendar, ArrowRight, ChevronRight,
   HeartPulse, AlertTriangle, CheckCircle2,
   Clock, Shield, Zap, TrendingUp, Siren, User,
-  Droplets, Thermometer, Brain, Wind, FileText,
+  Droplets, Thermometer, Brain, Wind, FileText, Pill, Heart, Users,
 } from 'lucide-react';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
@@ -68,13 +68,16 @@ export default function DashboardPage() {
 
   const risk = riskConfig(state?.last_triage_risk);
 
-  /* Keep only distinct, high-frequency destinations above the fold. */
+  /* Quick-access tiles (La Meva Salut composition): every main destination, one tap away. */
   const quickActions = [
-    { icon: Activity, label: t('dash.qa_triage'), color: '#0d9488', bg: '#e0f7f5', to: '/triage' },
-    { icon: Calendar, label: t('dash.qa_appointments'), color: '#2563eb', bg: '#dbeafe', to: '/consultations' },
-    { icon: HeartPulse, label: t('sidebar.readings'), color: '#7c3aed', bg: '#ede9fe', to: '/patient/readings' },
-    { icon: User, label: t('dash.qa_profile'), color: '#64748b', bg: '#f1f5f9', to: '/patient/profile' },
-    { icon: FileText, label: 'Os meus documentos', color: '#0d9488', bg: '#e0f7f5', to: '/patient/documents' },
+    { icon: Activity,   label: t('dash.qa_triage'),       color: '#0f766e', bg: '#e6f4f2', to: '/triage' },
+    { icon: Calendar,   label: t('dash.qa_appointments'), color: '#1d4ed8', bg: '#e8eefb', to: '/consultations' },
+    { icon: Pill,       label: 'Receitas', color: '#7c3aed', bg: '#efeafb', to: '/prescricoes/pedido' },
+    { icon: FileText,   label: 'Os meus documentos',      color: '#0f766e', bg: '#e6f4f2', to: '/patient/documents' },
+    { icon: HeartPulse, label: t('sidebar.readings'),     color: '#be185d', bg: '#fbe8f1', to: '/patient/readings' },
+    { icon: Heart,      label: t('sidebar.self_care'),    color: '#15803d', bg: '#e7f5ea', to: '/self-care' },
+    { icon: Users,      label: t('sidebar.family'),       color: '#b45309', bg: '#fbf0e3', to: '/family' },
+    { icon: User,       label: t('dash.qa_profile'),      color: '#475569', bg: '#eef2f6', to: '/patient/profile' },
   ];
 
   /* Chronic disease config — icons + colors */
@@ -132,6 +135,23 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Quick access (La Meva Salut composition) ── */}
+      <div className="dash-section-header">
+        <h2>{t('dash.quick_actions')}</h2>
+      </div>
+      <div className="dash-carousel">
+        <div className="dash-carousel-track">
+          {quickActions.map(qa => (
+            <Link key={qa.label} to={qa.to} className="dash-action-card" onClick={qa.label === t('dash.qa_appointments') ? (e) => { e.preventDefault(); setShowBooking(true); } : undefined}>
+              <div className="dash-action-icon" style={{ background: qa.bg, color: qa.color }}>
+                <qa.icon size={26} />
+              </div>
+              <span className="dash-action-label">{qa.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* URGENT BANNER */}
       {state?.last_triage_action === 'ER_NOW' && state.current_state === 'triage_completed' && (
         <div className="dash-urgent-banner">
@@ -176,23 +196,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* ── Quick Actions Carousel (La Meva Salut style) ── */}
-      <div className="dash-section-header">
-        <h2>{t('dash.quick_actions')}</h2>
-      </div>
-      <div className="dash-carousel">
-        <div className="dash-carousel-track">
-          {quickActions.map(qa => (
-            <Link key={qa.label} to={qa.to} className="dash-action-card" onClick={qa.label === t('dash.qa_appointments') ? (e) => { e.preventDefault(); setShowBooking(true); } : undefined}>
-              <div className="dash-action-icon" style={{ background: qa.bg, color: qa.color }}>
-                <qa.icon size={26} />
-              </div>
-              <span className="dash-action-label">{qa.label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
 
       {/* ── KPI Summary Cards ── */}
       <KpiGrid

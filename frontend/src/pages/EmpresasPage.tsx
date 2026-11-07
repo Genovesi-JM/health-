@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { Building2, Users, TrendingUp, Shield, RefreshCw, Clock, CheckCircle2, ArrowRight, Mail } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
@@ -23,8 +24,9 @@ export default function EmpresasPage() {
     <div className="landing-wrapper">
       <Navbar />
 
-      <section className="lp-page-hero" style={{ background: 'var(--brand-light)' }}>
+      <section className="lp-page-hero">
         <div className="lp-tag" style={{ background: 'var(--brand-light)', color: 'var(--brand-primary)' }}><Building2 size={13} /> {t('emp.tag')}</div>
+        <HeroArt name="company" />
         <h1>{t('emp.title1')}<br />{t('emp.title2')}</h1>
         <p>{t('emp.subtitle')}</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>

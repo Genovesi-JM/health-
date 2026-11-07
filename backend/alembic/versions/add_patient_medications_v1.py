@@ -23,7 +23,7 @@ def upgrade():
         sa.Column('frequency', sa.String(100), nullable=True),
         sa.Column('start_date', sa.String(10), nullable=True),
         sa.Column('end_date', sa.String(10), nullable=True),
-        sa.Column('is_current', sa.Boolean(), nullable=False, server_default=sa.text('1')),
+        sa.Column('is_current', sa.Boolean(), nullable=False, server_default=sa.text('true')),
         sa.Column('reason', sa.String(300), nullable=True),
         sa.Column('prescribed_by', sa.String(200), nullable=True),
         sa.Column('notes', sa.Text(), nullable=True),

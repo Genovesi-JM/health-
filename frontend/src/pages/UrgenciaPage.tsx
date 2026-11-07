@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { AlertTriangle, Smartphone, Building2, CheckCircle2, Clock, ArrowRight, Phone, Activity, HeartPulse } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
@@ -23,10 +24,11 @@ export default function UrgenciaPage() {
     <div className="landing-wrapper">
       <Navbar />
 
-      <section className="lp-page-hero" style={{ background: 'rgba(239,68,68,0.06)' }}>
+      <section className="lp-page-hero">
         <div className="lp-tag" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
           <AlertTriangle size={13} /> {t('urg.tag')}
         </div>
+        <HeroArt name="emergency" />
         <h1>{t('urg.title1')}<br />{t('urg.title2')}</h1>
         <p>
           {t('urg.subtitle_pre')} <strong>{t('urg.subtitle_bold')}</strong>{t('urg.subtitle_post')}

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
+import HeroArt from '../components/HeroArt';
 import { Video, CheckCircle2, Clock, Shield, Wifi, Monitor, ArrowRight, Stethoscope, Brain, Heart, Activity, HeartPulse } from 'lucide-react';
 import { useT } from '../i18n/LanguageContext';
 
@@ -32,6 +33,7 @@ export default function TeleconsultaPage() {
 
       <section className="lp-page-hero">
         <div className="lp-tag" style={{ background: 'rgba(8,145,178,0.12)', color: '#22d3ee' }}>{t('tele.tag')}</div>
+        <HeroArt name="telehealth" />
         <h1>{t('tele.title')}</h1>
         <p>{t('tele.subtitle')}</p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>

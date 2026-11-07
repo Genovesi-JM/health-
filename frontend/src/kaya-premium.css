@@ -1,0 +1,283 @@
+/* ============================================================
+   KAYA — Premium editorial + cinematic design system (global)
+   Synthesis of the Kasa visual language (warm, premium, calm,
+   editorial, spacious; forest green + cream + selective gold)
+   with KAYA's teal health identity and cinematic dark heroes.
+   Loaded AFTER index.css so it refines the shared landing classes
+   that every public page uses — restyling the whole marketing
+   surface at once.
+   ============================================================ */
+
+:root {
+  --k-forest:   #0b2a24;
+  --k-petrol:   #0e3a32;
+  --k-petrol2:  #124a40;
+  --k-teal:     #14b8a6;
+  --k-teal-d:   #0f766e;
+  --k-mint:     #5eead4;
+  --k-cream:    #f6f2e9;   /* warm ivory canvas */
+  --k-sand:     #efe8d8;
+  --k-card:     #fffdf8;   /* soft white card */
+  --k-ink:      #16302b;
+  --k-ink-soft: #3f5750;
+  --k-muted:    #6b8176;
+  --k-gold:     #c9a86a;
+  --k-border:   #e6dfce;   /* warm fine border */
+  --k-border-s: #d8cfba;
+  --k-fog:      #b9e7de;   /* light text on dark */
+}
+
+/* ---------- warm editorial canvas for marketing pages ---------- */
+.landing-wrapper {
+  background: var(--k-cream);
+  color: var(--k-ink);
+}
+.landing-wrapper p { color: var(--k-ink-soft); }
+
+/* =========================================================
+   SUB-PAGE HEROES — cinematic dark petrol header
+   (.lp-page-hero on most pages, .landing-hero on Services/About)
+   ========================================================= */
+.landing-wrapper .lp-page-hero {
+  max-width: none; margin: 0; text-align: center;
+  padding: clamp(6rem, 11vw, 8.5rem) 1.5rem clamp(3.2rem, 6vw, 4.8rem);
+  color: #eafbf7; position: relative; overflow: hidden;
+  background:
+    radial-gradient(900px 440px at 80% -15%, rgba(45,212,191,.22), transparent 60%),
+    radial-gradient(700px 400px at 5% 115%, rgba(34,211,238,.12), transparent 55%),
+    linear-gradient(165deg, var(--k-forest) 0%, var(--k-petrol) 60%, var(--k-petrol2) 100%);
+}
+.landing-wrapper .lp-page-hero > * { max-width: 780px; margin-left: auto; margin-right: auto; }
+.landing-wrapper .lp-page-hero h1 {
+  color: #fff; font-size: clamp(2.1rem, 5.4vw, 3.4rem); font-weight: 800;
+  letter-spacing: -.025em; line-height: 1.06; margin-bottom: .9rem;
+}
+.landing-wrapper .lp-page-hero p { color: var(--k-fog); font-size: clamp(1rem, 1.5vw, 1.18rem); line-height: 1.6; }
+
+.landing-hero {
+  min-height: auto;
+  padding: clamp(6rem, 11vw, 8.5rem) 1.5rem clamp(3.4rem, 6vw, 5rem);
+  background:
+    radial-gradient(900px 440px at 80% -15%, rgba(45,212,191,.22), transparent 60%),
+    linear-gradient(165deg, var(--k-forest) 0%, var(--k-petrol) 60%, var(--k-petrol2) 100%);
+  color: #eafbf7;
+}
+.landing-hero-bg { display: none; }
+.landing-hero-title { color: #fff; font-size: clamp(2.2rem, 5.6vw, 3.4rem); letter-spacing: -.025em; }
+.landing-hero-subtitle { color: var(--k-fog); }
+
+/* =========================================================
+   EDITORIAL BODY SECTIONS — generous, calm, cream/white
+   ========================================================= */
+.landing-wrapper .lp-section,
+.landing-wrapper .landing-section { padding: clamp(3.5rem, 7vw, 6rem) 1.5rem; }
+.landing-wrapper .lp-section--alt { background: var(--k-sand); border-top: 1px solid var(--k-border); border-bottom: 1px solid var(--k-border); }
+.landing-wrapper .landing-section-alt { background: var(--k-sand); border-color: var(--k-border); }
+
+/* section headers — editorial */
+.landing-wrapper .section-header h2,
+.landing-wrapper .lp-section__header h2 { color: var(--k-ink); font-size: clamp(1.7rem, 3.4vw, 2.5rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.12; }
+.landing-wrapper .section-header p,
+.landing-wrapper .lp-section__header p { color: var(--k-ink-soft); font-size: clamp(.98rem, 1.3vw, 1.08rem); line-height: 1.6; }
+
+/* eyebrow tags — warm */
+.landing-wrapper .lp-tag {
+  background: rgba(15,118,110,.08); border: 1px solid rgba(15,118,110,.2);
+  color: var(--k-teal-d); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: .72rem;
+}
+
+/* =========================================================
+   PREMIUM CARDS — soft white, fine warm border, calm shadow
+   ========================================================= */
+.landing-wrapper .landing-service-card,
+.landing-wrapper .landing-feature-card,
+.landing-wrapper .lp-specialty-card,
+.landing-wrapper .ecosystem-card,
+.landing-wrapper .lp-b2b-card,
+.landing-wrapper .lp-device-card,
+.landing-wrapper .lp-trust-card,
+.landing-wrapper .feat-card,
+.landing-wrapper .lp-step {
+  background: var(--k-card);
+  border: 1px solid var(--k-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(22,48,43,.04), 0 10px 26px rgba(22,48,43,.05);
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.landing-wrapper .landing-service-card:hover,
+.landing-wrapper .landing-feature-card:hover,
+.landing-wrapper .lp-specialty-card:hover,
+.landing-wrapper .ecosystem-card:hover,
+.landing-wrapper .feat-card:hover,
+.landing-wrapper .lp-step:hover {
+  transform: translateY(-4px);
+  border-color: rgba(15,118,110,.35);
+  box-shadow: 0 16px 40px rgba(22,48,43,.1);
+}
+.landing-wrapper .landing-service-icon,
+.landing-wrapper .landing-feature-icon {
+  background: rgba(15,118,110,.09); color: var(--k-teal-d); border-radius: 13px;
+}
+.landing-wrapper .landing-service-card h3,
+.landing-wrapper .feat-title { color: var(--k-ink); }
+.landing-wrapper .landing-service-card p,
+.landing-wrapper .feat-desc { color: var(--k-ink-soft); }
+
+/* =========================================================
+   BUTTONS — premium pills (forest primary, soft secondary)
+   ========================================================= */
+.landing-wrapper .lp-cta { border-radius: 999px; font-weight: 650; padding: .85rem 1.5rem; }
+.landing-wrapper .lp-cta--primary { background: linear-gradient(100deg, var(--k-teal), var(--k-teal-d)); color: #fff; box-shadow: 0 10px 26px rgba(15,118,110,.28); }
+.landing-wrapper .lp-cta--primary:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(15,118,110,.36); }
+.landing-wrapper .lp-cta--secondary,
+.landing-wrapper .lp-cta--outline { background: var(--k-card); color: var(--k-teal-d); border: 1px solid var(--k-border-s); }
+.landing-wrapper .lp-cta--secondary:hover,
+.landing-wrapper .lp-cta--outline:hover { border-color: var(--k-teal); background: #fff; transform: translateY(-2px); }
+.landing-wrapper .lp-link-more { color: var(--k-teal-d); font-weight: 650; }
+
+/* hero actions on the dark sub-page heroes keep legible buttons */
+.landing-hero .lp-cta--secondary,
+.landing-hero .lp-cta--outline,
+.lp-page-hero .lp-cta--secondary,
+.lp-page-hero .lp-cta--outline { background: rgba(255,255,255,.08); color: #eafbf7; border-color: rgba(255,255,255,.22); }
+
+/* =========================================================
+   PRICING — premium editorial cards
+   ========================================================= */
+.landing-wrapper .lp-price-card,
+.landing-wrapper .lp-plan-card {
+  background: var(--k-card); border: 1px solid var(--k-border); border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(22,48,43,.04), 0 10px 26px rgba(22,48,43,.05);
+}
+.landing-wrapper .lp-price-card--featured,
+.landing-wrapper .lp-plan-card--featured { background: linear-gradient(170deg, var(--k-petrol), var(--k-forest)); color: #eafbf7; border-color: rgba(45,212,191,.3); }
+.landing-wrapper .lp-price-label,
+.landing-wrapper .lp-price-amount { color: var(--k-ink); }
+.landing-wrapper .lp-price-card--featured .lp-price-label,
+.landing-wrapper .lp-price-card--featured .lp-price-amount { color: #fff; }
+
+/* =========================================================
+   FINAL CTA band — deep editorial green
+   ========================================================= */
+.landing-wrapper .lp-final-cta {
+  background:
+    radial-gradient(800px 420px at 80% -20%, rgba(45,212,191,.2), transparent 60%),
+    linear-gradient(160deg, var(--k-petrol2) 0%, var(--k-forest) 100%);
+}
+
+/* smoother type rendering */
+.landing-wrapper, .cine { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* ============================================================
+   EDITORIAL DISPLAY TYPE — Fraunces serif for headlines
+   (moves the brand away from the standard sans-serif SaaS look)
+   ============================================================ */
+:root { --k-display: 'Fraunces', 'Georgia', 'Times New Roman', serif; }
+
+.cine-title,
+.cine-h2,
+.landing-wrapper .lp-page-hero h1,
+.landing-hero-title,
+.landing-wrapper .section-header h2,
+.landing-wrapper .lp-section__header h2,
+.landing-wrapper .lp-final-cta h2,
+.cine-journey__head {
+  font-family: var(--k-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+.cine-title { font-weight: 600; letter-spacing: -0.02em; }
+.cine-h2,
+.landing-wrapper .section-header h2,
+.landing-wrapper .lp-section__header h2,
+.landing-wrapper .lp-final-cta h2 { font-weight: 600; }
+.landing-wrapper .lp-page-hero h1,
+.landing-hero-title { font-weight: 600; }
+/* let the accent word in the hero carry a soft editorial italic */
+.cine-title .accent { font-style: italic; }
+.cine-journey__head { font-weight: 600; letter-spacing: 0; font-size: .9rem; }
+
+/* ============================================================
+   NAVBAR + DROPDOWNS — cinematic premium
+   ============================================================ */
+.nav-wordmark {
+  font-family: var(--k-display); font-optical-sizing: auto;
+  font-size: 1.18rem; font-weight: 600; letter-spacing: 0.005em; color: var(--k-ink);
+}
+.navbar {
+  background: rgba(247, 244, 236, 0.82);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid rgba(22, 48, 43, 0.08);
+}
+.nav-group__trigger { color: var(--k-ink-soft); font-weight: 600; border-radius: 999px; }
+.nav-group__trigger:hover,
+.nav-group__trigger--active { color: var(--k-teal-d); background: rgba(15, 118, 110, 0.07); }
+
+/* dark cinematic dropdown panel */
+.nav-dropdown {
+  position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  min-width: 324px; padding: 0.55rem; border-radius: 18px;
+  background: linear-gradient(170deg, #0e3a32, #0a2620);
+  border: 1px solid rgba(94, 234, 212, 0.14);
+  box-shadow: 0 30px 70px rgba(2, 17, 15, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  animation: navDrop 0.22s cubic-bezier(.22, .61, .36, 1);
+}
+@keyframes navDrop {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.nav-dropdown__glow {
+  position: absolute; top: -45%; right: -22%; width: 72%; height: 95%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.22), transparent 70%); pointer-events: none;
+}
+.nav-dropdown__item {
+  position: relative; display: flex; flex-direction: row; align-items: center; gap: 0.75rem;
+  padding: 0.65rem 0.75rem; border-radius: 12px; text-decoration: none;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.nav-dropdown__item:hover,
+.nav-dropdown__item--active { background: rgba(94, 234, 212, 0.1); transform: translateX(2px); }
+.nav-dropdown__chip {
+  flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: rgba(45, 212, 191, 0.14); border: 1px solid rgba(45, 212, 191, 0.22); color: #5eead4;
+  transition: background 0.18s ease;
+}
+.nav-dropdown__item:hover .nav-dropdown__chip { background: rgba(45, 212, 191, 0.24); }
+.nav-dropdown__text { display: flex; flex-direction: column; }
+.nav-dropdown__label { font-size: 0.92rem; font-weight: 650; color: #f2fffb; }
+.nav-dropdown__sub { font-size: 0.78rem; color: #9fd3c8; margin-top: 0.1rem; }
+
+/* ============================================================
+   SITE-WIDE CINEMATIC DEPTH — filmic grain + ambient glow
+   Applies to every dark section so the whole site feels cinematic,
+   not just the hero.
+   ============================================================ */
+.cine-hero, .cine-transport, .cine-care, .landing-wrapper .lp-final-cta,
+.landing-wrapper .lp-page-hero, .landing-hero { position: relative; isolation: isolate; }
+
+.cine-hero::after, .cine-transport::after, .cine-care::after,
+.landing-wrapper .lp-final-cta::after,
+.landing-wrapper .lp-page-hero::after, .landing-hero::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 150px 150px; opacity: 0.05; mix-blend-mode: soft-light;
+}
+/* keep content above the grain */
+.cine-hero__grid, .cine-transport > .cine-wrap, .cine-care > .cine-wrap,
+.landing-wrapper .lp-final-cta > *, .landing-wrapper .lp-page-hero > *,
+.landing-hero > * { position: relative; z-index: 1; }
+
+/* a soft ambient glow orb for the shared sub-page heroes */
+.landing-wrapper .lp-page-hero::before,
+.landing-hero::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  top: -30%; right: -8%; width: 46%; height: 150%;
+  background: radial-gradient(circle at 60% 40%, rgba(94,234,212,0.16), transparent 62%);
+  filter: blur(6px);
+}
+
+/* ---------- sub-page hero illustration ---------- */
+.hero-art { display: flex; justify-content: center; margin-bottom: 1.1rem; }
+.hero-art .kaya-spot { width: 116px; height: 102px; filter: drop-shadow(0 14px 26px rgba(2,17,15,0.45)); }

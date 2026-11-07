@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 # backend/app/database.py — FINAL ESTÁVEL
 
 from sqlalchemy import create_engine, inspect, text
@@ -48,7 +49,8 @@ def init_db_engine(database_url: str | None = None) -> None:
     # Auto-create tables (works for both SQLite and PostgreSQL)
     # Import models so all tables are registered on Base.metadata
     from . import models, health_models  # noqa: F401
-    Base.metadata.create_all(bind=engine)
+    if os.getenv("KAYA_MANAGED_SCHEMA") != "true":
+        Base.metadata.create_all(bind=engine)
 
 
 def get_db():

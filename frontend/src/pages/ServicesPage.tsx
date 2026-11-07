@@ -1,6 +1,6 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-
+import HeroArt from '../components/HeroArt';
 import { useT } from '../i18n/LanguageContext';
 import {
   Activity, Stethoscope, FileText, HeartPulse, Building2, Layers,
@@ -55,6 +55,7 @@ export default function ServicesPage() {
       <section className="landing-hero" style={{ minHeight: '45vh' }}>
         <div className="landing-hero-bg" />
         <div className="landing-hero-content">
+          <HeroArt name="professional" />
           <h1 className="landing-hero-title">{t('services.hero_title')}</h1>
           <p className="landing-hero-subtitle" style={{ maxWidth: '560px' }}>{t('services.hero_desc')}</p>
         </div>
