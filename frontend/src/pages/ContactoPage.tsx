@@ -51,7 +51,7 @@ export default function ContactoPage() {
             { icon: MessageSquare, label: t('contact.card_business'), value: 'empresas@kaya.ao',   href: 'mailto:empresas@kaya.ao' },
             { icon: MapPin,      label: t('contact.card_location'), value: 'Luanda, Angola',         href: undefined },
           ].map(c => (
-            <div key={c.label} style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)', borderRadius: '14px', padding: '1.4rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div key={c.label} style={{ borderTop: '1px solid var(--border)', padding: '1.4rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <c.icon size={20} style={{ color: 'var(--accent-teal)' }} />
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.label}</div>
               {c.href ? (
@@ -63,7 +63,7 @@ export default function ContactoPage() {
           ))}
         </div>
 
-        <div style={{ maxWidth: '600px', margin: '0 auto', background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', borderTop: '1px solid var(--border)', padding: '2rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem' }}>{t('contact.send_title')}</h3>
           {sent ? (
             <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>

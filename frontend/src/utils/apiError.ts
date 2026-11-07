@@ -17,7 +17,7 @@ export function isServerUnreachable(error: unknown): boolean {
   const err = record(error);
   if (!err) return false;
   const response = record(err.response);
-  if (!response) return err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message === 'Network Error';
+  if (!response) return err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK';
   const status = response.status;
   const data = response.data;
   const html = typeof data === 'string' && /<html|<!doctype/i.test(data);
