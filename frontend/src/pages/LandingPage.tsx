@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
@@ -7,15 +7,8 @@ import JourneyScroll from '../components/JourneyScroll';
 import CareComposer from '../components/CareComposer';
 import LuandaMap from '../components/LuandaMap';
 import Spot, { type SpotName } from '../components/Spots';
+import BodyExplorer from '../components/BodyExplorer';
 import '../landing-editorial.css';
-
-/* The four services. One object on the page at a time; the rail switches it. */
-const SERVICES: { key: string; num: string; label: string; accent: string; spot: SpotName; caption: string; note: string }[] = [
-  { key: 'consulta',   num: '01', label: 'Consulta',        accent: 'chega até si.',  spot: 'telehealth',   caption: 'Consulta e teleconsulta',   note: 'Um médico real, presencial ou online, dentro do âmbito verificado.' },
-  { key: 'receita',    num: '02', label: 'Receita digital', accent: 'segue consigo.', spot: 'prescription', caption: 'Receita digital',            note: 'Pedida e renovada com decisão médica. Dispensa em farmácias parceiras.' },
-  { key: 'transporte', num: '03', label: 'Transporte',      accent: 'vem buscá-lo.',  spot: 'scheduled',    caption: 'Transporte de doentes',     note: 'Agendado ou assistido, com operador qualificado e entrega clínica.' },
-  { key: 'urgencia',   num: '04', label: 'Urgência',        accent: 'não espera.',    spot: 'emergency',    caption: 'Emergência pré-hospitalar', note: 'Despacho, pré-alerta ao hospital e resposta quando o tempo conta.' },
-];
 
 const CHAPTERS: {
   id: string; num: string; title: string; em: string; lead: string; spot: SpotName;
@@ -68,12 +61,6 @@ const AUDIENCES = [
 ];
 
 export default function LandingPage() {
-  const [active, setActive] = useState(0);
-  const [out, setOut] = useState(false);
-  const [touched, setTouched] = useState(false);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [scrollY, setScrollY] = useState(0);
   const [current, setCurrent] = useState<string>('');
 
   // Scroll reveal
@@ -99,42 +86,6 @@ export default function LandingPage() {
     return () => io.disconnect();
   }, []);
 
-  // Hero object drifts gently with the scroll
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; setScrollY(window.scrollY); }); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
-  }, []);
-
-  // Auto-advance until the visitor touches the rail
-  useEffect(() => {
-    if (touched) return;
-    const t = window.setInterval(() => switchTo((active + 1) % SERVICES.length, false), 5200);
-    return () => window.clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, touched]);
-
-  const switchTo = (idx: number, byUser = true) => {
-    if (byUser) setTouched(true);
-    if (idx === active) return;
-    setOut(true);
-    window.setTimeout(() => { setActive(idx); setOut(false); }, 280);
-  };
-
-  // Pointer: parallax on the object, spotlight on the canvas
-  const onStageMove = (e: MouseEvent<HTMLDivElement>) => {
-    const el = stageRef.current; if (!el) return;
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width; const py = (e.clientY - r.top) / r.height;
-    setTilt({ x: (px - .5) * 22, y: (py - .5) * 16 });
-    el.style.setProperty('--mx', `${px * 100}%`); el.style.setProperty('--my', `${py * 100}%`);
-  };
-  const onStageLeave = () => setTilt({ x: 0, y: 0 });
-
-  const s = SERVICES[active];
-  const drift = Math.min(scrollY, 600) * 0.12;
-
   return (
     <div className="landing-wrapper ed">
       <Navbar />
@@ -146,34 +97,17 @@ export default function LandingPage() {
             <div className="ed-kicker">Luanda · Angola — saúde e transporte</div>
             <h1 className="ed-title">
               Cuidado que
-              <span className={`ed-title__accent${out ? ' is-out' : ''}`}>{s.accent}</span>
+              <span className="ed-title__accent">chega até si.</span>
             </h1>
-            <p className="ed-sub">Consulta, receita digital, transporte e urgência num só lugar. Um médico real decide; o KAYA organiza o caminho.</p>
+            <p className="ed-sub">Toque numa parte do corpo e veja o que o KAYA faz por ela: consulta, receita digital, medições, transporte e urgência. Um médico real decide; o KAYA organiza o caminho.</p>
             <div className="ed-hero__links">
               <Link to="/register" className="ed-link">Criar conta <ArrowRight size={16} /></Link>
               <Link to="/login" className="ed-link ed-link--quiet">Entrar no portal <ArrowUpRight size={16} /></Link>
             </div>
           </div>
 
-          <div>
-            <div className="ed-stage" ref={stageRef} onMouseMove={onStageMove} onMouseLeave={onStageLeave}>
-              <div className="ed-stage__meta"><span>{s.num} / 04</span><span>{s.label}</span></div>
-              <div className={`ed-stage__art${out ? ' is-out' : ''}`}>
-                <div className="ed-stage__object ed-object" style={{ transform: `translate3d(${tilt.x}px, ${tilt.y + drift}px, 0)` }}>
-                  <Spot name={s.spot} />
-                </div>
-              </div>
-              <div className="ed-stage__caption"><strong>{s.caption}</strong><span>{s.note}</span></div>
-            </div>
-            <div className="ed-rail" role="tablist" aria-label="Serviços">
-              {SERVICES.map((item, i) => (
-                <button key={item.key} role="tab" aria-selected={i === active}
-                  className={`ed-rail__item${i === active ? ' is-on' : ''}`} onClick={() => switchTo(i)}>
-                  <span className="ed-rail__num">{item.num}</span>
-                  <span className="ed-rail__label">{item.label}</span>
-                </button>
-              ))}
-            </div>
+          <div className="reveal reveal--in" data-d="2">
+            <BodyExplorer />
           </div>
         </div>
       </section>
