@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, Stethoscope, Pill, HeartPulse, Ambulance, Siren, Building2, Sparkles, Bell } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
@@ -61,6 +61,14 @@ const AUDIENCES = [
 ];
 
 export default function LandingPage() {
+  // Skeleton → content: CSS animates the morph; this fallback flips a class on the
+  // section as well, so the reveal completes even where animations are paused.
+  const heroRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = heroRef.current;
+    const t = window.setTimeout(() => el?.classList.add('is-ready'), 1200);
+    return () => window.clearTimeout(t);
+  }, []);
   const [current, setCurrent] = useState<string>('');
 
   // Scroll reveal
@@ -91,7 +99,7 @@ export default function LandingPage() {
       <Navbar />
 
       {/* ══ HERO ══════════════════════════════════════════ */}
-      <section className="ed-hero">
+      <section className="ed-hero" ref={heroRef}>
         {/* skeleton layer: grey placeholders in the shape of the hero */}
         <div className="ed-skel" aria-hidden="true">
           <div className="ed-wrap ed-skel__grid">
