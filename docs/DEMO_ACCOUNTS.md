@@ -4,23 +4,14 @@
 
 | What | URL | Notes |
 |---|---|---|
-| Azure (current build) | https://stkayainfo4319.z43.web.core.windows.net/ | Deployed by hand from the `organise/kaya-nov7` branch |
-| GitHub Pages | https://genovesi-jm.github.io/health-/ | Auto-deploys from `main` |
+| Azure site (current build, **login works**) | https://stkayainfo4319.z43.web.core.windows.net/ | Deployed by hand from the `organise/kaya-nov7` branch; talks to the demo API below |
+| Demo API (synthetic mode, demo data only) | https://ca-kaya-demo-api.livelyplant-1f32338a.spaincentral.azurecontainerapps.io | Azure Container Apps `ca-kaya-demo-api`, rg `rg-kaya-pilot-weu`; SQLite in the container, so data resets when it restarts |
+| GitHub Pages | https://genovesi-jm.github.io/health-/ | Auto-deploys from `main`; has no API configured, so login shows an "unreachable" message |
 | Pull request | https://github.com/Genovesi-JM/health-/pull/8 | Merging it updates GitHub Pages too |
 
-## Why no public login works
-
-Both published sites are frontend-only. The clinical backend (Azure Container Apps
-`ca-kaya-staging-api`, Spain Central) is deliberately **held and internal** under the
-clinical HOLD, and the old backend address used by GitHub Pages
-(`health.geovisionops.com`) is offline. Until a backend is exposed, the login page on the
-public sites cannot authenticate anyone. Exposing it is a business/regulatory decision,
-not a code change.
-
-## Demo accounts (local backend)
+## Demo accounts
 
 Password for every account: `SeedDefault@1234`
-(unless the environment variable `ADMIN_PASSWORD` is set, in which case that value is used).
 
 | Role | Email |
 |---|---|
@@ -31,6 +22,9 @@ Password for every account: `SeedDefault@1234`
 | Admin | genovesi.maria@geovisionops.com |
 
 These are created by `backend/app/seed_data.py` when the backend starts outside production.
+The demo API runs the backend's **synthetic test mode** (`KAYA_EXECUTION_MODE=synthetic`,
+`ENV=test`): no real patients, no real clinical service, no external providers. The clinical
+staging API (`ca-kaya-staging-api`) stays held and internal.
 
 ## Running the backend locally
 
@@ -42,3 +36,13 @@ cd backend && KAYA_EXECUTION_MODE=synthetic ENV=test uvicorn app.main:app --port
 
 Then start the frontend with `npm run dev` in `frontend/` (it proxies `/auth`, `/api`,
 `/me`, `/admin` to port 8000) and open http://localhost:5173/health-/login.
+
+## Redeploying the demo API
+
+```bash
+# build (the backend .dockerignore excludes the synthetic runtime, so build from a full copy of backend/app)
+az acr build --registry acrkaypilotiloie6xix66qg --image kaya-demo:<tag> --target production --file <ctx>/Dockerfile <ctx>
+az containerapp update -n ca-kaya-demo-api -g rg-kaya-pilot-weu --image acrkaypilotiloie6xix66qg.azurecr.io/kaya-demo:<tag>
+```
+
+The app runs gunicorn with a single worker (two workers race on SQLite table creation).

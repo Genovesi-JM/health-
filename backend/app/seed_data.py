@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.config import settings
-from app.database import SessionLocal
+from app import database as _database
 from app.health_models import Patient, Doctor
 from app.utils import hash_password
 
@@ -106,7 +106,7 @@ def seed_admin_users() -> int:
     """Create admin user(s) if they do not exist."""
     password = (settings.admin_password or "").strip() or SEED_PASSWORD
 
-    db: Session = SessionLocal()
+    db: Session = _database.SessionLocal()  # resolved lazily: the factory exists only after init_db_engine()
     inserted = 0
     try:
         for user_data in ADMIN_USERS:
@@ -142,7 +142,7 @@ def seed_patient_users() -> int:
     """Create patient test accounts with full clinical profiles."""
     password = (settings.admin_password or "").strip() or SEED_PASSWORD
 
-    db: Session = SessionLocal()
+    db: Session = _database.SessionLocal()  # resolved lazily: the factory exists only after init_db_engine()
     inserted = 0
     try:
         for pdata in PATIENT_USERS:
@@ -185,7 +185,7 @@ def seed_doctor_users() -> int:
     """Create doctor test accounts with verified profiles."""
     password = (settings.admin_password or "").strip() or SEED_PASSWORD
 
-    db: Session = SessionLocal()
+    db: Session = _database.SessionLocal()  # resolved lazily: the factory exists only after init_db_engine()
     inserted = 0
     try:
         for ddata in DOCTOR_USERS:
