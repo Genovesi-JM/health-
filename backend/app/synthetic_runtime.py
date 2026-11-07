@@ -147,6 +147,12 @@ def create_application() -> FastAPI:
         try:
             result = seed_all()
             print(f"[HealthPlatform] Seed complete: {result}")
+            if os.getenv("KAYA_DEMO", "").lower() == "true":
+                from .demo_seed import seed_demo_data
+                try:
+                    print(f"[HealthPlatform] Demo data: {seed_demo_data()}")
+                except Exception as demo_exc:  # demo data is never allowed to block startup
+                    print(f"[HealthPlatform] Demo data failed (non-fatal): {demo_exc!r}")
         except Exception as exc:
             print(f"[HealthPlatform] Seed data failed (non-fatal): {exc}")
     else:
