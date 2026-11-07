@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './kaya-premium.css'
+import './app-shell.css'
 import App from './App'
 
 // When a newer build takes over the page's service worker, reload once so the

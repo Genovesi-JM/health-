@@ -126,19 +126,17 @@ export default function DoctorDashboardPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
 
       {/* ── HERO ── */}
-      <div style={{ background: 'var(--brand-primary)', borderRadius: '12px', padding: '1.75rem 2rem', marginBottom: '1.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', right: '-20px', top: '-20px', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-        <div style={{ position: 'absolute', right: '60px', bottom: '-40px', width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+      <div className="lms-greet" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.75, marginBottom: '0.25rem', fontWeight: 500 }}>{greeting}</div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.2rem', color: '#fff' }}>
+            <div style={{ fontSize: '1.05rem', color: 'var(--lms-ink-2, #3d3d3d)', marginBottom: '0.25rem' }}>{greeting}</div>
+            <h1 style={{ margin: '0 0 0.2rem' }}>
               {title} {name}
             </h1>
-            <p style={{ margin: '0 0 1.25rem', opacity: 0.85, fontSize: '0.88rem' }}>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '1.05rem' }}>
               {specialty && <span>{specialty} · </span>}
               <span style={{ fontWeight: 600 }}>Hoje: {confirmedToday} consultas confirmadas</span>
-              {waitingQ > 0 && <span style={{ marginLeft: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 }}>{waitingQ} em espera</span>}
+              {waitingQ > 0 && <span style={{ marginLeft: '0.75rem', padding: '0.15rem 0.6rem', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, background: '#fde8e8', color: '#b42318' }}>{waitingQ} em espera</span>}
             </p>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
               <HeroBtn to="/doctor/consultas" icon={<Video size={14} />} label="Entrar Online" primary />
@@ -151,10 +149,10 @@ export default function DoctorDashboardPage() {
             <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '0.3rem 0.75rem', borderRadius: 999, background: statusBadge.bg, color: statusBadge.color, border: `1px solid ${statusBadge.color}30`, backdropFilter: 'blur(8px)' }}>
               {statusBadge.label}
             </span>
-            <button onClick={refresh} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '8px', padding: '0.4rem 0.75rem', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 600 }}>
+            <button onClick={refresh} style={{ background: 'none', border: '1px solid var(--lms-rule, #cfd4d3)', borderRadius: '8px', padding: '0.4rem 0.75rem', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', fontWeight: 600 }}>
               <RefreshCw size={12} /> Actualizar
             </button>
-            <div style={{ fontSize: '0.72rem', opacity: 0.6 }}>
+            <div style={{ fontSize: '0.78rem', color: 'var(--lms-mute, #6b6b6b)' }}>
               {lastRefresh.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
@@ -319,7 +317,7 @@ export default function DoctorDashboardPage() {
 
 function HeroBtn({ to, icon, label, primary, badge }: { to: string; icon: React.ReactNode; label: string; primary?: boolean; badge?: number }) {
   return (
-    <Link to={to} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.1rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.83rem', textDecoration: 'none', background: primary ? '#fff' : 'rgba(255,255,255,0.15)', color: primary ? '#0f766e' : '#fff', border: primary ? 'none' : '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)', position: 'relative' }}>
+    <Link to={to} className="lms-link" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.55rem 1rem', borderRadius: '8px', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none', border: '1px solid var(--lms-rule, #cfd4d3)', color: primary ? '#fff' : 'inherit', background: primary ? '#0f766e' : 'transparent' }}>
       {icon} {label}
       {badge !== undefined && badge > 0 && (
         <span style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: '#fff', borderRadius: 999, width: 18, height: 18, fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badge}</span>

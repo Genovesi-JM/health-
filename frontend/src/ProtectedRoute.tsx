@@ -1,105 +1,100 @@
-import { Outlet, Navigate, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Menu, UserRound, X, IdCard, CalendarDays, ClipboardList, LogOut } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
-import { Activity, Calendar, Home, Menu, User } from 'lucide-react';
-import { useState } from 'react';
-import { useT } from './i18n/LanguageContext';
 import LanguageSelector from './components/LanguageSelector';
+import { useT } from './i18n/LanguageContext';
 import { isPatientAccount, requiredPathRedirect } from './authRouting';
+import kayaLogo from '/kaya-logo.svg';
 
+/* Logged-in shell on the La Meva Salut pattern: pastel header with a menu
+   drawer and a user pop-over, a plain white page, a sticky bottom action,
+   the emergency band and a dark footer. */
 export function ProtectedRoute() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useT();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  if (loading) {
-    return (
-      <div className="page-loading">
-        <div className="spinner" />
-      </div>
-    );
-  }
+  const [drawer, setDrawer] = useState(false);
+  const [pop, setPop] = useState(false);
 
+  if (loading) {
+    return <div className="page-loading"><div className="spinner" /></div>;
+  }
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
   const accountRedirect = requiredPathRedirect(user, location.pathname);
   if (accountRedirect) return <Navigate to={accountRedirect} replace />;
 
-  /* Map route path to a breadcrumb label */
-  const crumbs: Record<string, string> = {
-    '/dashboard': t('topbar.overview'),
-    '/patient/profile': t('topbar.my_profile'),
-    '/triage': t('topbar.triage'),
-    '/consultations': t('topbar.consultations'),
-    '/self-care': t('topbar.self_care'),
-    '/consents': t('topbar.consents'),
-    '/consent-gate': t('topbar.consents'),
-    '/data-consent': t('topbar.consents'),
-    '/family': t('topbar.family'),
-    '/notifications': t('topbar.notifications'),
-    '/patient/readings': t('topbar.readings'),
-    '/loja': t('topbar.store'),
-    '/corporate': t('topbar.corporate'),
-    // Doctor
-    '/doctor/dashboard': t('topbar.doctor_dashboard'),
-    '/doctor/agenda': t('topbar.agenda'),
-    '/doctor/disponibilidade': t('topbar.availability'),
-    '/doctor/pacientes': t('topbar.my_patients'),
-    '/doctor/consultas': t('topbar.live_consults'),
-    '/doctor/queue': t('topbar.queue'),
-    '/doctor/prescricoes': t('topbar.pending_rx'),
-    '/doctor/mensagens': t('topbar.messages'),
-    '/doctor/financeiro': t('topbar.finance'),
-    '/doctor/avaliacoes': t('topbar.reviews'),
-    '/doctor/profile': t('topbar.public_profile'),
-    // Nurse
-    '/nurse': t('topbar.nurse'),
-    // Admin
-    '/admin': t('topbar.admin_dashboard'),
-    '/admin/doctors': t('topbar.verify_doctors'),
-    '/admin/patients': t('topbar.patients') !== 'topbar.patients' ? t('topbar.patients') : 'Pacientes',
-    '/admin/applications': t('topbar.applications'),
-    '/admin/credentials': t('topbar.credentials'),
-    '/admin/compliance': t('admc.title'),
-    '/admin/expiry': t('exp.title'),
-    // Cross-role
-    '/professional-verification': t('topbar.my_credentials'),
-    '/pricing': t('topbar.subscription'),
-    '/settings': t('topbar.settings'),
-    '/security': t('sec.title'),
-    '/security/mfa': t('mfa.title'),
-    '/onboarding/organisation': t('org.title'),
-    '/onboarding/caregiver': t('cg.title'),
-  };
-  const pageTitle = crumbs[location.pathname] || '';
+  const displayName = user.name || user.email.split('@')[0];
+  const role = user.role;
+  const patient = isPatientAccount(user) && user.patient_onboarding_complete !== false;
+
+  const bottomAction =
+    patient ? { to: '/patient/profile', label: 'Cartão de saúde', icon: IdCard } :
+    role === 'doctor' ? { to: '/doctor/agenda', label: 'Agenda de hoje', icon: CalendarDays } :
+    role === 'nurse' ? { to: '/nurse', label: 'Fila de triagem', icon: ClipboardList } :
+    null;
+
+  const profileTo = role === 'doctor' ? '/doctor/profile' : patient ? '/patient/profile' : '/settings';
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <div className="app-layout" key={`${user.id}:${user.role}`}>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="app-main">
-        <header className="app-topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <button className="app-topbar-toggle" onClick={() => setSidebarOpen(true)} aria-label="Menu">
-              <Menu size={22} />
-            </button>
-            <div className="app-topbar-title">{pageTitle}</div>
-          </div>
-          <LanguageSelector />
-        </header>
-        <main className="app-content">
-          <Outlet />
-        </main>
-        {isPatientAccount(user) && user.patient_onboarding_complete !== false && (
-          <nav className="patient-bottom-nav" aria-label="Navegação principal">
-            <NavLink to="/dashboard"><Home size={20} /><span>{t('sidebar.overview')}</span></NavLink>
-            <NavLink to="/triage"><Activity size={20} /><span>{t('sidebar.triage')}</span></NavLink>
-            <NavLink to="/consultations"><Calendar size={20} /><span>{t('sidebar.consultations')}</span></NavLink>
-            <NavLink to="/patient/profile"><User size={20} /><span>{t('sidebar.my_profile')}</span></NavLink>
-          </nav>
-        )}
+    <div className="lms" key={`${user.id}:${user.role}`}>
+      <header className="lms-header">
+        <button className="lms-iconbtn" onClick={() => setDrawer(true)} aria-label="Menu"><Menu size={34} strokeWidth={1.6} /></button>
+        <Link to={role === 'doctor' ? '/doctor/dashboard' : role === 'admin' ? '/admin' : role === 'nurse' ? '/nurse' : '/dashboard'} className="lms-brand">
+          <img src={kayaLogo} alt="" width={34} height={34} />
+          <span className="lms-brand__text">
+            <span className="lms-brand__top">A minha</span>
+            <span className="lms-brand__main">/<b>Saúde</b></span>
+          </span>
+        </Link>
+        <div className="lms-header__right">
+          <button className="lms-iconbtn" onClick={() => setPop(p => !p)} aria-label="Conta" aria-expanded={pop}>
+            <UserRound size={34} strokeWidth={1.4} />
+          </button>
+          {pop && (
+            <div className="lms-pop" role="dialog" aria-label="Conta">
+              <div className="lms-pop__head">
+                <span>{displayName}</span>
+                <button className="lms-iconbtn" style={{ width: 44, height: 44 }} onClick={() => setPop(false)} aria-label="Fechar"><X size={28} strokeWidth={1.4} /></button>
+              </div>
+              <ul className="lms-pop__list">
+                <li><Link to={profileTo} onClick={() => setPop(false)}>Dados pessoais</Link></li>
+                <li><Link to="/settings" onClick={() => setPop(false)}>Gestão de notificações</Link></li>
+                <li><Link to="/notifications" onClick={() => setPop(false)}>Notificações recebidas</Link></li>
+                <li><Link to="/security" onClick={() => setPop(false)}>Segurança da conta</Link></li>
+                <li><LanguageSelector /></li>
+              </ul>
+              <button className="lms-pop__out" onClick={handleLogout}>{t('sidebar.logout')} <LogOut size={20} /></button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <Sidebar open={drawer} onClose={() => setDrawer(false)} />
+
+      <main className="lms-main">
+        <Outlet />
+      </main>
+
+      {bottomAction && (
+        <Link to={bottomAction.to} className="lms-cta"><bottomAction.icon size={26} strokeWidth={1.6} /> {bottomAction.label}</Link>
+      )}
+
+      <div className="lms-band">
+        <div className="lms-band__row"><span className="lms-band__num">KAYA</span> <Link to="/urgencia" style={{ color: 'inherit', textDecoration: 'none' }}>Urgência e pré-alerta hospitalar</Link></div>
+        <div className="lms-band__row"><span className="lms-band__num is-red">112</span> Emergências de risco de vida</div>
       </div>
+      <footer className="lms-footer">
+        <div className="lms-footer__brand">/Saúde <span style={{ fontSize: '1rem', fontWeight: 600, letterSpacing: '.12em' }}>KAYA</span></div>
+        <div className="lms-footer__links">
+          <Link to="/faq">Ajuda</Link> <span>|</span> <Link to="/terms">Aviso legal</Link> <span>|</span> <Link to="/privacy">Privacidade</Link>
+        </div>
+      </footer>
     </div>
   );
 }
