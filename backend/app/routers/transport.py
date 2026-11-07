@@ -7,7 +7,7 @@ call the emergency number for life-threatening situations.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -90,14 +90,18 @@ def my_requests(patient: Patient = Depends(get_patient_for_user), db: Session = 
 @router.post("/requests", response_model=TransportRequestOut, status_code=201)
 def create_request(body: TransportRequestIn, patient: Patient = Depends(get_patient_for_user),
                    user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if body.kind != "emergency" and body.scheduled_for is None:
+    scheduled = body.scheduled_for
+    if scheduled is not None and scheduled.tzinfo is not None:
+        # Store naive UTC like the rest of the schema.
+        scheduled = scheduled.astimezone(timezone.utc).replace(tzinfo=None)
+    if body.kind != "emergency" and scheduled is None:
         raise HTTPException(422, "Indique a data e hora pretendidas para o transporte.")
-    if body.kind != "emergency" and body.scheduled_for and body.scheduled_for < datetime.utcnow():
+    if body.kind != "emergency" and scheduled is not None and scheduled < datetime.utcnow():
         raise HTTPException(422, "A data do transporte tem de ser no futuro.")
     row = TransportRequest(
         patient_id=patient.id, consultation_id=body.consultation_id, kind=body.kind, status="requested",
         pickup_address=body.pickup_address.strip(), destination=body.destination.strip(),
-        scheduled_for=body.scheduled_for if body.kind != "emergency" else datetime.utcnow(),
+        scheduled_for=scheduled if body.kind != "emergency" else datetime.utcnow(),
         mobility_needs=(body.mobility_needs or "").strip() or None, companion=body.companion,
         notes=(body.notes or "").strip() or None, country="AO",
     )
