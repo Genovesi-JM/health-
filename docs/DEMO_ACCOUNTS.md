@@ -26,6 +26,28 @@ The demo API runs the backend's **synthetic test mode** (`KAYA_EXECUTION_MODE=sy
 `ENV=test`): no real patients, no real clinical service, no external providers. The clinical
 staging API (`ca-kaya-staging-api`) stays held and internal.
 
+## Doctor and admin accounts
+
+Clinical roles normally require an authenticator app (mandatory MFA). The demo API runs with
+`KAYA_DEMO_RELAX_MFA=true`, a switch honoured only inside the synthetic runtime, so the demo
+doctor and admin accounts sign in with just the password. Production keeps mandatory MFA.
+
+## Sign in with Microsoft / Google
+
+- **Microsoft**: Entra app registration "KAYA Demo Login" (appId `1a1ca123-046e-48bd-a20e-48c2f309ae41`,
+  personal + work accounts, redirect `<demo API>/auth/microsoft/callback`). Client id and secret are
+  set on the demo container app (`MICROSOFT_CLIENT_ID`, secret `ms-client-secret`).
+- **Google**: needs an OAuth 2.0 Web client created in Google Cloud Console by the account owner.
+  Authorised redirect URI: `https://ca-kaya-demo-api.livelyplant-1f32338a.spaincentral.azurecontainerapps.io/auth/google/callback`.
+  Authorised JavaScript origin: `https://stkayainfo4319.z43.web.core.windows.net`. Then:
+
+  ```bash
+  az containerapp secret set -n ca-kaya-demo-api -g rg-kaya-pilot-weu --secrets "google-client-secret=<SECRET>"
+  az containerapp update -n ca-kaya-demo-api -g rg-kaya-pilot-weu --set-env-vars GOOGLE_CLIENT_ID=<CLIENT_ID> GOOGLE_CLIENT_SECRET=secretref:google-client-secret
+  ```
+
+Both callbacks hand the session to the SPA via `/auth/callback?token=…` (the API runs on its own origin).
+
 ## Running the backend locally
 
 From a clone that has **no** `backend/.env` file:

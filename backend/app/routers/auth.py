@@ -19,7 +19,7 @@ from urllib.parse import urlencode
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -1026,29 +1026,19 @@ def google_callback(code: str | None = None, state: str | None = None,
         log_audit(db, "oauth_login", user_id=user.id, user_email=email,
                   details={"provider": "google"}, request=request)
 
+        # Hand the session to the SPA through its /auth/callback page. The API may run
+        # on a different origin than the frontend, so localStorage cannot be written here.
         redirect_path = "/admin" if role == "admin" else "/dashboard"
         frontend_base = settings.frontend_base.rstrip("/")
-        session = {
+        callback_url = f"{frontend_base}/auth/callback"
+        params = urlencode({
             "token": token, "email": email, "role": role,
-            "name": name or "", "user_id": user.id,
+            "name": name or "",
             "account_id": getattr(account, "id", ""),
             "account_name": getattr(account, "name", ""),
-        }
-        session_json = json.dumps(session).replace("<", "\\u003c")
-        destination_json = json.dumps(f"{frontend_base}{redirect_path}")
-        return HTMLResponse(
-            "<!doctype html><html><head><meta charset='utf-8'><title>KAYA</title></head>"
-            "<body><p>A concluir autenticação…</p><script>"
-            f"const session={session_json};"
-            "localStorage.setItem('ht_token',session.token);"
-            "localStorage.setItem('ht_user',JSON.stringify({id:session.user_id,email:session.email,role:session.role,name:session.name}));"
-            "localStorage.setItem('ht_email',session.email);"
-            "localStorage.setItem('ht_name',session.name);"
-            "localStorage.setItem('ht_role',session.role);"
-            "localStorage.setItem('ht_user_id',session.user_id);"
-            f"window.location.replace({destination_json});"
-            "</script></body></html>"
-        )
+            "redirect": redirect_path,
+        })
+        return RedirectResponse(f"{callback_url}?{params}")
 
     except HTTPException:
         raise

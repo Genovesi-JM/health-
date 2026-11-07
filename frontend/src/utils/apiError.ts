@@ -25,8 +25,11 @@ export function isServerUnreachable(error: unknown): boolean {
 }
 
 /** Convert FastAPI string or validation-detail responses into safe UI text. */
+export const TOO_MANY_ATTEMPTS_MESSAGE = 'Demasiadas tentativas. Aguarde um minuto e tente novamente.';
+
 export function apiErrorMessage(error: unknown, fallback: string): string {
   if (isServerUnreachable(error)) return SERVER_UNREACHABLE_MESSAGE;
+  if (apiErrorStatus(error) === 429) return TOO_MANY_ATTEMPTS_MESSAGE;
   const detail = record(record(record(error)?.response)?.data)?.detail;
   if (typeof detail === 'string' && detail.trim()) return detail;
   if (Array.isArray(detail)) {

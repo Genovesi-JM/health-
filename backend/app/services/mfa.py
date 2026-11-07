@@ -13,6 +13,7 @@ hashed (SHA-256). They let a user in when they lose their authenticator.
 import base64
 import hashlib
 import hmac
+import os
 import secrets
 import struct
 import time
@@ -107,6 +108,12 @@ MFA_MANDATORY_ROLES = frozenset({
 
 
 def mfa_is_mandatory(role: str) -> bool:
+    # A demo instance may relax the policy so seeded clinical accounts can sign in
+    # without an authenticator app. Honoured only inside the synthetic runtime, never
+    # in the held or production runtimes.
+    if (os.environ.get("KAYA_EXECUTION_MODE") == "synthetic"
+            and os.environ.get("KAYA_DEMO_RELAX_MFA", "").lower() == "true"):
+        return False
     return role in MFA_MANDATORY_ROLES
 
 
