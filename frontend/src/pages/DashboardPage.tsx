@@ -14,6 +14,7 @@ import type { ReadingSummary } from '../components/HealthSnapshot';
 import BookConsultationModal from '../components/BookConsultationModal';
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-PT', en: 'en-GB', fr: 'fr-FR' };
+const RISK_PT: Record<string, string> = { LOW: 'baixo', MEDIUM: 'médio', HIGH: 'alto', URGENT: 'urgente' };
 
 /* "Directo a": two pages of four pastel tiles, like La Meva Salut's quick access. */
 const TILES: { to: string; label: string; color: string; icon: typeof Activity; book?: boolean }[][] = [
@@ -139,7 +140,7 @@ export default function DashboardPage() {
           <div>
             <h3>{state?.state_label || 'Triagem digital'}</h3>
             <p>{lastTriage
-              ? `Última triagem: ${lastTriage.chief_complaint} · risco ${String(lastTriage.risk_level || '').toLowerCase()} · ${new Date(lastTriage.created_at).toLocaleDateString(locale)}.`
+              ? `Última triagem: ${lastTriage.chief_complaint} · risco ${RISK_PT[String(lastTriage.risk_level || '').toUpperCase()] || String(lastTriage.risk_level || '').toLowerCase()} · ${new Date(lastTriage.created_at).toLocaleDateString(locale)}.`
               : 'Avalie sintomas em minutos e receba uma recomendação. Um médico real decide o passo seguinte.'}</p>
             {state?.next_action === 'book_consultation'
               ? <button className="lms-link" onClick={() => setShowBooking(true)}>Marcar consulta <ArrowRight size={20} /></button>
