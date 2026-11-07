@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity, CalendarDays, Pill, FileText, HeartPulse, Leaf, Users, UserRound,
-  Stethoscope, ClipboardCheck, Bell, ExternalLink, ArrowRight,
+  Activity, CalendarDays, Pill, FileText, HeartPulse, Users, UserRound,
+  Stethoscope, ClipboardCheck, Bell, ExternalLink, ArrowRight, Ambulance,
 } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
@@ -27,7 +27,7 @@ const TILES: { to: string; label: string; color: string; icon: typeof Activity; 
   [
     { to: '/consultations',     label: 'Consultas e agenda',     color: '#f3a1a1', icon: CalendarDays },
     { to: '/patient/readings',  label: 'Medições',               color: '#a9ddf4', icon: HeartPulse },
-    { to: '/self-care',         label: 'Autocuidado',            color: '#cdb8f0', icon: Leaf },
+    { to: '/transporte',        label: 'Transporte e ambulância', color: '#cdb8f0', icon: Ambulance },
     { to: '/family',            label: 'Família',                color: '#eee59a', icon: Users },
   ],
 ];
@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const [readings, setReadings] = useState<ReadingSummary | null>(null);
   const [pendingRx, setPendingRx] = useState<number>(0);
   const [unread, setUnread] = useState<number>(0);
+  const [transport, setTransport] = useState<{ kind_label: string; status: string; destination: string; scheduled_for: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
   const [page, setPage] = useState(0);
@@ -49,13 +50,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const load = async () => {
-      const [s, tr, c, r, rx, n] = await Promise.allSettled([
+      const [s, tr, c, r, rx, n, tp] = await Promise.allSettled([
         api.get('/api/v1/dashboard/patient-state'),
         api.get('/api/v1/triage/history'),
         api.get('/api/v1/consultations/me'),
         api.get('/api/v1/readings/me/summary?days=30'),
         api.get('/api/v1/prescription-requests/me'),
         api.get('/api/v1/notifications/unread-count'),
+        api.get('/api/v1/transport/requests/me'),
       ]);
       if (s.status === 'fulfilled') setState(s.value.data);
       if (tr.status === 'fulfilled') setTriages(tr.value.data.slice(0, 3));
@@ -65,6 +67,7 @@ export default function DashboardPage() {
         const items: unknown = Array.isArray(rx.value.data) ? rx.value.data : rx.value.data?.items;
         setPendingRx(Array.isArray(items) ? items.filter((x: { status?: string }) => x.status === 'pending').length : 0);
       }
+      if (tp.status === 'fulfilled' && Array.isArray(tp.value.data)) setTransport(tp.value.data.find((x: { status: string }) => ['requested', 'confirmed', 'en_route'].includes(x.status)) || null);
       if (n.status === 'fulfilled') setUnread(Number(n.value.data?.count ?? n.value.data?.unread ?? 0) || 0);
       setLoading(false);
     };
@@ -155,6 +158,16 @@ export default function DashboardPage() {
               ? `Última tensão arterial ${bp.systolic}/${bp.diastolic} mmHg · ${readings?.total_readings ?? 0} registos em 30 dias.`
               : 'Registe tensão arterial, glicose, peso e temperatura, ou ligue um dispositivo.'}</p>
             <Link to="/patient/readings">Ver medições <ArrowRight size={20} /></Link>
+          </div>
+        </li>
+        <li className="lms-card">
+          <div className="lms-card__ico"><Ambulance /></div>
+          <div>
+            <h3>Transporte e ambulância</h3>
+            <p>{transport
+              ? `${transport.kind_label} ${transport.status === 'confirmed' ? 'confirmado' : transport.status === 'en_route' ? 'a caminho' : 'pedido'} para ${transport.destination}${transport.scheduled_for ? ` · ${new Date(transport.scheduled_for).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}` : ''}.`
+              : 'Transporte agendado, mobilidade acessível, transferência assistida ou pré-alerta de emergência.'}</p>
+            <Link to="/transporte">{transport ? 'Ver pedido' : 'Pedir transporte'} <ArrowRight size={20} /></Link>
           </div>
         </li>
         <li className="lms-card">

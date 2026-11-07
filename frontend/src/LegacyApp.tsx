@@ -76,6 +76,7 @@ const AdminExpiryPage = lazy(() => import('./pages/AdminExpiryPage'));
 const CorporateDashboardPage = lazy(() => import('./pages/CorporateDashboardPage'));
 const NurseDashboardPage = lazy(() => import('./pages/NurseDashboardPage'));
 const StorePage = lazy(() => import('./pages/StorePage'));
+const PatientTransportPage = lazy(() => import('./pages/PatientTransportPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const SecurityMfaPage = lazy(() => import('./pages/SecurityMfaPage'));
 const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
@@ -192,6 +193,7 @@ export default function App() {
               <Route path="/family" element={<FamilyPage />} />
               <Route path="/patient/readings" element={<PatientReadingsPage />} />
               <Route path="/loja" element={<StorePage />} />
+              <Route path="/transporte" element={<PatientTransportPage />} />
             </Route>
 
             {/* ── EMPLOYER / CORPORATE (self-serve: any logged-in user can create one) ── */}

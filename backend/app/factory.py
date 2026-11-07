@@ -50,6 +50,7 @@ from .routers import (
     health_dashboard,
     chatbot,
     readings,
+    transport,
     medications,
     family,
     notifications,
@@ -77,7 +78,7 @@ _ALL_ROUTERS = [
     notifications, credentials, clinician_workspace, clinical_operations,
     teleconsultation, onboarding, compliance_review, verification_actions,
     verification_webhooks, organisations, caregiver, public_contact,
-    public_facilities,
+    public_facilities, transport,
 ]
 
 

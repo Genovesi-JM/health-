@@ -46,6 +46,7 @@ export function Sidebar({ open, onClose }: Props) {
         { to: '/patient/documents', label: 'Os meus documentos' }, { to: '/patient/readings', label: t('sidebar.readings') },
       ] },
       { id: 'meds', title: 'Medicação', items: [{ to: '/prescricoes/pedido', label: 'Receitas e renovações' }, { to: '/self-care', label: t('sidebar.self_care') }] },
+      { id: 'transport', title: 'Transporte e ambulância', items: [{ to: '/transporte', label: 'Pedir transporte' }, { to: '/urgencia', label: 'Urgência e pré-alerta' }] },
       { id: 'family', title: 'Família e consentimentos', items: [{ to: '/family', label: t('sidebar.family') }, { to: '/consents', label: t('sidebar.consents') }] },
       { id: 'other', title: 'Outros', items: [{ to: '/loja', label: t('store.title') }, { to: '/pricing', label: t('sidebar.subscription') }, alerts] },
     ] :

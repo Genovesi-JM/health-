@@ -154,3 +154,13 @@
 
 /* inner pages keep their layout, but inherit the font and plain surfaces */
 .lms .page-header h1, .lms h1 { font-family: var(--lms-font); }
+
+/* forms inside the shell (transport request) */
+.lms-field { display: grid; gap: .4rem; }
+.lms-field span { font-size: .85rem; font-weight: 600; color: var(--lms-ink-2); }
+.lms-field input, .lms-field textarea { font: inherit; font-size: 1rem; padding: .8rem .9rem; border: 1px solid var(--lms-rule); border-radius: 10px; background: #fff; color: var(--lms-ink); width: 100%; }
+.lms-field input:focus, .lms-field textarea:focus { outline: none; border-color: var(--lms-link); box-shadow: none !important; }
+.lms-check { display: flex; align-items: center; gap: .7rem; font-size: 1rem; }
+.lms-check input { width: 22px; height: 22px; accent-color: var(--lms-link); }
+.lms-btn { appearance: none; border: 0; cursor: pointer; font: inherit; font-weight: 600; font-size: 1.05rem; padding: .9rem 1.8rem; border-radius: 10px; background: var(--lms-cta); color: var(--lms-ink); }
+.lms-btn:disabled { opacity: .6; cursor: wait; }

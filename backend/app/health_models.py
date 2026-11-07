@@ -1697,3 +1697,31 @@ from .services.renewal_retention import register_renewal_guards
 register_renewal_guards(Base.metadata)
 
 from . import clinical_document_models  # Register retained document artifacts after core tables.
+
+
+# ── Patient transport & ambulance requests ────────────────────────────────
+TRANSPORT_KINDS = ("scheduled", "accessible", "assisted", "emergency")
+TRANSPORT_STATUSES = ("requested", "confirmed", "en_route", "completed", "cancelled")
+
+
+class TransportRequest(Base):
+    """A patient's request for transport to care: scheduled, accessible
+    (non-clinical passenger support), assisted (clinical team on board) or
+    emergency pre-alert. Operators confirm and update the status; the patient
+    can cancel while it is still requested or confirmed."""
+    __tablename__ = "transport_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    patient_id: Mapped[str] = mapped_column(String(36), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    consultation_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("consultations.id", ondelete="SET NULL"), nullable=True)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="requested", index=True)
+    pickup_address: Mapped[str] = mapped_column(String(300), nullable=False)
+    destination: Mapped[str] = mapped_column(String(300), nullable=False)
+    scheduled_for: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    mobility_needs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    companion: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

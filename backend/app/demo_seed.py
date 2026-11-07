@@ -19,7 +19,7 @@ from app import models
 from app.health_models import (
     Consultation, ConsentCatalogDocument, DeviceReading, Doctor, DoctorAvailability,
     HealthAuditLog, Notification, OnboardingDraft, Patient, PatientConsentEvent,
-    PatientMedication, Prescription, PrescriptionRequest, TriageResult, TriageSession,
+    PatientMedication, Prescription, PrescriptionRequest, TransportRequest, TriageResult, TriageSession,
 )
 
 CONSENT_DOCS = [
@@ -214,11 +214,18 @@ def seed_demo_data() -> dict:
         _notify(db, p2u, "Está na fila de hoje", "O Dr. Carlos Mendonça vai chamá-lo em breve para a consulta.",
                 "consultation", _at(0, 14, 50))
 
+        # Transport: one confirmed ride to the upcoming consultation, one completed transfer
+        db.add(TransportRequest(patient_id=p1.id, kind="scheduled", status="confirmed", pickup_address="Rua Amílcar Cabral 12, Maianga, Luanda",
+                                destination="Clínica KAYA Talatona", scheduled_for=_at(2, 9, 15), companion=False, country="AO",
+                                notes="Levar inalador e cartão de saúde.", created_at=_at(-1, 9, 10)))
+        db.add(TransportRequest(patient_id=p2.id, kind="assisted", status="completed", pickup_address="Hospital Josina Machel, Luanda",
+                                destination="Casa — Kilamba Kiaxi", scheduled_for=_at(-20, 17, 0), mobility_needs="Cadeira de rodas",
+                                companion=True, country="AO", created_at=_at(-21, 11, 0)))
         _notify(db, d1u, "Pedido de renovação", "paciente@health.com pediu a renovação de Salbutamol.", "prescription", _at(-1, 18, 31))
         _notify(db, d1u, "Novo paciente em espera", "João Paciente aguarda consulta (triagem: risco alto).", "consultation", _at(0, 15, 1))
 
         db.commit()
-        return {"patients": 2, "consultations": 5, "readings": 17, "renewal_requests": 1}
+        return {"patients": 2, "consultations": 5, "readings": 17, "renewal_requests": 1, "transport_requests": 2}
     except Exception:
         db.rollback()
         raise
