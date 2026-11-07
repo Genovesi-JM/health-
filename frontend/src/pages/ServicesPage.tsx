@@ -48,7 +48,7 @@ export default function ServicesPage() {
   ];
 
   return (
-    <>
+    <div className="landing-wrapper">
       <Navbar />
 
       {/* Hero */}
@@ -98,6 +98,6 @@ export default function ServicesPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

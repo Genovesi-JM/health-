@@ -18,30 +18,29 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Para Pacientes',
     links: [
-      { to: '/patients',      label: 'Pacientes',        sub: 'Marque consultas e acompanhe a saúde', icon: Users },
+      { to: '/patients',      label: 'Pacientes',        sub: 'Consultas, receitas e historial',        icon: Users },
       { to: '/especialistas', label: 'Especialistas',    sub: 'Encontre o médico certo',               icon: Stethoscope },
-      { to: '/telemedicina',  label: 'Teleconsulta',     sub: 'Consulta online imediata',              icon: Video },
-      { to: '/urgencia',      label: 'Transporte & Ambulância', sub: 'Agendado, assistido ou de emergência', icon: Ambulance },
+      { to: '/telemedicina',  label: 'Teleconsulta',     sub: 'Consulta por vídeo',                    icon: Video },
       { to: '/chronic-care',  label: 'Cuidado Crónico',  sub: 'Hipertensão, diabetes, asma',           icon: HeartPulse },
-      { to: '/mapa',          label: 'Mapa de Clínicas', sub: 'Clínicas, hospitais e laboratórios', icon: MapPin },
+      { to: '/mapa',          label: 'Mapa de Clínicas', sub: 'Clínicas, hospitais e laboratórios',    icon: MapPin },
     ],
   },
   {
     label: 'Para Parceiros',
     links: [
-      { to: '/clinics',  label: 'Hospitais & Clínicas',   sub: 'Médicos, clínicas e transferências', icon: Building2 },
-      { to: '/clinics',  label: 'Farmácias parceiras',    sub: 'Dispensa ligada à receita digital',  icon: Pill },
-      { to: '/urgencia', label: 'Transporte de doentes',  sub: 'Transferências e ambulância',         icon: Ambulance },
-      { to: '/empresas', label: 'Empresas',               sub: 'Saúde ocupacional para equipas',     icon: Briefcase },
+      { to: '/clinics',  label: 'Hospitais, clínicas e farmácias', sub: 'Receba pacientes e dispense receitas', icon: Building2 },
+      { to: '/medicos',  label: 'Médicos',                         sub: 'Directório e candidatura',            icon: Pill },
+      { to: '/empresas', label: 'Empresas',                        sub: 'Saúde ocupacional para equipas',      icon: Briefcase },
     ],
   },
   {
     label: 'Soluções',
     links: [
-      { to: '/urgencia', label: 'Transporte & Urgência', sub: 'Ambulância e pré-alerta hospitalar', icon: Ambulance },
-      { to: '/about',    label: 'Sobre a KAYA',          sub: 'A nossa missão e visão',             icon: Heart },
-      { to: '/faq',      label: 'FAQ',                   sub: 'Perguntas frequentes',               icon: HelpCircle },
-      { to: '/contacto', label: 'Contacto',              sub: 'Fale com a equipa KAYA',             icon: Phone },
+      { to: '/urgencia', label: 'Transporte & Urgência', sub: 'Agendado, assistido ou de emergência', icon: Ambulance },
+      { to: '/pricing',  label: 'Planos e preços',       sub: 'Para pessoas, famílias e empresas',    icon: HelpCircle },
+      { to: '/about',    label: 'Sobre a KAYA',          sub: 'A nossa missão e visão',               icon: Heart },
+      { to: '/faq',      label: 'FAQ',                   sub: 'Perguntas frequentes',                 icon: HelpCircle },
+      { to: '/contacto', label: 'Contacto',              sub: 'Fale com a equipa KAYA',               icon: Phone },
     ],
   },
 ];

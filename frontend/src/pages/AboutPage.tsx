@@ -21,7 +21,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <>
+    <div className="landing-wrapper">
       <Navbar />
 
       {/* Hero */}
@@ -109,6 +109,6 @@ export default function AboutPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

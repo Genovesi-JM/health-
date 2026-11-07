@@ -12,6 +12,8 @@ const API_BASE = import.meta.env.VITE_API_URL || '/';
 const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
+  // A dead or unreachable API must fail fast; the UI shows a clear message instead of spinning.
+  timeout: 12000,
 });
 
 // Attach JWT to every request. Never override an Authorization header that the
