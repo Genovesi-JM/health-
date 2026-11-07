@@ -64,3 +64,6 @@ backend/email_log.txt
 *.sqlite
 # Local unsigned/test-signed native build artifacts (never release inputs).
 /artifacts/native/
+
+# local Azure build output
+frontend/dist-azure/

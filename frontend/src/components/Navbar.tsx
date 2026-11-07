@@ -121,16 +121,8 @@ export function Navbar() {
             </Link>
           ) : (
             <div className="navbar-auth-btns" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Link to="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500 }}>
-                {t('nav.portal')}
-              </Link>
-              <Link to="/choose-account-type" style={{
-                padding: '0.5rem 1.1rem', borderRadius: '8px',
-                background: 'var(--gradient-primary)', color: '#fff',
-                fontWeight: 700, textDecoration: 'none', fontSize: '0.83rem',
-              }}>
-                Começar grátis
-              </Link>
+              <Link to="/login" className="nav-link-text">{t('nav.portal')}</Link>
+              <Link to="/choose-account-type" className="nav-cta">{t('nav.start_free')}</Link>
             </div>
           )}
           <LanguageSelector />

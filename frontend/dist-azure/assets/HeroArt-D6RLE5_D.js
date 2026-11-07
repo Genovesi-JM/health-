@@ -1,1 +1,0 @@
-import{j as r}from"./index-doKNWIW0.js";import{S as o}from"./Spots-Cy35pkNX.js";function a({name:t}){return r.jsx("div",{className:"hero-art","aria-hidden":"true",children:r.jsx(o,{name:t})})}export{a as H};
