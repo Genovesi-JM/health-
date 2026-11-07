@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Stethoscope, Pill, HeartPulse, Ambulance, Siren, Building2, Sparkles, Bell } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import JourneyScroll from '../components/JourneyScroll';
@@ -92,22 +92,79 @@ export default function LandingPage() {
 
       {/* ══ HERO ══════════════════════════════════════════ */}
       <section className="ed-hero">
-        <div className="ed-wrap ed-hero__grid">
-          <div className="reveal reveal--in">
+        {/* skeleton layer: grey placeholders in the shape of the hero */}
+        <div className="ed-skel" aria-hidden="true">
+          <div className="ed-wrap ed-skel__grid">
+            <div>
+              <span className="ed-skel__b" style={{ width: '38%', height: 12 }} />
+              <span className="ed-skel__b" style={{ width: '92%', height: 64, marginTop: 26 }} />
+              <span className="ed-skel__b" style={{ width: '70%', height: 64 }} />
+              <span className="ed-skel__b" style={{ width: '80%', height: 14, marginTop: 28 }} />
+              <span className="ed-skel__b" style={{ width: '64%', height: 14 }} />
+              <span className="ed-skel__b ed-skel__b--pill" style={{ width: 210, height: 52, marginTop: 30 }} />
+              <div className="ed-skel__row"><span className="ed-skel__b" style={{ width: '46%', height: 84 }} /><span className="ed-skel__b" style={{ width: '46%', height: 84 }} /></div>
+            </div>
+            <div className="ed-skel__right">
+              <span className="ed-skel__b ed-skel__b--figure" />
+              <div className="ed-skel__list">{[0,1,2,3,4,5].map(i => <span key={i} className="ed-skel__b ed-skel__b--pill" style={{ height: 40 }} />)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="ed-wrap ed-hero__grid ed-hero__content">
+          <div>
             <div className="ed-kicker">Luanda · Angola — saúde e transporte</div>
             <h1 className="ed-title">
+              <span className="ed-spark ed-spark--a"><Sparkles size={22} strokeWidth={1.4} /></span>
               Cuidado que
-              <span className="ed-title__accent">chega até si.</span>
+              <span className="ed-title__accent">chega até si.<span className="ed-spark ed-spark--b"><Sparkles size={16} strokeWidth={1.4} /></span></span>
             </h1>
             <p className="ed-sub">Toque numa parte do corpo e veja o que o KAYA faz por ela: consulta, receita digital, medições, transporte e urgência. Um médico real decide; o KAYA organiza o caminho.</p>
             <div className="ed-hero__links">
-              <Link to="/register" className="ed-link">Criar conta <ArrowRight size={16} /></Link>
+              <Link to="/register" className="ed-pill">Explorar os serviços <span className="ed-pill__arrow"><ArrowRight size={16} /></span></Link>
               <Link to="/login" className="ed-link ed-link--quiet">Entrar no portal <ArrowUpRight size={16} /></Link>
+            </div>
+            <div className="ed-floats">
+              <Link to="/urgencia" className="ed-float">
+                <span className="ed-float__ico"><Siren size={22} strokeWidth={1.4} /></span>
+                <span className="ed-float__text"><strong>Estamos sempre disponíveis</strong><small>Urgência e transporte, 24 horas por dia</small></span>
+                <span className="ed-float__go"><ArrowRight size={14} /></span>
+              </Link>
+              <Link to="/contacto" className="ed-float">
+                <span className="ed-float__ico"><Bell size={22} strokeWidth={1.4} /></span>
+                <span className="ed-float__text"><strong>Receber novidades</strong><small>Novas zonas e serviços em Luanda</small></span>
+                <span className="ed-float__go"><ArrowRight size={14} /></span>
+              </Link>
             </div>
           </div>
 
-          <div className="reveal reveal--in" data-d="2">
+          <div>
             <BodyExplorer />
+          </div>
+        </div>
+      </section>
+
+      {/* ══ SERVICES BENTO ═══════════════════════════════ */}
+      <section className="ed-bento">
+        <div className="ed-wrap">
+          <div className="ed-bento__head reveal">
+            <h2 className="ed-h2" style={{ textAlign: 'center', margin: '0 auto .5rem' }}>Explore os principais <em>serviços.</em></h2>
+            <p className="ed-lead" style={{ margin: '0 auto', textAlign: 'center' }}>Tudo o que o KAYA liga, do pedido à chegada.</p>
+          </div>
+          <div className="ed-bento__grid reveal" data-d="2">
+            {[
+              { to: '/medicos',        label: 'Consultas',               icon: Stethoscope, big: false },
+              { to: '/patients',       label: 'Receita digital',         icon: Pill,        big: false },
+              { to: '/patient/readings', label: 'Medições em casa',      icon: HeartPulse,  big: true },
+              { to: '/clinics',        label: 'Hospitais e farmácias',   icon: Building2,   big: false },
+              { to: '/urgencia',       label: 'Transporte e ambulância', icon: Ambulance,   big: false },
+              { to: '/urgencia',       label: 'Urgência e pré-alerta',   icon: Siren,       big: false },
+            ].map(t => (
+              <Link key={t.label} to={t.to} className={`ed-bento__tile${t.big ? ' is-big' : ''}`}>
+                <t.icon size={t.big ? 56 : 40} strokeWidth={1.1} />
+                <span>{t.label}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
